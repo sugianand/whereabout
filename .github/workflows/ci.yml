@@ -44,3 +44,15 @@ jobs:
         run: npm run build
       - name: Type-check
         run: npm run typecheck
+
+  api-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -f api/Dockerfile -t whereabout-api .
+      - name: Smoke test
+        run: |
+          docker run -d --name api -p 8000:8000 whereabout-api
+          for i in $(seq 1 30); do curl -fs localhost:8000/healthz && break; sleep 1; done
+          curl -fs -X POST localhost:8000/api/v1/rounds | python3 -c "import json,sys; r=json.load(sys.stdin); assert r['photo']['image_url'].startswith('https://'); print('round ok')"
