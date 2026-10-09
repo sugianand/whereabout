@@ -41,6 +41,8 @@ make api         # start the API on http://localhost:8000 (docs at /docs)
 
 ## Roadmap
 
+Day-by-day progress is tracked in [`docs/roadmap.md`](docs/roadmap.md).
+
 | Milestone | Goal |
 | --- | --- |
 | 1 | Playable shell: globe, pins, scoring, curated photos |
