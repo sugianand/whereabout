@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+.next/
+out/
+
+# Data and models (versioned with DVC later, never committed)
+data/raw/
+data/processed/
+*.onnx
+*.pt
+*.safetensors
+mlruns/
+
+# Env and editors
+.env
+.env.*
+!.env.example
+.DS_Store
+.idea/
+.vscode/
