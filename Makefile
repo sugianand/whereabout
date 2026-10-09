@@ -12,3 +12,13 @@ lint:
 
 api:
 	python -m uvicorn whereabout_api.main:app --reload --app-dir api/src
+
+.PHONY: web-install web-dev web-test
+web-install:
+	cd web && npm ci
+
+web-dev:
+	cd web && npm run dev
+
+web-test:
+	cd web && npm run lint && npm test && npm run build && npm run typecheck

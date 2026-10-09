@@ -1,0 +1,48 @@
+@import "tailwindcss";
+@import "@fontsource-variable/big-shoulders-display";
+@import "@fontsource-variable/atkinson-hyperlegible-next";
+
+/* Design tokens: see docs/design.md */
+@theme {
+  --color-ocean: #0d3346;
+  --color-ocean-deep: #082331;
+  --color-graticule: #2a5b6e;
+  --color-chalk: #eef4f2;
+  --color-chalk-dim: #a9c2c8;
+  --color-flare: #ff5d8f;
+  --color-sonar: #4fe3c1;
+  --color-gold: #ffc53d;
+
+  --font-sign: "Big Shoulders Display Variable", "Arial Narrow", sans-serif;
+  --font-sans: "Atkinson Hyperlegible Next Variable", system-ui, sans-serif;
+}
+
+html {
+  background: var(--color-ocean);
+  color: var(--color-chalk);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  min-height: 100dvh;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}
