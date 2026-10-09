@@ -14,7 +14,7 @@ numbers anywhere. Benchmark results only appear when produced by `eval/` from a 
 - [x] Geo core: haversine distance, scoring, tests
 - [x] Rounds API: start round, single guess, server-side scoring
 - [x] CI: lint and test the API
-- [ ] Web: Next.js + TypeScript + Tailwind app in `web/`, lint + type-check + build job in CI
+- [x] Web: Next.js + TypeScript + Tailwind app in `web/`, lint + type-check + build job in CI
 - [ ] Web: interactive globe (MapLibre GL, globe projection) with click-to-place pin
 - [ ] Web: game loop wired to the API — start round, guess, reveal the true location and a distance line
 - [ ] API: settings from environment, CORS for the web app, Dockerfile, `docker-compose.yml` for local dev
