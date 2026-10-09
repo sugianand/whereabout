@@ -47,6 +47,16 @@ thing everywhere: on pins, arcs, distances and score bars.
 
 On phones the globe becomes a bottom sheet with the photo above it.
 
+## The globe
+
+- MapLibre GL in globe projection. The sea is `ocean`, land a lighter teal, borders and a 30°
+  graticule in `graticule`. No place labels: a labelled map would give the answer away.
+- The basemap is bundled (Natural Earth 1:110m, public domain), so the globe needs no tile
+  server or API key and works offline.
+- The player's pin is a `flare` drop. Clicking again moves it; there is only ever one.
+- Keyboard: Enter drops a pin at the centre of the view, arrow keys move it 1° (Shift: 10°)
+  and the camera follows, + and - zoom. The pin's coordinates are announced in a live region.
+
 ## Principles
 
 - One orchestrated moment: the reveal (pins drop, arcs draw, distances count up). No

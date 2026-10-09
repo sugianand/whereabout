@@ -26,7 +26,7 @@ Under the hood (planned, see [`docs/architecture.md`](docs/architecture.md)):
 | Path | What lives there |
 | --- | --- |
 | `api/` | FastAPI backend: rounds, guesses, scoring |
-| `web/` | Next.js frontend (coming in Milestone 1) |
+| `web/` | Next.js frontend: the globe and the game UI |
 | `ml/` | Training code for Atlas (Milestone 4) |
 | `eval/` | Evaluation harness and benchmarks (Milestone 2) |
 | `docs/` | Architecture, decisions, research notes |
@@ -38,6 +38,23 @@ python -m pip install -e "api[dev]"
 make test        # run the test suite
 make api         # start the API on http://localhost:8000 (docs at /docs)
 ```
+
+## Run the web app locally
+
+```bash
+make web-install  # npm ci in web/
+make web-dev      # http://localhost:3000
+make web-test     # lint, unit tests, production build, type-check
+```
+
+Or run both services with `docker compose up --build` (API on :8000, web on :3000).
+
+The globe is MapLibre GL in globe projection with a self-contained basemap: land and borders
+from [Natural Earth](https://www.naturalearthdata.com/) 1:110m (public domain, via the
+`world-atlas` package), no tile server, no API key and no place labels. Click to drop your pin;
+with the keyboard, focus the globe, press Enter, then move the pin with the arrow keys
+(Shift for 10° steps) and zoom with + and -. `npm run dev` and `npm run build` first copy
+MapLibre's web worker into `web/public/vendor/` (see `web/scripts/copy-maplibre-worker.mjs`).
 
 ## Roadmap
 
