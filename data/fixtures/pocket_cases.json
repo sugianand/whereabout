@@ -1,0 +1,291 @@
+{
+ "note": "Shared by ml/tests/test_pocket_index.py and web/src/lib/pocket/locate.test.ts. Regenerate with `python ml/tests/test_pocket_index.py`.",
+ "meta": {
+  "version": 1,
+  "model": "keyword/toy",
+  "hfModel": "Xenova/clip-vit-base-patch32",
+  "dim": 8,
+  "rows": 8,
+  "logitScale": 100.0,
+  "topKCountries": 2,
+  "minClueProbability": 0.55,
+  "countries": [
+   {
+    "code": "JP",
+    "name": "Japan",
+    "cities": [
+     2,
+     2
+    ]
+   },
+   {
+    "code": "PE",
+    "name": "Peru",
+    "cities": [
+     4,
+     2
+    ]
+   }
+  ],
+  "cities": [
+   {
+    "name": "Osaka",
+    "country": "JP",
+    "lat": 34.69,
+    "lng": 135.5
+   },
+   {
+    "name": "Kyoto",
+    "country": "JP",
+    "lat": 35.01,
+    "lng": 135.77
+   },
+   {
+    "name": "Lima",
+    "country": "PE",
+    "lat": -12.05,
+    "lng": -77.04
+   },
+   {
+    "name": "Cusco",
+    "country": "PE",
+    "lat": -13.53,
+    "lng": -71.97
+   }
+  ],
+  "clueGroups": [
+   {
+    "name": "climate",
+    "labels": [
+     "Snow and ice",
+     "Desert"
+    ],
+    "start": 6
+   }
+  ],
+  "scales": [
+   0.00787399,
+   0.00787399,
+   0.00556776,
+   0.00556776,
+   0.00556776,
+   0.00556776,
+   0.00787399,
+   0.00787399
+  ]
+ },
+ "vectors": [
+  [
+   127,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  [
+   0,
+   0,
+   0,
+   127,
+   0,
+   0,
+   0,
+   0
+  ],
+  [
+   127,
+   0,
+   127,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  [
+   127,
+   127,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  [
+   0,
+   0,
+   0,
+   127,
+   0,
+   127,
+   0,
+   0
+  ],
+  [
+   0,
+   0,
+   0,
+   127,
+   127,
+   0,
+   0,
+   0
+  ],
+  [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   127,
+   0
+  ],
+  [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   127
+  ]
+ ],
+ "cases": [
+  {
+   "image": [
+    0.001,
+    0.001,
+    0.001,
+    1.0,
+    1.0,
+    0.001,
+    0.001,
+    0.001
+   ],
+   "expected": {
+    "city": "Cusco",
+    "country": "PE",
+    "lat": -13.53,
+    "lng": -71.97,
+    "confidence": 1.0,
+    "topCountries": [
+     {
+      "country": "PE",
+      "p": 1.0
+     },
+     {
+      "country": "JP",
+      "p": 0.0
+     }
+    ],
+    "clues": []
+   }
+  },
+  {
+   "image": [
+    1.0,
+    1.0,
+    0.001,
+    0.001,
+    0.001,
+    0.001,
+    0.001,
+    0.001
+   ],
+   "expected": {
+    "city": "Kyoto",
+    "country": "JP",
+    "lat": 35.01,
+    "lng": 135.77,
+    "confidence": 1.0,
+    "topCountries": [
+     {
+      "country": "JP",
+      "p": 1.0
+     },
+     {
+      "country": "PE",
+      "p": 0.0
+     }
+    ],
+    "clues": []
+   }
+  },
+  {
+   "image": [
+    1.0,
+    0.001,
+    1.0,
+    0.001,
+    0.001,
+    0.001,
+    1.0,
+    0.001
+   ],
+   "expected": {
+    "city": "Osaka",
+    "country": "JP",
+    "lat": 34.69,
+    "lng": 135.5,
+    "confidence": 1.0,
+    "topCountries": [
+     {
+      "country": "JP",
+      "p": 1.0
+     },
+     {
+      "country": "PE",
+      "p": 0.0
+     }
+    ],
+    "clues": [
+     {
+      "label": "Snow and ice",
+      "p": 1.0
+     }
+    ]
+   }
+  },
+  {
+   "image": [
+    0.001,
+    0.001,
+    0.001,
+    1.0,
+    0.001,
+    0.001,
+    0.001,
+    1.0
+   ],
+   "expected": {
+    "city": "Lima",
+    "country": "PE",
+    "lat": -12.05,
+    "lng": -77.04,
+    "confidence": 1.0,
+    "topCountries": [
+     {
+      "country": "PE",
+      "p": 1.0
+     },
+     {
+      "country": "JP",
+      "p": 0.0
+     }
+    ],
+    "clues": [
+     {
+      "label": "Desert",
+      "p": 1.0
+     }
+    ]
+   }
+  }
+ ]
+}
