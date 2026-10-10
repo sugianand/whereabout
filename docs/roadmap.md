@@ -36,7 +36,7 @@ numbers anywhere. Benchmark results only appear when produced by `eval/` from a 
 ## Milestone 3 — Data pipeline
 
 - [ ] Geocells: adaptive S2 cell builder with tests (cells split until each has enough images)
-- [ ] Labels: concept-label derivation from coordinates — driving side by country, with tests
+- [x] Labels: concept-label derivation from coordinates — driving side by country, with tests
 - [ ] Labels: climate-zone and land-cover lookups from raster maps behind one interface, with tests on known coordinates
 - [ ] Data: ingestion pipeline for image metadata (license capture, perceptual-hash dedupe) on a small sample
 - [ ] Data: geographic-block train/validation split with a leakage test
