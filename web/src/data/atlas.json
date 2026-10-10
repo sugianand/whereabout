@@ -1,6 +1,2742 @@
 {
-  "model": null,
-  "version": null,
-  "generatedAt": null,
-  "guesses": {}
+ "model": "ViT-L-14/openai, country then city",
+ "version": "atlas-v0-zeroshot",
+ "generatedAt": "2026-10-10T01:01:08+00:00",
+ "guesses": {
+  "wm000": {
+   "lng": 102.44784,
+   "lat": 18.9235,
+   "confidence": 0.8127,
+   "guessedPlace": "Vang Vieng, LA",
+   "topCountries": [
+    {
+     "country": "LA",
+     "p": 0.8127
+    },
+    {
+     "country": "VN",
+     "p": 0.1618
+    },
+    {
+     "country": "KH",
+     "p": 0.0095
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.986
+    },
+    {
+     "label": "Mountains",
+     "p": 0.896
+    },
+    {
+     "label": "Temperate",
+     "p": 0.7321
+    }
+   ]
+  },
+  "wm003": {
+   "lng": -0.88333,
+   "lat": 52.25,
+   "confidence": 0.158,
+   "guessedPlace": "Northampton, GB",
+   "topCountries": [
+    {
+     "country": "GB",
+     "p": 0.158
+    },
+    {
+     "country": "DE",
+     "p": 0.0951
+    },
+    {
+     "country": "LV",
+     "p": 0.0749
+    }
+   ],
+   "clues": [
+    {
+     "label": "Snow and ice",
+     "p": 0.9809
+    },
+    {
+     "label": "Countryside",
+     "p": 0.6069
+    }
+   ]
+  },
+  "wm004": {
+   "lng": 10.20449,
+   "lat": 59.74389,
+   "confidence": 0.4075,
+   "guessedPlace": "Drammen, NO",
+   "topCountries": [
+    {
+     "country": "CH",
+     "p": 0.4075
+    },
+    {
+     "country": "NO",
+     "p": 0.2506
+    },
+    {
+     "country": "CA",
+     "p": 0.0563
+    }
+   ],
+   "clues": [
+    {
+     "label": "Snow and ice",
+     "p": 0.9817
+    },
+    {
+     "label": "No buildings",
+     "p": 0.7881
+    }
+   ]
+  },
+  "wm007": {
+   "lng": -51.72157,
+   "lat": 64.18347,
+   "confidence": 0.7316,
+   "guessedPlace": "Nuuk, GL",
+   "topCountries": [
+    {
+     "country": "GL",
+     "p": 0.7316
+    },
+    {
+     "country": "CA",
+     "p": 0.1154
+    },
+    {
+     "country": "GS",
+     "p": 0.0433
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9696
+    },
+    {
+     "label": "Arctic",
+     "p": 0.9512
+    },
+    {
+     "label": "Mountains",
+     "p": 0.8978
+    }
+   ]
+  },
+  "wm011": {
+   "lng": -77.03637,
+   "lat": 38.89511,
+   "confidence": 0.2426,
+   "guessedPlace": "Washington, US",
+   "topCountries": [
+    {
+     "country": "US",
+     "p": 0.2426
+    },
+    {
+     "country": "SH",
+     "p": 0.0815
+    },
+    {
+     "country": "CA",
+     "p": 0.0612
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9928
+    },
+    {
+     "label": "Mountains",
+     "p": 0.913
+    },
+    {
+     "label": "Temperate",
+     "p": 0.8439
+    }
+   ]
+  },
+  "wm012": {
+   "lng": -5.71816,
+   "lat": -15.92488,
+   "confidence": 0.4869,
+   "guessedPlace": "Jamestown, SH",
+   "topCountries": [
+    {
+     "country": "SH",
+     "p": 0.4869
+    },
+    {
+     "country": "CV",
+     "p": 0.4448
+    },
+    {
+     "country": "ES",
+     "p": 0.0109
+    }
+   ],
+   "clues": [
+    {
+     "label": "Coast",
+     "p": 0.8494
+    },
+    {
+     "label": "No buildings",
+     "p": 0.8144
+    },
+    {
+     "label": "Mediterranean",
+     "p": 0.766
+    }
+   ]
+  },
+  "wm015": {
+   "lng": 14.472,
+   "lat": 35.87601,
+   "confidence": 0.9966,
+   "guessedPlace": "Qormi, MT",
+   "topCountries": [
+    {
+     "country": "MT",
+     "p": 0.9966
+    },
+    {
+     "country": "IT",
+     "p": 0.0009
+    },
+    {
+     "country": "MF",
+     "p": 0.0008
+    }
+   ],
+   "clues": [
+    {
+     "label": "Mediterranean",
+     "p": 0.9008
+    },
+    {
+     "label": "European old town",
+     "p": 0.8854
+    }
+   ]
+  },
+  "wm016": {
+   "lng": 73.18317,
+   "lat": 31.56808,
+   "confidence": 0.3555,
+   "guessedPlace": "Chak Jhumra, PK",
+   "topCountries": [
+    {
+     "country": "TJ",
+     "p": 0.3555
+    },
+    {
+     "country": "PK",
+     "p": 0.2342
+    },
+    {
+     "country": "KG",
+     "p": 0.1198
+    }
+   ],
+   "clues": [
+    {
+     "label": "Mountains",
+     "p": 0.9881
+    },
+    {
+     "label": "No buildings",
+     "p": 0.9582
+    },
+    {
+     "label": "Temperate",
+     "p": 0.6824
+    }
+   ]
+  },
+  "wm018": {
+   "lng": 171.25364,
+   "lat": -44.39672,
+   "confidence": 0.4949,
+   "guessedPlace": "Timaru, NZ",
+   "topCountries": [
+    {
+     "country": "NZ",
+     "p": 0.4949
+    },
+    {
+     "country": "CK",
+     "p": 0.0351
+    },
+    {
+     "country": "FJ",
+     "p": 0.0351
+    }
+   ],
+   "clues": [
+    {
+     "label": "Temperate",
+     "p": 0.8266
+    },
+    {
+     "label": "Countryside",
+     "p": 0.7378
+    }
+   ]
+  },
+  "wm020": {
+   "lng": -122.41942,
+   "lat": 37.77493,
+   "confidence": 0.6273,
+   "guessedPlace": "San Francisco, US",
+   "topCountries": [
+    {
+     "country": "US",
+     "p": 0.6273
+    },
+    {
+     "country": "SH",
+     "p": 0.1141
+    },
+    {
+     "country": "JE",
+     "p": 0.0462
+    }
+   ],
+   "clues": [
+    {
+     "label": "City",
+     "p": 0.8691
+    }
+   ]
+  },
+  "wm022": {
+   "lng": -62.21058,
+   "lat": 16.79183,
+   "confidence": 0.5198,
+   "guessedPlace": "Brades, MS",
+   "topCountries": [
+    {
+     "country": "MA",
+     "p": 0.5198
+    },
+    {
+     "country": "DZ",
+     "p": 0.1751
+    },
+    {
+     "country": "MS",
+     "p": 0.1521
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.8111
+    }
+   ]
+  },
+  "wm023": {
+   "lng": -8.61097,
+   "lat": 41.1485,
+   "confidence": 0.739,
+   "guessedPlace": "Porto, PT",
+   "topCountries": [
+    {
+     "country": "PT",
+     "p": 0.739
+    },
+    {
+     "country": "ES",
+     "p": 0.0689
+    },
+    {
+     "country": "MO",
+     "p": 0.0451
+    }
+   ],
+   "clues": [
+    {
+     "label": "City",
+     "p": 0.9649
+    },
+    {
+     "label": "European old town",
+     "p": 0.9643
+    },
+    {
+     "label": "Mediterranean",
+     "p": 0.7023
+    }
+   ]
+  },
+  "wm024": {
+   "lng": -5.71816,
+   "lat": -15.92488,
+   "confidence": 0.4128,
+   "guessedPlace": "Jamestown, SH",
+   "topCountries": [
+    {
+     "country": "CV",
+     "p": 0.4128
+    },
+    {
+     "country": "SH",
+     "p": 0.2893
+    },
+    {
+     "country": "PT",
+     "p": 0.0712
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9849
+    },
+    {
+     "label": "Coast",
+     "p": 0.9173
+    }
+   ]
+  },
+  "wm027": {
+   "lng": -2.53527,
+   "lat": 49.45981,
+   "confidence": 0.1385,
+   "guessedPlace": "Saint Peter Port, GG",
+   "topCountries": [
+    {
+     "country": "FR",
+     "p": 0.1385
+    },
+    {
+     "country": "GG",
+     "p": 0.1166
+    },
+    {
+     "country": "TF",
+     "p": 0.0997
+    }
+   ],
+   "clues": [
+    {
+     "label": "Coast",
+     "p": 0.9402
+    },
+    {
+     "label": "No buildings",
+     "p": 0.7151
+    },
+    {
+     "label": "Mediterranean",
+     "p": 0.6715
+    }
+   ]
+  },
+  "wm030": {
+   "lng": 52.53113,
+   "lat": 29.61031,
+   "confidence": 0.5453,
+   "guessedPlace": "Shiraz, IR",
+   "topCountries": [
+    {
+     "country": "IR",
+     "p": 0.5453
+    },
+    {
+     "country": "IQ",
+     "p": 0.1256
+    },
+    {
+     "country": "JO",
+     "p": 0.0624
+    }
+   ],
+   "clues": [
+    {
+     "label": "Mediterranean",
+     "p": 0.8392
+    },
+    {
+     "label": "European old town",
+     "p": 0.6562
+    }
+   ]
+  },
+  "wm031": {
+   "lng": 50.61194,
+   "lat": 26.25722,
+   "confidence": 0.3317,
+   "guessedPlace": "Al Muharraq, BH",
+   "topCountries": [
+    {
+     "country": "BH",
+     "p": 0.3317
+    },
+    {
+     "country": "QA",
+     "p": 0.3062
+    },
+    {
+     "country": "OM",
+     "p": 0.1413
+    }
+   ],
+   "clues": [
+    {
+     "label": "Islamic architecture",
+     "p": 0.8248
+    },
+    {
+     "label": "Mediterranean",
+     "p": 0.5577
+    }
+   ]
+  },
+  "wm032": {
+   "lng": 44.00205,
+   "lat": 56.32867,
+   "confidence": 0.328,
+   "guessedPlace": "Nizhniy Novgorod, RU",
+   "topCountries": [
+    {
+     "country": "BY",
+     "p": 0.328
+    },
+    {
+     "country": "RU",
+     "p": 0.1674
+    },
+    {
+     "country": "UA",
+     "p": 0.1479
+    }
+   ],
+   "clues": [
+    {
+     "label": "European old town",
+     "p": 0.9203
+    },
+    {
+     "label": "Temperate",
+     "p": 0.6174
+    }
+   ]
+  },
+  "wm036": {
+   "lng": -51.72157,
+   "lat": 64.18347,
+   "confidence": 0.3877,
+   "guessedPlace": "Nuuk, GL",
+   "topCountries": [
+    {
+     "country": "NO",
+     "p": 0.3877
+    },
+    {
+     "country": "GL",
+     "p": 0.3065
+    },
+    {
+     "country": "SJ",
+     "p": 0.0604
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9683
+    },
+    {
+     "label": "Mountains",
+     "p": 0.9585
+    }
+   ]
+  },
+  "wm037": {
+   "lng": 15.64689,
+   "lat": 78.22334,
+   "confidence": 0.4409,
+   "guessedPlace": "Longyearbyen, SJ",
+   "topCountries": [
+    {
+     "country": "SJ",
+     "p": 0.4409
+    },
+    {
+     "country": "GL",
+     "p": 0.3549
+    },
+    {
+     "country": "NO",
+     "p": 0.108
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9752
+    },
+    {
+     "label": "Countryside",
+     "p": 0.691
+    },
+    {
+     "label": "Arctic",
+     "p": 0.6388
+    }
+   ]
+  },
+  "wm038": {
+   "lng": -5.71816,
+   "lat": -15.92488,
+   "confidence": 0.1721,
+   "guessedPlace": "Jamestown, SH",
+   "topCountries": [
+    {
+     "country": "MU",
+     "p": 0.1721
+    },
+    {
+     "country": "SH",
+     "p": 0.0887
+    },
+    {
+     "country": "MZ",
+     "p": 0.0709
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9319
+    },
+    {
+     "label": "Mountains",
+     "p": 0.6193
+    }
+   ]
+  },
+  "wm039": {
+   "lng": 43.25506,
+   "lat": -11.70216,
+   "confidence": 0.1263,
+   "guessedPlace": "Moroni, KM",
+   "topCountries": [
+    {
+     "country": "GM",
+     "p": 0.1263
+    },
+    {
+     "country": "SL",
+     "p": 0.1041
+    },
+    {
+     "country": "KM",
+     "p": 0.0782
+    }
+   ],
+   "clues": [
+    {
+     "label": "Coast",
+     "p": 0.97
+    },
+    {
+     "label": "No buildings",
+     "p": 0.818
+    }
+   ]
+  },
+  "wm040": {
+   "lng": 7.64052,
+   "lat": 45.05013,
+   "confidence": 0.8097,
+   "guessedPlace": "Circoiscrizione II, IT",
+   "topCountries": [
+    {
+     "country": "IT",
+     "p": 0.8097
+    },
+    {
+     "country": "SM",
+     "p": 0.0572
+    },
+    {
+     "country": "MS",
+     "p": 0.0125
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9716
+    },
+    {
+     "label": "Mountains",
+     "p": 0.9274
+    },
+    {
+     "label": "Mediterranean",
+     "p": 0.5915
+    }
+   ]
+  },
+  "wm046": {
+   "lng": -57.85701,
+   "lat": -51.69382,
+   "confidence": 0.201,
+   "guessedPlace": "Stanley, FK",
+   "topCountries": [
+    {
+     "country": "CL",
+     "p": 0.201
+    },
+    {
+     "country": "FK",
+     "p": 0.1161
+    },
+    {
+     "country": "AR",
+     "p": 0.1057
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.995
+    },
+    {
+     "label": "Mountains",
+     "p": 0.9177
+    },
+    {
+     "label": "Temperate",
+     "p": 0.6977
+    }
+   ]
+  },
+  "wm048": {
+   "lng": 92.00955,
+   "lat": 21.43973,
+   "confidence": 0.67,
+   "guessedPlace": "Cox's Bazar, BD",
+   "topCountries": [
+    {
+     "country": "BD",
+     "p": 0.67
+    },
+    {
+     "country": "ST",
+     "p": 0.0473
+    },
+    {
+     "country": "MM",
+     "p": 0.0345
+    }
+   ],
+   "clues": [
+    {
+     "label": "Coast",
+     "p": 0.5867
+    },
+    {
+     "label": "Mediterranean",
+     "p": 0.5515
+    }
+   ]
+  },
+  "wm049": {
+   "lng": 83.59956,
+   "lat": 28.26728,
+   "confidence": 0.7459,
+   "guessedPlace": "Baglun, NP",
+   "topCountries": [
+    {
+     "country": "NP",
+     "p": 0.7459
+    },
+    {
+     "country": "BT",
+     "p": 0.0768
+    },
+    {
+     "country": "GL",
+     "p": 0.0404
+    }
+   ],
+   "clues": [
+    {
+     "label": "Mountains",
+     "p": 0.996
+    },
+    {
+     "label": "No buildings",
+     "p": 0.9712
+    }
+   ]
+  },
+  "wm050": {
+   "lng": -62.72499,
+   "lat": 17.2955,
+   "confidence": 0.1519,
+   "guessedPlace": "Basseterre, KN",
+   "topCountries": [
+    {
+     "country": "AW",
+     "p": 0.1519
+    },
+    {
+     "country": "KN",
+     "p": 0.0588
+    },
+    {
+     "country": "DO",
+     "p": 0.058
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9712
+    },
+    {
+     "label": "Coast",
+     "p": 0.9072
+    }
+   ]
+  },
+  "wm051": {
+   "lng": -62.72499,
+   "lat": 17.2955,
+   "confidence": 0.7931,
+   "guessedPlace": "Basseterre, KN",
+   "topCountries": [
+    {
+     "country": "KN",
+     "p": 0.7931
+    },
+    {
+     "country": "BQ",
+     "p": 0.1695
+    },
+    {
+     "country": "AG",
+     "p": 0.0061
+    }
+   ],
+   "clues": [
+    {
+     "label": "Tropical",
+     "p": 0.7173
+    }
+   ]
+  },
+  "wm055": {
+   "lng": -68.92371,
+   "lat": -22.45667,
+   "confidence": 0.2503,
+   "guessedPlace": "Calama, CL",
+   "topCountries": [
+    {
+     "country": "AR",
+     "p": 0.2503
+    },
+    {
+     "country": "CL",
+     "p": 0.247
+    },
+    {
+     "country": "BO",
+     "p": 0.1436
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9895
+    },
+    {
+     "label": "Desert",
+     "p": 0.5768
+    }
+   ]
+  },
+  "wm057": {
+   "lng": 25.59159,
+   "lat": 58.36319,
+   "confidence": 0.4269,
+   "guessedPlace": "Viljandi, EE",
+   "topCountries": [
+    {
+     "country": "EE",
+     "p": 0.4269
+    },
+    {
+     "country": "LT",
+     "p": 0.0914
+    },
+    {
+     "country": "LV",
+     "p": 0.0618
+    }
+   ],
+   "clues": [
+    {
+     "label": "European old town",
+     "p": 0.7904
+    },
+    {
+     "label": "Village",
+     "p": 0.6003
+    }
+   ]
+  },
+  "wm058": {
+   "lng": 10.93691,
+   "lat": 1.29683,
+   "confidence": 0.2495,
+   "guessedPlace": "Aconibe, GQ",
+   "topCountries": [
+    {
+     "country": "GQ",
+     "p": 0.2495
+    },
+    {
+     "country": "BR",
+     "p": 0.0807
+    },
+    {
+     "country": "PA",
+     "p": 0.0782
+    }
+   ],
+   "clues": [
+    {
+     "label": "Temperate",
+     "p": 0.5889
+    },
+    {
+     "label": "Mountains",
+     "p": 0.5815
+    }
+   ]
+  },
+  "wm062": {
+   "lng": 127.14889,
+   "lat": 35.82194,
+   "confidence": 0.9277,
+   "guessedPlace": "Jeonju, KR",
+   "topCountries": [
+    {
+     "country": "KR",
+     "p": 0.9277
+    },
+    {
+     "country": "KP",
+     "p": 0.0273
+    },
+    {
+     "country": "CN",
+     "p": 0.0184
+    }
+   ],
+   "clues": [
+    {
+     "label": "East Asian architecture",
+     "p": 0.9996
+    },
+    {
+     "label": "Village",
+     "p": 0.95
+    }
+   ]
+  },
+  "wm063": {
+   "lng": -36.5092,
+   "lat": -54.28111,
+   "confidence": 0.1369,
+   "guessedPlace": "Grytviken, GS",
+   "topCountries": [
+    {
+     "country": "GS",
+     "p": 0.1369
+    },
+    {
+     "country": "PE",
+     "p": 0.1222
+    },
+    {
+     "country": "NP",
+     "p": 0.0889
+    }
+   ],
+   "clues": [
+    {
+     "label": "Mountains",
+     "p": 0.999
+    },
+    {
+     "label": "No buildings",
+     "p": 0.9743
+    },
+    {
+     "label": "Arctic",
+     "p": 0.5635
+    }
+   ]
+  },
+  "wm066": {
+   "lng": -176.17453,
+   "lat": -13.28163,
+   "confidence": 0.1592,
+   "guessedPlace": "Mata-Utu, WF",
+   "topCountries": [
+    {
+     "country": "JP",
+     "p": 0.1592
+    },
+    {
+     "country": "WF",
+     "p": 0.1324
+    },
+    {
+     "country": "SZ",
+     "p": 0.0616
+    }
+   ],
+   "clues": [
+    {
+     "label": "Temperate",
+     "p": 0.7455
+    },
+    {
+     "label": "East Asian architecture",
+     "p": 0.6757
+    },
+    {
+     "label": "Village",
+     "p": 0.6504
+    }
+   ]
+  },
+  "wm067": {
+   "lng": 6.7299,
+   "lat": 0.33756,
+   "confidence": 0.5299,
+   "guessedPlace": "Sao Tome, ST",
+   "topCountries": [
+    {
+     "country": "ST",
+     "p": 0.5299
+    },
+    {
+     "country": "TT",
+     "p": 0.1385
+    },
+    {
+     "country": "JM",
+     "p": 0.0499
+    }
+   ],
+   "clues": [
+    {
+     "label": "Coast",
+     "p": 0.9524
+    },
+    {
+     "label": "Tropical",
+     "p": 0.9223
+    },
+    {
+     "label": "No buildings",
+     "p": 0.8729
+    }
+   ]
+  },
+  "wm068": {
+   "lng": 119.87083,
+   "lat": -0.90833,
+   "confidence": 0.3242,
+   "guessedPlace": "Palu, ID",
+   "topCountries": [
+    {
+     "country": "ID",
+     "p": 0.3242
+    },
+    {
+     "country": "KM",
+     "p": 0.1106
+    },
+    {
+     "country": "PG",
+     "p": 0.0859
+    }
+   ],
+   "clues": [
+    {
+     "label": "Mountains",
+     "p": 0.9521
+    },
+    {
+     "label": "No buildings",
+     "p": 0.9367
+    }
+   ]
+  },
+  "wm069": {
+   "lng": 16.28432,
+   "lat": 50.77141,
+   "confidence": 0.1169,
+   "guessedPlace": "Walbrzych, PL",
+   "topCountries": [
+    {
+     "country": "SK",
+     "p": 0.1169
+    },
+    {
+     "country": "BG",
+     "p": 0.1027
+    },
+    {
+     "country": "PL",
+     "p": 0.0891
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9943
+    },
+    {
+     "label": "Mountains",
+     "p": 0.7116
+    },
+    {
+     "label": "Temperate",
+     "p": 0.6041
+    }
+   ]
+  },
+  "wm070": {
+   "lng": 126.39181,
+   "lat": 34.81282,
+   "confidence": 0.7366,
+   "guessedPlace": "Mokpo, KR",
+   "topCountries": [
+    {
+     "country": "KR",
+     "p": 0.7366
+    },
+    {
+     "country": "KP",
+     "p": 0.1238
+    },
+    {
+     "country": "AO",
+     "p": 0.0185
+    }
+   ],
+   "clues": [
+    {
+     "label": "City",
+     "p": 0.8626
+    },
+    {
+     "label": "Temperate",
+     "p": 0.5756
+    }
+   ]
+  },
+  "wm071": {
+   "lng": -5.71816,
+   "lat": -15.92488,
+   "confidence": 0.1117,
+   "guessedPlace": "Jamestown, SH",
+   "topCountries": [
+    {
+     "country": "DJ",
+     "p": 0.1117
+    },
+    {
+     "country": "SH",
+     "p": 0.0867
+    },
+    {
+     "country": "CV",
+     "p": 0.0761
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.969
+    },
+    {
+     "label": "Mountains",
+     "p": 0.9498
+    },
+    {
+     "label": "Desert",
+     "p": 0.572
+    }
+   ]
+  },
+  "wm072": {
+   "lng": -2.10491,
+   "lat": 49.18804,
+   "confidence": 0.3512,
+   "guessedPlace": "Saint Helier, JE",
+   "topCountries": [
+    {
+     "country": "JE",
+     "p": 0.3512
+    },
+    {
+     "country": "US",
+     "p": 0.3281
+    },
+    {
+     "country": "SH",
+     "p": 0.0676
+    }
+   ],
+   "clues": [
+    {
+     "label": "City",
+     "p": 0.8202
+    }
+   ]
+  },
+  "wm074": {
+   "lng": 100.64552,
+   "lat": 13.92068,
+   "confidence": 0.7808,
+   "guessedPlace": "Sai Mai, TH",
+   "topCountries": [
+    {
+     "country": "TH",
+     "p": 0.7808
+    },
+    {
+     "country": "ST",
+     "p": 0.0491
+    },
+    {
+     "country": "PW",
+     "p": 0.0443
+    }
+   ],
+   "clues": [
+    {
+     "label": "Tropical",
+     "p": 0.6955
+    },
+    {
+     "label": "Coast",
+     "p": 0.6835
+    },
+    {
+     "label": "No buildings",
+     "p": 0.6767
+    }
+   ]
+  },
+  "wm077": {
+   "lng": 19.93481,
+   "lat": 60.09726,
+   "confidence": 0.4702,
+   "guessedPlace": "Mariehamn, AX",
+   "topCountries": [
+    {
+     "country": "AX",
+     "p": 0.4702
+    },
+    {
+     "country": "FI",
+     "p": 0.3121
+    },
+    {
+     "country": "SE",
+     "p": 0.1085
+    }
+   ],
+   "clues": [
+    {
+     "label": "European old town",
+     "p": 0.7056
+    }
+   ]
+  },
+  "wm078": {
+   "lng": -8.86179,
+   "lat": 40.15085,
+   "confidence": 0.0558,
+   "guessedPlace": "Figueira da Foz, PT",
+   "topCountries": [
+    {
+     "country": "KW",
+     "p": 0.0558
+    },
+    {
+     "country": "DK",
+     "p": 0.0535
+    },
+    {
+     "country": "PT",
+     "p": 0.0499
+    }
+   ],
+   "clues": [
+    {
+     "label": "Mediterranean",
+     "p": 0.8401
+    }
+   ]
+  },
+  "wm079": {
+   "lng": -4.48333,
+   "lat": 54.15,
+   "confidence": 0.3577,
+   "guessedPlace": "Douglas, IM",
+   "topCountries": [
+    {
+     "country": "TW",
+     "p": 0.3577
+    },
+    {
+     "country": "IM",
+     "p": 0.1493
+    },
+    {
+     "country": "DK",
+     "p": 0.0651
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.8764
+    },
+    {
+     "label": "Coast",
+     "p": 0.8278
+    },
+    {
+     "label": "Temperate",
+     "p": 0.552
+    }
+   ]
+  },
+  "wm084": {
+   "lng": -56.1773,
+   "lat": 46.77914,
+   "confidence": 0.6803,
+   "guessedPlace": "Saint-Pierre, PM",
+   "topCountries": [
+    {
+     "country": "PM",
+     "p": 0.6803
+    },
+    {
+     "country": "NF",
+     "p": 0.0989
+    },
+    {
+     "country": "PN",
+     "p": 0.0478
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9098
+    },
+    {
+     "label": "Coast",
+     "p": 0.813
+    },
+    {
+     "label": "Temperate",
+     "p": 0.6987
+    }
+   ]
+  },
+  "wm086": {
+   "lng": -86.84656,
+   "lat": 21.17429,
+   "confidence": 0.2485,
+   "guessedPlace": "Cancun, MX",
+   "topCountries": [
+    {
+     "country": "MX",
+     "p": 0.2485
+    },
+    {
+     "country": "BS",
+     "p": 0.1714
+    },
+    {
+     "country": "TC",
+     "p": 0.1104
+    }
+   ],
+   "clues": [
+    {
+     "label": "Tropical",
+     "p": 0.8976
+    },
+    {
+     "label": "Colonial architecture",
+     "p": 0.8428
+    },
+    {
+     "label": "Coast",
+     "p": 0.7498
+    }
+   ]
+  },
+  "wm087": {
+   "lng": 25.40074,
+   "lat": -33.75562,
+   "confidence": 0.8321,
+   "guessedPlace": "Kariega, ZA",
+   "topCountries": [
+    {
+     "country": "ZA",
+     "p": 0.8321
+    },
+    {
+     "country": "SH",
+     "p": 0.0244
+    },
+    {
+     "country": "MZ",
+     "p": 0.0235
+    }
+   ],
+   "clues": [
+    {
+     "label": "Coast",
+     "p": 0.9473
+    },
+    {
+     "label": "No buildings",
+     "p": 0.8634
+    }
+   ]
+  },
+  "wm088": {
+   "lng": 167.96628,
+   "lat": -29.05459,
+   "confidence": 0.3606,
+   "guessedPlace": "Kingston, NF",
+   "topCountries": [
+    {
+     "country": "AU",
+     "p": 0.3606
+    },
+    {
+     "country": "NF",
+     "p": 0.3366
+    },
+    {
+     "country": "ZA",
+     "p": 0.1812
+    }
+   ],
+   "clues": [
+    {
+     "label": "Coast",
+     "p": 0.9504
+    },
+    {
+     "label": "No buildings",
+     "p": 0.9255
+    }
+   ]
+  },
+  "wm089": {
+   "lng": 27.70027,
+   "lat": -30.40001,
+   "confidence": 0.3222,
+   "guessedPlace": "Quthing, LS",
+   "topCountries": [
+    {
+     "country": "LS",
+     "p": 0.3222
+    },
+    {
+     "country": "MN",
+     "p": 0.1167
+    },
+    {
+     "country": "CL",
+     "p": 0.0677
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9899
+    }
+   ]
+  },
+  "wm091": {
+   "lng": 8.40444,
+   "lat": 49.00937,
+   "confidence": 0.8952,
+   "guessedPlace": "Karlsruhe, DE",
+   "topCountries": [
+    {
+     "country": "DE",
+     "p": 0.8952
+    },
+    {
+     "country": "AT",
+     "p": 0.0293
+    },
+    {
+     "country": "LU",
+     "p": 0.0183
+    }
+   ],
+   "clues": [
+    {
+     "label": "European old town",
+     "p": 0.9909
+    },
+    {
+     "label": "Temperate",
+     "p": 0.689
+    }
+   ]
+  },
+  "wm092": {
+   "lng": -117.16472,
+   "lat": 32.71571,
+   "confidence": 0.1669,
+   "guessedPlace": "San Diego, US",
+   "topCountries": [
+    {
+     "country": "US",
+     "p": 0.1669
+    },
+    {
+     "country": "SH",
+     "p": 0.0908
+    },
+    {
+     "country": "PN",
+     "p": 0.061
+    }
+   ],
+   "clues": [
+    {
+     "label": "Coast",
+     "p": 0.9934
+    },
+    {
+     "label": "No buildings",
+     "p": 0.9184
+    },
+    {
+     "label": "Mediterranean",
+     "p": 0.6707
+    }
+   ]
+  },
+  "wm093": {
+   "lng": -115.13722,
+   "lat": 36.17497,
+   "confidence": 0.268,
+   "guessedPlace": "Las Vegas, US",
+   "topCountries": [
+    {
+     "country": "NA",
+     "p": 0.268
+    },
+    {
+     "country": "US",
+     "p": 0.1065
+    },
+    {
+     "country": "AW",
+     "p": 0.0939
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9969
+    },
+    {
+     "label": "Desert",
+     "p": 0.8973
+    },
+    {
+     "label": "Countryside",
+     "p": 0.7813
+    }
+   ]
+  },
+  "wm094": {
+   "lng": 145.7545,
+   "lat": 15.21233,
+   "confidence": 0.1619,
+   "guessedPlace": "Saipan, MP",
+   "topCountries": [
+    {
+     "country": "MP",
+     "p": 0.1619
+    },
+    {
+     "country": "NF",
+     "p": 0.0943
+    },
+    {
+     "country": "KM",
+     "p": 0.087
+    }
+   ],
+   "clues": [
+    {
+     "label": "Coast",
+     "p": 0.9678
+    },
+    {
+     "label": "No buildings",
+     "p": 0.9588
+    },
+    {
+     "label": "Tropical",
+     "p": 0.5837
+    }
+   ]
+  },
+  "wm097": {
+   "lng": 144.36069,
+   "lat": -38.14711,
+   "confidence": 0.95,
+   "guessedPlace": "Geelong, AU",
+   "topCountries": [
+    {
+     "country": "AU",
+     "p": 0.95
+    },
+    {
+     "country": "NF",
+     "p": 0.0192
+    },
+    {
+     "country": "NZ",
+     "p": 0.0037
+    }
+   ],
+   "clues": [
+    {
+     "label": "Coast",
+     "p": 0.9815
+    },
+    {
+     "label": "No buildings",
+     "p": 0.9271
+    },
+    {
+     "label": "Mediterranean",
+     "p": 0.7165
+    }
+   ]
+  },
+  "wm101": {
+   "lng": 66.96445,
+   "lat": 39.65456,
+   "confidence": 0.8176,
+   "guessedPlace": "Samarkand, UZ",
+   "topCountries": [
+    {
+     "country": "UZ",
+     "p": 0.8176
+    },
+    {
+     "country": "TM",
+     "p": 0.104
+    },
+    {
+     "country": "TJ",
+     "p": 0.0336
+    }
+   ],
+   "clues": [
+    {
+     "label": "Islamic architecture",
+     "p": 0.9788
+    },
+    {
+     "label": "Temperate",
+     "p": 0.7413
+    }
+   ]
+  },
+  "wm102": {
+   "lng": 174.91667,
+   "lat": -41.21667,
+   "confidence": 0.8639,
+   "guessedPlace": "Lower Hutt, NZ",
+   "topCountries": [
+    {
+     "country": "NZ",
+     "p": 0.8639
+    },
+    {
+     "country": "TW",
+     "p": 0.0386
+    },
+    {
+     "country": "RE",
+     "p": 0.0164
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.984
+    },
+    {
+     "label": "Mountains",
+     "p": 0.9828
+    },
+    {
+     "label": "Temperate",
+     "p": 0.6086
+    }
+   ]
+  },
+  "wm104": {
+   "lng": -84.21275,
+   "lat": 10.01723,
+   "confidence": 0.4998,
+   "guessedPlace": "Alajuela, CR",
+   "topCountries": [
+    {
+     "country": "CR",
+     "p": 0.4998
+    },
+    {
+     "country": "NI",
+     "p": 0.0881
+    },
+    {
+     "country": "DM",
+     "p": 0.0642
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9823
+    },
+    {
+     "label": "Mountains",
+     "p": 0.9175
+    },
+    {
+     "label": "Tropical",
+     "p": 0.8482
+    }
+   ]
+  },
+  "wm106": {
+   "lng": 91.64194,
+   "lat": 48.00556,
+   "confidence": 0.5385,
+   "guessedPlace": "Khovd, MN",
+   "topCountries": [
+    {
+     "country": "MN",
+     "p": 0.5385
+    },
+    {
+     "country": "KZ",
+     "p": 0.0876
+    },
+    {
+     "country": "KG",
+     "p": 0.0828
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9877
+    },
+    {
+     "label": "Snow and ice",
+     "p": 0.8674
+    },
+    {
+     "label": "Mountains",
+     "p": 0.5953
+    }
+   ]
+  },
+  "wm107": {
+   "lng": 167.96628,
+   "lat": -29.05459,
+   "confidence": 0.1822,
+   "guessedPlace": "Kingston, NF",
+   "topCountries": [
+    {
+     "country": "NF",
+     "p": 0.1822
+    },
+    {
+     "country": "AU",
+     "p": 0.1375
+    },
+    {
+     "country": "YT",
+     "p": 0.089
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.991
+    },
+    {
+     "label": "Coast",
+     "p": 0.947
+    }
+   ]
+  },
+  "wm108": {
+   "lng": 1.53414,
+   "lat": 42.50729,
+   "confidence": 0.1785,
+   "guessedPlace": "les Escaldes, AD",
+   "topCountries": [
+    {
+     "country": "AD",
+     "p": 0.1785
+    },
+    {
+     "country": "TZ",
+     "p": 0.0409
+    },
+    {
+     "country": "RW",
+     "p": 0.0401
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9845
+    },
+    {
+     "label": "Mountains",
+     "p": 0.9823
+    },
+    {
+     "label": "Temperate",
+     "p": 0.561
+    }
+   ]
+  },
+  "wm110": {
+   "lng": -56.1773,
+   "lat": 46.77914,
+   "confidence": 0.3864,
+   "guessedPlace": "Saint-Pierre, PM",
+   "topCountries": [
+    {
+     "country": "PM",
+     "p": 0.3864
+    },
+    {
+     "country": "RU",
+     "p": 0.0532
+    },
+    {
+     "country": "CA",
+     "p": 0.0484
+    }
+   ],
+   "clues": [
+    {
+     "label": "Coast",
+     "p": 0.5591
+    }
+   ]
+  },
+  "wm111": {
+   "lng": 24.71204,
+   "lat": 41.57439,
+   "confidence": 0.1819,
+   "guessedPlace": "Smolyan, BG",
+   "topCountries": [
+    {
+     "country": "SK",
+     "p": 0.1819
+    },
+    {
+     "country": "BG",
+     "p": 0.1183
+    },
+    {
+     "country": "LT",
+     "p": 0.055
+    }
+   ],
+   "clues": [
+    {
+     "label": "Mountains",
+     "p": 0.9903
+    },
+    {
+     "label": "No buildings",
+     "p": 0.9863
+    },
+    {
+     "label": "Snow and ice",
+     "p": 0.8528
+    }
+   ]
+  },
+  "wm112": {
+   "lng": 15.64689,
+   "lat": 78.22334,
+   "confidence": 0.661,
+   "guessedPlace": "Longyearbyen, SJ",
+   "topCountries": [
+    {
+     "country": "SJ",
+     "p": 0.661
+    },
+    {
+     "country": "IS",
+     "p": 0.2572
+    },
+    {
+     "country": "FO",
+     "p": 0.0343
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9929
+    },
+    {
+     "label": "Mountains",
+     "p": 0.7859
+    }
+   ]
+  },
+  "wm116": {
+   "lng": 103.85007,
+   "lat": 1.28967,
+   "confidence": 0.9892,
+   "guessedPlace": "Singapore, SG",
+   "topCountries": [
+    {
+     "country": "SG",
+     "p": 0.9892
+    },
+    {
+     "country": "MY",
+     "p": 0.0035
+    },
+    {
+     "country": "MO",
+     "p": 0.0013
+    }
+   ],
+   "clues": [
+    {
+     "label": "City",
+     "p": 0.9674
+    },
+    {
+     "label": "Modern skyline",
+     "p": 0.8287
+    }
+   ]
+  },
+  "wm117": {
+   "lng": 15.89107,
+   "lat": -17.39321,
+   "confidence": 0.932,
+   "guessedPlace": "Helao Nafidi, NA",
+   "topCountries": [
+    {
+     "country": "NA",
+     "p": 0.932
+    },
+    {
+     "country": "BW",
+     "p": 0.0115
+    },
+    {
+     "country": "ZA",
+     "p": 0.0069
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9976
+    },
+    {
+     "label": "Desert",
+     "p": 0.9937
+    },
+    {
+     "label": "Countryside",
+     "p": 0.6937
+    }
+   ]
+  },
+  "wm119": {
+   "lng": 120.59538,
+   "lat": 31.30408,
+   "confidence": 0.9193,
+   "guessedPlace": "Suzhou, CN",
+   "topCountries": [
+    {
+     "country": "CN",
+     "p": 0.9193
+    },
+    {
+     "country": "MO",
+     "p": 0.0341
+    },
+    {
+     "country": "TW",
+     "p": 0.0057
+    }
+   ],
+   "clues": [
+    {
+     "label": "East Asian architecture",
+     "p": 0.9824
+    },
+    {
+     "label": "Temperate",
+     "p": 0.8306
+    }
+   ]
+  },
+  "wm122": {
+   "lng": 25.85425,
+   "lat": -17.84194,
+   "confidence": 0.4039,
+   "guessedPlace": "Livingstone, ZM",
+   "topCountries": [
+    {
+     "country": "ZW",
+     "p": 0.4039
+    },
+    {
+     "country": "ZM",
+     "p": 0.3942
+    },
+    {
+     "country": "MW",
+     "p": 0.0495
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.8663
+    }
+   ]
+  },
+  "wm124": {
+   "lng": 55.45501,
+   "lat": -4.62001,
+   "confidence": 0.5667,
+   "guessedPlace": "Victoria, SC",
+   "topCountries": [
+    {
+     "country": "SC",
+     "p": 0.5667
+    },
+    {
+     "country": "YT",
+     "p": 0.2465
+    },
+    {
+     "country": "FM",
+     "p": 0.0244
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9845
+    },
+    {
+     "label": "Tropical",
+     "p": 0.889
+    },
+    {
+     "label": "Coast",
+     "p": 0.8835
+    }
+   ]
+  },
+  "wm126": {
+   "lng": 68.21204,
+   "lat": 27.55898,
+   "confidence": 0.5112,
+   "guessedPlace": "Larkana, PK",
+   "topCountries": [
+    {
+     "country": "PK",
+     "p": 0.5112
+    },
+    {
+     "country": "IN",
+     "p": 0.0257
+    },
+    {
+     "country": "UZ",
+     "p": 0.0166
+    }
+   ],
+   "clues": [
+    {
+     "label": "Countryside",
+     "p": 0.573
+    },
+    {
+     "label": "East Asian architecture",
+     "p": 0.5632
+    }
+   ]
+  },
+  "wm127": {
+   "lng": 35.70802,
+   "lat": 32.40792,
+   "confidence": 0.4291,
+   "guessedPlace": "Judita, JO",
+   "topCountries": [
+    {
+     "country": "JO",
+     "p": 0.4291
+    },
+    {
+     "country": "SA",
+     "p": 0.1731
+    },
+    {
+     "country": "NA",
+     "p": 0.0722
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9876
+    },
+    {
+     "label": "Desert",
+     "p": 0.9314
+    },
+    {
+     "label": "Mountains",
+     "p": 0.6265
+    }
+   ]
+  },
+  "wm128": {
+   "lng": -59.62021,
+   "lat": 13.10732,
+   "confidence": 0.0892,
+   "guessedPlace": "Bridgetown, BB",
+   "topCountries": [
+    {
+     "country": "BB",
+     "p": 0.0892
+    },
+    {
+     "country": "KY",
+     "p": 0.0854
+    },
+    {
+     "country": "MH",
+     "p": 0.0853
+    }
+   ],
+   "clues": [
+    {
+     "label": "Coast",
+     "p": 0.8435
+    },
+    {
+     "label": "Tropical",
+     "p": 0.7845
+    },
+    {
+     "label": "No buildings",
+     "p": 0.599
+    }
+   ]
+  },
+  "wm131": {
+   "lng": 54.23758,
+   "lat": 39.63101,
+   "confidence": 0.1781,
+   "guessedPlace": "Jebel, TM",
+   "topCountries": [
+    {
+     "country": "TM",
+     "p": 0.1781
+    },
+    {
+     "country": "IR",
+     "p": 0.0845
+    },
+    {
+     "country": "TJ",
+     "p": 0.0738
+    }
+   ],
+   "clues": [
+    {
+     "label": "Desert",
+     "p": 0.9418
+    },
+    {
+     "label": "No buildings",
+     "p": 0.9378
+    },
+    {
+     "label": "Mountains",
+     "p": 0.9262
+    }
+   ]
+  },
+  "wm132": {
+   "lng": 13.02028,
+   "lat": 32.17222,
+   "confidence": 0.1944,
+   "guessedPlace": "Gharyan, LY",
+   "topCountries": [
+    {
+     "country": "LY",
+     "p": 0.1944
+    },
+    {
+     "country": "IQ",
+     "p": 0.1523
+    },
+    {
+     "country": "JO",
+     "p": 0.1334
+    }
+   ],
+   "clues": []
+  },
+  "wm133": {
+   "lng": 44.36152,
+   "lat": 40.2976,
+   "confidence": 0.5829,
+   "guessedPlace": "Ashtarak, AM",
+   "topCountries": [
+    {
+     "country": "AM",
+     "p": 0.5829
+    },
+    {
+     "country": "IS",
+     "p": 0.0827
+    },
+    {
+     "country": "ET",
+     "p": 0.0273
+    }
+   ],
+   "clues": [
+    {
+     "label": "Village",
+     "p": 0.7926
+    },
+    {
+     "label": "European old town",
+     "p": 0.7624
+    }
+   ]
+  },
+  "wm134": {
+   "lng": 179.19417,
+   "lat": -8.52425,
+   "confidence": 0.1487,
+   "guessedPlace": "Funafuti, TV",
+   "topCountries": [
+    {
+     "country": "SB",
+     "p": 0.1487
+    },
+    {
+     "country": "MH",
+     "p": 0.146
+    },
+    {
+     "country": "TV",
+     "p": 0.1204
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9893
+    },
+    {
+     "label": "Coast",
+     "p": 0.9608
+    },
+    {
+     "label": "Tropical",
+     "p": 0.9414
+    }
+   ]
+  },
+  "wm136": {
+   "lng": -77.03637,
+   "lat": 38.89511,
+   "confidence": 0.1721,
+   "guessedPlace": "Washington, US",
+   "topCountries": [
+    {
+     "country": "US",
+     "p": 0.1721
+    },
+    {
+     "country": "IS",
+     "p": 0.1362
+    },
+    {
+     "country": "NZ",
+     "p": 0.1206
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9664
+    },
+    {
+     "label": "Mountains",
+     "p": 0.648
+    },
+    {
+     "label": "Temperate",
+     "p": 0.6086
+    }
+   ]
+  },
+  "wm139": {
+   "lng": 115.8614,
+   "lat": -31.95224,
+   "confidence": 0.7462,
+   "guessedPlace": "Perth, AU",
+   "topCountries": [
+    {
+     "country": "AU",
+     "p": 0.7462
+    },
+    {
+     "country": "SG",
+     "p": 0.0211
+    },
+    {
+     "country": "RE",
+     "p": 0.0154
+    }
+   ],
+   "clues": [
+    {
+     "label": "City",
+     "p": 0.9768
+    }
+   ]
+  },
+  "wm140": {
+   "lng": -149.56843,
+   "lat": -17.5347,
+   "confidence": 0.4521,
+   "guessedPlace": "Papeete, PF",
+   "topCountries": [
+    {
+     "country": "PF",
+     "p": 0.4521
+    },
+    {
+     "country": "MV",
+     "p": 0.0922
+    },
+    {
+     "country": "KI",
+     "p": 0.0719
+    }
+   ],
+   "clues": [
+    {
+     "label": "Tropical",
+     "p": 0.9353
+    },
+    {
+     "label": "Coast",
+     "p": 0.801
+    }
+   ]
+  },
+  "wm141": {
+   "lng": -79.84963,
+   "lat": 43.25011,
+   "confidence": 0.9331,
+   "guessedPlace": "Hamilton, CA",
+   "topCountries": [
+    {
+     "country": "CA",
+     "p": 0.9331
+    },
+    {
+     "country": "US",
+     "p": 0.0256
+    },
+    {
+     "country": "GB",
+     "p": 0.0114
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.7235
+    },
+    {
+     "label": "Temperate",
+     "p": 0.5849
+    }
+   ]
+  },
+  "wm143": {
+   "lng": 15.15383,
+   "lat": -26.64807,
+   "confidence": 0.1261,
+   "guessedPlace": "Luderitz, NA",
+   "topCountries": [
+    {
+     "country": "NA",
+     "p": 0.1261
+    },
+    {
+     "country": "LY",
+     "p": 0.1037
+    },
+    {
+     "country": "DJ",
+     "p": 0.0602
+    }
+   ],
+   "clues": [
+    {
+     "label": "Desert",
+     "p": 0.8765
+    },
+    {
+     "label": "City",
+     "p": 0.6277
+    },
+    {
+     "label": "No buildings",
+     "p": 0.5885
+    }
+   ]
+  },
+  "wm144": {
+   "lng": 25.68867,
+   "lat": 66.49897,
+   "confidence": 0.3189,
+   "guessedPlace": "Rovaniemi, FI",
+   "topCountries": [
+    {
+     "country": "FI",
+     "p": 0.3189
+    },
+    {
+     "country": "NO",
+     "p": 0.1522
+    },
+    {
+     "country": "SE",
+     "p": 0.0723
+    }
+   ],
+   "clues": [
+    {
+     "label": "Mountains",
+     "p": 0.9823
+    },
+    {
+     "label": "No buildings",
+     "p": 0.9722
+    },
+    {
+     "label": "Snow and ice",
+     "p": 0.9351
+    }
+   ]
+  },
+  "wm145": {
+   "lng": -66.10572,
+   "lat": 18.46633,
+   "confidence": 0.7613,
+   "guessedPlace": "San Juan, PR",
+   "topCountries": [
+    {
+     "country": "PR",
+     "p": 0.7613
+    },
+    {
+     "country": "CU",
+     "p": 0.0511
+    },
+    {
+     "country": "DO",
+     "p": 0.0237
+    }
+   ],
+   "clues": [
+    {
+     "label": "Colonial architecture",
+     "p": 0.8475
+    }
+   ]
+  },
+  "wm146": {
+   "lng": -100.38806,
+   "lat": 20.58806,
+   "confidence": 0.3217,
+   "guessedPlace": "Santiago de Queretaro, MX",
+   "topCountries": [
+    {
+     "country": "MX",
+     "p": 0.3217
+    },
+    {
+     "country": "GT",
+     "p": 0.2458
+    },
+    {
+     "country": "SV",
+     "p": 0.1117
+    }
+   ],
+   "clues": [
+    {
+     "label": "Colonial architecture",
+     "p": 0.9921
+    }
+   ]
+  },
+  "wm147": {
+   "lng": -51.72157,
+   "lat": 64.18347,
+   "confidence": 0.2295,
+   "guessedPlace": "Nuuk, GL",
+   "topCountries": [
+    {
+     "country": "CA",
+     "p": 0.2295
+    },
+    {
+     "country": "GL",
+     "p": 0.1655
+    },
+    {
+     "country": "NO",
+     "p": 0.0519
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9933
+    },
+    {
+     "label": "Countryside",
+     "p": 0.7109
+    },
+    {
+     "label": "Arctic",
+     "p": 0.6376
+    }
+   ]
+  },
+  "wm150": {
+   "lng": -16.57803,
+   "lat": 13.45274,
+   "confidence": 0.5225,
+   "guessedPlace": "Banjul, GM",
+   "topCountries": [
+    {
+     "country": "GM",
+     "p": 0.5225
+    },
+    {
+     "country": "SN",
+     "p": 0.0771
+    },
+    {
+     "country": "GW",
+     "p": 0.0632
+    }
+   ],
+   "clues": [
+    {
+     "label": "Coast",
+     "p": 0.883
+    }
+   ]
+  },
+  "wm151": {
+   "lng": -51.72157,
+   "lat": 64.18347,
+   "confidence": 0.718,
+   "guessedPlace": "Nuuk, GL",
+   "topCountries": [
+    {
+     "country": "GL",
+     "p": 0.718
+    },
+    {
+     "country": "PM",
+     "p": 0.2674
+    },
+    {
+     "country": "SJ",
+     "p": 0.004
+    }
+   ],
+   "clues": [
+    {
+     "label": "Arctic",
+     "p": 0.6883
+    },
+    {
+     "label": "Village",
+     "p": 0.663
+    },
+    {
+     "label": "No buildings",
+     "p": 0.6024
+    }
+   ]
+  },
+  "wm154": {
+   "lng": -5.71816,
+   "lat": -15.92488,
+   "confidence": 0.2038,
+   "guessedPlace": "Jamestown, SH",
+   "topCountries": [
+    {
+     "country": "CL",
+     "p": 0.2038
+    },
+    {
+     "country": "SH",
+     "p": 0.1432
+    },
+    {
+     "country": "PN",
+     "p": 0.1201
+    }
+   ],
+   "clues": [
+    {
+     "label": "Coast",
+     "p": 0.9867
+    },
+    {
+     "label": "No buildings",
+     "p": 0.9626
+    }
+   ]
+  },
+  "wm157": {
+   "lng": -5.35257,
+   "lat": 36.14474,
+   "confidence": 0.0668,
+   "guessedPlace": "Gibraltar, GI",
+   "topCountries": [
+    {
+     "country": "ES",
+     "p": 0.0668
+    },
+    {
+     "country": "PT",
+     "p": 0.0631
+    },
+    {
+     "country": "GI",
+     "p": 0.0613
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.8052
+    },
+    {
+     "label": "Coast",
+     "p": 0.7279
+    }
+   ]
+  },
+  "wm158": {
+   "lng": -62.21058,
+   "lat": 16.79183,
+   "confidence": 0.4199,
+   "guessedPlace": "Brades, MS",
+   "topCountries": [
+    {
+     "country": "MS",
+     "p": 0.4199
+    },
+    {
+     "country": "RE",
+     "p": 0.062
+    },
+    {
+     "country": "CR",
+     "p": 0.0514
+    }
+   ],
+   "clues": [
+    {
+     "label": "No buildings",
+     "p": 0.9931
+    },
+    {
+     "label": "Mountains",
+     "p": 0.7963
+    }
+   ]
+  }
+ }
 }

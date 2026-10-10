@@ -1,0 +1,161 @@
+{
+  "system": "atlas-v0-zeroshot",
+  "generatedAt": "2026-10-10T01:01:08+00:00",
+  "dataset": "whereabout-curated (data/curation/photos.csv)",
+  "n": 88,
+  "skipped": {},
+  "playing_in_game": "ViT-L-14/openai, country then city",
+  "systems": {
+    "Random city (baseline)": {
+      "n": 88,
+      "accuracy_at_km": {
+        "1": 0.0,
+        "25": 0.0,
+        "200": 0.0,
+        "750": 0.0114,
+        "2500": 0.0795
+      },
+      "median_km": 7836.3,
+      "mean_km": 8152.4,
+      "mean_score": 268.3,
+      "country_accuracy": 0.0227,
+      "median_km_ci95": [
+        7080.5,
+        8721.9
+      ]
+    },
+    "Best constant guess (baseline)": {
+      "n": 88,
+      "accuracy_at_km": {
+        "1": 0.0114,
+        "25": 0.0114,
+        "200": 0.0114,
+        "750": 0.0341,
+        "2500": 0.2386
+      },
+      "median_km": 6469.6,
+      "mean_km": 6350.4,
+      "mean_score": 590.9,
+      "country_accuracy": 0.0227,
+      "median_km_ci95": [
+        4467.5,
+        7354.8
+      ]
+    },
+    "ViT-B-32/laion2b_s34b_b79k, country only": {
+      "n": 88,
+      "accuracy_at_km": {
+        "1": 0.0114,
+        "25": 0.0568,
+        "200": 0.125,
+        "750": 0.2841,
+        "2500": 0.4886
+      },
+      "median_km": 2589.9,
+      "mean_km": 4461.6,
+      "mean_score": 1644.7,
+      "country_accuracy": 0.3068,
+      "median_km_ci95": [
+        1833.0,
+        3963.1
+      ]
+    },
+    "ViT-B-32/laion2b_s34b_b79k, country then city": {
+      "n": 88,
+      "accuracy_at_km": {
+        "1": 0.0341,
+        "25": 0.0909,
+        "200": 0.2045,
+        "750": 0.2727,
+        "2500": 0.4886
+      },
+      "median_km": 2592.9,
+      "mean_km": 4612.4,
+      "mean_score": 1739.1,
+      "country_accuracy": 0.2727,
+      "median_km_ci95": [
+        1633.0,
+        4097.7
+      ]
+    },
+    "ViT-L-14/openai, country only": {
+      "n": 88,
+      "accuracy_at_km": {
+        "1": 0.0114,
+        "25": 0.0682,
+        "200": 0.1818,
+        "750": 0.4205,
+        "2500": 0.5795
+      },
+      "median_km": 1156.0,
+      "mean_km": 3489.1,
+      "mean_score": 2148.8,
+      "country_accuracy": 0.4318,
+      "median_km_ci95": [
+        701.0,
+        2822.6
+      ]
+    },
+    "ViT-L-14/openai, country then city": {
+      "n": 88,
+      "accuracy_at_km": {
+        "1": 0.0455,
+        "25": 0.1364,
+        "200": 0.2841,
+        "750": 0.4318,
+        "2500": 0.5795
+      },
+      "median_km": 949.0,
+      "mean_km": 3324.7,
+      "mean_score": 2358.8,
+      "country_accuracy": 0.4205,
+      "median_km_ci95": [
+        648.7,
+        2834.5
+      ]
+    }
+  },
+  "best_vs_others": [
+    {
+      "versus": "Random city (baseline)",
+      "median_km_delta": -6887.3,
+      "ci95": [
+        -7748.9,
+        -5006.1
+      ]
+    },
+    {
+      "versus": "Best constant guess (baseline)",
+      "median_km_delta": -5520.7,
+      "ci95": [
+        -6562.5,
+        -2925.4
+      ]
+    },
+    {
+      "versus": "ViT-B-32/laion2b_s34b_b79k, country only",
+      "median_km_delta": -1640.9,
+      "ci95": [
+        -2764.8,
+        -116.7
+      ]
+    },
+    {
+      "versus": "ViT-B-32/laion2b_s34b_b79k, country then city",
+      "median_km_delta": -1643.9,
+      "ci95": [
+        -2773.1,
+        -9.5
+      ]
+    },
+    {
+      "versus": "ViT-L-14/openai, country only",
+      "median_km_delta": -207.0,
+      "ci95": [
+        -1335.2,
+        870.1
+      ]
+    }
+  ],
+  "table": "| System | n | 25 km | 200 km | 750 km | 2,500 km | Median km (95% CI) | Country | Mean score |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n| Random city (baseline) | 88 | 0.0% | 0.0% | 1.1% | 8.0% | 7,836 (7,081–8,722) | 2.3% | 268 |\n| Best constant guess (baseline) | 88 | 1.1% | 1.1% | 3.4% | 23.9% | 6,470 (4,467–7,355) | 2.3% | 591 |\n| ViT-B-32/laion2b_s34b_b79k, country only | 88 | 5.7% | 12.5% | 28.4% | 48.9% | 2,590 (1,833–3,963) | 30.7% | 1,645 |\n| ViT-B-32/laion2b_s34b_b79k, country then city | 88 | 9.1% | 20.5% | 27.3% | 48.9% | 2,593 (1,633–4,098) | 27.3% | 1,739 |\n| ViT-L-14/openai, country only | 88 | 6.8% | 18.2% | 42.0% | 58.0% | 1,156 (701–2,823) | 43.2% | 2,149 |\n| ViT-L-14/openai, country then city | 88 | 13.6% | 28.4% | 43.2% | 58.0% | 949 (649–2,834) | 42.0% | 2,359 |"
+}
