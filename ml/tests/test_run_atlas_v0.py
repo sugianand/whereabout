@@ -169,3 +169,68 @@ def test_main_runs_the_whole_pipeline_offline(tmp_path, monkeypatch):
     assert report["systems"]["Fake-1/test, country only"]["median_km"] > 0
     assert (results / "atlas-v0.md").read_text().startswith("# Atlas v0 results")
     assert not math.isnan(report["systems"]["Random city (baseline)"]["mean_km"])
+
+
+def test_download_skips_a_photo_that_keeps_failing(tmp_path, monkeypatch):
+    calls = []
+
+    def fake_fetch(url, **_):
+        calls.append(url)
+        if "cusco" in url:
+            raise RuntimeError("gave up: HTTP 403")
+        return b"jpeg bytes"
+
+    monkeypatch.setattr(run_atlas_v0, "fetch", fake_fetch)
+    kept, paths, failed = run_atlas_v0.download_images(PHOTOS, tmp_path, pause_s=0)
+    assert [p.id for p in kept] == ["kyoto"]
+    assert paths == [tmp_path / "kyoto.jpg"] and paths[0].read_bytes() == b"jpeg bytes"
+    assert failed == {"cusco": "gave up: HTTP 403"}
+
+    # Cached photos are never fetched again.
+    calls.clear()
+    run_atlas_v0.download_images(PHOTOS[:1], tmp_path, pause_s=0)
+    assert calls == []
+
+
+def test_fetch_retries_throttling_then_succeeds(monkeypatch):
+    import io
+    import urllib.error
+
+    attempts = []
+
+    class Response(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    def fake_urlopen(req, timeout):
+        attempts.append(req.full_url)
+        if len(attempts) < 3:
+            raise urllib.error.HTTPError(req.full_url, 429, "Too Many Requests", {}, None)
+        return Response(b"ok")
+
+    monkeypatch.setattr(run_atlas_v0.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(run_atlas_v0.time, "sleep", lambda s: None)
+    assert run_atlas_v0.fetch("https://x/a.jpg") == b"ok"
+    assert len(attempts) == 3
+
+
+def test_fetch_does_not_retry_a_missing_file(monkeypatch):
+    import urllib.error
+
+    def fake_urlopen(req, timeout):
+        raise urllib.error.HTTPError(req.full_url, 404, "Not Found", {}, None)
+
+    monkeypatch.setattr(run_atlas_v0.urllib.request, "urlopen", fake_urlopen)
+    with pytest.raises(urllib.error.HTTPError):
+        run_atlas_v0.fetch("https://x/missing.jpg")
+
+
+def test_skipped_photos_are_reported():
+    _, report, markdown = build_outputs(
+        PHOTOS, systems(), now="2026-10-10T00:00:00+00:00", skipped={"wm9": "HTTP 403"}
+    )
+    assert report["skipped"] == {"wm9": "HTTP 403"}
+    assert "1 photos couldn't be downloaded: wm9." in markdown

@@ -57,28 +57,49 @@ jobs:
           unzip -o /tmp/cities15000.zip -d data/geonames
 
       - name: Run Atlas v0
+        shell: bash
         run: |
-          atlas-v0 \
-            --catalog data/curation/photos.csv \
-            --gazetteer data/geonames \
-            --images .cache/images \
-            --atlas-out web/src/data/atlas.json \
-            --results-dir eval/results \
-            --model ViT-B-32:laion2b_s34b_b79k \
-            --model ViT-L-14:openai | tee -a "$GITHUB_STEP_SUMMARY"
+          set -o pipefail
+          # Annotations are readable through the API even where raw logs aren't, so failures
+          # and results are reported as annotations too.
+          annotate() { python3 -c 'import sys; t=sys.stdin.read()[-3500:]; print(t.replace("%","%25").replace("\r","%0D").replace("\n","%0A"))'; }
+          if ! atlas-v0 \
+              --catalog data/curation/photos.csv \
+              --gazetteer data/geonames \
+              --images .cache/images \
+              --atlas-out web/src/data/atlas.json \
+              --results-dir eval/results \
+              --model ViT-B-32:laion2b_s34b_b79k \
+              --model ViT-L-14:openai 2> >(tee atlas-stderr.log >&2) | tee atlas-stdout.log; then
+            echo "::error title=Atlas v0 failed::$(annotate < atlas-stderr.log)"
+            exit 1
+          fi
+          cat eval/results/atlas-v0.md >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice title=Atlas v0 results::$(annotate < eval/results/atlas-v0.md)"
+          if grep -q "^skipping" atlas-stderr.log; then
+            echo "::warning title=Photos skipped::$(grep '^skipping' atlas-stderr.log | annotate)"
+          fi
 
       - name: Commit results
+        shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add web/src/data/atlas.json eval/results/
           if git diff --cached --quiet; then
             echo "No changes to commit."
-          else
-            git commit -m "chore(atlas): Atlas v0 guesses and evaluation results"
-            git pull --rebase origin main
-            git push origin HEAD:main
+            exit 0
           fi
+          git commit -m "chore(atlas): Atlas v0 guesses and evaluation results"
+          for attempt in 1 2 3; do
+            git fetch --depth=50 origin main
+            git rebase origin/main && git push origin HEAD:main && exit 0
+            git rebase --abort || true
+            sleep $((attempt * 5))
+          done
+          echo "::error title=Could not push Atlas results::rebase or push failed three times"
+          exit 1
 
       # Pushes made with GITHUB_TOKEN don't trigger other workflows, so redeploy explicitly.
       - name: Redeploy the site

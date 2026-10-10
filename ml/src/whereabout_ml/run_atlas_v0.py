@@ -17,7 +17,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 import time
+import urllib.error
 import urllib.request
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -56,22 +58,56 @@ class System:
         return [p.distance_km for p in self.predictions]
 
 
-def download_images(photos: Sequence[Photo], cache: Path, pause_s: float = 0.2) -> list[Path]:
-    """Fetch each photo once into `cache`, politely (one at a time, with a descriptive UA)."""
+def fetch(url: str, *, attempts: int = 4, backoff_s: float = 2.0) -> bytes:
+    """GET `url` with a descriptive User-Agent, retrying on throttling and server errors."""
+    last: Exception | None = None
+    for attempt in range(attempts):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                return resp.read()
+        except urllib.error.HTTPError as err:
+            last = err
+            if err.code not in (429, 500, 502, 503, 504):
+                raise
+            retry_after = err.headers.get("Retry-After") if err.headers else None
+            wait = float(retry_after) if retry_after and retry_after.isdigit() else 0.0
+            time.sleep(max(wait, backoff_s * 2**attempt))
+        except urllib.error.URLError as err:
+            last = err
+            time.sleep(backoff_s * 2**attempt)
+    raise RuntimeError(f"gave up on {url} after {attempts} attempts: {last}")
+
+
+def download_images(
+    photos: Sequence[Photo], cache: Path, pause_s: float = 0.5
+) -> tuple[list[Photo], list[Path], dict[str, str]]:
+    """Fetch each photo once into `cache`, politely: one at a time, paced, with retries.
+
+    A photo that still can't be fetched is skipped and reported rather than failing the run.
+    Returns the photos that are available, their paths, and {photo id: reason} for the rest.
+    """
     cache.mkdir(parents=True, exist_ok=True)
-    paths = []
+    kept: list[Photo] = []
+    paths: list[Path] = []
+    failed: dict[str, str] = {}
     for photo in photos:
         if not photo.image_url:
-            raise ValueError(f"{photo.id} has no image_url")
+            failed[photo.id] = "no image_url"
+            continue
         suffix = ".png" if photo.image_url.lower().endswith(".png") else ".jpg"
         path = cache / f"{photo.id}{suffix}"
         if not path.exists():
-            req = urllib.request.Request(photo.image_url, headers={"User-Agent": USER_AGENT})
-            with urllib.request.urlopen(req, timeout=60) as resp:
-                path.write_bytes(resp.read())
+            try:
+                path.write_bytes(fetch(photo.image_url))
+            except Exception as err:  # noqa: BLE001 - reported per photo, not fatal
+                failed[photo.id] = str(err)
+                print(f"skipping {photo.id}: {err}", file=sys.stderr)
+                continue
             time.sleep(pause_s)
+        kept.append(photo)
         paths.append(path)
-    return paths
+    return kept, paths, failed
 
 
 def predictions_from_guesses(photos: Sequence[Photo], guesses: Sequence[Guess]) -> list[Prediction]:
@@ -108,7 +144,12 @@ def pick_best(systems: Sequence[System]) -> System:
     return min(playable, key=lambda s: (s.report.median_km, -s.report.mean_score))
 
 
-def build_outputs(photos: Sequence[Photo], systems: Sequence[System], now: str | None = None):
+def build_outputs(
+    photos: Sequence[Photo],
+    systems: Sequence[System],
+    now: str | None = None,
+    skipped: dict[str, str] | None = None,
+):
     """Atlas's guesses for the game, plus a JSON report and a Markdown results page."""
     now = now or datetime.now(UTC).replace(microsecond=0).isoformat()
     for s in systems:
@@ -142,6 +183,7 @@ def build_outputs(photos: Sequence[Photo], systems: Sequence[System], now: str |
         "generatedAt": now,
         "dataset": "whereabout-curated (data/curation/photos.csv)",
         "n": len(photos),
+        "skipped": dict(skipped or {}),
         "playing_in_game": best.name,
         "systems": {s.name: s.report.as_dict() for s in systems if s.report},
         "best_vs_others": comparisons,
@@ -182,6 +224,15 @@ def results_markdown(report: dict, now: str) -> str:
         "## Read these numbers carefully",
         "",
         f"- **Small test set.** {report['n']} photos, so intervals are wide.",
+        *(
+            [
+                f"- **Skipped.** {len(report['skipped'])} photos couldn't be downloaded: "
+                + ", ".join(sorted(report["skipped"]))
+                + "."
+            ]
+            if report["skipped"]
+            else []
+        ),
         "- **Possible leakage.** The photos come from Wikimedia Commons, and CLIP models were "
         "pre-trained on large web scrapes that probably include Commons images or captions. "
         "Some photos may have been seen in training, which would flatter these scores. Public "
@@ -220,9 +271,10 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     from whereabout_ml.clip_encoder import ClipEncoder
 
-    photos = load_catalog(args.catalog)
     gazetteer = Gazetteer.load(args.gazetteer)
-    paths = download_images(photos, args.images)
+    photos, paths, skipped = download_images(load_catalog(args.catalog), args.images)
+    if not photos:
+        raise SystemExit(f"no photos could be downloaded: {skipped}")
 
     systems: list[System] = [
         System(
@@ -252,7 +304,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             )
         )
 
-    atlas, report, markdown = build_outputs(photos, systems)
+    atlas, report, markdown = build_outputs(photos, systems, skipped=skipped)
     args.atlas_out.write_text(json.dumps(atlas, indent=1, ensure_ascii=False) + "\n")
     args.results_dir.mkdir(parents=True, exist_ok=True)
     (args.results_dir / "atlas-v0.json").write_text(
