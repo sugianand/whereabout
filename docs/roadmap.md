@@ -31,7 +31,7 @@ numbers anywhere. Benchmark results only appear when produced by `eval/` from a 
 - [x] Web: reveal animation with Atlas's pin, both arcs, both distances and Atlas's clues
 - [x] Web: "How Atlas works" page that explains the pipeline with the real results table
 - [x] API: the guess response includes Atlas's precomputed guess, distance and score, so the API backend plays against Atlas too
-- [ ] Eval: per-continent breakdown and a failure gallery (the photos Atlas missed by most) in the results page
+- [x] Eval: per-continent breakdown and a failure gallery (the photos Atlas missed by most) in the results page
 - [ ] **[needs you]** Download Im2GPS3k / YFCC4k test sets and run the first public benchmark
 
 ## Milestone 3 — Data pipeline

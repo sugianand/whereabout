@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import ContinentChart from "@/components/ContinentChart";
+import GuessGallery from "@/components/GuessGallery";
 import atlasData from "@/data/atlas.json";
+import catalog from "@/data/photos.json";
 import { systemLabel } from "@/lib/atlas";
-import type { AtlasData, AtlasSystemResult } from "@/lib/game/types";
+import { byContinent, extremes, scoreGuesses } from "@/lib/atlasReport";
+import type { AtlasData, AtlasSystemResult, CatalogPhoto } from "@/lib/game/types";
 
 export const metadata: Metadata = {
   title: "How Atlas guesses — Whereabout",
@@ -13,6 +17,11 @@ export const metadata: Metadata = {
 
 const atlas = atlasData as AtlasData;
 const REPO = "https://github.com/sugianand/whereabout";
+
+// Computed at build time from the files the game ships, with the game's own scoring.
+const scored = scoreGuesses(catalog as CatalogPhoto[], atlas);
+const continents = byContinent(scored);
+const { best, worst } = extremes(scored, 3);
 
 const pct = (x: number | null | undefined) =>
   x === null || x === undefined ? "–" : `${(x * 100).toFixed(1)}%`;
@@ -176,6 +185,36 @@ export default function AtlasPage() {
           </a>
           .
         </p>
+      )}
+
+      {scored.length > 0 && (
+        <>
+          <h2 className="mt-16 font-sign text-4xl font-bold">Where Atlas struggles</h2>
+          <p className="mt-4 text-chalk-dim">
+            Atlas&apos;s median error on the game&apos;s {scored.length} photos, split by the
+            continent each photo was really taken on. Some continents have only a handful of photos,
+            so treat the small groups as hints, not verdicts.
+          </p>
+          {continents.length > 1 && (
+            <p className="mt-4 text-xl">
+              Atlas is closest in <strong>{continents[0].continent}</strong> (
+              {km(continents[0].medianKm)}) and furthest off in{" "}
+              <strong>{continents[continents.length - 1].continent}</strong> (
+              {km(continents[continents.length - 1].medianKm)}).
+            </p>
+          )}
+          <ContinentChart rows={continents} />
+
+          <h2 className="mt-16 font-sign text-4xl font-bold">Its best guesses</h2>
+          <GuessGallery rows={best} label="Atlas's closest guesses" />
+
+          <h2 className="mt-16 font-sign text-4xl font-bold">And its worst</h2>
+          <p className="mt-4 text-chalk-dim">
+            These are the clearest view of what a zero-shot model gets wrong, and the first thing a
+            trained Atlas has to fix.
+          </p>
+          <GuessGallery rows={worst} label="Atlas's furthest guesses" />
+        </>
       )}
 
       <h2 className="mt-16 font-sign text-4xl font-bold">Read these numbers carefully</h2>

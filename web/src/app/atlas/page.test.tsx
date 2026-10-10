@@ -2,9 +2,12 @@ import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import atlasData from "@/data/atlas.json";
-import type { AtlasData } from "@/lib/game/types";
+import catalog from "@/data/photos.json";
+import { niceMax } from "@/components/ContinentChart";
+import type { AtlasData, CatalogPhoto } from "@/lib/game/types";
 
 import { systemLabel } from "@/lib/atlas";
+import { byContinent, scoreGuesses } from "@/lib/atlasReport";
 
 import AtlasPage from "./page";
 
@@ -27,16 +30,49 @@ describe("How Atlas guesses", () => {
       expect(screen.getByText(/appears here after Atlas's next run/)).toBeInTheDocument();
       return;
     }
-    const table = screen.getByRole("table");
+    const table = screen.getByRole("table", { name: /How close each system got/ });
     expect(within(table).getAllByRole("row")).toHaveLength(systems.length + 1);
     const playing = systems.filter((s) => s.playsInGame);
     expect(playing).toHaveLength(1);
     expect(within(table).getByText("The Atlas you play against")).toBeInTheDocument();
   });
 
+  it("breaks Atlas down by continent, with a table for screen readers", () => {
+    render(<AtlasPage />);
+    expect(screen.getByRole("heading", { name: "Where Atlas struggles" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "Atlas's median error by continent" }),
+    ).toBeInTheDocument();
+    const rows = byContinent(scoreGuesses(catalog as CatalogPhoto[], atlas));
+    const tables = screen.getAllByRole("table");
+    const chartTable = tables.find((t) => within(t).queryByText("Continent"));
+    expect(chartTable).toBeDefined();
+    expect(within(chartTable!).getAllByRole("row")).toHaveLength(rows.length + 1);
+  });
+
+  it("shows Atlas's three closest and three furthest guesses, credited", () => {
+    render(<AtlasPage />);
+    for (const name of ["Atlas's closest guesses", "Atlas's furthest guesses"]) {
+      const list = screen.getByRole("list", { name });
+      const items = within(list).getAllByRole("listitem");
+      expect(items).toHaveLength(3);
+      for (const item of items) expect(within(item).getByRole("link")).toHaveAttribute("href");
+    }
+  });
+
   it("links back to the game", () => {
     render(<AtlasPage />);
     expect(screen.getByRole("link", { name: "Play today's five" })).toHaveAttribute("href", "/");
+  });
+});
+
+describe("niceMax", () => {
+  it("rounds a scale up to 1, 2 or 5 times a power of ten", () => {
+    expect(niceMax(949)).toBe(1000);
+    expect(niceMax(1200)).toBe(2000);
+    expect(niceMax(3100)).toBe(5000);
+    expect(niceMax(5000)).toBe(5000);
+    expect(niceMax(0)).toBe(1);
   });
 });
 
