@@ -1,0 +1,9 @@
+# Netlify builds the same static export as GitHub Pages, served at the root (no base path).
+# Site: https://playwhereabout.netlify.app
+[build]
+  base = "web"
+  command = "npm run build"
+  publish = "out"
+
+[build.environment]
+  NODE_VERSION = "22"
