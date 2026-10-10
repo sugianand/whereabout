@@ -56,6 +56,8 @@ milestone starts.
 
 (The daily job lists blocked steps here with what it needs.)
 
-- **Turn on GitHub Pages** (Settings → Pages → Source: GitHub Actions). The deploy workflow
-  builds and tests the site on every push and publishes it as soon as Pages is enabled; until
-  then it skips the deploy step.
+- **Short site address on Vercel.** Sign in at vercel.com with GitHub, *Add New → Project*,
+  import `sugianand/whereabout`, set **Root Directory** to `web` and leave the rest as detected
+  (the static export needs no base path there). Name the project `whereabout`, or add a free
+  `*.vercel.app` name under *Settings → Domains* if that one is taken, then share
+  the address so the README can link to it. GitHub Pages stays on as a mirror.
