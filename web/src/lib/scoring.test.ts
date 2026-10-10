@@ -22,7 +22,9 @@ type Case = {
 
 // Vitest runs from web/, and under jsdom import.meta.url is not a file URL.
 const fixturePath = resolve(process.cwd(), "../data/fixtures/geo_cases.json");
-const { cases } = JSON.parse(readFileSync(fixturePath, "utf8")) as { cases: Case[] };
+const { cases } = JSON.parse(readFileSync(fixturePath, "utf8")) as {
+  cases: Case[];
+};
 
 describe("parity with the API (data/fixtures/geo_cases.json)", () => {
   it("has cases to check", () => {
