@@ -68,6 +68,19 @@ describe("Globe", () => {
     expect(marker()?.lngLat).toEqual([-170, 10]);
   });
 
+  it("accepts a click straight after being enabled, before passive effects run", async () => {
+    const view = render(<Harness disabled />);
+    await waitFor(() => expect(FakeMap.instances).toHaveLength(1));
+    const map = FakeMap.instances[0];
+    act(() => map.emit("load"));
+    // Re-render enabled and click in the same synchronous block: no effects flush between.
+    act(() => {
+      view.rerender(<Harness disabled={false} />);
+    });
+    act(() => map.click(5, 5));
+    expect(screen.getByText("Your pin: 5.00° N, 5.00° E")).toBeInTheDocument();
+  });
+
   it("ignores clicks while disabled", async () => {
     const { map } = await renderGlobe({ disabled: true });
     act(() => map.click(2, 48));

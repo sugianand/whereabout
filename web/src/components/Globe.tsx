@@ -3,7 +3,7 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import type { Map as MapLibreMap, Marker } from "maplibre-gl";
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import { MAP_COLORS, buildGlobeStyle } from "@/lib/basemap";
 import { formatLngLat, normalize, nudge, type Direction, type LngLat } from "@/lib/geo";
@@ -121,10 +121,12 @@ export default function Globe({
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
 
-  // The map is created once; these refs let its event handlers see the latest props.
+  // The map is created once; these refs let its event handlers see the latest props. They are
+  // synced in a layout effect, before paint: a passive effect runs after paint, and a click in
+  // that gap would see a stale `disabled` and be dropped.
   const onPinChangeRef = useRef(onPinChange);
   const disabledRef = useRef(disabled);
-  useEffect(() => {
+  useLayoutEffect(() => {
     onPinChangeRef.current = onPinChange;
     disabledRef.current = disabled;
   }, [onPinChange, disabled]);
