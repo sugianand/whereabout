@@ -1,0 +1,306 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
+
+import { formatDistance, formatPoints, haversineKm, scoreDistance, type LngLat } from "@/lib/geo";
+import { loadEncoder, type DownloadProgress, type ImageEncoder } from "@/lib/pocket/encoder";
+import { IndexUnavailable, loadIndex } from "@/lib/pocket/index";
+import { locate, type PocketGuess, type PocketIndex } from "@/lib/pocket/locate";
+import type { RevealView } from "@/lib/reveal";
+
+import Globe from "./Globe";
+
+type Phase =
+  | { kind: "idle" }
+  | { kind: "loading"; progress: DownloadProgress | null }
+  | { kind: "thinking" }
+  | { kind: "guessed"; guess: PocketGuess }
+  | { kind: "revealed"; guess: PocketGuess; truth: LngLat; distanceKm: number; score: number }
+  | { kind: "unavailable" }
+  | { kind: "error"; message: string };
+
+export interface PocketDeps {
+  loadIndex: () => Promise<PocketIndex>;
+  loadEncoder: (
+    modelId: string,
+    onProgress: (p: DownloadProgress) => void,
+  ) => Promise<ImageEncoder>;
+}
+
+const DEFAULT_DEPS: PocketDeps = { loadIndex: () => loadIndex(), loadEncoder };
+
+const mb = (bytes: number) => `${Math.round(bytes / 1e6)} MB`;
+const pct = (p: number) => `${Math.round(p * 100)}%`;
+
+declare global {
+  interface Window {
+    /** The last embedding and guess, for the browser-vs-PyTorch parity test (e2e/pocket.spec.ts). */
+    __pocketAtlas?: { embedding: number[]; guess: PocketGuess; model: string };
+  }
+}
+
+/**
+ * "Your photo": Atlas guesses where a photo of yours was taken, entirely on your device, then
+ * you show it where it really was.
+ */
+export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps }) {
+  const [phase, setPhase] = useState<Phase>({ kind: "idle" });
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [truth, setTruth] = useState<LngLat | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const ready = useRef<Promise<{ index: PocketIndex; encoder: ImageEncoder }> | null>(null);
+  const [names, setNames] = useState<ReadonlyMap<string, string>>(new Map());
+
+  // Free the preview's object URL when the photo changes or the page goes away.
+  useEffect(() => () => void (photo && URL.revokeObjectURL(photo)), [photo]);
+
+  const prepare = useCallback(() => {
+    if (!ready.current) {
+      ready.current = (async () => {
+        const index = await deps.loadIndex();
+        setNames(new Map(index.meta.countries.map((c) => [c.code, c.name])));
+        const encoder = await deps.loadEncoder(index.meta.hfModel, (progress) =>
+          setPhase((p) => (p.kind === "loading" ? { kind: "loading", progress } : p)),
+        );
+        return { index, encoder };
+      })();
+      // A failed load can be retried with the next photo.
+      ready.current.catch(() => (ready.current = null));
+    }
+    return ready.current;
+  }, [deps]);
+
+  async function guessFor(file: File) {
+    if (!file.type.startsWith("image/")) {
+      setPhase({ kind: "error", message: "That isn't a photo. Try a JPEG, PNG or HEIC image." });
+      return;
+    }
+    setPhoto(URL.createObjectURL(file));
+    setTruth(null);
+    setPhase({ kind: "loading", progress: null });
+    try {
+      const { index, encoder } = await prepare();
+      setPhase({ kind: "thinking" });
+      const embedding = await encoder.embed(file);
+      const guess = locate(index, embedding);
+      window.__pocketAtlas = { embedding: Array.from(embedding), guess, model: index.meta.model };
+      setPhase({ kind: "guessed", guess });
+    } catch (err) {
+      setPhase(
+        err instanceof IndexUnavailable
+          ? { kind: "unavailable" }
+          : { kind: "error", message: (err as Error).message || "Something went wrong." },
+      );
+    }
+  }
+
+  function onDrop(event: DragEvent<HTMLElement>) {
+    event.preventDefault();
+    setDragging(false);
+    const file = event.dataTransfer.files?.[0];
+    if (file) void guessFor(file);
+  }
+
+  function reveal() {
+    if (phase.kind !== "guessed" || !truth) return;
+    const distanceKm = haversineKm(phase.guess, truth);
+    setPhase({
+      kind: "revealed",
+      guess: phase.guess,
+      truth,
+      distanceKm,
+      score: scoreDistance(distanceKm),
+    });
+  }
+
+  const guess = phase.kind === "guessed" || phase.kind === "revealed" ? phase.guess : null;
+  const revealView: RevealView | null =
+    phase.kind === "revealed"
+      ? { truth: phase.truth, guesses: [{ actor: "atlas", at: phase.guess }] }
+      : null;
+  const countryName = (code: string) => names.get(code) ?? code;
+  const busy = phase.kind === "loading" || phase.kind === "thinking";
+
+  return (
+    <div className="mt-10 grid gap-8 lg:grid-cols-2">
+      <section aria-label="Your photo">
+        <label
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={onDrop}
+          className={`relative block aspect-[4/3] cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed transition ${
+            dragging ? "border-sonar bg-sonar/10" : "border-graticule hover:border-chalk-dim"
+          } ${busy ? "pointer-events-none" : ""}`}
+        >
+          <input
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            disabled={busy}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void guessFor(file);
+              e.target.value = "";
+            }}
+          />
+          {photo ? (
+            // eslint-disable-next-line @next/next/no-img-element -- a local object URL
+            <img src={photo} alt="Your photo" className="h-full w-full object-cover" />
+          ) : (
+            <span className="absolute inset-0 grid place-items-center p-6 text-center">
+              <span>
+                <span className="block font-sign text-3xl font-bold">Drop a photo here</span>
+                <span className="mt-2 block text-chalk-dim">or tap to choose one, or take one</span>
+              </span>
+            </span>
+          )}
+          {phase.kind === "thinking" && (
+            <span className="wb-scan absolute inset-0" aria-hidden="true" />
+          )}
+        </label>
+        <p className="mt-3 text-sm text-chalk-dim">
+          Your photo never leaves this device: Atlas runs right here in your browser. Outdoor photos
+          work best. Atlas only ever names a city, never an address.
+        </p>
+      </section>
+
+      <section aria-live="polite" aria-label="Atlas's guess" className="min-w-0">
+        {phase.kind === "idle" && (
+          <p className="text-chalk-dim">
+            Atlas has never seen your photo. Give it one and watch it reason its way to a country,
+            then a city.
+          </p>
+        )}
+
+        {phase.kind === "loading" && (
+          <div>
+            <p className="font-sign text-2xl font-bold">Waking Atlas up…</p>
+            <p className="mt-2 text-chalk-dim">
+              The first time, your browser downloads Atlas&apos;s eyes (a vision model of about 90
+              MB). After that it is cached, so the next photo is instant.
+            </p>
+            <div
+              role="progressbar"
+              aria-label="Downloading Atlas"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={
+                phase.progress?.total
+                  ? Math.round((phase.progress.loaded / phase.progress.total) * 100)
+                  : 0
+              }
+              className="mt-4 h-2 overflow-hidden rounded-full bg-chalk/15"
+            >
+              <div
+                className="h-full rounded-full bg-sonar transition-[width]"
+                style={{
+                  width: phase.progress?.total
+                    ? `${(phase.progress.loaded / phase.progress.total) * 100}%`
+                    : "4%",
+                }}
+              />
+            </div>
+            {phase.progress?.total ? (
+              <p className="mt-2 tabular text-sm text-chalk-dim">
+                {mb(phase.progress.loaded)} of {mb(phase.progress.total)}
+              </p>
+            ) : null}
+          </div>
+        )}
+
+        {phase.kind === "thinking" && (
+          <p className="font-sign text-2xl font-bold">Atlas is looking at your photo…</p>
+        )}
+
+        {phase.kind === "unavailable" && (
+          <p role="alert" className="text-chalk-dim">
+            Pocket Atlas isn&apos;t published yet. It appears after Atlas&apos;s next run, usually
+            within a day.
+          </p>
+        )}
+
+        {phase.kind === "error" && (
+          <p role="alert" className="text-flare">
+            {phase.message}
+          </p>
+        )}
+
+        {guess && (
+          <div>
+            <p className="text-sm text-chalk-dim">Atlas thinks this is</p>
+            <h2 className="font-sign text-5xl font-extrabold leading-tight text-sonar">
+              {guess.city}
+            </h2>
+            <p className="text-xl">{countryName(guess.country)}</p>
+
+            <ol aria-label="Atlas's most likely countries" className="mt-5 space-y-2">
+              {guess.topCountries.map((c) => (
+                <li key={c.country} className="grid grid-cols-[8rem_1fr_3rem] items-center gap-3">
+                  <span className="truncate">{countryName(c.country)}</span>
+                  <span className="h-2 overflow-hidden rounded-full bg-chalk/10">
+                    <span
+                      className="block h-full rounded-full bg-sonar"
+                      style={{ width: `${Math.max(2, c.p * 100)}%` }}
+                    />
+                  </span>
+                  <span className="tabular text-right text-sm text-chalk-dim">{pct(c.p)}</span>
+                </li>
+              ))}
+            </ol>
+
+            {guess.clues.length > 0 && (
+              <ul aria-label="What Atlas noticed" className="mt-4 flex flex-wrap gap-2">
+                {guess.clues.map((clue) => (
+                  <li
+                    key={clue.label}
+                    className="rounded-full border border-sonar/40 px-3 py-1 text-sm text-sonar"
+                  >
+                    {clue.label} <span className="tabular text-chalk-dim">{pct(clue.p)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="mt-6">
+              <p className="font-semibold">
+                {phase.kind === "revealed"
+                  ? "Here's how close Atlas got."
+                  : "Was it right? Tap the globe where the photo was really taken."}
+              </p>
+              <div className="mt-3 h-80 overflow-hidden rounded-2xl border border-graticule/70">
+                <Globe
+                  pin={truth}
+                  onPinChange={setTruth}
+                  disabled={phase.kind !== "guessed"}
+                  reveal={revealView}
+                  className="h-full"
+                />
+              </div>
+              {phase.kind === "guessed" && (
+                <button
+                  type="button"
+                  onClick={reveal}
+                  disabled={!truth}
+                  className="mt-4 rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition enabled:hover:brightness-110 disabled:cursor-not-allowed disabled:bg-chalk/15 disabled:text-chalk-dim"
+                >
+                  {truth ? "That's where it was" : "Place a pin first"}
+                </button>
+              )}
+              {phase.kind === "revealed" && (
+                <p className="mt-4 text-xl">
+                  Atlas was{" "}
+                  <strong className="tabular text-sonar">{formatDistance(phase.distanceKm)}</strong>{" "}
+                  off, worth <strong className="tabular">{formatPoints(phase.score)}</strong> points
+                  in the game.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}

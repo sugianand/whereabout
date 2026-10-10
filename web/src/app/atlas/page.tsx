@@ -5,7 +5,7 @@ import ContinentChart from "@/components/ContinentChart";
 import GuessGallery from "@/components/GuessGallery";
 import atlasData from "@/data/atlas.json";
 import catalog from "@/data/photos.json";
-import { systemLabel } from "@/lib/atlas";
+import { POCKET_SYSTEM, systemLabel } from "@/lib/atlas";
 import { byContinent, extremes, scoreGuesses } from "@/lib/atlasReport";
 import type { AtlasData, AtlasSystemResult, CatalogPhoto } from "@/lib/game/types";
 
@@ -67,6 +67,11 @@ function ResultsTable({ systems }: { systems: AtlasSystemResult[] }) {
                 </span>
                 {s.playsInGame && (
                   <span className="block text-xs text-chalk-dim">The Atlas you play against</span>
+                )}
+                {s.name === POCKET_SYSTEM && (
+                  <span className="block text-xs text-chalk-dim">
+                    Pocket Atlas, which runs in your browser
+                  </span>
                 )}
               </th>
               <td className="tabular px-4 py-3 text-right">{pct(s.accuracy_at_km["25"])}</td>
@@ -263,6 +268,12 @@ export default function AtlasPage() {
           className="rounded-full bg-flare px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
         >
           Play today&apos;s five
+        </Link>
+        <Link
+          href="/you"
+          className="rounded-full border border-sonar/60 px-6 py-3 font-semibold text-sonar transition hover:border-sonar"
+        >
+          Test Atlas on your photo
         </Link>
         <a className="text-chalk-dim underline underline-offset-2 hover:text-chalk" href={REPO}>
           Code, data and results on GitHub

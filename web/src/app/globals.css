@@ -282,3 +282,26 @@ body {
   top: 0;
   bottom: auto;
 }
+
+/* Pocket Atlas "looking" at a photo: a sonar-coloured sweep down the image. */
+.wb-scan {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in oklab, var(--color-sonar) 35%, transparent) 48%,
+    var(--color-sonar) 50%,
+    transparent 52%
+  );
+  background-size: 100% 220%;
+  animation: wb-scan 1.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  mix-blend-mode: screen;
+}
+
+@keyframes wb-scan {
+  from {
+    background-position: 0 100%;
+  }
+  to {
+    background-position: 0 0%;
+  }
+}

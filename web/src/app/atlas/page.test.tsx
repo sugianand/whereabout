@@ -6,7 +6,7 @@ import catalog from "@/data/photos.json";
 import { niceMax } from "@/components/ContinentChart";
 import type { AtlasData, CatalogPhoto } from "@/lib/game/types";
 
-import { systemLabel } from "@/lib/atlas";
+import { POCKET_SYSTEM, systemLabel } from "@/lib/atlas";
 import { byContinent, scoreGuesses } from "@/lib/atlasReport";
 
 import AtlasPage from "./page";
@@ -82,5 +82,6 @@ describe("systemLabel", () => {
       "CLIP ViT-L/14 (OpenAI), country then city",
     );
     expect(systemLabel("Random city (baseline)")).toBe("Random city");
+    expect(systemLabel(POCKET_SYSTEM)).toBe("CLIP ViT-B/32 (OpenAI), country then city");
   });
 });

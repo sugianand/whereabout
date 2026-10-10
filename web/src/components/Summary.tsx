@@ -131,6 +131,19 @@ export default function Summary({ results, title, onPlayAgain }: SummaryProps) {
         </p>
       </div>
 
+      <Link
+        href="/you"
+        className="mt-10 block rounded-2xl border border-sonar/40 p-5 transition hover:border-sonar hover:bg-sonar/5"
+      >
+        <span className="block font-sign text-2xl font-bold text-sonar">
+          Test Atlas on your own photo
+        </span>
+        <span className="mt-1 block text-chalk-dim">
+          Give it a holiday photo and see if it can tell where you were. It runs on your device;
+          your photo never leaves it.
+        </span>
+      </Link>
+
       <p className="mt-12 text-sm text-chalk-dim">
         A new Daily Five arrives at midnight UTC. Photos from Wikimedia Commons, credited after each
         round.
