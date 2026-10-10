@@ -6,7 +6,9 @@ import { FakeMap, FakeMarker, resetFakes, workerUrls } from "@/test/maplibre-moc
 import type { LngLat } from "@/lib/geo";
 import type { RevealLines, RevealView } from "@/lib/reveal";
 
-import Globe from "./Globe";
+import { fitGlobeZoom } from "@/lib/globe-view";
+
+import Globe, { INITIAL_VIEW } from "./Globe";
 
 vi.mock("maplibre-gl", async () => (await import("@/test/maplibre-mock")).maplibreMock);
 
@@ -14,13 +16,23 @@ function Harness({
   initial = null,
   disabled = false,
   reveal = null,
+  onInteract,
 }: {
   initial?: LngLat | null;
   disabled?: boolean;
   reveal?: RevealView | null;
+  onInteract?: () => void;
 }) {
   const [pin, setPin] = useState<LngLat | null>(initial);
-  return <Globe pin={pin} onPinChange={setPin} disabled={disabled} reveal={reveal} />;
+  return (
+    <Globe
+      pin={pin}
+      onPinChange={setPin}
+      disabled={disabled}
+      reveal={reveal}
+      onInteract={onInteract}
+    />
+  );
 }
 
 async function renderGlobe(props: Parameters<typeof Harness>[0] = {}) {
@@ -46,6 +58,113 @@ describe("Globe", () => {
     expect(map.options.keyboard).toBe(false);
     expect(workerUrls).toEqual(["/vendor/maplibre-gl-worker-6.13.0.mjs"]);
     expect(screen.getByText("Place your pin")).toBeInTheDocument();
+  });
+
+  describe("fitting the whole globe in its frame", () => {
+    function frameSize(width: number, height: number) {
+      vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(width);
+      vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(height);
+    }
+    afterEach(() => vi.restoreAllMocks());
+
+    it("opens at the zoom where the whole globe fits a small frame", async () => {
+      frameSize(380, 260);
+      const { map } = await renderGlobe();
+      const fitted = fitGlobeZoom(380, 260, INITIAL_VIEW.center.lat)!;
+      expect(map.options.zoom).toBeCloseTo(fitted, 6);
+      expect(fitted).toBeLessThan(INITIAL_VIEW.zoom);
+      expect(map.minZoomCalls.at(-1)).toBeLessThan(fitted);
+    });
+
+    it("has buttons to zoom and to get back to the whole globe", async () => {
+      frameSize(680, 460);
+      const { map } = await renderGlobe();
+
+      fireEvent.click(screen.getByRole("button", { name: "Zoom in" }));
+      fireEvent.click(screen.getByRole("button", { name: "Zoom out" }));
+      expect(map.zoomInCalls).toBe(1);
+      expect(map.zoomOutCalls).toBe(1);
+
+      const moves = map.easeToCalls.length + map.jumpToCalls.length;
+      fireEvent.click(screen.getByRole("button", { name: "Show the whole globe" }));
+      const last = [...map.easeToCalls, ...map.jumpToCalls].at(-1);
+      expect(map.easeToCalls.length + map.jumpToCalls.length).toBe(moves + 1);
+      expect(last?.zoom).toBeCloseTo(fitGlobeZoom(680, 460, INITIAL_VIEW.center.lat)!, 6);
+    });
+
+    describe("when the frame resizes", () => {
+      let resized: (() => void) | null = null;
+      beforeEach(() => {
+        resized = null;
+        vi.stubGlobal(
+          "ResizeObserver",
+          class {
+            constructor(callback: () => void) {
+              resized = callback;
+            }
+            observe() {}
+            disconnect() {}
+          },
+        );
+      });
+      afterEach(() => vi.unstubAllGlobals());
+
+      it("refits the whole globe while the player has not zoomed", async () => {
+        frameSize(380, 260);
+        const { map } = await renderGlobe();
+        frameSize(680, 460);
+        act(() => resized?.());
+        expect(map.getZoom()).toBeCloseTo(fitGlobeZoom(680, 460, INITIAL_VIEW.center.lat)!, 6);
+      });
+
+      it("keeps a hand-zoomed view framed the same when the frame shrinks", async () => {
+        frameSize(680, 460);
+        const { map } = await renderGlobe();
+        const bigFit = fitGlobeZoom(680, 460, INITIAL_VIEW.center.lat)!;
+        act(() => map.emit("zoomstart", { originalEvent: {} }));
+        act(() => map.jumpTo({ zoom: bigFit + 1.5 }));
+
+        frameSize(380, 260);
+        act(() => resized?.());
+        const smallFit = fitGlobeZoom(380, 260, INITIAL_VIEW.center.lat)!;
+        expect(map.getZoom()).toBeCloseTo(smallFit + 1.5, 6);
+        expect(map.minZoomCalls.at(-1)).toBeLessThan(smallFit);
+      });
+    });
+
+    it("hides the view buttons during the reveal and refits for the next round", async () => {
+      frameSize(680, 460);
+      const reveal: RevealView = {
+        truth: { lng: 2, lat: 48 },
+        guesses: [{ actor: "player", at: { lng: 3, lat: 50 } }],
+      };
+      const view = render(<Harness reveal={reveal} />);
+      await waitFor(() => expect(FakeMap.instances).toHaveLength(1));
+      const map = FakeMap.instances[0];
+      act(() => map.emit("load"));
+      expect(screen.queryByRole("button", { name: "Zoom in" })).not.toBeInTheDocument();
+
+      const jumps = map.jumpToCalls.length;
+      view.rerender(<Harness reveal={null} />);
+      expect(screen.getByRole("button", { name: "Zoom in" })).toBeInTheDocument();
+      expect(map.jumpToCalls.length).toBe(jumps + 1);
+      expect(map.jumpToCalls.at(-1)?.zoom).toBeCloseTo(
+        fitGlobeZoom(680, 460, INITIAL_VIEW.center.lat)!,
+        6,
+      );
+    });
+  });
+
+  it("reports when the player spins, zooms or clicks the globe", async () => {
+    const onInteract = vi.fn();
+    const { map } = await renderGlobe({ onInteract });
+    act(() => map.emit("zoomstart"));
+    expect(onInteract).not.toHaveBeenCalled();
+    act(() => map.emit("dragstart"));
+    act(() => map.emit("zoomstart", { originalEvent: {} }));
+    fireEvent.click(screen.getByRole("button", { name: "Zoom in" }));
+    act(() => map.click(5, 5));
+    expect(onInteract).toHaveBeenCalledTimes(4);
   });
 
   it("places a pin where the player clicks and moves it on the next click", async () => {

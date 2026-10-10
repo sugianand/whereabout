@@ -193,7 +193,7 @@ body {
 
   .wb-globe-panel {
     inset: auto 1.5rem 1.5rem auto;
-    width: min(380px, 42vw);
+    width: min(440px, 42vw);
     height: auto;
     padding: 0;
     background: transparent;
@@ -202,19 +202,22 @@ body {
 
   .wb-globe-frame {
     flex: none;
-    height: 260px;
+    height: min(300px, 40vh);
     transition: height 350ms cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
-  /* The globe grows while the player is using it, and stays big once a pin is down. */
+  /* The globe grows while the player is using it, and stays big once they have spun or
+     zoomed it or put a pin down, so the view they were working in never shrinks under them. */
   .wb-globe-panel:hover,
   .wb-globe-panel:focus-within,
+  .wb-globe-panel[data-engaged="true"],
   .wb-globe-panel[data-pinned="true"] {
     width: min(680px, 56vw);
   }
 
   .wb-globe-panel:hover .wb-globe-frame,
   .wb-globe-panel:focus-within .wb-globe-frame,
+  .wb-globe-panel[data-engaged="true"] .wb-globe-frame,
   .wb-globe-panel[data-pinned="true"] .wb-globe-frame {
     height: min(460px, 60vh);
   }
@@ -277,10 +280,51 @@ body {
   }
 }
 
-/* In the game frame the status line owns the bottom edge, so credits move to the top. */
-.wb-globe-frame .maplibregl-ctrl-bottom-right {
+/* The status line and the view buttons own the bottom edge, so credits move to the top. */
+.globe .maplibregl-ctrl-bottom-right {
   top: 0;
   bottom: auto;
+}
+
+/* Zoom in, zoom out and "show the whole globe": big enough for a thumb, quiet on the chart. */
+.globe-controls {
+  position: absolute;
+  right: 0.6rem;
+  bottom: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  z-index: 2;
+}
+
+.globe-controls button {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgb(42 91 110 / 0.9);
+  background: rgb(8 35 49 / 0.82);
+  color: var(--color-chalk);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.35);
+  cursor: pointer;
+  transition:
+    background-color 150ms,
+    border-color 150ms;
+}
+
+.globe-controls button:hover {
+  background: rgb(13 51 70 / 0.95);
+  border-color: var(--color-sonar);
+}
+
+.globe-controls svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
 }
 
 /* Pocket Atlas "looking" at a photo: a sonar-coloured sweep down the image. */
