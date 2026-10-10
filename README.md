@@ -96,6 +96,10 @@ atlas-v0 --catalog data/curation/photos.csv --gazetteer data/geonames \
          --results-dir eval/results --model ViT-B-32:laion2b_s34b_b79k
 ```
 
+Concept labels for the clue heads (driving side, climate, land cover) come from open maps by
+coordinates; see [`data/maps/README.md`](data/maps/README.md) for the downloads and
+`python -m pip install -e "ml[maps]"` for the GeoTIFF reader.
+
 ## Tests
 
 Every push runs the Python suites, the web unit tests, a production build, a type-check, a

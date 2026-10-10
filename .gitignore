@@ -18,6 +18,8 @@ out/
 # Data and models (versioned with DVC later, never committed)
 data/raw/
 data/processed/
+data/maps/*.tif
+data/maps/worldcover/
 *.onnx
 *.pt
 *.safetensors
