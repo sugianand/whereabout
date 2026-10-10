@@ -276,3 +276,9 @@ body {
     opacity: 1;
   }
 }
+
+/* In the game frame the status line owns the bottom edge, so credits move to the top. */
+.wb-globe-frame .maplibregl-ctrl-bottom-right {
+  top: 0;
+  bottom: auto;
+}

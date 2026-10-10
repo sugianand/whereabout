@@ -19,4 +19,13 @@ describe("maplibreWorkerUrl", () => {
       true,
     );
   });
+
+  it("prefixes the site's base path when it is served from a subfolder", () => {
+    expect(maplibreWorkerUrl("6.13.0", "/whereabout")).toBe(
+      "/whereabout/vendor/maplibre-gl-worker-6.13.0.mjs",
+    );
+    expect(maplibreWorkerUrl("6.13.0", "/whereabout/")).toBe(
+      "/whereabout/vendor/maplibre-gl-worker-6.13.0.mjs",
+    );
+  });
 });
