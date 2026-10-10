@@ -62,8 +62,7 @@ export function haversineKm(a: LngLat, b: LngLat): number {
   const phi2 = toRad(b.lat);
   const dPhi = phi2 - phi1;
   const dLambda = toRad(b.lng - a.lng);
-  const h =
-    Math.sin(dPhi / 2) ** 2 + Math.cos(phi1) * Math.cos(phi2) * Math.sin(dLambda / 2) ** 2;
+  const h = Math.sin(dPhi / 2) ** 2 + Math.cos(phi1) * Math.cos(phi2) * Math.sin(dLambda / 2) ** 2;
   // Clamp: floating-point drift can push h just past 1 for antipodal points.
   return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(Math.min(1, Math.max(0, h))));
 }
@@ -96,7 +95,11 @@ export function greatCirclePath(a: LngLat, b: LngLat, segments = 64): [number, n
   const phi2 = toRad(b.lat);
   const lambda2 = toRad(b.lng);
   const delta = haversineKm(a, b) / EARTH_RADIUS_KM;
-  if (delta < 1e-9) return [[a.lng, a.lat], [b.lng, b.lat]];
+  if (delta < 1e-9)
+    return [
+      [a.lng, a.lat],
+      [b.lng, b.lat],
+    ];
 
   const points: [number, number][] = [];
   let previousLng: number | null = null;
@@ -166,4 +169,9 @@ export function graticule(stepDegrees = 30, densifyDegrees = 5): Graticule {
   }
 
   return { type: "FeatureCollection", features };
+}
+
+/** "14,220" — points with thousands separators. */
+export function formatPoints(points: number): string {
+  return Math.round(points).toLocaleString("en-US");
 }

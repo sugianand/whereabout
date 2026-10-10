@@ -68,3 +68,211 @@ body {
 .globe .maplibregl-canvas {
   cursor: crosshair;
 }
+
+/* Atlas's pin and the true location share the player's drop shape in their own colors. */
+.globe-pin--atlas .globe-pin__drop {
+  background: var(--color-sonar);
+}
+
+.globe-pin--truth .globe-pin__drop {
+  background: var(--color-gold);
+  animation: pin-drop 420ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+@keyframes pin-drop {
+  from {
+    transform: translateY(-18px) rotate(-45deg) scale(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: rotate(-45deg) scale(1);
+    opacity: 1;
+  }
+}
+
+/* ── Game stage (docs/design.md): the photo is the hero, the globe waits in the corner ── */
+
+.wb-photo {
+  position: absolute;
+  inset: 0 0 48dvh 0;
+  transition: opacity 600ms ease;
+}
+
+.wb-header {
+  background: linear-gradient(to bottom, rgb(8 35 49 / 0.85), rgb(8 35 49 / 0));
+  padding-bottom: 2.5rem;
+}
+
+.wb-globe-panel {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 48dvh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem 0.75rem;
+  background: var(--color-ocean-deep);
+}
+
+.wb-globe-frame {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid rgb(42 91 110 / 0.8);
+  box-shadow: 0 18px 50px rgb(0 0 0 / 0.45);
+}
+
+/* Inside the panel the globe fills the frame, and its status line floats over the map. */
+.wb-globe-frame .globe {
+  min-height: 0;
+  border-radius: 0;
+}
+
+.wb-globe-frame #globe-pin-status {
+  position: absolute;
+  left: 0.75rem;
+  bottom: 0.4rem;
+  margin: 0;
+  pointer-events: none;
+  font-size: 1rem;
+  text-shadow: 0 1px 4px rgb(0 0 0 / 0.8);
+}
+
+.wb-reveal {
+  inset: auto 0.75rem 0.75rem 0.75rem;
+  display: flex;
+}
+
+.wb-stage[data-phase="revealed"] .wb-photo {
+  opacity: 0.18;
+}
+
+.wb-stage[data-phase="revealed"] .wb-globe-panel {
+  top: 0;
+  height: auto;
+  padding: 0;
+  background: transparent;
+}
+
+.wb-stage[data-phase="revealed"] .wb-globe-frame {
+  border-radius: 0;
+  border: 0;
+}
+
+/* At the reveal the card names the place, so the coordinates line is for screen readers only. */
+.wb-stage[data-phase="revealed"] #globe-pin-status {
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* MapLibre's attribution, quieted to match the night chart. */
+.globe .maplibregl-ctrl-attrib,
+.globe .maplibregl-ctrl-attrib.maplibregl-compact {
+  background: rgb(8 35 49 / 0.75);
+  color: var(--color-chalk-dim);
+  font-size: 10px;
+}
+
+.globe .maplibregl-ctrl-attrib a {
+  color: var(--color-chalk-dim);
+}
+
+.globe .maplibregl-ctrl-attrib-button {
+  filter: invert(1) opacity(0.6);
+}
+
+@media (min-width: 768px) {
+  .wb-photo {
+    inset: 0;
+  }
+
+  .wb-globe-panel {
+    inset: auto 1.5rem 1.5rem auto;
+    width: min(380px, 42vw);
+    height: auto;
+    padding: 0;
+    background: transparent;
+    transition: width 350ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .wb-globe-frame {
+    flex: none;
+    height: 260px;
+    transition: height 350ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  /* The globe grows while the player is using it, and stays big once a pin is down. */
+  .wb-globe-panel:hover,
+  .wb-globe-panel:focus-within,
+  .wb-globe-panel[data-pinned="true"] {
+    width: min(680px, 56vw);
+  }
+
+  .wb-globe-panel:hover .wb-globe-frame,
+  .wb-globe-panel:focus-within .wb-globe-frame,
+  .wb-globe-panel[data-pinned="true"] .wb-globe-frame {
+    height: min(460px, 60vh);
+  }
+
+  /* Full screen at once, so the reveal camera fits the final frame, not a moving one. */
+  .wb-stage[data-phase="revealed"] .wb-globe-panel {
+    inset: 0;
+    width: auto;
+    transition: none;
+  }
+
+  .wb-stage[data-phase="revealed"] .wb-globe-frame {
+    transition: none;
+  }
+
+  .wb-stage[data-phase="revealed"] .wb-globe-frame {
+    height: 100%;
+  }
+
+  .wb-reveal {
+    inset: auto auto 1.5rem 1.5rem;
+  }
+}
+
+/* ── Loading and the result card ── */
+
+.wb-shimmer {
+  background: linear-gradient(
+    100deg,
+    var(--color-ocean-deep) 30%,
+    rgb(42 91 110 / 0.45) 50%,
+    var(--color-ocean-deep) 70%
+  );
+  background-size: 300% 100%;
+  animation: wb-shimmer 1.6s linear infinite;
+}
+
+@keyframes wb-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+/* The card rises as the arcs land, the one orchestrated moment in the game. */
+.wb-card {
+  animation: wb-rise 500ms 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes wb-rise {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}

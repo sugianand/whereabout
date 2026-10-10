@@ -6,16 +6,10 @@ import Home from "./page";
 vi.mock("maplibre-gl", async () => (await import("@/test/maplibre-mock")).maplibreMock);
 
 describe("Home", () => {
-  it("names the product and explains it in one sentence", () => {
+  it("lands the visitor straight in the game, not on a marketing page", () => {
     render(<Home />);
-    expect(screen.getByRole("heading", { name: "Whereabout" })).toBeInTheDocument();
-    expect(screen.getByText(/beat Atlas/)).toBeInTheDocument();
-  });
-
-  it("asks the player to place a pin on the globe", () => {
-    render(<Home />);
-    expect(screen.getByRole("heading", { name: "Where was this taken?" })).toBeInTheDocument();
-    expect(screen.getByRole("application")).toHaveAttribute("tabindex", "0");
-    expect(screen.getByText("Place your pin")).toBeInTheDocument();
+    expect(screen.getByText("Whereabout")).toBeInTheDocument();
+    expect(screen.getByRole("application", { name: /Globe/ })).toHaveAttribute("tabindex", "0");
+    expect(screen.getByRole("button", { name: "Place your pin on the globe" })).toBeDisabled();
   });
 });

@@ -16,9 +16,10 @@ numbers anywhere. Benchmark results only appear when produced by `eval/` from a 
 - [x] CI: lint and test the API
 - [x] Web: Next.js + TypeScript + Tailwind app in `web/`, lint + type-check + build job in CI
 - [x] Web: interactive globe (MapLibre GL, globe projection) with click-to-place pin
-- [ ] Web: game loop wired to the API — start round, guess, reveal the true location and a distance line
+- [x] Web: game loop wired to the API — start round, guess, reveal the true location and a distance line
 - [x] API: settings from environment, CORS for the web app, Dockerfile, `docker-compose.yml` for local dev
-- [ ] Web: five-round game with a summary screen; Playwright end-to-end test of a full game
+- [x] Web: five-round game with a summary screen
+- [ ] Web: Playwright end-to-end test of a full game in a real browser, run in CI
 - [x] Data: photo catalog loaded from `data/curation/photos.csv` (id, image URL, lat, lon, place, author, license) with validation, replacing the dev fixtures
 - [x] Curate the first 50 openly licensed photos (88 curated) into `photos.csv` (Wikimedia Commons, CC BY / CC BY-SA / CC0), outdoor, no people
 

@@ -15,6 +15,9 @@ export const MAP_COLORS = {
   border: "#2a5b6e",
   graticule: "#2a5b6e",
   space: "#061a24",
+  flare: "#ff5d8f",
+  sonar: "#4fe3c1",
+  gold: "#ffc53d",
 } as const;
 
 export const BASEMAP_ATTRIBUTION =

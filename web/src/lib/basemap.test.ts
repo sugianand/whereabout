@@ -37,7 +37,10 @@ describe("buildGlobeStyle", () => {
   });
 
   it("decodes real land polygons from Natural Earth and credits them", () => {
-    const land = style.sources.land as { data: { type: string; features: unknown[] }; attribution: string };
+    const land = style.sources.land as {
+      data: { type: string; features: unknown[] };
+      attribution: string;
+    };
     expect(land.data.type).toBe("FeatureCollection");
     expect(land.data.features.length).toBeGreaterThan(0);
     expect(land.attribution).toBe(BASEMAP_ATTRIBUTION);

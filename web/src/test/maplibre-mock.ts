@@ -13,7 +13,10 @@ export class FakeMap {
   removed = false;
   zoomInCalls = 0;
   zoomOutCalls = 0;
-  easeToCalls: Array<{ center: LngLatLike }> = [];
+  easeToCalls: Array<{ center: LngLatLike; zoom?: number }> = [];
+  jumpToCalls: Array<{ center: LngLatLike; zoom?: number }> = [];
+  sources: Record<string, { data: unknown; setData(data: unknown): void }> = {};
+  layers: Array<{ id: string; source?: string }> = [];
 
   constructor(options: Record<string, unknown>) {
     this.options = options;
@@ -45,8 +48,34 @@ export class FakeMap {
     this.zoomOutCalls += 1;
   }
 
-  easeTo(options: { center: LngLatLike }) {
+  easeTo(options: { center: LngLatLike; zoom?: number }) {
     this.easeToCalls.push(options);
+  }
+
+  jumpTo(options: { center: LngLatLike; zoom?: number }) {
+    this.jumpToCalls.push(options);
+  }
+
+  addSource(id: string, spec: { data: unknown }) {
+    const source = {
+      data: spec.data,
+      setData(data: unknown) {
+        source.data = data;
+      },
+    };
+    this.sources[id] = source;
+  }
+
+  getSource(id: string) {
+    return this.sources[id];
+  }
+
+  addLayer(layer: { id: string; source?: string }) {
+    this.layers.push(layer);
+  }
+
+  resize() {
+    return this;
   }
 
   remove() {
