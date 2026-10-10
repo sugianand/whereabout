@@ -1,0 +1,87 @@
+name: Atlas v0
+
+# Runs zero-shot CLIP geolocation over the photo catalog on a CPU runner, compares two models
+# against baselines, and commits Atlas's guesses (web/src/data/atlas.json) and the results
+# (eval/results/). This is the offline "cold path" from docs/architecture.md: the model runs
+# here, once, and the game ships its answers.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "ml/src/**"
+      - "eval/src/**"
+      - "data/curation/photos.csv"
+      - ".github/workflows/atlas.yml"
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: atlas
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install (CPU PyTorch)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -e api -e eval -e "ml[clip]"
+
+      - name: Cache model weights and photos
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/huggingface
+            .cache/images
+          key: atlas-${{ hashFiles('data/curation/photos.csv') }}
+          restore-keys: atlas-
+
+      - name: Download the GeoNames gazetteer (CC BY 4.0)
+        run: |
+          mkdir -p data/geonames
+          curl -fsSL -o data/geonames/countryInfo.txt https://download.geonames.org/export/dump/countryInfo.txt
+          curl -fsSL -o /tmp/cities15000.zip https://download.geonames.org/export/dump/cities15000.zip
+          unzip -o /tmp/cities15000.zip -d data/geonames
+
+      - name: Run Atlas v0
+        run: |
+          atlas-v0 \
+            --catalog data/curation/photos.csv \
+            --gazetteer data/geonames \
+            --images .cache/images \
+            --atlas-out web/src/data/atlas.json \
+            --results-dir eval/results \
+            --model ViT-B-32:laion2b_s34b_b79k \
+            --model ViT-L-14:openai | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/src/data/atlas.json eval/results/
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore(atlas): Atlas v0 guesses and evaluation results"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+
+      # Pushes made with GITHUB_TOKEN don't trigger other workflows, so redeploy explicitly.
+      - name: Redeploy the site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main
