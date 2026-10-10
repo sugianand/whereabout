@@ -52,6 +52,34 @@ class ClipEncoder:
                 out.append(self._normalise(feats))
         return np.concatenate(out)
 
+    def load_pixels(self, path: Path) -> tuple[np.ndarray, tuple[float, float, float, float]]:
+        """The (C, H, W) input CLIP sees for `path`, and where that square sits in the photo.
+
+        The crop box assumes open_clip's evaluation transform (resize the short side, then
+        centre-crop), which is checked here rather than trusted.
+        """
+        from PIL import Image
+
+        from whereabout_ml.saliency import centre_crop_box
+
+        steps = [type(t).__name__ for t in getattr(self.preprocess, "transforms", [])]
+        if "CenterCrop" not in steps:
+            raise RuntimeError(f"unexpected CLIP preprocessing {steps}: crop box unknown")
+        with Image.open(path) as im:
+            rgb = im.convert("RGB")
+            box = centre_crop_box(*rgb.size)
+            pixels = self.preprocess(rgb).numpy()
+        return pixels, box
+
+    def encode_pixels(self, batch: np.ndarray) -> np.ndarray:
+        """Embed already-preprocessed (N, C, H, W) pixels, e.g. occluded copies of a photo."""
+        out = []
+        with self._torch.no_grad():
+            for i in range(0, len(batch), self.batch_size):
+                chunk = self._torch.from_numpy(np.ascontiguousarray(batch[i : i + self.batch_size]))
+                out.append(self._normalise(self.model.encode_image(chunk.to(self.device))))
+        return np.concatenate(out)
+
     def _normalise(self, feats) -> np.ndarray:
         feats = feats / feats.norm(dim=-1, keepdim=True)
         return feats.float().cpu().numpy()

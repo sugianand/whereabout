@@ -26,7 +26,8 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # Occlusion maps cost ~50 forward passes per new photo; cached ones are free.
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
 
@@ -49,6 +50,15 @@ jobs:
             .cache/images
           key: atlas-${{ hashFiles('data/curation/photos.csv') }}
           restore-keys: atlas-
+
+      # Saliency maps get their own cache with a per-run key, so maps computed in this run are
+      # always saved (a cache whose key already exists is never re-saved).
+      - name: Cache saliency maps
+        uses: actions/cache@v4
+        with:
+          path: .cache/saliency
+          key: saliency-${{ github.run_id }}
+          restore-keys: saliency-
 
       - name: Download the GeoNames gazetteer (CC BY 4.0)
         run: |
@@ -80,9 +90,13 @@ jobs:
           if grep -q "^skipping" atlas-stderr.log; then
             echo "::warning title=Photos skipped::$(grep '^skipping' atlas-stderr.log | annotate)"
           fi
+          if grep -q "^saliency failed" atlas-stderr.log; then
+            echo "::warning title=Saliency failed::$(grep -A3 '^saliency failed' atlas-stderr.log | annotate)"
+          fi
+          grep "^saliency:" atlas-stdout.log | sed 's/^/::notice title=Saliency::/' || true
 
-      # The bot's push won't trigger CI, so check here that the game still passes with the
-      # new guesses before committing them.
+      # The bot's push won't trigger CI, so check here that the game still passes, type-checks
+      # and builds with the new guesses before committing them.
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -93,6 +107,8 @@ jobs:
         run: |
           npm ci
           npm test
+          npm run typecheck
+          npm run build
 
       - name: Commit results
         shell: bash

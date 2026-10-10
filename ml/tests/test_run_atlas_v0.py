@@ -110,6 +110,20 @@ class FakeClip:
     def encode_images(self, paths):
         return np.stack([self._embed(p.read_text()) for p in paths])
 
+    # Pixels: one channel per word, lit everywhere the word "appears", so hiding cells dims it.
+    def load_pixels(self, path):
+        on = self._embed(path.read_text()) > 0.5
+        return np.repeat(on.astype(np.float32)[:, None, None], 14, axis=1).repeat(14, axis=2), (
+            0.0,
+            0.0,
+            1.0,
+            1.0,
+        )
+
+    def encode_pixels(self, batch):
+        v = 1e-3 + batch.mean(axis=(2, 3))
+        return v / np.linalg.norm(v, axis=1, keepdims=True)
+
 
 def test_main_runs_the_whole_pipeline_offline(tmp_path, monkeypatch):
     catalog = tmp_path / "photos.csv"
@@ -160,12 +174,20 @@ def test_main_runs_the_whole_pipeline_offline(tmp_path, monkeypatch):
             str(results),
             "--model",
             "Fake-1:test",
+            "--saliency-cache",
+            str(tmp_path / "saliency"),
         ]
     )
 
     atlas = json.loads(atlas_out.read_text())
     assert atlas["model"] == "Fake-1/test, country then city"
     assert atlas["guesses"]["kyoto"]["guessedPlace"] == "Kyoto, JP"
+    looked = atlas["guesses"]["kyoto"]["looked"]
+    # The fake lights every pixel alike, so no cell matters more than another: shape and range
+    # are what this checks (test_saliency.py checks that maps find what a model uses).
+    assert looked["grid"] == 7 and len(looked["cells"]) == 49
+    assert all(0.0 <= v <= 1.0 for v in looked["cells"])
+    assert atlas["evaluation"]["saliency"]["n"] == 2
     report = json.loads((results / "atlas-v0.json").read_text())
     assert set(report["systems"]) == {
         "Random city (baseline)",

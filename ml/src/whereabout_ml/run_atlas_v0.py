@@ -26,6 +26,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+import numpy as np
+
 from whereabout_api.catalog import load_catalog
 from whereabout_api.geo import LatLon
 from whereabout_api.photos import Photo
@@ -38,6 +40,13 @@ from whereabout_eval.metrics import (
 )
 from whereabout_ml.baselines import constant_guesses, random_city_guesses
 from whereabout_ml.gazetteer import Gazetteer
+from whereabout_ml.saliency import (
+    DEFAULT_GRID,
+    SALIENCY_VERSION,
+    Saliency,
+    explain,
+    summarise,
+)
 from whereabout_ml.zeroshot import Guess, ZeroShotGeolocator
 
 VERSION = "atlas-v0-zeroshot"
@@ -124,9 +133,9 @@ def predictions_from_points(photos: Sequence[Photo], points) -> list[Prediction]
     ]
 
 
-def guess_to_json(g: Guess) -> dict:
+def guess_to_json(g: Guess, looked: Saliency | None = None) -> dict:
     """The shape web/src/lib/game/types.ts expects for an AtlasGuess (lng/lat, like GeoJSON)."""
-    return {
+    out = {
         "lng": round(g.lon, 5),
         "lat": round(g.lat, 5),
         "confidence": round(g.confidence, 4),
@@ -134,6 +143,79 @@ def guess_to_json(g: Guess) -> dict:
         "topCountries": [{"country": c, "p": round(p, 4)} for c, p in g.top_countries],
         "clues": [{"label": c.label, "p": round(c.p, 4)} for c in g.clues],
     }
+    if looked is not None:
+        out["looked"] = {
+            "grid": looked.grid,
+            "crop": list(looked.crop),
+            "cells": list(looked.cells),
+        }
+    return out
+
+
+def country_log_prob(encoder, locator: ZeroShotGeolocator, country: str):
+    """A scorer for saliency: log p(`country`) for each image in a batch of pixels."""
+    codes = [c.code for c in locator.gazetteer.countries]
+    idx = codes.index(country)
+
+    def score(batch):
+        embeddings = encoder.encode_pixels(batch)
+        return np.array([np.log(locator.country_probabilities(e)[idx]) for e in embeddings])
+
+    return score
+
+
+def saliency_cache_path(cache: Path, model: str, photo_id: str, grid: int) -> Path:
+    safe = "".join(ch if ch.isalnum() else "_" for ch in model)
+    return cache / safe / f"{photo_id}-g{grid}-v{SALIENCY_VERSION}.json"
+
+
+def explain_photos(
+    photos: Sequence[Photo],
+    paths: Sequence[Path],
+    guesses: Sequence[Guess],
+    encoder,
+    locator: ZeroShotGeolocator,
+    cache: Path,
+    grid: int = DEFAULT_GRID,
+    seed: int = 0,
+) -> dict[str, Saliency]:
+    """Where Atlas looked, for every photo, cached by (model, photo, grid, guessed country).
+
+    Occlusion costs ~50 forward passes per photo, so a cached map is reused until the photo's
+    guess changes; only new or re-guessed photos cost anything on later runs.
+    """
+    out: dict[str, Saliency] = {}
+    for photo, path, guess in zip(photos, paths, guesses, strict=True):
+        file = saliency_cache_path(cache, encoder.name, photo.id, grid)
+        if file.exists():
+            cached = json.loads(file.read_text())
+            if cached.get("country") == guess.country:
+                out[photo.id] = Saliency(
+                    cached["grid"],
+                    tuple(cached["cells"]),
+                    tuple(cached["crop"]),
+                    cached["top_k_drop"],
+                    cached["random_k_drop"],
+                )
+                continue
+        pixels, crop = encoder.load_pixels(path)
+        rng = np.random.default_rng([seed, int.from_bytes(photo.id.encode(), "little") % 2**32])
+        s = explain(pixels, crop, country_log_prob(encoder, locator, guess.country), rng, grid)
+        out[photo.id] = s
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_text(
+            json.dumps(
+                {
+                    "country": guess.country,
+                    "grid": s.grid,
+                    "cells": s.cells,
+                    "crop": s.crop,
+                    "top_k_drop": s.top_k_drop,
+                    "random_k_drop": s.random_k_drop,
+                }
+            )
+        )
+    return out
 
 
 def pick_best(systems: Sequence[System]) -> System:
@@ -149,8 +231,13 @@ def build_outputs(
     systems: Sequence[System],
     now: str | None = None,
     skipped: dict[str, str] | None = None,
+    saliency: dict[str, Saliency] | None = None,
 ):
-    """Atlas's guesses for the game, plus a JSON report and a Markdown results page."""
+    """Atlas's guesses for the game, plus a JSON report and a Markdown results page.
+
+    `saliency` (photo id → where the playing system looked) is attached to its guesses.
+    """
+    saliency = saliency or {}
     now = now or datetime.now(UTC).replace(microsecond=0).isoformat()
     for s in systems:
         s.report = evaluate(s.predictions)
@@ -161,7 +248,10 @@ def build_outputs(
         "model": best.name,
         "version": VERSION,
         "generatedAt": now,
-        "guesses": {p.id: guess_to_json(g) for p, g in zip(photos, best.guesses, strict=True)},
+        "guesses": {
+            p.id: guess_to_json(g, saliency.get(p.id))
+            for p, g in zip(photos, best.guesses, strict=True)
+        },
     }
 
     comparisons = []
@@ -187,6 +277,9 @@ def build_outputs(
             if s.report
         ],
     }
+    faithfulness = summarise(list(saliency.values())) if saliency else None
+    if faithfulness:
+        atlas["evaluation"]["saliency"] = faithfulness
 
     table = markdown_table({s.name: s.report for s in systems if s.report})
     report = {
@@ -198,6 +291,7 @@ def build_outputs(
         "playing_in_game": best.name,
         "systems": {s.name: s.report.as_dict() for s in systems if s.report},
         "best_vs_others": comparisons,
+        "saliency": faithfulness,
         "table": table,
     }
     return atlas, report, results_markdown(report, now)
@@ -230,6 +324,25 @@ def results_markdown(report: dict, now: str) -> str:
     for c in report["best_vs_others"]:
         lo, hi = c["ci95"]
         lines.append(f"| {c['versus']} | {c['median_km_delta']:,.0f} | {lo:,.0f} to {hi:,.0f} |")
+    sal = report.get("saliency")
+    if sal:
+        lines += [
+            "",
+            "## Where Atlas looked: is the map faithful?",
+            "",
+            f"Occlusion saliency on a {sal['grid']}×{sal['grid']} grid over the square CLIP sees, "
+            f"for {sal['n']} photos. Deletion test: hide the {sal['k']} cells the map ranks "
+            f"highest, or {sal['k']} random cells, and measure the relative drop in Atlas's "
+            "probability for the country it chose.",
+            "",
+            "| Cells hidden | Mean drop in p(country) |",
+            "| --- | ---: |",
+            f"| Top {sal['k']} by saliency | {sal['mean_top_k_drop']:.1%} |",
+            f"| {sal['k']} random (mean of 3 draws) | {sal['mean_random_k_drop']:.1%} |",
+            "",
+            f"Hiding the top cells hurt more than hiding random ones on "
+            f"{sal['share_top_worse']:.0%} of photos.",
+        ]
     lines += [
         "",
         "## Read these numbers carefully",
@@ -277,6 +390,13 @@ def main(argv: Sequence[str] | None = None) -> None:
         dest="models",
         help="open_clip MODEL:PRETRAINED; repeat to compare several",
     )
+    ap.add_argument(
+        "--saliency-grid",
+        type=int,
+        default=DEFAULT_GRID,
+        help="occlusion grid for 'where Atlas looked' (0 turns it off)",
+    )
+    ap.add_argument("--saliency-cache", type=Path, default=Path(".cache/saliency"))
     args = ap.parse_args(argv)
     models = args.models or [("ViT-B-32", "laion2b_s34b_b79k")]
 
@@ -297,6 +417,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             predictions_from_points(photos, constant_guesses(photos)),
         ),
     ]
+    handles: dict[str, tuple[ClipEncoder, ZeroShotGeolocator]] = {}
     for name, pretrained in models:
         started = time.perf_counter()
         encoder = ClipEncoder(name, pretrained)
@@ -306,6 +427,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         country_only = [locator.predict_country_only(e) for e in embeddings]
         seconds = time.perf_counter() - started
         print(f"{encoder.name}: {len(photos)} photos in {seconds:.0f}s")
+        handles[f"{encoder.name}, country then city"] = (encoder, locator)
         systems.append(
             System(f"{encoder.name}, country only", predictions_from_guesses(photos, country_only))
         )
@@ -315,7 +437,29 @@ def main(argv: Sequence[str] | None = None) -> None:
             )
         )
 
-    atlas, report, markdown = build_outputs(photos, systems, skipped=skipped)
+    saliency: dict[str, Saliency] = {}
+    if args.saliency_grid > 0:
+        for s in systems:
+            s.report = evaluate(s.predictions)
+        best = pick_best(systems)
+        encoder, locator = handles[best.name]
+        started = time.perf_counter()
+        try:
+            saliency = explain_photos(
+                photos,
+                paths,
+                best.guesses,
+                encoder,
+                locator,
+                args.saliency_cache,
+                args.saliency_grid,
+            )
+            print(f"saliency: {len(saliency)} photos in {time.perf_counter() - started:.0f}s")
+        except Exception as err:  # noqa: BLE001 - maps are a bonus; never lose the guesses
+            saliency = {}
+            print(f"saliency failed, shipping guesses without maps: {err!r}", file=sys.stderr)
+
+    atlas, report, markdown = build_outputs(photos, systems, skipped=skipped, saliency=saliency)
     args.atlas_out.write_text(json.dumps(atlas, indent=1, ensure_ascii=False) + "\n")
     args.results_dir.mkdir(parents=True, exist_ok=True)
     (args.results_dir / "atlas-v0.json").write_text(
