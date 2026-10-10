@@ -4,7 +4,8 @@ FROM python:3.12-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    WHEREABOUT_CATALOG=/app/data/curation/photos.csv
+    WHEREABOUT_CATALOG=/app/data/curation/photos.csv \
+    WHEREABOUT_ATLAS=/app/data/atlas.json
 
 WORKDIR /app
 
@@ -13,6 +14,8 @@ COPY api/src api/src
 RUN pip install ./api
 
 COPY data/curation data/curation
+# Atlas's precomputed guesses, so the API can play against Atlas too.
+COPY web/src/data/atlas.json data/atlas.json
 
 RUN useradd --create-home --uid 10001 whereabout
 USER whereabout

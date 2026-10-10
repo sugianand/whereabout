@@ -12,8 +12,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from whereabout_api import __version__
+from whereabout_api.atlas import AtlasGuess, load_atlas
 from whereabout_api.catalog import load_catalog
-from whereabout_api.geo import LatLon
+from whereabout_api.geo import LatLon, haversine_km, score_distance
 from whereabout_api.rounds import RoundAlreadyGuessed, RoundNotFound, RoundStore
 from whereabout_api.settings import Settings
 
@@ -47,16 +48,62 @@ class AnswerOut(BaseModel):
     credit: CreditOut
 
 
+class CountryChanceOut(BaseModel):
+    country: str
+    p: float
+
+
+class ClueOut(BaseModel):
+    label: str
+    p: float
+
+
+class AtlasOut(BaseModel):
+    """Atlas's precomputed guess for the same photo, scored against the same answer."""
+
+    lat: float
+    lon: float
+    guessed_place: str | None
+    confidence: float
+    top_countries: list[CountryChanceOut]
+    clues: list[ClueOut]
+    distance_km: float
+    score: int
+
+
 class GuessOut(BaseModel):
     round_id: str
     distance_km: float
     score: int
     answer: AnswerOut
+    # None when Atlas has no guess for this photo (e.g. it was added after Atlas's last run).
+    atlas: AtlasOut | None
 
 
-def create_app(store: RoundStore | None = None, settings: Settings | None = None) -> FastAPI:
+def score_atlas(guess: AtlasGuess | None, truth: LatLon) -> AtlasOut | None:
+    if guess is None:
+        return None
+    distance = haversine_km(guess.location, truth)
+    return AtlasOut(
+        lat=guess.location.lat,
+        lon=guess.location.lon,
+        guessed_place=guess.guessed_place,
+        confidence=guess.confidence,
+        top_countries=[CountryChanceOut(country=c, p=p) for c, p in guess.top_countries],
+        clues=[ClueOut(label=c.label, p=c.p) for c in guess.clues],
+        distance_km=round(distance, 3),
+        score=score_distance(distance),
+    )
+
+
+def create_app(
+    store: RoundStore | None = None,
+    settings: Settings | None = None,
+    atlas: dict[str, AtlasGuess] | None = None,
+) -> FastAPI:
     settings = settings or Settings.from_env()
     rounds = store or RoundStore(load_catalog(settings.catalog_path))
+    atlas_guesses = load_atlas(settings.atlas_path) if atlas is None else atlas
 
     app = FastAPI(title="Whereabout API", version=__version__)
     app.add_middleware(
@@ -100,6 +147,7 @@ def create_app(store: RoundStore | None = None, settings: Settings | None = None
                     author=truth.attribution, license=truth.license, source_url=truth.source_url
                 ),
             ),
+            atlas=score_atlas(atlas_guesses.get(truth.id), truth.location),
         )
 
     return app

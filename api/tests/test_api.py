@@ -3,7 +3,8 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from whereabout_api.geo import MAX_POINTS, LatLon
+from whereabout_api.atlas import parse_guess
+from whereabout_api.geo import MAX_POINTS, LatLon, haversine_km, score_distance
 from whereabout_api.main import create_app
 from whereabout_api.photos import Photo
 from whereabout_api.rounds import RoundStore
@@ -22,10 +23,29 @@ KYOTO = Photo(
 SETTINGS = Settings(catalog_path=Path("unused.csv"), cors_origins=("http://localhost:3000",))
 
 
+OSAKA_GUESS = parse_guess(
+    "test-kyoto",
+    {
+        "lat": 34.6937,
+        "lng": 135.5023,
+        "confidence": 0.7,
+        "guessedPlace": "Osaka, JP",
+        "topCountries": [{"country": "JP", "p": 0.7}],
+        "clues": [{"label": "Temple", "p": 0.88}],
+    },
+)
+
+
 @pytest.fixture
 def client() -> TestClient:
     store = RoundStore([KYOTO], choose=lambda photos: photos[0])
-    return TestClient(create_app(store, SETTINGS))
+    return TestClient(create_app(store, SETTINGS, atlas={}))
+
+
+@pytest.fixture
+def client_with_atlas() -> TestClient:
+    store = RoundStore([KYOTO], choose=lambda photos: photos[0])
+    return TestClient(create_app(store, SETTINGS, atlas={"test-kyoto": OSAKA_GUESS}))
 
 
 def start_round(client: TestClient) -> dict:
@@ -60,6 +80,32 @@ def test_perfect_guess(client):
         "license": "CC BY-SA 4.0",
         "source_url": "https://example.org/File:Kyoto_temple.jpg",
     }
+
+
+def test_atlas_sits_out_photos_it_has_no_guess_for(client):
+    rid = start_round(client)["round_id"]
+    body = client.post(f"/api/v1/rounds/{rid}/guess", json={"lat": 0, "lon": 0}).json()
+    assert body["atlas"] is None
+
+
+def test_atlas_guess_is_scored_server_side_and_revealed_only_after_the_guess(client_with_atlas):
+    started = start_round(client_with_atlas)
+    assert "atlas" not in started and "Osaka" not in str(started)
+
+    rid = started["round_id"]
+    body = client_with_atlas.post(
+        f"/api/v1/rounds/{rid}/guess", json={"lat": 35.0116, "lon": 135.7681}
+    ).json()
+    atlas = body["atlas"]
+    # Osaka is ~43 km from Kyoto: the same haversine and points that score the player.
+    expected_km = haversine_km(OSAKA_GUESS.location, KYOTO.location)
+    assert atlas["distance_km"] == pytest.approx(expected_km, abs=1e-3)
+    assert 40 < atlas["distance_km"] < 46
+    assert atlas["score"] == score_distance(expected_km)
+    assert atlas["score"] < body["score"] == MAX_POINTS
+    assert atlas["guessed_place"] == "Osaka, JP"
+    assert atlas["top_countries"] == [{"country": "JP", "p": 0.7}]
+    assert atlas["clues"] == [{"label": "Temple", "p": 0.88}]
 
 
 def test_far_guess_scores_less(client):
