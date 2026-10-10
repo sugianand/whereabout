@@ -32,6 +32,8 @@ numbers anywhere. Benchmark results only appear when produced by `eval/` from a 
 - [x] Web: "How Atlas works" page that explains the pipeline with the real results table
 - [x] API: the guess response includes Atlas's precomputed guess, distance and score, so the API backend plays against Atlas too
 - [x] Eval: per-continent breakdown and a failure gallery (the photos Atlas missed by most) in the results page
+- [x] ML: "where Atlas looked" occlusion saliency with a deletion-test faithfulness check, shown in the reveal (docs/decisions/0003)
+- [x] Web + ML: Pocket Atlas, "test Atlas on your own photo" entirely in the browser, with a browser-vs-PyTorch parity test (docs/decisions/0004)
 - [ ] **[needs you]** Download Im2GPS3k / YFCC4k test sets and run the first public benchmark
 
 ## Milestone 3 — Data pipeline
