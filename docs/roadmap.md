@@ -29,8 +29,8 @@ numbers anywhere. Benchmark results only appear when produced by `eval/` from a 
 - [x] ML: hierarchical zero-shot CLIP (country, then city) behind an `Encoder` protocol, with tests using a stub encoder, a country-only ablation and two baselines
 - [x] CI: `atlas.yml` runs Atlas v0 on a GitHub runner, compares two CLIP models, commits `web/src/data/atlas.json` and `eval/results/atlas-v0.{json,md}`
 - [x] Web: reveal animation with Atlas's pin, both arcs, both distances and Atlas's clues
-- [ ] Web: "How Atlas works" page that explains the pipeline with the real results table
-- [ ] API: the guess response includes Atlas's precomputed guess, distance and score, so the API backend plays against Atlas too
+- [x] Web: "How Atlas works" page that explains the pipeline with the real results table
+- [x] API: the guess response includes Atlas's precomputed guess, distance and score, so the API backend plays against Atlas too
 - [ ] Eval: per-continent breakdown and a failure gallery (the photos Atlas missed by most) in the results page
 - [ ] **[needs you]** Download Im2GPS3k / YFCC4k test sets and run the first public benchmark
 

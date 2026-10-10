@@ -60,6 +60,30 @@ jobs:
           docker run -d --name api -p 8000:8000 whereabout-api
           for i in $(seq 1 30); do curl -fs localhost:8000/healthz && break; sleep 1; done
           curl -fs -X POST localhost:8000/api/v1/rounds | python3 -c "import json,sys; r=json.load(sys.stdin); assert r['photo']['image_url'].startswith('https://'); print('round ok')"
+      - name: Smoke test Atlas inside the image
+        run: |
+          python3 - <<'EOF'
+          import json, urllib.request
+
+          def post(path, body=None):
+              data = None if body is None else json.dumps(body).encode()
+              req = urllib.request.Request(
+                  f"http://localhost:8000{path}", data=data, method="POST",
+                  headers={"content-type": "application/json"},
+              )
+              return json.load(urllib.request.urlopen(req))
+
+          played = 0
+          for _ in range(10):
+              rid = post("/api/v1/rounds")["round_id"]
+              g = post(f"/api/v1/rounds/{rid}/guess", {"lat": 0, "lon": 0})
+              assert "atlas" in g, "guess response has no atlas field"
+              if g["atlas"]:
+                  assert 0 <= g["atlas"]["score"] <= 5000
+                  played += 1
+          assert played > 0, "Atlas didn't play any of 10 rounds: atlas.json missing from image?"
+          print(f"Atlas played {played} of 10 rounds")
+          EOF
 
   e2e:
     name: end-to-end (real browser)

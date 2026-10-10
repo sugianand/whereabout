@@ -31,6 +31,11 @@ export interface Reveal {
     country: string | null;
     credit: Credit | null;
   };
+  /**
+   * Atlas's guess, when the backend supplies it (the API does, scored server-side). `null`
+   * means Atlas sat this photo out; absent means the backend leaves Atlas to the client.
+   */
+  atlas?: AtlasGuess | null;
 }
 
 /** One concept Atlas noticed in the photo, e.g. "drives on the left", with its probability. */

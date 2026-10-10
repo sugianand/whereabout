@@ -94,7 +94,10 @@ export default function Game({ apiUrl, today, backendFor }: GameProps) {
     dispatch({ type: "submitted" });
     try {
       const reveal = await backend.guess(state.round.roundId, state.pin);
-      dispatch({ type: "revealed", reveal, atlas: atlas.guesses[state.round.photo.id] ?? null });
+      // The server's word on Atlas wins; otherwise use the guesses bundled with the site.
+      const atlasGuess =
+        reveal.atlas !== undefined ? reveal.atlas : (atlas.guesses[state.round.photo.id] ?? null);
+      dispatch({ type: "revealed", reveal, atlas: atlasGuess });
     } catch (err) {
       dispatch({ type: "failed", message: (err as Error).message });
     }

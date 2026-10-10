@@ -115,6 +115,51 @@ describe("ApiBackend", () => {
     expect(fetchImpl.mock.calls[0][0]).toBe("http://api.test/api/v1/rounds");
   });
 
+  it("maps Atlas's server-scored guess, and tells 'sat out' apart from 'not sent'", async () => {
+    const answer = {
+      lat: 1,
+      lon: 2,
+      place_name: "Somewhere",
+      country: "SG",
+      credit: { author: null, license: null, source_url: null },
+    };
+    const guess = (extra: object) =>
+      new Response(
+        JSON.stringify({ round_id: "r", distance_km: 1, score: 4997, answer, ...extra }),
+      );
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(
+        guess({
+          atlas: {
+            lat: 1.3,
+            lon: 103.8,
+            guessed_place: "Singapore, SG",
+            confidence: 0.9,
+            top_countries: [{ country: "SG", p: 0.9 }],
+            clues: [{ label: "City", p: 0.95 }],
+            distance_km: 11408,
+            score: 2,
+          },
+        }),
+      )
+      .mockResolvedValueOnce(guess({ atlas: null }))
+      .mockResolvedValueOnce(guess({}));
+    const backend = new ApiBackend("http://api.test", fetchImpl);
+
+    const played = await backend.guess("r", { lng: 2, lat: 1 });
+    expect(played.atlas).toEqual({
+      lng: 103.8,
+      lat: 1.3,
+      confidence: 0.9,
+      guessedPlace: "Singapore, SG",
+      topCountries: [{ country: "SG", p: 0.9 }],
+      clues: [{ label: "City", p: 0.95 }],
+    });
+    expect((await backend.guess("r", { lng: 2, lat: 1 })).atlas).toBeNull();
+    expect("atlas" in (await backend.guess("r", { lng: 2, lat: 1 }))).toBe(false);
+  });
+
   it("turns HTTP errors into a readable message", async () => {
     const backend = new ApiBackend(
       "http://api.test",

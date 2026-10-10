@@ -1,6 +1,6 @@
 import { haversineKm, scoreDistance, type LngLat } from "@/lib/geo";
 
-import type { CatalogPhoto, GameBackend, Reveal, RoundStart } from "./types";
+import type { AtlasGuess, CatalogPhoto, GameBackend, Reveal, RoundStart } from "./types";
 
 /**
  * Plays rounds from a fixed list of photos entirely in the browser.
@@ -66,6 +66,29 @@ interface ApiGuess {
       source_url: string | null;
     };
   };
+  atlas?: {
+    lat: number;
+    lon: number;
+    guessed_place: string | null;
+    confidence: number;
+    top_countries: { country: string; p: number }[];
+    clues: { label: string; p: number }[];
+    distance_km: number;
+    score: number;
+  } | null;
+}
+
+function atlasFromApi(a: ApiGuess["atlas"]): AtlasGuess | null | undefined {
+  if (a === undefined) return undefined; // an older server: let the client decide
+  if (a === null) return null;
+  return {
+    lng: a.lon,
+    lat: a.lat,
+    confidence: a.confidence,
+    ...(a.guessed_place ? { guessedPlace: a.guessed_place } : {}),
+    topCountries: a.top_countries,
+    clues: a.clues,
+  };
 }
 
 /** Talks to the FastAPI backend, which keeps answers server-side until the guess. */
@@ -120,6 +143,7 @@ export class ApiBackend implements GameBackend {
             ? { author: c.author, license: c.license, sourceUrl: c.source_url }
             : null,
       },
+      ...(g.atlas === undefined ? {} : { atlas: atlasFromApi(g.atlas) }),
     };
   }
 }
