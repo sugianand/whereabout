@@ -7,6 +7,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from
 
 import { MAP_COLORS, buildGlobeStyle } from "@/lib/basemap";
 import { formatLngLat, normalize, nudge, type Direction, type LngLat } from "@/lib/geo";
+import { MIN_SUPPORTED_ZOOM, ZOOM_OUT_SLACK, fitGlobeZoom } from "@/lib/globe-view";
 import { maplibreWorkerUrl } from "@/lib/maplibre-worker";
 import {
   REVEAL_DRAW_MS,
@@ -28,6 +29,8 @@ export type GlobeProps = {
   disabled?: boolean;
   /** After a guess: the true location and every guess, drawn as arcs that land on the truth. */
   reveal?: RevealView | null;
+  /** Called when the player spins, zooms or clicks the globe, so the frame can stay open. */
+  onInteract?: () => void;
   className?: string;
 };
 
@@ -85,7 +88,10 @@ const ARROW_KEYS: Record<string, Direction> = {
 export const KEY_STEP_DEGREES = 1;
 export const KEY_STEP_LARGE_DEGREES = 10;
 
+/** The opening view. `zoom` is only a fallback: the globe is sized to fit its frame. */
 export const INITIAL_VIEW = { center: { lng: 10, lat: 20 } satisfies LngLat, zoom: 1.4 };
+
+const RESET_MS = 450;
 
 function createPinElement(variant: "player" | "atlas" | "truth" = "player"): HTMLElement {
   // MapLibre positions the outer element with its own `transform`, so the drop shape is
@@ -111,6 +117,7 @@ export default function Globe({
   onPinChange,
   disabled = false,
   reveal = null,
+  onInteract,
   className,
 }: GlobeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -125,27 +132,84 @@ export default function Globe({
   // synced in a layout effect, before paint: a passive effect runs after paint, and a click in
   // that gap would see a stale `disabled` and be dropped.
   const onPinChangeRef = useRef(onPinChange);
+  const onInteractRef = useRef(onInteract);
   const disabledRef = useRef(disabled);
+  const revealingRef = useRef(!!reveal);
   useLayoutEffect(() => {
     onPinChangeRef.current = onPinChange;
+    onInteractRef.current = onInteract;
     disabledRef.current = disabled;
-  }, [onPinChange, disabled]);
+    revealingRef.current = !!reveal;
+  }, [onPinChange, onInteract, disabled, reveal]);
+
+  // While true, the globe keeps itself sized to show the whole Earth as its frame grows and
+  // shrinks. Zooming by hand turns it off; "Show the whole globe" turns it back on.
+  const autoFitRef = useRef(true);
+  const wasRevealingRef = useRef(false);
+  // The whole-globe zoom for the frame's current size. When the player has zoomed by hand and
+  // the frame then resizes, their zoom moves by the same amount, so the view keeps its framing
+  // instead of spilling past the edges of a smaller frame.
+  const fitZoomRef = useRef<number | null>(null);
+
+  /** Keeps the player's framing when the frame resizes after they zoomed by hand. */
+  function keepFraming(map: MapLibreMap) {
+    const el = containerRef.current;
+    if (!el) return;
+    const fit = fitGlobeZoom(el.clientWidth, el.clientHeight, INITIAL_VIEW.center.lat);
+    if (fit === null) return;
+    const previous = fitZoomRef.current;
+    fitZoomRef.current = fit;
+    const minZoom = Math.max(MIN_SUPPORTED_ZOOM, fit - ZOOM_OUT_SLACK);
+    map.setMinZoom(minZoom);
+    if (previous === null || previous === fit) return;
+    map.jumpTo({ zoom: Math.max(minZoom, map.getZoom() + (fit - previous)) });
+  }
+  const keepFramingRef = useRef(keepFraming);
+  useLayoutEffect(() => {
+    keepFramingRef.current = keepFraming;
+  });
+
+  /** Sizes the camera so the whole globe fits the frame. */
+  function fitWholeGlobe(map: MapLibreMap, animate: boolean) {
+    const el = containerRef.current;
+    if (!el) return;
+    const lat = INITIAL_VIEW.center.lat;
+    const zoom = fitGlobeZoom(el.clientWidth, el.clientHeight, lat);
+    if (zoom === null) return;
+    fitZoomRef.current = zoom;
+    map.setMinZoom(Math.max(MIN_SUPPORTED_ZOOM, zoom - ZOOM_OUT_SLACK));
+    const lng = map.getCenter().lng;
+    const view = {
+      center: [lng, lat] as [number, number],
+      zoom,
+      padding: { top: 0, right: 0, bottom: 0, left: 0 },
+    };
+    if (animate && !prefersReducedMotion()) map.easeTo({ ...view, duration: RESET_MS });
+    else map.jumpTo(view);
+  }
+  const fitRef = useRef(fitWholeGlobe);
+  useLayoutEffect(() => {
+    fitRef.current = fitWholeGlobe;
+  });
 
   useEffect(() => {
     let cancelled = false;
     let map: MapLibreMap | null = null;
+    let observer: ResizeObserver | null = null;
 
     // MapLibre touches `window` on import, so load it only in the browser.
     import("maplibre-gl")
       .then(({ Map, Marker, getVersion, setWorkerUrl }) => {
-        if (cancelled || !containerRef.current) return;
+        const el = containerRef.current;
+        if (cancelled || !el) return;
         setWorkerUrl(maplibreWorkerUrl(getVersion()));
+        const fitted = fitGlobeZoom(el.clientWidth, el.clientHeight, INITIAL_VIEW.center.lat);
         map = new Map({
-          container: containerRef.current,
+          container: el,
           style: buildGlobeStyle(),
           center: [INITIAL_VIEW.center.lng, INITIAL_VIEW.center.lat],
-          zoom: INITIAL_VIEW.zoom,
-          minZoom: 0.5,
+          zoom: fitted ?? INITIAL_VIEW.zoom,
+          minZoom: MIN_SUPPORTED_ZOOM,
           maxZoom: 9,
           // Keyboard play is handled by the wrapper so it can move the pin, not just the camera.
           keyboard: false,
@@ -153,8 +217,16 @@ export default function Globe({
         });
         map.on("click", (event) => {
           if (disabledRef.current) return;
+          onInteractRef.current?.();
           onPinChangeRef.current(normalize({ lng: event.lngLat.lng, lat: event.lngLat.lat }));
         });
+        // A wheel, pinch or double-click zoom means the player wants this view; stop refitting.
+        map.on("zoomstart", (event) => {
+          if (!(event as { originalEvent?: unknown } | undefined)?.originalEvent) return;
+          autoFitRef.current = false;
+          onInteractRef.current?.();
+        });
+        map.on("dragstart", () => onInteractRef.current?.());
         map.on("load", () => {
           if (cancelled || !map) return;
           addRevealLayers(map);
@@ -162,6 +234,18 @@ export default function Globe({
         });
         mapRef.current = map;
         markerClassRef.current = Marker;
+        fitRef.current(map, false);
+
+        // The frame changes size (it grows while in use on wide screens), so refit with it.
+        if (typeof ResizeObserver !== "undefined") {
+          observer = new ResizeObserver(() => {
+            if (!map || revealingRef.current) return;
+            map.resize();
+            if (autoFitRef.current) fitRef.current(map, false);
+            else keepFramingRef.current(map);
+          });
+          observer.observe(el);
+        }
       })
       .catch(() => {
         // Most often: the browser has no WebGL. Keyboard placement still works without it.
@@ -170,6 +254,7 @@ export default function Globe({
 
     return () => {
       cancelled = true;
+      observer?.disconnect();
       markerRef.current?.remove();
       markerRef.current = null;
       for (const m of revealMarkersRef.current) m.remove();
@@ -212,8 +297,16 @@ export default function Globe({
     clearMarkers();
     if (!reveal) {
       setRevealLines(map, EMPTY_LINES);
+      // A new round: go back to the whole globe, whatever the reveal zoomed in on.
+      if (wasRevealingRef.current) {
+        wasRevealingRef.current = false;
+        autoFitRef.current = true;
+        map.resize();
+        fitRef.current(map, false);
+      }
       return;
     }
+    wasRevealingRef.current = true;
 
     for (const g of reveal.guesses) {
       if (g.actor === "atlas") {
@@ -264,18 +357,42 @@ export default function Globe({
     };
   }, [reveal, ready]);
 
+  function zoomIn() {
+    autoFitRef.current = false;
+    onInteract?.();
+    mapRef.current?.zoomIn();
+  }
+
+  function zoomOut() {
+    autoFitRef.current = false;
+    onInteract?.();
+    mapRef.current?.zoomOut();
+  }
+
+  function showWholeGlobe() {
+    const map = mapRef.current;
+    if (!map) return;
+    autoFitRef.current = true;
+    fitWholeGlobe(map, true);
+  }
+
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     const map = mapRef.current;
     const direction = ARROW_KEYS[event.key];
 
     if (event.key === "+" || event.key === "=") {
       event.preventDefault();
-      map?.zoomIn();
+      zoomIn();
       return;
     }
     if (event.key === "-" || event.key === "_") {
       event.preventDefault();
-      map?.zoomOut();
+      zoomOut();
+      return;
+    }
+    if (event.key === "0") {
+      event.preventDefault();
+      showWholeGlobe();
       return;
     }
     if (disabled) return;
@@ -301,18 +418,45 @@ export default function Globe({
 
   return (
     <div className={["flex flex-col", className].filter(Boolean).join(" ")}>
-      <div
-        ref={containerRef}
-        role="application"
-        aria-roledescription="globe"
-        aria-label="Globe. Click to place your pin. With the keyboard, press Enter to drop a pin, arrow keys to move it (hold Shift for bigger steps), plus and minus to zoom."
-        aria-describedby="globe-pin-status"
-        aria-disabled={disabled || undefined}
-        tabIndex={0}
-        onKeyDown={handleKeyDown}
-        data-ready={ready || undefined}
-        className="globe relative min-h-72 w-full flex-1 overflow-hidden rounded-lg bg-ocean-deep"
-      />
+      <div className="relative flex min-h-0 w-full flex-1 flex-col">
+        <div
+          ref={containerRef}
+          role="application"
+          aria-roledescription="globe"
+          aria-label="Globe. Click to place your pin, drag to spin, scroll or pinch to zoom. With the keyboard, press Enter to drop a pin, arrow keys to move it (hold Shift for bigger steps), plus and minus to zoom, and 0 to see the whole globe."
+          aria-describedby="globe-pin-status"
+          aria-disabled={disabled || undefined}
+          tabIndex={0}
+          onKeyDown={handleKeyDown}
+          data-ready={ready || undefined}
+          className="globe relative min-h-72 w-full flex-1 overflow-hidden rounded-lg bg-ocean-deep"
+        />
+        {!reveal && !failed && (
+          <div className="globe-controls" role="group" aria-label="Globe view">
+            <button type="button" onClick={zoomIn} aria-label="Zoom in" title="Zoom in">
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M10 4v12M4 10h12" />
+              </svg>
+            </button>
+            <button type="button" onClick={zoomOut} aria-label="Zoom out" title="Zoom out">
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M4 10h12" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={showWholeGlobe}
+              aria-label="Show the whole globe"
+              title="Show the whole globe"
+            >
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <circle cx="10" cy="10" r="6.5" />
+                <path d="M3.5 10h13M10 3.5c-2.2 2-2.2 11 0 13M10 3.5c2.2 2 2.2 11 0 13" />
+              </svg>
+            </button>
+          </div>
+        )}
+      </div>
       <p
         id="globe-pin-status"
         aria-live="polite"

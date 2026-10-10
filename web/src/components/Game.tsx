@@ -89,6 +89,10 @@ export default function Game({ apiUrl, today, backendFor }: GameProps) {
 
   const onPinChange = useCallback((pin: LngLat) => dispatch({ type: "pinned", pin }), []);
 
+  // Once the player spins or zooms the globe, its frame stays open for the rest of the round,
+  // so moving the pointer away never shrinks the view they were working in.
+  const [engagedRound, setEngagedRound] = useState<string | null>(null);
+
   async function submit() {
     if (state.phase !== "guessing" || !state.pin || state.submitting || !backend) return;
     dispatch({ type: "submitted" });
@@ -133,6 +137,7 @@ export default function Game({ apiUrl, today, backendFor }: GameProps) {
   const score = totals(state.results).player;
   const error = state.phase === "guessing" || state.phase === "loading" ? state.error : null;
   const roundNumber = state.index + 1;
+  const engaged = !!round && engagedRound === round.roundId;
 
   return (
     <main
@@ -181,13 +186,18 @@ export default function Game({ apiUrl, today, backendFor }: GameProps) {
         </div>
       </header>
 
-      <div className="wb-globe-panel z-10" data-pinned={pin ? "true" : "false"}>
+      <div
+        className="wb-globe-panel z-10"
+        data-pinned={pin ? "true" : "false"}
+        data-engaged={engaged ? "true" : "false"}
+      >
         <div className="wb-globe-frame">
           <Globe
             pin={pin}
             onPinChange={onPinChange}
             disabled={state.phase !== "guessing" || state.submitting}
             reveal={revealView}
+            onInteract={() => round && setEngagedRound(round.roundId)}
             className="h-full"
           />
         </div>
