@@ -1,0 +1,54 @@
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+
+import { expect, test } from "@playwright/test";
+
+/**
+ * Does the browser's Atlas see what PyTorch's Atlas sees?
+ *
+ * Runs only with POCKET_PARITY_IMAGE set (the Atlas workflow sets it), because it downloads the
+ * real model from the Hugging Face Hub. It uploads the same photo whose PyTorch embedding the
+ * index stores, and compares the embedding transformers.js computes in Chromium.
+ */
+const image = process.env.POCKET_PARITY_IMAGE;
+const MIN_COSINE = 0.95;
+
+function cosine(a: number[], b: number[]) {
+  let dot = 0;
+  let na = 0;
+  let nb = 0;
+  a.forEach((x, i) => {
+    dot += x * b[i];
+    na += x * x;
+    nb += b[i] * b[i];
+  });
+  return dot / Math.sqrt(na * nb);
+}
+
+test("Pocket Atlas in the browser agrees with PyTorch", async ({ page }, info) => {
+  test.skip(!image, "set POCKET_PARITY_IMAGE to run (downloads the model weights)");
+  test.skip(info.project.name !== "desktop", "one browser is enough for parity");
+  test.setTimeout(10 * 60_000);
+
+  const meta = JSON.parse(readFileSync("public/pocket-atlas/index.json", "utf8"));
+  expect(meta.parity, "index.json has no parity embedding").toBeTruthy();
+
+  await page.goto("you");
+  await page.setInputFiles('input[type="file"]', image!);
+  await page.waitForFunction(() => window.__pocketAtlas, undefined, { timeout: 9 * 60_000 });
+  const got = await page.evaluate(() => window.__pocketAtlas!);
+
+  const similarity = cosine(got.embedding, meta.parity.embedding);
+  const report = {
+    cosine: Math.round(similarity * 10000) / 10000,
+    browser: got.guess,
+    pytorch: meta.parity.guess,
+    sameCountry: got.guess.country === meta.parity.guess.country,
+    sameCity: got.guess.city === meta.parity.guess.city,
+  };
+  mkdirSync("test-results", { recursive: true });
+  writeFileSync("test-results/pocket-parity.json", JSON.stringify(report, null, 2));
+  console.log(`pocket parity: ${JSON.stringify(report)}`);
+
+  expect(similarity).toBeGreaterThanOrEqual(MIN_COSINE);
+  await expect(page.getByRole("heading", { name: got.guess.city })).toBeVisible();
+});
