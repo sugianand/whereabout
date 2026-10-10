@@ -49,11 +49,27 @@ export interface AtlasGuess extends LngLat {
   clues: AtlasClue[];
 }
 
+/** One row of the evaluation that produced Atlas's guesses (ml/src/whereabout_ml/run_atlas_v0.py). */
+export interface AtlasSystemResult {
+  name: string;
+  playsInGame: boolean;
+  n: number;
+  /** Share of photos within each distance, keyed by kilometres ("1", "25", "200", ...). */
+  accuracy_at_km: Record<string, number>;
+  median_km: number;
+  median_km_ci95: [number, number] | null;
+  mean_km: number;
+  mean_score: number;
+  country_accuracy: number | null;
+}
+
 export interface AtlasData {
   model: string | null;
   version: string | null;
   generatedAt: string | null;
   guesses: Record<string, AtlasGuess>;
+  /** Present once atlas.yml has run with evaluation export. */
+  evaluation?: { n: number; systems: AtlasSystemResult[] };
 }
 
 /** Where rounds come from: the FastAPI backend, or the bundled catalog (static demo). */

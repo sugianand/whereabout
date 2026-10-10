@@ -177,6 +177,17 @@ def build_outputs(
             }
         )
 
+    # The results table travels with the guesses, so the site's "How Atlas works" page shows
+    # the numbers from the very run that produced the guesses players meet.
+    atlas["evaluation"] = {
+        "n": len(photos),
+        "systems": [
+            {"name": s.name, "playsInGame": s is best, **s.report.as_dict()}
+            for s in systems
+            if s.report
+        ],
+    }
+
     table = markdown_table({s.name: s.report for s in systems if s.report})
     report = {
         "system": VERSION,

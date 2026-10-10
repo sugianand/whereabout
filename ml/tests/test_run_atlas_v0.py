@@ -65,6 +65,16 @@ def test_the_most_accurate_playable_system_plays_in_the_game():
     assert "Possible leakage" in markdown
 
 
+def test_the_guesses_carry_the_results_of_the_run_that_made_them():
+    atlas, report, _ = build_outputs(PHOTOS, systems(), now="2026-10-10T00:00:00+00:00")
+    evaluation = atlas["evaluation"]
+    assert evaluation["n"] == 2
+    assert [s["name"] for s in evaluation["systems"]] == ["wrong", "right", "baseline"]
+    assert [s["name"] for s in evaluation["systems"] if s["playsInGame"]] == ["right"]
+    right = next(s for s in evaluation["systems"] if s["name"] == "right")
+    assert right["median_km"] == report["systems"]["right"]["median_km"] == 0
+
+
 def test_baselines_are_scored_but_never_play():
     only_baseline = [System("baseline", predictions_from_guesses(PHOTOS, RIGHT))]
     for s in only_baseline:

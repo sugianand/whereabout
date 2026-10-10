@@ -1,11 +1,12 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import atlasData from "@/data/atlas.json";
 import catalog from "@/data/photos.json";
 import { LocalBackend } from "@/lib/game/backends";
 import { pickDaily } from "@/lib/game/daily";
 import { ROUNDS_PER_GAME } from "@/lib/game/state";
-import type { CatalogPhoto, GameBackend } from "@/lib/game/types";
+import type { AtlasData, CatalogPhoto, GameBackend } from "@/lib/game/types";
 import { FakeMap, resetFakes } from "@/test/maplibre-mock";
 
 import Game, { modeTitle } from "./Game";
@@ -66,9 +67,15 @@ describe("Game", { timeout: 20000 }, () => {
 
     const card = await playRound(map, first);
     expect(within(card).getByRole("heading", { name: first.place })).toBeInTheDocument();
-    expect(
-      within(card).getByText("You were 0 m away and scored 5,000 points."),
-    ).toBeInTheDocument();
+    const announced = within(card).getByText(/^You were 0 m away and scored 5,000 points\./);
+    const atlasGuess = (atlasData as AtlasData).guesses[first.id];
+    if (atlasGuess) {
+      // Atlas played this photo: its distance and the verdict are announced too.
+      expect(announced).toHaveTextContent(/Atlas was .+ away and scored [\d,]+\./);
+      expect(announced).toHaveTextContent(/(You beat Atlas|Atlas got closer|A dead heat)/);
+    } else {
+      expect(announced).toHaveTextContent(/^You were 0 m away and scored 5,000 points\.$/);
+    }
     expect(
       within(card).getByRole("link", { name: new RegExp(first.credit.author) }),
     ).toHaveAttribute("href", first.credit.sourceUrl);

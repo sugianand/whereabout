@@ -81,6 +81,19 @@ jobs:
             echo "::warning title=Photos skipped::$(grep '^skipping' atlas-stderr.log | annotate)"
           fi
 
+      # The bot's push won't trigger CI, so check here that the game still passes with the
+      # new guesses before committing them.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Test the game with the new guesses
+        working-directory: web
+        run: |
+          npm ci
+          npm test
+
       - name: Commit results
         shell: bash
         run: |
