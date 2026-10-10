@@ -5,7 +5,7 @@ import type { RoundResult } from "@/lib/game/state";
 
 import PhotoViewer, { ZOOM } from "./PhotoViewer";
 import { verdict } from "./RevealCard";
-import { shareText } from "./Summary";
+import Summary, { shareText } from "./Summary";
 
 function result(playerKm: number, playerScore: number, atlasScore?: number): RoundResult {
   return {
@@ -68,6 +68,23 @@ describe("shareText", () => {
   it("adds the head-to-head when Atlas played", () => {
     const text = shareText("Practice game", [result(1, 5000, 10), result(1, 10, 5000)], "u");
     expect(text).toContain("Beat Atlas in 1 of 2 rounds");
+  });
+});
+
+describe("Summary", () => {
+  it("points to how Atlas works once Atlas has played", () => {
+    render(
+      <Summary results={[result(1, 5000, 10)]} title="Practice game" onPlayAgain={() => {}} />,
+    );
+    expect(screen.getByRole("link", { name: "How does Atlas guess?" })).toHaveAttribute(
+      "href",
+      "/atlas",
+    );
+  });
+
+  it("has no Atlas link when Atlas sat the game out", () => {
+    render(<Summary results={[result(1, 5000)]} title="Practice game" onPlayAgain={() => {}} />);
+    expect(screen.queryByRole("link", { name: "How does Atlas guess?" })).toBeNull();
   });
 });
 

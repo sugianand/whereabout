@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import { ROUNDS_PER_GAME, totals, type RoundResult } from "@/lib/game/state";
@@ -68,7 +69,13 @@ export default function Summary({ results, title, onPlayAgain }: SummaryProps) {
           <strong className="text-flare">
             {t.playerWins} of {t.atlasRounds}
           </strong>{" "}
-          rounds. Atlas scored <span className="tabular text-sonar">{formatPoints(t.atlas)}</span>.
+          rounds. Atlas scored <span className="tabular text-sonar">{formatPoints(t.atlas)}</span>.{" "}
+          <Link
+            href="/atlas"
+            className="text-base text-chalk-dim underline underline-offset-2 hover:text-chalk"
+          >
+            How does Atlas guess?
+          </Link>
         </p>
       ) : (
         <p className="mt-6 text-chalk-dim">
