@@ -7,6 +7,8 @@ import { formatDistance, formatPoints } from "@/lib/geo";
 import { REVEAL_DRAW_MS } from "@/lib/reveal";
 import { useCountUp } from "@/lib/useCountUp";
 
+import AtlasEyes from "./AtlasEyes";
+
 type RevealCardProps = {
   result: RoundResult;
   isLast: boolean;
@@ -96,20 +98,32 @@ export default function RevealCard({ result, isLast, onNext }: RevealCardProps) 
         </p>
       )}
 
-      {atlas && atlas.clues.length > 0 && (
-        <div className="mt-4">
-          <p className="text-sm text-chalk-dim">What Atlas noticed</p>
-          <ul className="mt-2 flex flex-wrap gap-2">
-            {atlas.clues.slice(0, 4).map((clue) => (
-              <li
-                key={clue.label}
-                className="rounded-full border border-sonar/40 px-3 py-1 text-sm text-sonar"
-              >
-                {clue.label}{" "}
-                <span className="tabular text-chalk-dim">{Math.round(clue.p * 100)}%</span>
-              </li>
-            ))}
-          </ul>
+      {atlas && (atlas.clues.length > 0 || atlas.looked) && (
+        <div className="mt-4 flex items-start gap-4">
+          {atlas.looked && (
+            <figure className="w-24 shrink-0">
+              <AtlasEyes src={result.round.photo.imageUrl} looked={atlas.looked} />
+              <figcaption className="mt-1 text-xs leading-tight text-chalk-dim">
+                Where Atlas looked
+              </figcaption>
+            </figure>
+          )}
+          {atlas.clues.length > 0 && (
+            <div className="min-w-0">
+              <p className="text-sm text-chalk-dim">What Atlas noticed</p>
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {atlas.clues.slice(0, 4).map((clue) => (
+                  <li
+                    key={clue.label}
+                    className="rounded-full border border-sonar/40 px-3 py-1 text-sm text-sonar"
+                  >
+                    {clue.label}{" "}
+                    <span className="tabular text-chalk-dim">{Math.round(clue.p * 100)}%</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 

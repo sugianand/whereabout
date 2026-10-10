@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { AtlasData } from "@/lib/game/types";
+import { isValidLooked } from "@/lib/looked";
 
 import atlasData from "./atlas.json";
 import photos from "./photos.json";
@@ -29,6 +30,18 @@ describe("Atlas's precomputed guesses", () => {
       expect(g.confidence).toBeGreaterThanOrEqual(0);
       expect(g.confidence).toBeLessThanOrEqual(1);
       for (const c of g.clues) expect(c.p).toBeGreaterThan(0);
+    }
+  });
+
+  it("have well-formed 'where Atlas looked' maps, when they have them", () => {
+    for (const [id, g] of Object.entries(atlas.guesses)) {
+      if (g.looked) expect(isValidLooked(g.looked), id).toBe(true);
+    }
+    const s = atlas.evaluation?.saliency;
+    if (s) {
+      expect(s.n).toBeGreaterThan(0);
+      for (const v of [s.mean_top_k_drop, s.mean_random_k_drop, s.share_top_worse])
+        expect(Number.isFinite(v)).toBe(true);
     }
   });
 });

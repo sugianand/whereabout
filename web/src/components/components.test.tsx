@@ -1,10 +1,11 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { RoundResult } from "@/lib/game/state";
 
 import PhotoViewer, { ZOOM } from "./PhotoViewer";
-import { verdict } from "./RevealCard";
+import AtlasEyes from "./AtlasEyes";
+import RevealCard, { verdict } from "./RevealCard";
 import Summary, { shareText } from "./Summary";
 
 function result(playerKm: number, playerScore: number, atlasScore?: number): RoundResult {
@@ -85,6 +86,46 @@ describe("Summary", () => {
   it("has no Atlas link when Atlas sat the game out", () => {
     render(<Summary results={[result(1, 5000)]} title="Practice game" onPlayAgain={() => {}} />);
     expect(screen.queryByRole("link", { name: "How does Atlas guess?" })).toBeNull();
+  });
+});
+
+describe("Where Atlas looked", () => {
+  const looked = {
+    grid: 3,
+    crop: [0.25, 0, 0.5, 1],
+    cells: [1, 0.5, 0, 0, 0, 0, 0, 0, 0],
+  };
+
+  it("shows the square CLIP saw, glowing where it mattered, described for screen readers", () => {
+    render(<AtlasEyes src="https://example.org/p.jpg" looked={looked} />);
+    const map = screen.getByRole("img", {
+      name: "Where Atlas looked: mostly the top left of the photo",
+    });
+    const photo = map.querySelector("img")!;
+    // A crop starting a quarter of the way in, half the photo wide: shift left by 50%, 200% wide.
+    expect(photo.style.width).toBe("200%");
+    expect(photo.style.left).toBe("-50%");
+    const heat = within(map).getByTestId("atlas-eyes-heat");
+    expect(heat.children).toHaveLength(9);
+    expect((heat.children[0] as HTMLElement).style.opacity).toBe("0.9");
+    expect((heat.children[8] as HTMLElement).style.opacity).toBe("0");
+  });
+
+  it("draws nothing for a malformed map", () => {
+    const { container } = render(
+      <AtlasEyes src="https://example.org/p.jpg" looked={{ ...looked, cells: [1] }} />,
+    );
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("appears on the reveal card only when Atlas has a map for the photo", () => {
+    const withMap = result(5, 4900, 100);
+    withMap.atlas = { ...withMap.atlas!, looked };
+    const { unmount } = render(<RevealCard result={withMap} isLast={false} onNext={() => {}} />);
+    expect(screen.getByText("Where Atlas looked")).toBeInTheDocument();
+    unmount();
+    render(<RevealCard result={result(5, 4900, 100)} isLast={false} onNext={() => {}} />);
+    expect(screen.queryByText("Where Atlas looked")).toBeNull();
   });
 });
 

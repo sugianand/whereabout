@@ -1,6 +1,8 @@
 import type { ScoredGuess } from "@/lib/atlasReport";
 import { formatDistance } from "@/lib/geo";
 
+import AtlasEyes from "./AtlasEyes";
+
 /** A row of photos with where they really are and where Atlas put them. */
 export default function GuessGallery({ rows, label }: { rows: ScoredGuess[]; label: string }) {
   return (
@@ -10,13 +12,22 @@ export default function GuessGallery({ rows, label }: { rows: ScoredGuess[]; lab
           key={r.photo.id}
           className="overflow-hidden rounded-xl border border-graticule/70 bg-ocean-deep"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element -- remote Commons photos, static export */}
-          <img
-            src={r.photo.imageUrl}
-            alt={`Photo taken in ${r.photo.place}`}
-            loading="lazy"
-            className="aspect-[4/3] w-full object-cover"
-          />
+          <div className="relative">
+            {/* eslint-disable-next-line @next/next/no-img-element -- remote Commons photos, static export */}
+            <img
+              src={r.photo.imageUrl}
+              alt={`Photo taken in ${r.photo.place}`}
+              loading="lazy"
+              className="aspect-[4/3] w-full object-cover"
+            />
+            {r.guess.looked && (
+              <AtlasEyes
+                src={r.photo.imageUrl}
+                looked={r.guess.looked}
+                className="absolute bottom-2 right-2 w-20 shadow-lg"
+              />
+            )}
+          </div>
           <div className="p-4">
             <p className="text-sm text-chalk-dim">Really</p>
             <p className="font-semibold">{r.photo.place}</p>

@@ -22,6 +22,8 @@ const REPO = "https://github.com/sugianand/whereabout";
 const scored = scoreGuesses(catalog as CatalogPhoto[], atlas);
 const continents = byContinent(scored);
 const { best, worst } = extremes(scored, 3);
+const saliency = atlas.evaluation?.saliency;
+const pctWhole = (x: number) => `${Math.round(x * 100)}%`;
 
 const pct = (x: number | null | undefined) =>
   x === null || x === undefined ? "–" : `${(x * 100).toFixed(1)}%`;
@@ -72,7 +74,7 @@ function ResultsTable({ systems }: { systems: AtlasSystemResult[] }) {
               <td className="tabular px-4 py-3 text-right">{pct(s.country_accuracy)}</td>
               <td className="tabular px-4 py-3 text-right">
                 {km(s.median_km)}
-                {s.median_km_ci95 && (
+                {s.median_km_ci95?.length === 2 && (
                   <span className="block text-xs text-chalk-dim">
                     {km(s.median_km_ci95[0])} to {km(s.median_km_ci95[1])}
                   </span>
@@ -157,6 +159,30 @@ export default function AtlasPage() {
         buildings&rdquo;, come from the same trick: Atlas compares the photo with a few descriptions
         of the scene and only shows a clue when one clearly wins.
       </p>
+
+      <h2 className="mt-16 font-sign text-4xl font-bold">Where Atlas looks</h2>
+      <p className="mt-4 text-chalk-dim">
+        CLIP only ever sees a square from the middle of each photo. To find out which parts of that
+        square Atlas relies on, it is split into a {saliency?.grid ?? 7}×{saliency?.grid ?? 7} grid
+        and Atlas guesses again with one cell greyed out at a time. Where hiding a cell makes Atlas
+        much less sure of its country, that cell glows. It takes about fifty extra looks per photo,
+        so it runs once, offline, alongside the guesses.
+      </p>
+      {saliency ? (
+        <p className="mt-4 text-chalk-dim">
+          A glowing map is only worth something if it is true, so it is tested. Hiding the{" "}
+          {saliency.k} cells that glow brightest cut Atlas&apos;s confidence in its country by{" "}
+          <strong className="text-sonar">{pctWhole(saliency.mean_top_k_drop)}</strong> on average;
+          hiding {saliency.k} random cells cut it by{" "}
+          <strong className="text-chalk">{pctWhole(saliency.mean_random_k_drop)}</strong>. The
+          bright cells mattered more on {pctWhole(saliency.share_top_worse)} of the {saliency.n}{" "}
+          photos.
+        </p>
+      ) : (
+        <p className="mt-4 text-chalk-dim">
+          The maps, and a test of whether they are faithful, appear after Atlas&apos;s next run.
+        </p>
+      )}
 
       <h2 className="mt-16 font-sign text-4xl font-bold">How often it gets it right</h2>
       {systems.length > 0 ? (

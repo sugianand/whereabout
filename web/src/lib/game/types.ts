@@ -44,8 +44,22 @@ export interface AtlasClue {
   p: number;
 }
 
+/**
+ * Where Atlas looked: occlusion saliency over the square crop CLIP sees
+ * (ml/src/whereabout_ml/saliency.py).
+ */
+export interface AtlasLooked {
+  grid: number;
+  /** The square CLIP saw, as [x, y, width, height] fractions of the full photo. */
+  crop: number[];
+  /** Row-major grid × grid importances in [0, 1]; 1 is the cell that mattered most. */
+  cells: number[];
+}
+
 /** Atlas's precomputed guess for one photo (src/data/atlas.json). */
 export interface AtlasGuess extends LngLat {
+  /** Present once atlas.yml has run with saliency. */
+  looked?: AtlasLooked;
   /** Probability Atlas gave its top country. */
   confidence: number;
   /** The place Atlas picked, e.g. "Kyoto, JP". */
@@ -62,10 +76,24 @@ export interface AtlasSystemResult {
   /** Share of photos within each distance, keyed by kilometres ("1", "25", "200", ...). */
   accuracy_at_km: Record<string, number>;
   median_km: number;
-  median_km_ci95: [number, number] | null;
+  /** [low, high] of a 95% bootstrap interval; JSON arrays, so typed as number[]. */
+  median_km_ci95: number[] | null;
   mean_km: number;
   mean_score: number;
   country_accuracy: number | null;
+}
+
+/** Deletion test for the saliency maps: hide the top-k cells, or k random ones. */
+export interface AtlasSaliencySummary {
+  n: number;
+  k: number;
+  grid: number;
+  /** Mean relative drop in p(country) after hiding the k most important cells. */
+  mean_top_k_drop: number;
+  /** The same after hiding k random cells (mean of three draws per photo). */
+  mean_random_k_drop: number;
+  /** Share of photos where hiding the top cells hurt more than hiding random ones. */
+  share_top_worse: number;
 }
 
 export interface AtlasData {
@@ -74,7 +102,7 @@ export interface AtlasData {
   generatedAt: string | null;
   guesses: Record<string, AtlasGuess>;
   /** Present once atlas.yml has run with evaluation export. */
-  evaluation?: { n: number; systems: AtlasSystemResult[] };
+  evaluation?: { n: number; systems: AtlasSystemResult[]; saliency?: AtlasSaliencySummary };
 }
 
 /** Where rounds come from: the FastAPI backend, or the bundled catalog (static demo). */
