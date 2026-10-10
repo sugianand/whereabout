@@ -79,7 +79,9 @@ describe("Game", { timeout: 20000 }, () => {
     expect(
       within(card).getByRole("link", { name: new RegExp(first.credit.author) }),
     ).toHaveAttribute("href", first.credit.sourceUrl);
-    expect(within(card).getByRole("button", { name: "Next photo" })).toHaveFocus();
+    // Focus moves in a passive effect, which can flush just after the card reaches the DOM.
+    const next = within(card).getByRole("button", { name: "Next photo" });
+    await waitFor(() => expect(next).toHaveFocus());
   });
 
   it("plays five rounds and ends on a summary with every place", async () => {
