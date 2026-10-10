@@ -2,7 +2,7 @@
 
 **Can you beat the AI at guessing where in the world a photo was taken?**
 
-**[▶ Play it now](https://sugianand.github.io/whereabout/)**
+**[▶ Play it now](https://playwhereabout.netlify.app)**
 
 Whereabout is a geography game played against **Atlas**, a computer-vision model. You look at a
 photo, drop a pin on a 3D globe, and guess. Then the globe goes full screen: arcs draw from your
