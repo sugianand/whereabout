@@ -60,3 +60,33 @@ jobs:
           docker run -d --name api -p 8000:8000 whereabout-api
           for i in $(seq 1 30); do curl -fs localhost:8000/healthz && break; sleep 1; done
           curl -fs -X POST localhost:8000/api/v1/rounds | python3 -c "import json,sys; r=json.load(sys.stdin); assert r['photo']['image_url'].startswith('https://'); print('round ok')"
+
+  e2e:
+    name: end-to-end (real browser)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Build the static site
+        run: npm run build
+        env:
+          NEXT_PUBLIC_BASE_PATH: /whereabout
+      - name: Play the game in a browser
+        run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: web/playwright-report
+          retention-days: 7
