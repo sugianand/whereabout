@@ -2,82 +2,110 @@
 
 **Can you beat the AI at guessing where in the world a photo was taken?**
 
-Whereabout is a geography game played against **Atlas**, a computer-vision model that reads a
-photo the way expert players do. You look at a photo, drop a pin on the globe, and then watch
-Atlas drop its own pin, show the clues it noticed, and measure who got closer.
+Whereabout is a geography game played against **Atlas**, a computer-vision model. You look at a
+photo, drop a pin on a 3D globe, and guess. Then the globe goes full screen: arcs draw from your
+pin and Atlas's pin to the true location, the gold pin drops, and the distances count up.
 
-> Status: early development (Milestone 1 — playable shell). Nothing here is deployed yet.
+Everyone gets the same **Daily Five** photos each day, so you can compare scores with friends,
+and the share text gives no spoilers.
 
-## How it works (short version)
+## What's interesting about it
 
-1. **Look** — a photo appears.
-2. **Pin** — you guess a location on the globe.
-3. **Reveal** — Atlas guesses too, explains its clues, and both distances are scored.
+| Area | What it does | Where |
+| --- | --- | --- |
+| **Atlas v0** | Hierarchical zero-shot CLIP geolocation: country by prompt-ensembled softmax, then city within the top countries, P(city) = P(country) × P(city \| country), over GeoNames. Clues ("Snow and ice 81%") come from zero-shot concept groups and only show when one option clearly wins. | [`ml/`](ml/) |
+| **Evaluation** | Accuracy at 1 / 25 / 200 / 750 / 2,500 km, median error with bootstrap CIs, a paired bootstrap to test whether one system really beats another, a country-only ablation and two baselines. All scored with the same haversine that scores players. | [`eval/`](eval/), [`eval/results/`](eval/results/) |
+| **Cold-path inference** | The model runs once, in GitHub Actions, over the catalog. The game ships its answers, so no visit ever waits on a model and hosting costs nothing. | [`.github/workflows/atlas.yml`](.github/workflows/atlas.yml) |
+| **The reveal** | Great-circle arcs that cross the antimeridian correctly, a camera that fits its zoom to the visible frame (each zoom level halves the planet's span) and pads around the result card, reduced-motion support. | [`web/src/lib/reveal.ts`](web/src/lib/reveal.ts) |
+| **One definition of distance** | The browser and the server score with separate code (TypeScript and Python), so a shared fixture pins them together: both test suites check the same 10 cases. | [`data/fixtures/geo_cases.json`](data/fixtures/geo_cases.json) |
+| **Game engine** | A pure reducer drives the game, with two interchangeable backends: the FastAPI server (answers stay server-side until you guess) or the bundled catalog (a free static site). | [`web/src/lib/game/`](web/src/lib/game/) |
+| **Accessibility** | The whole game can be played with the keyboard, and an end-to-end test does exactly that. Type is Atkinson Hyperlegible; results are announced to screen readers. | [`web/e2e/`](web/e2e/) |
+| **Open data** | 88 photos from 54 countries, all openly licensed from Wikimedia Commons, reviewed by eye, credited after every round. | [`data/curation/`](data/curation/) |
 
-Under the hood (planned, see [`docs/architecture.md`](docs/architecture.md)):
+## Atlas results
 
-- a fine-tuned vision transformer that classifies photos into geographic cells,
-- retrieval over a reference index of geotagged images to refine the guess,
-- interpretable "clue" heads (driving side, climate, land cover) trained on labels derived from open maps,
-- a privacy gate: region-level answers only, photos with people declined, EXIF stripped.
+Zero-shot, on the 88 game photos (run of 2026-10-10, from
+[`eval/results/atlas-v0.md`](eval/results/atlas-v0.md), which
+[`.github/workflows/atlas.yml`](.github/workflows/atlas.yml) generates and commits):
 
-## Repository layout
+| System | Within 25 km | Within 750 km | Country right | Median error (95% CI) | Mean score |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Random city (baseline) | 0.0% | 1.1% | 2.3% | 7,836 km (7,081–8,722) | 268 |
+| Best constant guess (baseline) | 1.1% | 3.4% | 2.3% | 6,470 km (4,467–7,355) | 591 |
+| CLIP ViT-B/32 (LAION-2B), country then city | 9.1% | 27.3% | 27.3% | 2,593 km (1,633–4,098) | 1,739 |
+| CLIP ViT-L/14 (OpenAI), country only | 6.8% | 42.0% | 43.2% | 1,156 km (701–2,823) | 2,149 |
+| **CLIP ViT-L/14 (OpenAI), country then city** (plays in the game) | **13.6%** | **43.2%** | 42.0% | **949 km** (649–2,834) | **2,359** |
 
-| Path | What lives there |
-| --- | --- |
-| `api/` | FastAPI backend: rounds, guesses, scoring |
-| `web/` | Next.js frontend: the globe and the game UI |
-| `ml/` | Training code for Atlas (Milestone 4) |
-| `eval/` | Evaluation harness and benchmarks (Milestone 2) |
-| `docs/` | Architecture, decisions, research notes |
+What the run shows:
 
-## Run the API locally
+- **Model size matters.** ViT-L/14 beats ViT-B/32 by 1,644 km of median error, and a paired
+  bootstrap puts that difference clearly away from zero (95% CI −2,773 to −10 km).
+- **The city step helps where it should.** It doubles city-level hits (6.8% → 13.6% within
+  25 km), but its effect on median error is within noise (−207 km, CI −1,335 to 870).
+- **Caveats.** 88 photos is small, and CLIP was pre-trained on web data that probably includes
+  Wikimedia Commons, which may flatter these scores. Public benchmarks are next.
 
-```bash
-python -m pip install -e "api[dev]"
-make test        # run the test suite
-make api         # start the API on http://localhost:8000 (docs at /docs)
+## How it fits together
+
+```
+ Browser (Next.js static export)                        GitHub Actions (offline)
+ ┌───────────────────────────────────────────┐          ┌───────────────────────────────┐
+ │ Photo viewer ─ Globe (MapLibre, WebGL)    │          │ atlas.yml                     │
+ │        │                                  │          │  photos + GeoNames + CLIP     │
+ │   game reducer ── LocalBackend (catalog) ◀┼──────────┼─ atlas.json (Atlas's guesses) │
+ │        └──────── ApiBackend ──┐           │          │  eval/results/ (metrics)      │
+ └───────────────────────────────┼───────────┘          └───────────────────────────────┘
+                                 ▼
+                    FastAPI (rounds, server-side scoring)
 ```
 
-## Run the web app locally
+More in [`docs/architecture.md`](docs/architecture.md), design decisions in
+[`docs/decisions/`](docs/decisions/), the visual system in [`docs/design.md`](docs/design.md).
+
+## Run it
 
 ```bash
-make web-install  # npm ci in web/
-make web-dev      # http://localhost:3000
-make web-test     # lint, unit tests, production build, type-check
+make web-install && make web-dev   # the game on http://localhost:3000
+make install && make test          # Python: api, eval, ml
+make web-test                      # web: lint, unit tests, build, type-check
+make web-e2e                       # real games in Chromium (npx playwright install chromium)
+make api                           # the FastAPI backend on :8000 (docs at /docs)
 ```
 
-Or run both services with `docker compose up --build` (API on :8000, web on :3000).
+Set `NEXT_PUBLIC_API_URL=http://localhost:8000` to play against the API instead of the bundled
+catalog, or run both with `docker compose up --build`.
 
-The globe is MapLibre GL in globe projection with a self-contained basemap: land and borders
-from [Natural Earth](https://www.naturalearthdata.com/) 1:110m (public domain, via the
-`world-atlas` package), no tile server, no API key and no place labels. Click to drop your pin;
-with the keyboard, focus the globe, press Enter, then move the pin with the arrow keys
-(Shift for 10° steps) and zoom with + and -. `npm run dev` and `npm run build` first copy
-MapLibre's web worker into `web/public/vendor/` (see `web/scripts/copy-maplibre-worker.mjs`).
+Run Atlas yourself (downloads CLIP weights and the photos):
+
+```bash
+python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+python -m pip install -e api -e eval -e "ml[clip]"
+atlas-v0 --catalog data/curation/photos.csv --gazetteer data/geonames \
+         --images .cache/images --atlas-out web/src/data/atlas.json \
+         --results-dir eval/results --model ViT-B-32:laion2b_s34b_b79k
+```
+
+## Tests
+
+Every push runs the Python suites, the web unit tests, a production build, a type-check, a
+Docker smoke test of the API, and Playwright games on a desktop and a phone viewport.
+
+## Honest limitations
+
+- Atlas v0 is zero-shot: nothing is trained yet. It is the baseline that trained models
+  (geocell classification, retrieval refinement, map-derived clue heads) have to beat.
+- The photos come from Wikimedia Commons, which CLIP's web-scale pre-training probably saw.
+  Scores on this set may be flattered; public benchmarks are next.
+- In the static demo the answers ship in the page and image URLs contain file names. It's a
+  casual daily puzzle; leaderboards and rooms will use the API, which keeps answers server-side.
 
 ## Roadmap
 
 Day-by-day progress is tracked in [`docs/roadmap.md`](docs/roadmap.md).
 
-| Milestone | Goal |
-| --- | --- |
-| 1 | Playable shell: globe, pins, scoring, curated photos |
-| 2 | Atlas v0: zero-shot baseline + evaluation harness |
-| 3 | Data pipeline: openly licensed geotagged images, concept labels |
-| 4 | Atlas v1: trained geocell classifier + clue heads |
-| 5 | Retrieval refinement, heatmaps, calibrated confidence |
-| 6 | Privacy gate and "Your Photo" mode |
-| 7 | Daily Five, friend rooms, share cards |
-| 8 | Distillation and CPU serving optimization |
-| 9 | Production hardening and observability |
-| 10 | Research write-up and launch |
-
-## Results
-
-No model results yet. Every number that appears here will be produced by the evaluation
-harness in `eval/` and traceable to a committed run.
-
 ## License
 
-MIT — see [LICENSE](LICENSE). Photos used in the game will carry their own licenses and attribution.
+Code: MIT, see [LICENSE](LICENSE). Photos keep their own Creative Commons licenses and are
+credited in the game and in [`data/curation/photos.csv`](data/curation/photos.csv). Country and
+city data: [GeoNames](https://www.geonames.org/) (CC BY 4.0). Coastlines and borders:
+[Natural Earth](https://www.naturalearthdata.com/) (public domain).

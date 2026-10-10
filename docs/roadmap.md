@@ -25,13 +25,14 @@ numbers anywhere. Benchmark results only appear when produced by `eval/` from a 
 
 ## Milestone 2 — Atlas v0 and the evaluation harness
 
-- [ ] Eval: metrics module (accuracy at 1/25/200/750/2500 km, median error, mean game score) built on `whereabout_api.geo`, with tests
-- [ ] Eval: dataset interface + tiny synthetic fixture + `make eval` CLI that writes a JSON results file
-- [ ] Inference service skeleton in `inference/` with a `Predictor` interface and a prior baseline (always guess the most common region) so Atlas can play immediately
-- [ ] API: Atlas plays every round through the inference service; the guess response includes Atlas's guess, distance and score
-- [ ] Web: reveal animation with Atlas's pin, both arcs and both distances
-- [ ] ML: zero-shot CLIP country baseline (open_clip) behind the `Predictor` interface, with a unit test using a stubbed model
-- [ ] **[needs you]** Download Im2GPS3k / YFCC4k test sets and run the first real benchmark
+- [x] Eval: metrics module (accuracy at 1/25/200/750/2500 km, median error with bootstrap CI, mean game score, country accuracy, paired bootstrap between systems) built on `whereabout_api.geo`, with tests
+- [x] ML: hierarchical zero-shot CLIP (country, then city) behind an `Encoder` protocol, with tests using a stub encoder, a country-only ablation and two baselines
+- [x] CI: `atlas.yml` runs Atlas v0 on a GitHub runner, compares two CLIP models, commits `web/src/data/atlas.json` and `eval/results/atlas-v0.{json,md}`
+- [x] Web: reveal animation with Atlas's pin, both arcs, both distances and Atlas's clues
+- [ ] Web: "How Atlas works" page that explains the pipeline with the real results table
+- [ ] API: the guess response includes Atlas's precomputed guess, distance and score, so the API backend plays against Atlas too
+- [ ] Eval: per-continent breakdown and a failure gallery (the photos Atlas missed by most) in the results page
+- [ ] **[needs you]** Download Im2GPS3k / YFCC4k test sets and run the first public benchmark
 
 ## Milestone 3 — Data pipeline
 
@@ -52,3 +53,7 @@ milestone starts.
 ## Waiting on you
 
 (The daily job lists blocked steps here with what it needs.)
+
+- **Turn on GitHub Pages** (Settings → Pages → Source: GitHub Actions). The deploy workflow
+  builds and tests the site on every push and publishes it as soon as Pages is enabled; until
+  then it skips the deploy step.
