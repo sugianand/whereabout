@@ -1,7 +1,7 @@
 {
  "model": "ViT-L-14/openai, country then city",
  "version": "atlas-v0-zeroshot",
- "generatedAt": "2026-10-10T01:01:08+00:00",
+ "generatedAt": "2026-10-10T01:54:15+00:00",
  "guesses": {
   "wm000": {
    "lng": 102.44784,
@@ -33,7 +33,7 @@
     },
     {
      "label": "Temperate",
-     "p": 0.7321
+     "p": 0.7322
     }
    ]
   },
@@ -322,12 +322,12 @@
   "wm022": {
    "lng": -62.21058,
    "lat": 16.79183,
-   "confidence": 0.5198,
+   "confidence": 0.5197,
    "guessedPlace": "Brades, MS",
    "topCountries": [
     {
      "country": "MA",
-     "p": 0.5198
+     "p": 0.5197
     },
     {
      "country": "DZ",
@@ -818,12 +818,12 @@
   "wm051": {
    "lng": -62.72499,
    "lat": 17.2955,
-   "confidence": 0.7931,
+   "confidence": 0.793,
    "guessedPlace": "Basseterre, KN",
    "topCountries": [
     {
      "country": "KN",
-     "p": 0.7931
+     "p": 0.793
     },
     {
      "country": "BQ",
@@ -2738,5 +2738,130 @@
     }
    ]
   }
+ },
+ "evaluation": {
+  "n": 88,
+  "systems": [
+   {
+    "name": "Random city (baseline)",
+    "playsInGame": false,
+    "n": 88,
+    "accuracy_at_km": {
+     "1": 0.0,
+     "25": 0.0,
+     "200": 0.0,
+     "750": 0.0114,
+     "2500": 0.0795
+    },
+    "median_km": 7836.3,
+    "mean_km": 8152.4,
+    "mean_score": 268.3,
+    "country_accuracy": 0.0227,
+    "median_km_ci95": [
+     7080.5,
+     8721.9
+    ]
+   },
+   {
+    "name": "Best constant guess (baseline)",
+    "playsInGame": false,
+    "n": 88,
+    "accuracy_at_km": {
+     "1": 0.0114,
+     "25": 0.0114,
+     "200": 0.0114,
+     "750": 0.0341,
+     "2500": 0.2386
+    },
+    "median_km": 6469.6,
+    "mean_km": 6350.4,
+    "mean_score": 590.9,
+    "country_accuracy": 0.0227,
+    "median_km_ci95": [
+     4467.5,
+     7354.8
+    ]
+   },
+   {
+    "name": "ViT-B-32/laion2b_s34b_b79k, country only",
+    "playsInGame": false,
+    "n": 88,
+    "accuracy_at_km": {
+     "1": 0.0114,
+     "25": 0.0568,
+     "200": 0.125,
+     "750": 0.2841,
+     "2500": 0.4886
+    },
+    "median_km": 2589.9,
+    "mean_km": 4461.6,
+    "mean_score": 1644.7,
+    "country_accuracy": 0.3068,
+    "median_km_ci95": [
+     1833.0,
+     3963.1
+    ]
+   },
+   {
+    "name": "ViT-B-32/laion2b_s34b_b79k, country then city",
+    "playsInGame": false,
+    "n": 88,
+    "accuracy_at_km": {
+     "1": 0.0341,
+     "25": 0.0909,
+     "200": 0.2045,
+     "750": 0.2727,
+     "2500": 0.4886
+    },
+    "median_km": 2592.9,
+    "mean_km": 4612.4,
+    "mean_score": 1739.1,
+    "country_accuracy": 0.2727,
+    "median_km_ci95": [
+     1633.0,
+     4097.7
+    ]
+   },
+   {
+    "name": "ViT-L-14/openai, country only",
+    "playsInGame": false,
+    "n": 88,
+    "accuracy_at_km": {
+     "1": 0.0114,
+     "25": 0.0682,
+     "200": 0.1818,
+     "750": 0.4205,
+     "2500": 0.5795
+    },
+    "median_km": 1156.0,
+    "mean_km": 3489.1,
+    "mean_score": 2148.8,
+    "country_accuracy": 0.4318,
+    "median_km_ci95": [
+     701.0,
+     2822.6
+    ]
+   },
+   {
+    "name": "ViT-L-14/openai, country then city",
+    "playsInGame": true,
+    "n": 88,
+    "accuracy_at_km": {
+     "1": 0.0455,
+     "25": 0.1364,
+     "200": 0.2841,
+     "750": 0.4318,
+     "2500": 0.5795
+    },
+    "median_km": 949.0,
+    "mean_km": 3324.7,
+    "mean_score": 2358.8,
+    "country_accuracy": 0.4205,
+    "median_km_ci95": [
+     648.7,
+     2834.5
+    ]
+   }
+  ]
  }
 }
