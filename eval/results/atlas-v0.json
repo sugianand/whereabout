@@ -1,6 +1,6 @@
 {
   "system": "atlas-v0-zeroshot",
-  "generatedAt": "2026-10-10T01:54:15+00:00",
+  "generatedAt": "2026-10-10T14:26:16+00:00",
   "dataset": "whereabout-curated (data/curation/photos.csv)",
   "n": 88,
   "skipped": {},
@@ -78,6 +78,42 @@
         4097.7
       ]
     },
+    "ViT-B-32/openai, country only": {
+      "n": 88,
+      "accuracy_at_km": {
+        "1": 0.0114,
+        "25": 0.0341,
+        "200": 0.0795,
+        "750": 0.2273,
+        "2500": 0.4545
+      },
+      "median_km": 2936.4,
+      "mean_km": 4880.1,
+      "mean_score": 1519.6,
+      "country_accuracy": 0.2045,
+      "median_km_ci95": [
+        1777.3,
+        4171.2
+      ]
+    },
+    "ViT-B-32/openai, country then city": {
+      "n": 88,
+      "accuracy_at_km": {
+        "1": 0.0341,
+        "25": 0.0568,
+        "200": 0.1023,
+        "750": 0.1932,
+        "2500": 0.4205
+      },
+      "median_km": 3425.7,
+      "mean_km": 4931.7,
+      "mean_score": 1428.1,
+      "country_accuracy": 0.1591,
+      "median_km_ci95": [
+        2047.0,
+        4566.0
+      ]
+    },
     "ViT-L-14/openai, country only": {
       "n": 88,
       "accuracy_at_km": {
@@ -149,6 +185,22 @@
       ]
     },
     {
+      "versus": "ViT-B-32/openai, country only",
+      "median_km_delta": -1987.4,
+      "ci95": [
+        -3224.0,
+        -246.6
+      ]
+    },
+    {
+      "versus": "ViT-B-32/openai, country then city",
+      "median_km_delta": -2476.7,
+      "ci95": [
+        -3589.8,
+        -775.8
+      ]
+    },
+    {
       "versus": "ViT-L-14/openai, country only",
       "median_km_delta": -207.0,
       "ci95": [
@@ -157,5 +209,13 @@
       ]
     }
   ],
-  "table": "| System | n | 25 km | 200 km | 750 km | 2,500 km | Median km (95% CI) | Country | Mean score |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n| Random city (baseline) | 88 | 0.0% | 0.0% | 1.1% | 8.0% | 7,836 (7,081–8,722) | 2.3% | 268 |\n| Best constant guess (baseline) | 88 | 1.1% | 1.1% | 3.4% | 23.9% | 6,470 (4,467–7,355) | 2.3% | 591 |\n| ViT-B-32/laion2b_s34b_b79k, country only | 88 | 5.7% | 12.5% | 28.4% | 48.9% | 2,590 (1,833–3,963) | 30.7% | 1,645 |\n| ViT-B-32/laion2b_s34b_b79k, country then city | 88 | 9.1% | 20.5% | 27.3% | 48.9% | 2,593 (1,633–4,098) | 27.3% | 1,739 |\n| ViT-L-14/openai, country only | 88 | 6.8% | 18.2% | 42.0% | 58.0% | 1,156 (701–2,823) | 43.2% | 2,149 |\n| ViT-L-14/openai, country then city | 88 | 13.6% | 28.4% | 43.2% | 58.0% | 949 (649–2,834) | 42.0% | 2,359 |"
+  "saliency": {
+    "n": 88,
+    "k": 5,
+    "grid": 7,
+    "mean_top_k_drop": 0.5962,
+    "mean_random_k_drop": 0.3079,
+    "share_top_worse": 0.8864
+  },
+  "table": "| System | n | 25 km | 200 km | 750 km | 2,500 km | Median km (95% CI) | Country | Mean score |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n| Random city (baseline) | 88 | 0.0% | 0.0% | 1.1% | 8.0% | 7,836 (7,081–8,722) | 2.3% | 268 |\n| Best constant guess (baseline) | 88 | 1.1% | 1.1% | 3.4% | 23.9% | 6,470 (4,467–7,355) | 2.3% | 591 |\n| ViT-B-32/laion2b_s34b_b79k, country only | 88 | 5.7% | 12.5% | 28.4% | 48.9% | 2,590 (1,833–3,963) | 30.7% | 1,645 |\n| ViT-B-32/laion2b_s34b_b79k, country then city | 88 | 9.1% | 20.5% | 27.3% | 48.9% | 2,593 (1,633–4,098) | 27.3% | 1,739 |\n| ViT-B-32/openai, country only | 88 | 3.4% | 8.0% | 22.7% | 45.5% | 2,936 (1,777–4,171) | 20.5% | 1,520 |\n| ViT-B-32/openai, country then city | 88 | 5.7% | 10.2% | 19.3% | 42.0% | 3,426 (2,047–4,566) | 15.9% | 1,428 |\n| ViT-L-14/openai, country only | 88 | 6.8% | 18.2% | 42.0% | 58.0% | 1,156 (701–2,823) | 43.2% | 2,149 |\n| ViT-L-14/openai, country then city | 88 | 13.6% | 28.4% | 43.2% | 58.0% | 949 (649–2,834) | 42.0% | 2,359 |"
 }
