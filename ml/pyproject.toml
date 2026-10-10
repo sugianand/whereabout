@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "whereabout-ml"
+version = "0.1.0"
+description = "Atlas: the geolocation models behind Whereabout."
+requires-python = ">=3.11"
+dependencies = ["numpy>=1.26", "whereabout-api", "whereabout-eval"]
+
+[project.optional-dependencies]
+# The CLIP encoder is only needed to run the model, not to test the pipeline.
+clip = ["torch>=2.2", "open_clip_torch>=2.24", "pillow>=10"]
+dev = ["pytest>=8", "ruff>=0.5"]
+
+[project.scripts]
+atlas-v0 = "whereabout_ml.run_atlas_v0:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["whereabout_api", "whereabout_eval", "whereabout_ml"]
