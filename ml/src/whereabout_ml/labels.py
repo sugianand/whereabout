@@ -122,3 +122,16 @@ def driving_side_labels(
 ) -> list[DrivingSide | None]:
     """Driving-side label for each point (None where the country or the rule is unknown)."""
     return [driving_side(c) for c in locator.countries(points)]
+
+
+class DrivingSideMap:
+    """The driving side as a `maps.ConceptMap`, so it is labelled alongside climate and land
+    cover by `maps.label_points`."""
+
+    name = "driving_side"
+
+    def __init__(self, locator: CountryLocator) -> None:
+        self.locator = locator
+
+    def labels(self, points: Sequence[LatLon]) -> list[str | None]:
+        return list(driving_side_labels(points, self.locator))
