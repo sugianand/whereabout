@@ -1,0 +1,135 @@
+{
+ "_comment": "Generated from api/src/whereabout_api/geo.py. Both the API and web test suites check against these values so player and Atlas scores mean the same thing everywhere.",
+ "cases": [
+  {
+   "name": "same point",
+   "a": {
+    "lat": 51.5074,
+    "lon": -0.1278
+   },
+   "b": {
+    "lat": 51.5074,
+    "lon": -0.1278
+   },
+   "distance_km": 0.0,
+   "score": 5000
+  },
+  {
+   "name": "London to Paris",
+   "a": {
+    "lat": 51.5074,
+    "lon": -0.1278
+   },
+   "b": {
+    "lat": 48.8566,
+    "lon": 2.3522
+   },
+   "distance_km": 343.556535,
+   "score": 3976
+  },
+  {
+   "name": "New York to Los Angeles",
+   "a": {
+    "lat": 40.7128,
+    "lon": -74.006
+   },
+   "b": {
+    "lat": 34.0522,
+    "lon": -118.2437
+   },
+   "distance_km": 3935.751691,
+   "score": 363
+  },
+  {
+   "name": "across the antimeridian",
+   "a": {
+    "lat": 0,
+    "lon": 179.9
+   },
+   "b": {
+    "lat": 0,
+    "lon": -179.9
+   },
+   "distance_km": 22.239016,
+   "score": 4926
+  },
+  {
+   "name": "antipodes on the equator",
+   "a": {
+    "lat": 0,
+    "lon": 0
+   },
+   "b": {
+    "lat": 0,
+    "lon": 180
+   },
+   "distance_km": 20015.114442,
+   "score": 0
+  },
+  {
+   "name": "pole to pole",
+   "a": {
+    "lat": 90,
+    "lon": 0
+   },
+   "b": {
+    "lat": -90,
+    "lon": 0
+   },
+   "distance_km": 20015.114442,
+   "score": 0
+  },
+  {
+   "name": "Kyoto to Cape Town",
+   "a": {
+    "lat": 35.0116,
+    "lon": 135.7681
+   },
+   "b": {
+    "lat": -33.9249,
+    "lon": 18.4241
+   },
+   "distance_km": 14369.254823,
+   "score": 0
+  },
+  {
+   "name": "Reykjavik to Queenstown",
+   "a": {
+    "lat": 64.1466,
+    "lon": -21.9426
+   },
+   "b": {
+    "lat": -45.0312,
+    "lon": 168.6626
+   },
+   "distance_km": 17789.428538,
+   "score": 0
+  },
+  {
+   "name": "Cusco to Lima",
+   "a": {
+    "lat": -13.532,
+    "lon": -71.9675
+   },
+   "b": {
+    "lat": -12.0464,
+    "lon": -77.0428
+   },
+   "distance_km": 574.579233,
+   "score": 3409
+  },
+  {
+   "name": "a city block",
+   "a": {
+    "lat": 48.8584,
+    "lon": 2.2945
+   },
+   "b": {
+    "lat": 48.8606,
+    "lon": 2.3376
+   },
+   "distance_km": 3.162504,
+   "score": 4989
+  }
+ ]
+}

@@ -83,3 +83,19 @@ class TestScoring:
 def test_thresholds():
     hits = within_thresholds(150)
     assert hits == {1.0: False, 25.0: False, 200.0: True, 750.0: True, 2500.0: True}
+
+
+def test_shared_fixture_matches():
+    """The web app scores with a TypeScript copy of these functions; both check this file."""
+    import json
+    from pathlib import Path
+
+    fixture = Path(__file__).resolve().parents[2] / "data" / "fixtures" / "geo_cases.json"
+    cases = json.loads(fixture.read_text())["cases"]
+    assert len(cases) >= 10
+    for case in cases:
+        a = LatLon(case["a"]["lat"], case["a"]["lon"])
+        b = LatLon(case["b"]["lat"], case["b"]["lon"])
+        d = haversine_km(a, b)
+        assert d == pytest.approx(case["distance_km"], abs=1e-6), case["name"]
+        assert score_distance(d) == case["score"], case["name"]

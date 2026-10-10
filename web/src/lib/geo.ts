@@ -47,6 +47,86 @@ export function formatLngLat(point: LngLat, decimals = 2): string {
   return `${latText}, ${lngText}`;
 }
 
+// Scoring constants. These must match api/src/whereabout_api/geo.py; both test suites check
+// against data/fixtures/geo_cases.json so a distance means the same thing in both places.
+export const EARTH_RADIUS_KM = 6371.0088;
+export const MAX_POINTS = 5000;
+export const SCORE_SCALE_KM = 1500;
+
+const toRad = (deg: number) => (deg * Math.PI) / 180;
+const toDeg = (rad: number) => (rad * 180) / Math.PI;
+
+/** Great-circle distance in kilometres (haversine formula). */
+export function haversineKm(a: LngLat, b: LngLat): number {
+  const phi1 = toRad(a.lat);
+  const phi2 = toRad(b.lat);
+  const dPhi = phi2 - phi1;
+  const dLambda = toRad(b.lng - a.lng);
+  const h =
+    Math.sin(dPhi / 2) ** 2 + Math.cos(phi1) * Math.cos(phi2) * Math.sin(dLambda / 2) ** 2;
+  // Clamp: floating-point drift can push h just past 1 for antipodal points.
+  return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(Math.min(1, Math.max(0, h))));
+}
+
+/** Points for a guess `distanceKm` from the truth: 5000 at 0 km, decaying exponentially. */
+export function scoreDistance(distanceKm: number): number {
+  if (!Number.isFinite(distanceKm) || distanceKm < 0) {
+    throw new RangeError("distance must be a non-negative finite number");
+  }
+  return roundHalfEven(MAX_POINTS * Math.exp(-distanceKm / SCORE_SCALE_KM));
+}
+
+/** Python's round(): halves go to the even neighbour. Keeps scores identical to the API. */
+function roundHalfEven(x: number): number {
+  const floor = Math.floor(x);
+  const diff = x - floor;
+  if (diff > 0.5) return floor + 1;
+  if (diff < 0.5) return floor;
+  return floor % 2 === 0 ? floor : floor + 1;
+}
+
+/**
+ * Points along the shortest path between two locations, for drawing the line between a guess
+ * and the truth. Longitudes are unwrapped (they may run past ±180) so the line crosses the
+ * antimeridian instead of jumping the long way round the map.
+ */
+export function greatCirclePath(a: LngLat, b: LngLat, segments = 64): [number, number][] {
+  const phi1 = toRad(a.lat);
+  const lambda1 = toRad(a.lng);
+  const phi2 = toRad(b.lat);
+  const lambda2 = toRad(b.lng);
+  const delta = haversineKm(a, b) / EARTH_RADIUS_KM;
+  if (delta < 1e-9) return [[a.lng, a.lat], [b.lng, b.lat]];
+
+  const points: [number, number][] = [];
+  let previousLng: number | null = null;
+  for (let i = 0; i <= segments; i++) {
+    const f = i / segments;
+    // Spherical linear interpolation between the two unit vectors.
+    const s1 = Math.sin((1 - f) * delta) / Math.sin(delta);
+    const s2 = Math.sin(f * delta) / Math.sin(delta);
+    const x = s1 * Math.cos(phi1) * Math.cos(lambda1) + s2 * Math.cos(phi2) * Math.cos(lambda2);
+    const y = s1 * Math.cos(phi1) * Math.sin(lambda1) + s2 * Math.cos(phi2) * Math.sin(lambda2);
+    const z = s1 * Math.sin(phi1) + s2 * Math.sin(phi2);
+    const lat = toDeg(Math.atan2(z, Math.hypot(x, y)));
+    let lng = toDeg(Math.atan2(y, x));
+    if (previousLng !== null) {
+      while (lng - previousLng > 180) lng -= 360;
+      while (lng - previousLng < -180) lng += 360;
+    }
+    previousLng = lng;
+    points.push([lng, lat]);
+  }
+  return points;
+}
+
+/** "344 km", "1,240 km", "12 m" — how far off a guess was, for people. */
+export function formatDistance(km: number): string {
+  if (km < 1) return `${Math.round(km * 1000)} m`;
+  if (km < 10) return `${km.toFixed(1)} km`;
+  return `${Math.round(km).toLocaleString("en-US")} km`;
+}
+
 type LineFeature = {
   type: "Feature";
   properties: { kind: "meridian" | "parallel"; degrees: number };
