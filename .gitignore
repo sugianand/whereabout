@@ -20,6 +20,9 @@ data/raw/
 data/processed/
 data/maps/*.tif
 data/maps/worldcover/
+data/maps/koppen_legend.txt
+data/maps/.koppen_archive.zip
+*.part
 *.onnx
 *.pt
 *.safetensors

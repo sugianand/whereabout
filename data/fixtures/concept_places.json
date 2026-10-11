@@ -1,0 +1,18 @@
+{
+  "description": "Places whose climate or land cover is not in doubt. concept-labels reads each one from the real maps before labelling the catalog and stops if any reads outside its accepted labels. Climates follow the Köppen-Geiger classes of Beck et al.; land covers the ESA WorldCover legend.",
+  "places": [
+    {"name": "London (Westminster)", "lat": 51.501, "lon": -0.142, "concept": "climate", "accept": ["Cfb"]},
+    {"name": "Cairo", "lat": 30.044, "lon": 31.236, "concept": "climate", "accept": ["BWh"]},
+    {"name": "Singapore", "lat": 1.352, "lon": 103.82, "concept": "climate", "accept": ["Af"]},
+    {"name": "Moscow", "lat": 55.756, "lon": 37.617, "concept": "climate", "accept": ["Dfb"]},
+    {"name": "Lisbon", "lat": 38.722, "lon": -9.139, "concept": "climate", "accept": ["Csa"]},
+    {"name": "Phoenix", "lat": 33.448, "lon": -112.074, "concept": "climate", "accept": ["BWh"]},
+    {"name": "Darwin", "lat": -12.46, "lon": 130.84, "concept": "climate", "accept": ["Aw"]},
+    {"name": "Summit Camp, Greenland ice sheet", "lat": 72.58, "lon": -38.46, "concept": "climate", "accept": ["EF"]},
+    {"name": "Midtown Manhattan", "lat": 40.7549, "lon": -73.984, "concept": "land_cover", "accept": ["Built-up"]},
+    {"name": "Summit Camp, Greenland ice sheet", "lat": 72.58, "lon": -38.46, "concept": "land_cover", "accept": ["Snow and ice"]},
+    {"name": "Lake Geneva, mid-lake", "lat": 46.45, "lon": 6.55, "concept": "land_cover", "accept": ["Permanent water bodies"]},
+    {"name": "Tanezrouft, Algerian Sahara", "lat": 26.0, "lon": 1.0, "concept": "land_cover", "accept": ["Bare / sparse vegetation"]},
+    {"name": "Amazon Tall Tower Observatory, Brazil", "lat": -2.1459, "lon": -59.0056, "concept": "land_cover", "accept": ["Tree cover"]}
+  ]
+}

@@ -19,6 +19,7 @@ dev = ["pytest>=8", "ruff>=0.5", "rasterio>=1.3"]
 [project.scripts]
 atlas-v0 = "whereabout_ml.run_atlas_v0:main"
 pocket-atlas-index = "whereabout_ml.pocket_index:main"
+concept-labels = "whereabout_ml.concept_labels:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
