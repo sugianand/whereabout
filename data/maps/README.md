@@ -14,6 +14,13 @@ Both are GeoTIFFs in latitude/longitude (EPSG:4326). The reader only opens the s
 around each photo, so the full 1 km climate map never has to fit in memory, and only the
 WorldCover tiles that contain photos need to be downloaded. A missing tile gives no label.
 
+`concept-labels --download` (`ml/src/whereabout_ml/concept_labels.py`) fetches both: it finds
+Beck et al.'s `koppen_geiger_tif.zip` through the figshare API (article 21789074), keeps only
+`1991_2020/koppen_geiger_0p00833333.tif` and the archive's `legend.txt` (saved as
+`koppen_legend.txt`), and pulls each needed WorldCover tile from the public bucket. Before
+labelling anything it checks the legend against `maps.KOPPEN_GEIGER` and reads the places in
+`data/fixtures/concept_places.json` from the real maps; any mismatch stops the run.
+
 ## Legends
 
 - **Köppen-Geiger**: codes 1–30 in the order Af, Am, Aw, BWh, BWk, BSh, BSk, Csa, Csb, Csc,

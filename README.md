@@ -98,7 +98,15 @@ atlas-v0 --catalog data/curation/photos.csv --gazetteer data/geonames \
 
 Concept labels for the clue heads (driving side, climate, land cover) come from open maps by
 coordinates; see [`data/maps/README.md`](data/maps/README.md) for the downloads and
-`python -m pip install -e "ml[maps]"` for the GeoTIFF reader.
+`python -m pip install -e "ml[maps]"` for the GeoTIFF reader. The catalog's labels are made by
+[`.github/workflows/labels.yml`](.github/workflows/labels.yml), which fetches the real maps,
+checks known places against them and commits [`data/labels/`](data/labels/README.md); locally:
+
+```bash
+concept-labels --catalog data/curation/photos.csv --maps-dir data/maps \
+    --known-places data/fixtures/concept_places.json \
+    --out data/labels/concept_labels.csv --download
+```
 
 ## Tests
 
