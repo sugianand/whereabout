@@ -1,0 +1,63 @@
+{
+  "photos": 88,
+  "coverage": {
+    "climate": {
+      "Af": 3,
+      "Am": 5,
+      "Aw": 3,
+      "BSh": 3,
+      "BSk": 5,
+      "BWh": 4,
+      "BWk": 5,
+      "Cfa": 3,
+      "Cfb": 5,
+      "Csa": 3,
+      "Csb": 4,
+      "Cwb": 3,
+      "Dfa": 1,
+      "Dfb": 11,
+      "Dfc": 7,
+      "Dsc": 1,
+      "Dwa": 1,
+      "Dwc": 1,
+      "ET": 6,
+      "unlabelled": 14
+    },
+    "climate_group": {
+      "Arid": 17,
+      "Continental": 22,
+      "Polar": 6,
+      "Temperate": 18,
+      "Tropical": 11,
+      "unlabelled": 14
+    },
+    "land_cover": {
+      "Bare / sparse vegetation": 11,
+      "Built-up": 15,
+      "Grassland": 21,
+      "Moss and lichen": 2,
+      "Permanent water bodies": 14,
+      "Shrubland": 2,
+      "Snow and ice": 1,
+      "Tree cover": 22
+    },
+    "driving_side": {
+      "left": 25,
+      "right": 63
+    }
+  },
+  "known_places_checked": 13,
+  "worldcover_tiles_needed": 96,
+  "worldcover_tiles_absent": [],
+  "sources": {
+    "climate": "Köppen-Geiger 1991-2020, 1 km, Beck et al. (2023), CC BY 4.0",
+    "land_cover": "ESA WorldCover 2021 v200, 10 m, majority within 15x15 px, CC BY 4.0",
+    "driving_side": "catalog country + whereabout_ml.labels.LEFT_HAND_TRAFFIC"
+  },
+  "koppen": {
+    "archive": "koppen_geiger_tif.zip",
+    "figshare_file_id": "61012822",
+    "map_member": "1991_2020/koppen_geiger_0p00833333.tif",
+    "legend_member": "legend.txt"
+  }
+}

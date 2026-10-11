@@ -1,0 +1,89 @@
+id,climate,climate_group,land_cover,driving_side
+wm000,Am,Tropical,Tree cover,right
+wm003,Cfb,Temperate,Built-up,right
+wm004,Dfb,Continental,Permanent water bodies,right
+wm007,Dfc,Continental,Grassland,right
+wm011,Dsc,Continental,Tree cover,right
+wm012,BSh,Arid,Bare / sparse vegetation,right
+wm015,Csa,Temperate,Built-up,left
+wm016,ET,Polar,Grassland,left
+wm018,Cfb,Temperate,Grassland,left
+wm020,,,Tree cover,right
+wm022,BSk,Arid,Tree cover,right
+wm023,Csb,Temperate,Built-up,right
+wm024,Csa,Temperate,Grassland,right
+wm027,Csb,Temperate,Permanent water bodies,right
+wm030,BSk,Arid,Grassland,right
+wm031,,,Bare / sparse vegetation,right
+wm032,Dfb,Continental,Built-up,right
+wm036,Dfc,Continental,Grassland,right
+wm037,Dfc,Continental,Grassland,right
+wm038,Aw,Tropical,Tree cover,left
+wm039,,,Tree cover,left
+wm040,Dfc,Continental,Grassland,right
+wm046,ET,Polar,Grassland,left
+wm048,Am,Tropical,Permanent water bodies,left
+wm049,ET,Polar,Grassland,left
+wm050,BSh,Arid,Bare / sparse vegetation,right
+wm051,Aw,Tropical,Tree cover,left
+wm055,BWk,Arid,Bare / sparse vegetation,right
+wm057,Dfb,Continental,Built-up,right
+wm058,Cfa,Temperate,Built-up,right
+wm062,Dwa,Continental,Built-up,right
+wm063,ET,Polar,Snow and ice,right
+wm066,Cfa,Temperate,Built-up,left
+wm067,,,Permanent water bodies,left
+wm068,Cwb,Temperate,Bare / sparse vegetation,left
+wm069,Dfb,Continental,Tree cover,right
+wm070,Dfb,Continental,Tree cover,right
+wm071,BWk,Arid,Shrubland,right
+wm072,,,Tree cover,right
+wm074,Am,Tropical,Grassland,left
+wm077,Dfb,Continental,Tree cover,right
+wm078,,,Bare / sparse vegetation,right
+wm079,Cfb,Temperate,Permanent water bodies,left
+wm084,,,Permanent water bodies,right
+wm086,Aw,Tropical,Grassland,right
+wm087,Csb,Temperate,Tree cover,left
+wm088,,,Grassland,left
+wm089,Cwb,Temperate,Grassland,right
+wm091,Cfb,Temperate,Grassland,right
+wm092,,,Permanent water bodies,right
+wm093,BWk,Arid,Shrubland,right
+wm094,,,Permanent water bodies,right
+wm097,Csb,Temperate,Grassland,left
+wm101,BSk,Arid,Built-up,right
+wm102,Cfb,Temperate,Tree cover,left
+wm104,Af,Tropical,Tree cover,right
+wm106,BSk,Arid,Grassland,right
+wm107,Cfa,Temperate,Tree cover,right
+wm108,Dfc,Continental,Moss and lichen,right
+wm110,Dfb,Continental,Permanent water bodies,right
+wm111,Dfc,Continental,Tree cover,right
+wm112,ET,Polar,Grassland,right
+wm116,Af,Tropical,Built-up,left
+wm117,BWh,Arid,Bare / sparse vegetation,left
+wm119,BSk,Arid,Built-up,right
+wm122,BSh,Arid,Tree cover,left
+wm124,Af,Tropical,Tree cover,left
+wm126,BWh,Arid,Built-up,right
+wm127,BWh,Arid,Bare / sparse vegetation,right
+wm128,,,Permanent water bodies,right
+wm131,BWk,Arid,Bare / sparse vegetation,right
+wm132,Dfb,Continental,Grassland,right
+wm133,Dfb,Continental,Grassland,right
+wm134,Am,Tropical,Permanent water bodies,left
+wm136,Dfb,Continental,Bare / sparse vegetation,right
+wm139,Csa,Temperate,Permanent water bodies,left
+wm140,Am,Tropical,Tree cover,left
+wm141,Dfa,Continental,Tree cover,right
+wm143,BWk,Arid,Built-up,right
+wm144,Dfb,Continental,Permanent water bodies,right
+wm145,,,Grassland,right
+wm146,Cwb,Temperate,Built-up,right
+wm147,Dwc,Continental,Tree cover,right
+wm150,BWh,Arid,Built-up,right
+wm151,ET,Polar,Moss and lichen,right
+wm154,,,Tree cover,right
+wm157,,,Permanent water bodies,right
+wm158,Dfc,Continental,Bare / sparse vegetation,right
