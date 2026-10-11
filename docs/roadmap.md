@@ -41,7 +41,7 @@ numbers anywhere. Benchmark results only appear when produced by `eval/` from a 
 - [x] Geocells: adaptive cell builder with tests (cells split until each has enough images; a lat/lon quadtree in the spirit of S2, `ml/src/whereabout_ml/geocells.py`)
 - [x] Labels: concept-label derivation from coordinates — driving side by country, with tests (`ml/src/whereabout_ml/labels.py`)
 - [x] Labels: climate-zone and land-cover lookups from raster maps behind one interface, with tests on known coordinates (`ml/src/whereabout_ml/maps.py`, sources in `data/maps/README.md`)
-- [ ] Labels: in CI, download the Köppen-Geiger map and the WorldCover tiles the catalog needs, check known places against the real maps, and commit the catalog's concept labels
+- [x] Labels: in CI, download the Köppen-Geiger map and the WorldCover tiles the catalog needs, check known places against the real maps, and commit the catalog's concept labels (`.github/workflows/labels.yml`, `data/labels/`)
 - [ ] Data: ingestion pipeline for image metadata (license capture, perceptual-hash dedupe) on a small sample
 - [ ] Data: geographic-block train/validation split with a leakage test
 - [ ] **[needs you]** Pull 1–5M openly licensed training images (OSV-5M / MP-16) to storage
