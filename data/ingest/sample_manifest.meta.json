@@ -1,0 +1,23 @@
+{
+  "titles": 88,
+  "kept": 88,
+  "duplicates": 0,
+  "rejected": 0,
+  "rejected_by_reason": {},
+  "licenses": {
+    "CC BY 3.0": 1,
+    "CC BY 4.0": 5,
+    "CC BY-SA 2.5 ca": 1,
+    "CC BY-SA 3.0": 19,
+    "CC BY-SA 4.0": 58,
+    "CC0": 3,
+    "Public domain": 1
+  },
+  "phash": {
+    "bits": 64,
+    "max_distance": 8,
+    "thumb_width": 330
+  },
+  "source": "Wikimedia Commons API (imageinfo + extmetadata)",
+  "catalog_license_mismatches": []
+}
