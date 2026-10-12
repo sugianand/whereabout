@@ -14,12 +14,15 @@ dependencies = ["numpy>=1.26", "whereabout-api", "whereabout-eval"]
 clip = ["torch>=2.2", "open_clip_torch>=2.24", "pillow>=10"]
 # Reading the climate and land-cover GeoTIFFs (whereabout_ml.maps); tests write small ones.
 maps = ["rasterio>=1.3"]
-dev = ["pytest>=8", "ruff>=0.5", "rasterio>=1.3"]
+# Thumbnail hashing in the ingestion pipeline (whereabout_ml.ingest).
+ingest = ["pillow>=10"]
+dev = ["pytest>=8", "ruff>=0.5", "rasterio>=1.3", "pillow>=10"]
 
 [project.scripts]
 atlas-v0 = "whereabout_ml.run_atlas_v0:main"
 pocket-atlas-index = "whereabout_ml.pocket_index:main"
 concept-labels = "whereabout_ml.concept_labels:main"
+ingest-commons = "whereabout_ml.ingest:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
