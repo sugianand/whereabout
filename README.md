@@ -108,6 +108,16 @@ concept-labels --catalog data/curation/photos.csv --maps-dir data/maps \
     --out data/labels/concept_labels.csv --download
 ```
 
+Training images come through an ingestion pipeline that captures each Commons file's license
+and author from the Commons API, rejects anything outside CC0 / public domain / CC BY /
+CC BY-SA, and flags near-duplicates with a 64-bit perceptual hash.
+[`.github/workflows/ingest.yml`](.github/workflows/ingest.yml) runs it on the catalog's files
+and commits [`data/ingest/`](data/ingest/README.md); locally (`ml[ingest]`):
+
+```bash
+ingest-commons --catalog data/curation/photos.csv --out-dir data/ingest --name sample
+```
+
 ## Tests
 
 Every push runs the Python suites, the web unit tests, a production build, a type-check, a
