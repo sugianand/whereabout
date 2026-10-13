@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import atlasData from "@/data/atlas.json";
 import catalog from "@/data/photos.json";
+import sceneGate from "@/data/scene_gate.json";
 import { niceMax } from "@/components/ContinentChart";
 import type { AtlasData, CatalogPhoto } from "@/lib/game/types";
 
@@ -62,7 +63,10 @@ describe("How Atlas guesses", () => {
 
   it("links back to the game", () => {
     render(<AtlasPage />);
-    expect(screen.getByRole("link", { name: "Play today's five" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Play today's five" })).toHaveAttribute(
+      "href",
+      "/?daily",
+    );
   });
 });
 
@@ -83,5 +87,20 @@ describe("systemLabel", () => {
     );
     expect(systemLabel("Random city (baseline)")).toBe("Random city");
     expect(systemLabel(POCKET_SYSTEM)).toBe("CLIP ViT-B/32 (OpenAI), country then city");
+  });
+});
+
+describe("Choosing the photos", () => {
+  it("shows the photo screen's real counts and the images it turned away", () => {
+    render(<AtlasPage />);
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Choosing the photos" }),
+    ).toBeInTheDocument();
+    const table = screen.getByRole("table", { name: /photo screen catches/ });
+    const people = within(table).getByRole("row", { name: /People in the shot/ });
+    const { n, caught_for_label } = sceneGate.rejects.people;
+    expect(within(people).getAllByRole("cell")[0]).toHaveTextContent(`${caught_for_label} of ${n}`);
+    const gallery = screen.getByRole("list", { name: "Images the screen turned away" });
+    expect(within(gallery).getAllByRole("listitem")).toHaveLength(sceneGate.examples.length);
   });
 });

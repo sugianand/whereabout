@@ -12,6 +12,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "catalog": "node scripts/build-catalog.mjs",
+    "scene-gate": "node scripts/build-scene-gate.mjs",
     "e2e": "playwright test"
   },
   "dependencies": {

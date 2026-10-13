@@ -5,6 +5,7 @@ import ContinentChart from "@/components/ContinentChart";
 import GuessGallery from "@/components/GuessGallery";
 import atlasData from "@/data/atlas.json";
 import catalog from "@/data/photos.json";
+import sceneGateData from "@/data/scene_gate.json";
 import { POCKET_SYSTEM, systemLabel } from "@/lib/atlas";
 import { byContinent, extremes, scoreGuesses } from "@/lib/atlasReport";
 import type { AtlasData, AtlasSystemResult, CatalogPhoto } from "@/lib/game/types";
@@ -24,6 +25,25 @@ const continents = byContinent(scored);
 const { best, worst } = extremes(scored, 3);
 const saliency = atlas.evaluation?.saliency;
 const pctWhole = (x: number) => `${Math.round(x * 100)}%`;
+
+type GateReason = "people" | "indoor" | "text" | "not_photo";
+type SceneGate = {
+  catalog: { n: number; passed: number };
+  rejects: Record<GateReason, { n: number; caught: number; caught_for_label: number }>;
+  examples: {
+    reason: GateReason;
+    title: string;
+    imageUrl: string;
+    credit: { author: string; license: string; sourceUrl: string };
+  }[];
+};
+const gate = sceneGateData as SceneGate;
+const GATE_REASONS: { key: GateReason; label: string }[] = [
+  { key: "people", label: "People in the shot" },
+  { key: "text", label: "Text that names the place" },
+  { key: "indoor", label: "Indoor scenes" },
+  { key: "not_photo", label: "Not a photo (maps, art, screenshots)" },
+];
 
 const pct = (x: number | null | undefined) =>
   x === null || x === undefined ? "–" : `${(x * 100).toFixed(1)}%`;
@@ -248,6 +268,92 @@ export default function AtlasPage() {
         </>
       )}
 
+      <h2 className="mt-16 font-sign text-4xl font-bold">Choosing the photos</h2>
+      <p className="mt-4 text-chalk-dim">
+        A good round needs an outdoor photo of a place, with no faces and no sign that simply names
+        the town. To grow the game past hand-picked photos, CLIP screens each candidate first: it
+        scores how much a picture looks like people, an interior, readable text or not-a-photo at
+        all, and turns it away if any score is too high. The bar is set so the hand-reviewed game
+        photos get through ({gate.catalog.passed} of {gate.catalog.n} do), then tested on images
+        that should be turned away.
+      </p>
+      <div className="mt-6 overflow-x-auto rounded-xl border border-graticule/70">
+        <table className="w-full text-left text-sm">
+          <caption className="sr-only">How many unwanted images the photo screen catches</caption>
+          <thead className="bg-ocean-deep text-chalk-dim">
+            <tr>
+              <th scope="col" className="px-4 py-3 font-normal">
+                Should be turned away for
+              </th>
+              <th scope="col" className="px-4 py-3 text-right font-normal">
+                Caught for that reason
+              </th>
+              <th scope="col" className="px-4 py-3 text-right font-normal">
+                Caught for any reason
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-graticule/50">
+            {GATE_REASONS.map(({ key, label }) => {
+              const r = gate.rejects[key];
+              return (
+                <tr key={key}>
+                  <th scope="row" className="px-4 py-3 font-normal">
+                    {label}
+                  </th>
+                  <td className="tabular px-4 py-3 text-right">
+                    {r.caught_for_label} of {r.n}
+                  </td>
+                  <td className="tabular px-4 py-3 text-right">
+                    {r.caught} of {r.n}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-3 text-sm text-chalk-dim">
+        The test images come from Wikimedia Commons categories, not from a person checking each one,
+        so a few may be labelled wrong. The screen is good at people and text already; indoor scenes
+        and non-photos still slip past it, and that is the next thing to fix.
+      </p>
+      {gate.examples.length > 0 && (
+        <ul
+          className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4"
+          aria-label="Images the screen turned away"
+        >
+          {gate.examples.map((e) => (
+            <li
+              key={e.imageUrl}
+              className="overflow-hidden rounded-xl border border-graticule/70 bg-ocean-deep"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element -- static export, remote Commons thumbnails */}
+              <img
+                src={e.imageUrl}
+                alt={e.title}
+                loading="lazy"
+                className="aspect-[4/3] w-full object-cover"
+              />
+              <div className="p-3 text-xs">
+                <p className="font-semibold text-flare">
+                  Turned away: {GATE_REASONS.find((g) => g.key === e.reason)?.label.toLowerCase()}
+                </p>
+                <p className="mt-1 text-chalk-dim">
+                  <a
+                    className="underline underline-offset-2 hover:text-chalk"
+                    href={e.credit.sourceUrl}
+                  >
+                    {e.credit.author}
+                  </a>
+                  , {e.credit.license}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
       <h2 className="mt-16 font-sign text-4xl font-bold">Read these numbers carefully</h2>
       <ul className="mt-4 list-disc space-y-3 pl-5 text-chalk-dim">
         <li>The test set is small, so the ranges are wide.</li>
@@ -264,7 +370,7 @@ export default function AtlasPage() {
 
       <div className="mt-16 flex flex-wrap items-center gap-6">
         <Link
-          href="/"
+          href="/?daily"
           className="rounded-full bg-flare px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
         >
           Play today&apos;s five

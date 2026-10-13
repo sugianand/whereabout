@@ -48,7 +48,7 @@ should show the model at work. These steps come before the rest of Milestone 3.
 - [ ] Data: Commons harvester in CI, geotagged quality images across landscape and street categories, grid-balanced, run through `ingest.py` (license capture, dedupe against the catalog) and the scene gate, place and country from the GeoNames gazetteer; grow `photos.csv` to about 1,000 and record pass/reject counts per reason
 - [ ] CI + Web: Atlas runs on the larger catalog within runner limits; the site loads photos and Atlas's guesses in chunks so the bundle stays small
 - [ ] Web: "Atlas's thinking" at the reveal, a probability heatmap over the globe and Atlas's top five countries with confidences (atlas.json carries the distribution)
-- [ ] Web: "How Atlas works" gets an AI-curation section with the gate's real pass/reject counts and example rejects
+- [x] Web: "How Atlas works" gets an AI-curation section with the gate's real pass/reject counts and example rejects ("Choosing the photos", from `web/src/data/scene_gate.json`, rebuilt by `scene_gate.yml`)
 - [x] Web: Pocket Atlas on the home page, "Try Atlas on your photo" (CLIP in the browser) as a first-screen card in the game header, one line on phones so the photo stays the hero
 - [ ] ML: retrieval refinement, kNN over CLIP embeddings of geotagged reference photos (harvested, never game photos), compared with Atlas v0 by the paired bootstrap in `eval/`; ships only if it wins
 
