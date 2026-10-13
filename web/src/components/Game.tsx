@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 
 import atlasData from "@/data/atlas.json";
@@ -218,6 +219,36 @@ export default function Game({ apiUrl, start, today, backendFor }: GameProps) {
             >
               {mode.kind === "daily" ? "New random game" : "Play the Daily Five"}
             </button>
+          )}
+          {state.phase !== "revealed" && (
+            <Link
+              href="/you"
+              className="wb-try-atlas mt-2 flex max-w-60 items-center gap-2 rounded-full md:mt-3 md:gap-2.5 md:rounded-2xl border border-sonar/40 bg-ocean-deep/70 py-1 pl-1 pr-3 backdrop-blur transition hover:border-sonar md:px-3 md:py-2"
+            >
+              <span
+                aria-hidden="true"
+                className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-sonar/15 md:h-7 md:w-7 text-sonar"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M4 8h3l2-3h6l2 3h3v11H4z" strokeLinejoin="round" />
+                  <circle cx="12" cy="13" r="3.5" />
+                </svg>
+              </span>
+              <span className="text-left leading-tight">
+                <span className="block text-xs font-semibold text-sonar">
+                  Try Atlas on your photo
+                </span>
+                <span className="hidden text-[11px] text-chalk-dim md:block">
+                  Runs in your browser, stays private
+                </span>
+              </span>
+            </Link>
           )}
         </div>
         <div className="pointer-events-auto text-right">

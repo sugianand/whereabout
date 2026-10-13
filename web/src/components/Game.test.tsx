@@ -52,6 +52,15 @@ describe("Game", { timeout: 20000 }, () => {
     expect(modeTitle({ kind: "fresh", game: 2 })).toBe("Fresh game");
   });
 
+  it("offers Pocket Atlas from the first screen, and hides it during the reveal", async () => {
+    render(<Game start="daily" today={TODAY} />);
+    const map = await mapReady();
+    const card = await screen.findByRole("link", { name: /Try Atlas on your photo/ });
+    expect(card).toHaveAttribute("href", "/you");
+    await playRound(map, daily[0]);
+    expect(screen.queryByRole("link", { name: /Try Atlas on your photo/ })).toBeNull();
+  });
+
   it("needs a pin before the player can guess", async () => {
     render(<Game start="daily" today={TODAY} />);
     await mapReady();
