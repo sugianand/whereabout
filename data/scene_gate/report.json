@@ -1,0 +1,44 @@
+{
+  "thresholds": {
+    "people": 0.999,
+    "indoor": 1.0,
+    "text": 0.891,
+    "not_photo": 1.0
+  },
+  "catalog": {
+    "n": 88,
+    "passed": 88,
+    "rejected_by": {
+      "people": 0,
+      "indoor": 0,
+      "text": 0,
+      "not_photo": 0
+    }
+  },
+  "rejects": {
+    "people": {
+      "n": 12,
+      "caught": 10,
+      "caught_for_label": 10
+    },
+    "indoor": {
+      "n": 12,
+      "caught": 4,
+      "caught_for_label": 0
+    },
+    "text": {
+      "n": 12,
+      "caught": 12,
+      "caught_for_label": 12
+    },
+    "not_photo": {
+      "n": 12,
+      "caught": 7,
+      "caught_for_label": 0
+    }
+  },
+  "skipped": {
+    "catalog": 0,
+    "rejects": 0
+  }
+}
