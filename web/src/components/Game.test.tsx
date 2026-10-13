@@ -5,6 +5,7 @@ import atlasData from "@/data/atlas.json";
 import catalog from "@/data/photos.json";
 import { LocalBackend } from "@/lib/game/backends";
 import { pickDaily } from "@/lib/game/daily";
+import { RECENT_KEY } from "@/lib/game/fresh";
 import { ROUNDS_PER_GAME } from "@/lib/game/state";
 import type { AtlasData, CatalogPhoto, GameBackend } from "@/lib/game/types";
 import { FakeMap, resetFakes } from "@/test/maplibre-mock";
@@ -18,6 +19,8 @@ const daily = pickDaily(catalog as CatalogPhoto[], "2026-10-09", ROUNDS_PER_GAME
 
 beforeEach(() => {
   resetFakes();
+  localStorage.clear();
+  window.history.replaceState(null, "", "/");
   // Reduced motion: the reveal and count-ups jump straight to their final values.
   window.matchMedia = vi.fn().mockReturnValue({ matches: true }) as typeof window.matchMedia;
 });
@@ -46,11 +49,11 @@ async function playRound(map: FakeMap, at: { lng: number; lat: number }) {
 describe("Game", { timeout: 20000 }, () => {
   it("titles the game with today's date", () => {
     expect(modeTitle({ kind: "daily", day: "2026-10-09" })).toBe("Daily Five, October 9");
-    expect(modeTitle({ kind: "practice", game: 2 })).toBe("Practice game");
+    expect(modeTitle({ kind: "fresh", game: 2 })).toBe("Fresh game");
   });
 
   it("needs a pin before the player can guess", async () => {
-    render(<Game today={TODAY} />);
+    render(<Game start="daily" today={TODAY} />);
     await mapReady();
     await screen.findByRole("button", { name: "Zoom in on the photo" });
     expect(screen.getByRole("button", { name: "Place your pin on the globe" })).toBeDisabled();
@@ -58,7 +61,7 @@ describe("Game", { timeout: 20000 }, () => {
   });
 
   it("shows today's first photo, and reveals the place, distance and credit after a guess", async () => {
-    render(<Game today={TODAY} />);
+    render(<Game start="daily" today={TODAY} />);
     const map = await mapReady();
     const first = daily[0];
 
@@ -85,7 +88,7 @@ describe("Game", { timeout: 20000 }, () => {
   });
 
   it("plays five rounds and ends on a summary with every place", async () => {
-    render(<Game today={TODAY} />);
+    render(<Game start="daily" today={TODAY} />);
     const map = await mapReady();
 
     for (let i = 0; i < ROUNDS_PER_GAME; i++) {
@@ -110,7 +113,7 @@ describe("Game", { timeout: 20000 }, () => {
         guess: () => Promise.reject(new Error("The game server answered 503. Try again.")),
       };
     };
-    render(<Game today={TODAY} backendFor={failing} />);
+    render(<Game start="daily" today={TODAY} backendFor={failing} />);
     const map = await mapReady();
     await screen.findByRole("button", { name: "Zoom in on the photo" });
     act(() => map.click(10, 10));
@@ -119,15 +122,72 @@ describe("Game", { timeout: 20000 }, () => {
     expect(screen.getByRole("button", { name: "Guess here" })).toBeEnabled();
   });
 
-  it("starts a different practice game after the daily one", async () => {
+  it("opens on a fresh game by default and remembers the photos it dealt", async () => {
+    render(<Game />);
+    await mapReady();
+    expect(await screen.findByText("Fresh game", {}, WAIT)).toBeInTheDocument();
+    const src = (await screen.findByRole("img")).getAttribute("src");
+    const recent = JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]") as string[];
+    expect(recent).toHaveLength(ROUNDS_PER_GAME);
+    const byId = new Map((catalog as CatalogPhoto[]).map((p) => [p.id, p]));
+    expect(recent.map((id) => byId.get(id)!.imageUrl)).toContain(src);
+    expect(window.location.search).toBe("");
+  });
+
+  it("never deals a photo the browser played in the last game", async () => {
+    const first = render(<Game />);
+    await mapReady();
+    await screen.findByText("Fresh game", {}, WAIT);
+    const before = JSON.parse(localStorage.getItem(RECENT_KEY)!) as string[];
+    first.unmount();
+
+    render(<Game />);
+    await mapReady();
+    await screen.findByText("Fresh game", {}, WAIT);
+    const after = JSON.parse(localStorage.getItem(RECENT_KEY)!) as string[];
+    const dealt = after.slice(-ROUNDS_PER_GAME);
+    expect(after).toHaveLength(2 * ROUNDS_PER_GAME);
+    for (const id of dealt) expect(before).not.toContain(id);
+  });
+
+  it("opens the Daily Five from ?daily, and the header button switches modes", async () => {
+    window.history.replaceState(null, "", "/?daily");
     render(<Game today={TODAY} />);
+    await mapReady();
+    expect(await screen.findByText("Daily Five, October 9", {}, WAIT)).toBeInTheDocument();
+    expect(await screen.findByRole("img")).toHaveAttribute("src", daily[0].imageUrl);
+
+    fireEvent.click(screen.getByRole("button", { name: "New random game" }));
+    expect(await screen.findByText("Fresh game", {}, WAIT)).toBeInTheDocument();
+    await waitFor(() => expect(window.location.search).toBe(""));
+
+    fireEvent.click(screen.getByRole("button", { name: "Play the Daily Five" }));
+    expect(await screen.findByText("Daily Five, October 9", {}, WAIT)).toBeInTheDocument();
+    await waitFor(() => expect(window.location.search).toBe("?daily"));
+    expect(screen.getByText("Round 1 of 5")).toBeInTheDocument();
+  });
+
+  it("offers a fresh game after the Daily Five, and the Daily Five after a fresh game", async () => {
+    render(<Game start="daily" today={TODAY} />);
     const map = await mapReady();
     for (let i = 0; i < ROUNDS_PER_GAME; i++) {
       const card = await playRound(map, { lng: 0, lat: 0 });
       fireEvent.click(within(card).getAllByRole("button")[0]);
     }
-    fireEvent.click(await screen.findByRole("button", { name: "Play a practice game" }, WAIT));
-    expect(await screen.findByText("Practice game", {}, WAIT)).toBeInTheDocument();
+    await screen.findByRole("button", { name: "Play a fresh game" }, WAIT);
+    expect(screen.queryByRole("button", { name: "Play the Daily Five" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Play a fresh game" }));
+    expect(await screen.findByText("Fresh game", {}, WAIT)).toBeInTheDocument();
     expect(screen.getByText("Round 1 of 5")).toBeInTheDocument();
+
+    // The summary unmounted the globe, so the second game plays on a new map.
+    const second = await mapReady();
+    expect(second).not.toBe(map);
+    for (let i = 0; i < ROUNDS_PER_GAME; i++) {
+      const card = await playRound(second, { lng: 0, lat: 0 });
+      fireEvent.click(within(card).getAllByRole("button")[0]);
+    }
+    fireEvent.click(await screen.findByRole("button", { name: "Play the Daily Five" }, WAIT));
+    expect(await screen.findByText("Daily Five, October 9", {}, WAIT)).toBeInTheDocument();
   });
 });

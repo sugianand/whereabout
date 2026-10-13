@@ -5,7 +5,8 @@ import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import atlasData from "@/data/atlas.json";
 import catalog from "@/data/photos.json";
 import { ApiBackend, LocalBackend } from "@/lib/game/backends";
-import { dayKey, pickDaily, pickRandom } from "@/lib/game/daily";
+import { dayKey, pickDaily } from "@/lib/game/daily";
+import { loadRecent, pickFresh, rememberPlayed, saveRecent } from "@/lib/game/fresh";
 import { ROUNDS_PER_GAME, gameReducer, initialState, totals } from "@/lib/game/state";
 import type { AtlasData, CatalogPhoto, GameBackend } from "@/lib/game/types";
 import { formatPoints, type LngLat } from "@/lib/geo";
@@ -19,10 +20,11 @@ import Summary from "./Summary";
 const photos = catalog as CatalogPhoto[];
 const atlas = atlasData as AtlasData;
 
-export type GameMode = { kind: "daily"; day: string } | { kind: "practice"; game: number };
+/** A fresh game is five photos the player hasn't seen lately; the Daily Five is shared by all. */
+export type GameMode = { kind: "daily"; day: string } | { kind: "fresh"; game: number };
 
 export function modeTitle(mode: GameMode): string {
-  if (mode.kind === "practice") return "Practice game";
+  if (mode.kind === "fresh") return "Fresh game";
   const label = new Date(`${mode.day}T12:00:00Z`).toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
@@ -34,31 +36,72 @@ export function modeTitle(mode: GameMode): string {
 type GameProps = {
   /** Base URL of the FastAPI backend. Without one, rounds are played from the bundled catalog. */
   apiUrl?: string;
+  /** Which game a visit opens on. Defaults to `?daily` in the URL, otherwise a fresh game. */
+  start?: GameMode["kind"];
   /** For tests: the date that decides the Daily Five. Defaults to now, read in the browser. */
   today?: Date;
   /** For tests: supply the backend directly. */
   backendFor?: (photos: CatalogPhoto[]) => GameBackend;
 };
 
-export default function Game({ apiUrl, today, backendFor }: GameProps) {
-  // The day is read in the browser after hydration, so a static page built yesterday still
-  // serves today's Daily Five.
-  const [mode, setMode] = useState<GameMode | null>(
-    today ? { kind: "daily", day: dayKey(today) } : null,
-  );
+/** True when the page URL asks for the Daily Five (`?daily`). */
+function urlWantsDaily(): boolean {
+  return new URLSearchParams(window.location.search).has("daily");
+}
+
+/** Keep the address bar in step with the mode, so a shared link opens the same kind of game. */
+function syncUrl(kind: GameMode["kind"]) {
+  const url = new URL(window.location.href);
+  if (kind === "daily") url.searchParams.set("daily", "");
+  else url.searchParams.delete("daily");
+  const next = `${url.pathname}${url.search.replace(/daily=(?=&|$)/, "daily")}${url.hash}`;
+  if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
+    window.history.replaceState(window.history.state, "", next);
+  }
+}
+
+export default function Game({ apiUrl, start, today, backendFor }: GameProps) {
+  // The mode is decided in the browser after hydration: the URL, today's date and the photos
+  // this browser played recently are all unknown when the static page is built.
+  const [mode, setMode] = useState<GameMode | null>(null);
   const [state, dispatch] = useReducer(gameReducer, initialState);
 
   useEffect(() => {
     if (mode) return;
-    const id = requestAnimationFrame(() => setMode({ kind: "daily", day: dayKey(new Date()) }));
+    const id = requestAnimationFrame(() => {
+      const kind = start ?? (urlWantsDaily() ? "daily" : "fresh");
+      setMode(
+        kind === "daily"
+          ? { kind: "daily", day: dayKey(today ?? new Date()) }
+          : { kind: "fresh", game: 1 },
+      );
+    });
     return () => cancelAnimationFrame(id);
-  }, [mode]);
+  }, [mode, start, today]);
 
+  // Each fresh game is drawn once per mode change and avoids the photos played lately.
   const gamePhotos = useMemo(() => {
     if (!mode) return [];
     return mode.kind === "daily"
       ? pickDaily(photos, mode.day, ROUNDS_PER_GAME)
-      : pickRandom(photos, ROUNDS_PER_GAME);
+      : pickFresh(photos, loadRecent(), ROUNDS_PER_GAME);
+  }, [mode]);
+
+  // Remember what was dealt, so the next visit or fresh game opens on other photos.
+  useEffect(() => {
+    if (gamePhotos.length === 0) return;
+    const limit = Math.max(0, photos.length - ROUNDS_PER_GAME);
+    saveRecent(
+      rememberPlayed(
+        loadRecent(),
+        gamePhotos.map((p) => p.id),
+        limit,
+      ),
+    );
+  }, [gamePhotos]);
+
+  useEffect(() => {
+    if (mode) syncUrl(mode.kind);
   }, [mode]);
 
   const backend = useMemo<GameBackend | null>(() => {
@@ -103,8 +146,13 @@ export default function Game({ apiUrl, today, backendFor }: GameProps) {
     }
   }
 
-  function playAgain() {
-    setMode((m) => ({ kind: "practice", game: m?.kind === "practice" ? m.game + 1 : 1 }));
+  function playFresh() {
+    setMode((m) => ({ kind: "fresh", game: m?.kind === "fresh" ? m.game + 1 : 1 }));
+    dispatch({ type: "restart" });
+  }
+
+  function playDaily() {
+    setMode({ kind: "daily", day: dayKey(today ?? new Date()) });
     dispatch({ type: "restart" });
   }
 
@@ -119,7 +167,14 @@ export default function Game({ apiUrl, today, backendFor }: GameProps) {
   }, [state]);
 
   if (state.phase === "finished") {
-    return <Summary results={state.results} title={title} onPlayAgain={playAgain} />;
+    return (
+      <Summary
+        results={state.results}
+        title={title}
+        onPlayAgain={playFresh}
+        onPlayDaily={mode?.kind === "daily" ? undefined : playDaily}
+      />
+    );
   }
 
   const round =
@@ -155,6 +210,15 @@ export default function Game({ apiUrl, today, backendFor }: GameProps) {
             Whereabout
           </p>
           <p className="mt-1 text-sm text-chalk-dim">{title}</p>
+          {mode && (
+            <button
+              type="button"
+              onClick={mode.kind === "daily" ? playFresh : playDaily}
+              className="mt-2 rounded-full border border-chalk/30 bg-ocean-deep/60 px-3 py-1 text-xs font-semibold backdrop-blur transition hover:border-chalk"
+            >
+              {mode.kind === "daily" ? "New random game" : "Play the Daily Five"}
+            </button>
+          )}
         </div>
         <div className="pointer-events-auto text-right">
           <ol className="flex justify-end gap-1.5" aria-hidden="true">

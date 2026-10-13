@@ -9,9 +9,12 @@ import { useCountUp } from "@/lib/useCountUp";
 
 type SummaryProps = {
   results: RoundResult[];
-  /** "Daily Five, October 9" or "Practice game". */
+  /** "Daily Five, October 9" or "Fresh game". */
   title: string;
+  /** Deal a fresh game of photos the player hasn't seen lately. */
   onPlayAgain: () => void;
+  /** Switch to today's Daily Five; omitted when the finished game was the Daily Five. */
+  onPlayDaily?: () => void;
 };
 
 /** One square per round, so a result can be pasted into a chat without spoilers. */
@@ -36,7 +39,7 @@ export function shareText(title: string, results: readonly RoundResult[], url: s
   return lines.join("\n");
 }
 
-export default function Summary({ results, title, onPlayAgain }: SummaryProps) {
+export default function Summary({ results, title, onPlayAgain, onPlayDaily }: SummaryProps) {
   const t = totals(results);
   const shown = useCountUp(t.player, 1400);
   const [shared, setShared] = useState<"idle" | "copied" | "failed">("idle");
@@ -123,8 +126,17 @@ export default function Summary({ results, title, onPlayAgain }: SummaryProps) {
           onClick={onPlayAgain}
           className="rounded-full border border-chalk/40 px-6 py-3 font-semibold transition hover:border-chalk"
         >
-          Play a practice game
+          Play a fresh game
         </button>
+        {onPlayDaily && (
+          <button
+            type="button"
+            onClick={onPlayDaily}
+            className="rounded-full border border-sonar/50 px-6 py-3 font-semibold text-sonar transition hover:border-sonar"
+          >
+            Play the Daily Five
+          </button>
+        )}
         <p role="status" className="text-sm text-chalk-dim">
           {shared === "copied" && "Result copied. Paste it anywhere."}
           {shared === "failed" && "Couldn't copy. Your browser blocked the clipboard."}
@@ -145,7 +157,8 @@ export default function Summary({ results, title, onPlayAgain }: SummaryProps) {
       </Link>
 
       <p className="mt-12 text-sm text-chalk-dim">
-        A new Daily Five arrives at midnight UTC. Photos from Wikimedia Commons, credited after each
+        Every game deals photos you haven&apos;t played lately. The Daily Five is the same for
+        everyone and changes at midnight UTC. Photos from Wikimedia Commons, credited after each
         round.
       </p>
     </main>
