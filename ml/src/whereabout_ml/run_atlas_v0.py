@@ -52,6 +52,9 @@ from whereabout_ml.zeroshot import Guess, ZeroShotGeolocator
 VERSION = "atlas-v0-zeroshot"
 # Countries each guess reports for the reveal's shortlist (the city step still searches 3).
 REVEAL_TOP_COUNTRIES = 5
+# The heatmap keeps every country at or above this probability, rounded to BELIEF_DECIMALS.
+BELIEF_MIN_P = 0.005
+BELIEF_DECIMALS = 3
 USER_AGENT = "WhereaboutBot/0.1 (https://github.com/sugianand/whereabout; research demo)"
 
 
@@ -135,7 +138,33 @@ def predictions_from_points(photos: Sequence[Photo], points) -> list[Prediction]
     ]
 
 
-def guess_to_json(g: Guess, looked: Saliency | None = None) -> dict:
+def belief_from_probabilities(
+    codes: Sequence[str], probabilities: Sequence[float], min_p: float = BELIEF_MIN_P
+) -> dict[str, float]:
+    """Compact country distribution for the reveal heatmap: {ISO alpha-2: p}, largest first.
+
+    Countries below `min_p` are dropped and the rest rounded to 3 decimals, so a photo costs
+    a few hundred bytes. The values need not sum to 1 (the tail is left out).
+    """
+    kept = [(c, float(p)) for c, p in zip(codes, probabilities, strict=True) if p >= min_p]
+    kept.sort(key=lambda cp: -cp[1])
+    return {c: round(p, BELIEF_DECIMALS) for c, p in kept}
+
+
+def beliefs_for(
+    photos: Sequence[Photo], embeddings: Sequence[np.ndarray], locator: ZeroShotGeolocator
+) -> dict[str, dict[str, float]]:
+    """Photo id → country distribution, from the same embeddings the guesses came from."""
+    codes = [c.code for c in locator.gazetteer.countries]
+    return {
+        p.id: belief_from_probabilities(codes, locator.country_probabilities(e))
+        for p, e in zip(photos, embeddings, strict=True)
+    }
+
+
+def guess_to_json(
+    g: Guess, looked: Saliency | None = None, belief: dict[str, float] | None = None
+) -> dict:
     """The shape web/src/lib/game/types.ts expects for an AtlasGuess (lng/lat, like GeoJSON)."""
     out = {
         "lng": round(g.lon, 5),
@@ -145,6 +174,8 @@ def guess_to_json(g: Guess, looked: Saliency | None = None) -> dict:
         "topCountries": [{"country": c, "p": round(p, 4)} for c, p in g.top_countries],
         "clues": [{"label": c.label, "p": round(c.p, 4)} for c in g.clues],
     }
+    if belief:
+        out["belief"] = belief
     if looked is not None:
         out["looked"] = {
             "grid": looked.grid,
@@ -234,12 +265,15 @@ def build_outputs(
     now: str | None = None,
     skipped: dict[str, str] | None = None,
     saliency: dict[str, Saliency] | None = None,
+    beliefs: dict[str, dict[str, float]] | None = None,
 ):
     """Atlas's guesses for the game, plus a JSON report and a Markdown results page.
 
-    `saliency` (photo id → where the playing system looked) is attached to its guesses.
+    `saliency` (photo id → where the playing system looked) and `beliefs` (photo id → country
+    distribution, see `belief_from_probabilities`) are attached to its guesses.
     """
     saliency = saliency or {}
+    beliefs = beliefs or {}
     now = now or datetime.now(UTC).replace(microsecond=0).isoformat()
     for s in systems:
         s.report = evaluate(s.predictions)
@@ -251,7 +285,7 @@ def build_outputs(
         "version": VERSION,
         "generatedAt": now,
         "guesses": {
-            p.id: guess_to_json(g, saliency.get(p.id))
+            p.id: guess_to_json(g, saliency.get(p.id), beliefs.get(p.id))
             for p, g in zip(photos, best.guesses, strict=True)
         },
     }
@@ -419,7 +453,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             predictions_from_points(photos, constant_guesses(photos)),
         ),
     ]
-    handles: dict[str, tuple[ClipEncoder, ZeroShotGeolocator]] = {}
+    handles: dict[str, tuple[ClipEncoder, ZeroShotGeolocator, list[np.ndarray]]] = {}
     for name, pretrained in models:
         started = time.perf_counter()
         encoder = ClipEncoder(name, pretrained)
@@ -429,7 +463,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         country_only = [locator.predict_country_only(e) for e in embeddings]
         seconds = time.perf_counter() - started
         print(f"{encoder.name}: {len(photos)} photos in {seconds:.0f}s")
-        handles[f"{encoder.name}, country then city"] = (encoder, locator)
+        handles[f"{encoder.name}, country then city"] = (encoder, locator, list(embeddings))
         systems.append(
             System(f"{encoder.name}, country only", predictions_from_guesses(photos, country_only))
         )
@@ -439,12 +473,14 @@ def main(argv: Sequence[str] | None = None) -> None:
             )
         )
 
+    for s in systems:
+        s.report = evaluate(s.predictions)
+    best = pick_best(systems)
+    encoder, locator, best_embeddings = handles[best.name]
+    beliefs = beliefs_for(photos, best_embeddings, locator)
+
     saliency: dict[str, Saliency] = {}
     if args.saliency_grid > 0:
-        for s in systems:
-            s.report = evaluate(s.predictions)
-        best = pick_best(systems)
-        encoder, locator = handles[best.name]
         started = time.perf_counter()
         try:
             saliency = explain_photos(
@@ -461,7 +497,9 @@ def main(argv: Sequence[str] | None = None) -> None:
             saliency = {}
             print(f"saliency failed, shipping guesses without maps: {err!r}", file=sys.stderr)
 
-    atlas, report, markdown = build_outputs(photos, systems, skipped=skipped, saliency=saliency)
+    atlas, report, markdown = build_outputs(
+        photos, systems, skipped=skipped, saliency=saliency, beliefs=beliefs
+    )
     args.atlas_out.write_text(json.dumps(atlas, indent=1, ensure_ascii=False) + "\n")
     args.results_dir.mkdir(parents=True, exist_ok=True)
     (args.results_dir / "atlas-v0.json").write_text(

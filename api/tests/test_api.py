@@ -32,6 +32,7 @@ OSAKA_GUESS = parse_guess(
         "guessedPlace": "Osaka, JP",
         "topCountries": [{"country": "JP", "p": 0.7}],
         "clues": [{"label": "Temple", "p": 0.88}],
+        "belief": {"JP": 0.7, "KR": 0.05},
     },
 )
 
@@ -106,6 +107,7 @@ def test_atlas_guess_is_scored_server_side_and_revealed_only_after_the_guess(cli
     assert atlas["guessed_place"] == "Osaka, JP"
     assert atlas["top_countries"] == [{"country": "JP", "p": 0.7}]
     assert atlas["clues"] == [{"label": "Temple", "p": 0.88}]
+    assert atlas["belief"] == {"JP": 0.7, "KR": 0.05}
 
 
 def test_far_guess_scores_less(client):

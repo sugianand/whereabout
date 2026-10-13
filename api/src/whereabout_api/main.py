@@ -67,6 +67,8 @@ class AtlasOut(BaseModel):
     confidence: float
     top_countries: list[CountryChanceOut]
     clues: list[ClueOut]
+    # Country distribution for the reveal heatmap; None when atlas.json has none.
+    belief: dict[str, float] | None = None
     distance_km: float
     score: int
 
@@ -91,6 +93,7 @@ def score_atlas(guess: AtlasGuess | None, truth: LatLon) -> AtlasOut | None:
         confidence=guess.confidence,
         top_countries=[CountryChanceOut(country=c, p=p) for c, p in guess.top_countries],
         clues=[ClueOut(label=c.label, p=c.p) for c in guess.clues],
+        belief=dict(guess.belief) if guess.belief is not None else None,
         distance_km=round(distance, 3),
         score=score_distance(distance),
     )

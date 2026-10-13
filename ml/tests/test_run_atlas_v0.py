@@ -12,6 +12,7 @@ from whereabout_api.photos import Photo
 from whereabout_ml import run_atlas_v0
 from whereabout_ml.run_atlas_v0 import (
     System,
+    belief_from_probabilities,
     build_outputs,
     guess_to_json,
     parse_model,
@@ -52,6 +53,25 @@ def test_guess_json_matches_the_web_contract():
         "clues",
     }
     assert guess_to_json(RIGHT[0])["lng"] == 135.77
+
+
+def test_belief_keeps_countries_at_or_above_half_a_percent_rounded_largest_first():
+    belief = belief_from_probabilities(["ES", "FR", "IT", "DE"], [0.12049, 0.41249, 0.005, 0.00499])
+    assert belief == {"FR": 0.412, "ES": 0.12, "IT": 0.005}
+    assert list(belief) == ["FR", "ES", "IT"]
+
+
+def test_belief_is_only_written_when_given():
+    assert "belief" not in guess_to_json(RIGHT[0])
+    assert guess_to_json(RIGHT[0], belief={"JP": 0.9})["belief"] == {"JP": 0.9}
+
+
+def test_build_outputs_attaches_each_photos_belief():
+    atlas, _, _ = build_outputs(
+        PHOTOS, systems(), beliefs={"kyoto": {"JP": 0.9}}, now="2026-10-10T00:00:00+00:00"
+    )
+    assert atlas["guesses"]["kyoto"]["belief"] == {"JP": 0.9}
+    assert "belief" not in atlas["guesses"]["cusco"]
 
 
 def test_the_most_accurate_playable_system_plays_in_the_game():
@@ -188,6 +208,10 @@ def test_main_runs_the_whole_pipeline_offline(tmp_path, monkeypatch):
     assert looked["grid"] == 7 and len(looked["cells"]) == 49
     assert all(0.0 <= v <= 1.0 for v in looked["cells"])
     assert atlas["evaluation"]["saliency"]["n"] == 2
+    # The heatmap's distribution: Japan dominates the Kyoto photo, and the tail is trimmed.
+    belief = atlas["guesses"]["kyoto"]["belief"]
+    assert next(iter(belief)) == "JP" and belief["JP"] > 0.9
+    assert all(p >= 0.005 for p in belief.values()) and set(belief) <= {"JP", "PE"}
     report = json.loads((results / "atlas-v0.json").read_text())
     assert set(report["systems"]) == {
         "Random city (baseline)",

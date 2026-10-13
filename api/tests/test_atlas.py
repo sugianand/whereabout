@@ -24,6 +24,14 @@ def test_parses_a_guess():
     assert g.clues[0].label == "Temple"
 
 
+def test_belief_is_optional_and_validated():
+    assert parse_guess("p1", GOOD).belief is None
+    g = parse_guess("p1", {**GOOD, "belief": {"JP": 0.62, "KR": 0.2}})
+    assert g.belief == {"JP": 0.62, "KR": 0.2}
+    with pytest.raises(AtlasFileError, match="p1"):
+        parse_guess("p1", {**GOOD, "belief": {"JP": 1.5}})
+
+
 @pytest.mark.parametrize(
     "patch",
     [{"lat": 95}, {"lng": "east"}, {"confidence": 1.5}, {"clues": [{"label": "x", "p": -0.1}]}],

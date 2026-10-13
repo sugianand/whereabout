@@ -32,6 +32,8 @@ class AtlasGuess:
     guessed_place: str | None
     top_countries: tuple[tuple[str, float], ...]
     clues: tuple[AtlasClue, ...]
+    # ISO alpha-2 → probability for the reveal heatmap; None for atlas.json files that predate it.
+    belief: Mapping[str, float] | None = None
 
 
 def _probability(value: Any, where: str) -> float:
@@ -55,6 +57,12 @@ def parse_guess(photo_id: str, raw: Mapping[str, Any]) -> AtlasGuess:
         AtlasClue(str(c["label"]), _probability(c["p"], f"{where} clue"))
         for c in raw.get("clues", [])
     )
+    raw_belief = raw.get("belief")
+    belief = (
+        {str(c): _probability(p, f"{where} belief") for c, p in raw_belief.items()}
+        if isinstance(raw_belief, Mapping)
+        else None
+    )
     place = raw.get("guessedPlace")
     return AtlasGuess(
         location=location,
@@ -62,6 +70,7 @@ def parse_guess(photo_id: str, raw: Mapping[str, Any]) -> AtlasGuess:
         guessed_place=str(place) if place else None,
         top_countries=top,
         clues=clues,
+        belief=belief,
     )
 
 
