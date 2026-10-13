@@ -1,0 +1,28 @@
+{
+  "files_found": 4051,
+  "per_query": {
+    "filetype:bitmap hastemplate:Pano360": 2000,
+    "filetype:bitmap incategory:\"Spherical_panoramas\"": 11,
+    "filetype:bitmap incategory:\"360°_panoramas\"": 2000,
+    "filetype:bitmap \"equirectangular\" filew:>3999": 2000
+  },
+  "passed_checks": 3594,
+  "after_spreading": 72,
+  "candidates": 64,
+  "dropped": {
+    "narrower than 4000 px": 19,
+    "near-duplicate": 1,
+    "no author to credit": 1,
+    "no camera coordinates": 148,
+    "not 2:1 equirectangular": 265,
+    "personality rights (identifiable people)": 24
+  },
+  "settings": {
+    "min_width": 4000,
+    "aspect_tolerance": 0.01,
+    "cell_deg": 15.0,
+    "per_cell": 2,
+    "game_width": 3840
+  },
+  "sheets": 8
+}
