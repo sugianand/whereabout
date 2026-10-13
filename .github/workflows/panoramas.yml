@@ -1,0 +1,71 @@
+name: Panorama candidates
+
+# Searches Wikimedia Commons for 360° equirectangular panoramas that pass the license, credit,
+# privacy and coordinate checks, removes near-duplicates and writes numbered contact sheets.
+# Results go to the curation/panoramas branch for review by eye; only reviewed panoramas are
+# added to data/curation/photos.csv on main.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [curation/panoramas]
+    paths:
+      - "ml/src/whereabout_ml/panoramas.py"
+      - "ml/src/whereabout_ml/ingest.py"
+      - ".github/workflows/panoramas.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: panorama-candidates
+  cancel-in-progress: false
+
+jobs:
+  candidates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            api/pyproject.toml
+            eval/pyproject.toml
+            ml/pyproject.toml
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e api -e eval -e "ml[ingest]"
+
+      - name: Find candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf data/curation/panoramas/sheets
+          panorama-candidates --out-dir data/curation/panoramas \
+            --catalog data/curation/photos.csv --cache-dir "$RUNNER_TEMP/panoramas" --limit 64
+          {
+            echo "## Panorama candidates"
+            echo '```json'
+            cat data/curation/panoramas/candidates.meta.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit candidates to the review branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data/curation/panoramas
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "chore(panoramas): candidates for review"
+          git push origin HEAD:refs/heads/curation/panoramas
