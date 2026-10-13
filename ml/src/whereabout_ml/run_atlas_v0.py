@@ -50,6 +50,8 @@ from whereabout_ml.saliency import (
 from whereabout_ml.zeroshot import Guess, ZeroShotGeolocator
 
 VERSION = "atlas-v0-zeroshot"
+# Countries each guess reports for the reveal's shortlist (the city step still searches 3).
+REVEAL_TOP_COUNTRIES = 5
 USER_AGENT = "WhereaboutBot/0.1 (https://github.com/sugianand/whereabout; research demo)"
 
 
@@ -421,7 +423,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     for name, pretrained in models:
         started = time.perf_counter()
         encoder = ClipEncoder(name, pretrained)
-        locator = ZeroShotGeolocator(encoder, gazetteer)
+        locator = ZeroShotGeolocator(encoder, gazetteer, report_top_countries=REVEAL_TOP_COUNTRIES)
         embeddings = encoder.encode_images(paths)
         full = [locator.predict(e) for e in embeddings]
         country_only = [locator.predict_country_only(e) for e in embeddings]

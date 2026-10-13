@@ -74,11 +74,15 @@ class ZeroShotGeolocator:
         gazetteer: Gazetteer,
         *,
         top_k_countries: int = 3,
+        report_top_countries: int | None = None,
         concept_groups: Sequence[ConceptGroup] = CONCEPT_GROUPS,
     ) -> None:
         self.encoder = encoder
         self.gazetteer = gazetteer
         self.top_k = top_k_countries
+        # How many countries a Guess reports. The city step still searches only `top_k`, so
+        # reporting more (the reveal's shortlist) never changes where Atlas guesses.
+        self.report_top = max(top_k_countries, report_top_countries or top_k_countries)
         self.groups = tuple(concept_groups)
 
         names = [c.name for c in gazetteer.countries]
@@ -112,6 +116,10 @@ class ZeroShotGeolocator:
         image = normalise(np.asarray(image_embedding, dtype=np.float64))
         return softmax(LOGIT_SCALE * self.country_embeddings @ image)
 
+    def _reported(self, p_country: np.ndarray) -> tuple[tuple[str, float], ...]:
+        order = np.argsort(-p_country)[: self.report_top]
+        return tuple((self.gazetteer.countries[int(i)].code, float(p_country[i])) for i in order)
+
     def predict_country_only(self, image_embedding: np.ndarray) -> Guess:
         """Ablation: stop after the country step and guess its largest city.
 
@@ -128,9 +136,7 @@ class ZeroShotGeolocator:
             city=city.name,
             country=city.country,
             confidence=float(p_country[order[0]]),
-            top_countries=tuple(
-                (self.gazetteer.countries[int(i)].code, float(p_country[i])) for i in order
-            ),
+            top_countries=self._reported(p_country),
             clues=(),
         )
 
@@ -159,6 +165,6 @@ class ZeroShotGeolocator:
             city=city.name,
             country=city.country,
             confidence=float(p_country[order[0]]),
-            top_countries=tuple((countries[int(i)].code, float(p_country[i])) for i in order),
+            top_countries=self._reported(p_country),
             clues=self.clues(image),
         )

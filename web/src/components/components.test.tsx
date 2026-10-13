@@ -164,3 +164,65 @@ describe("PhotoViewer", () => {
     expect(screen.getByRole("button", { name: "Zoom in on the photo" })).toBeInTheDocument();
   });
 });
+
+describe("RevealCard shortlist", () => {
+  function withTop(top: { country: string; p: number }[], truth: string): RoundResult {
+    const r = result(5, 100, 4900);
+    return {
+      ...r,
+      reveal: { ...r.reveal, answer: { ...r.reveal.answer, country: truth } },
+      atlas: { ...r.atlas!, topCountries: top },
+    };
+  }
+
+  it("lists Atlas's likeliest countries and marks the right one", () => {
+    render(
+      <RevealCard
+        result={withTop(
+          [
+            { country: "VN", p: 0.16 },
+            { country: "LA", p: 0.81 },
+            { country: "KH", p: 0.004 },
+          ],
+          "LA",
+        )}
+        isLast={false}
+        onNext={() => {}}
+      />,
+    );
+    const list = screen.getByRole("list", { name: "Atlas's shortlist" });
+    const items = within(list).getAllByRole("listitem");
+    expect(items.map((li) => li.textContent)).toEqual([
+      "Laos 81% (the right country)",
+      "Vietnam 16%",
+    ]);
+  });
+
+  it("says when the right country wasn't on it", () => {
+    render(
+      <RevealCard
+        result={withTop(
+          [
+            { country: "FR", p: 0.6 },
+            { country: "ES", p: 0.3 },
+          ],
+          "PT",
+        )}
+        isLast={false}
+        onNext={() => {}}
+      />,
+    );
+    expect(screen.getByText(/Portugal wasn't on it/)).toBeInTheDocument();
+  });
+
+  it("stays quiet with fewer than two countries", () => {
+    render(
+      <RevealCard
+        result={withTop([{ country: "FR", p: 0.9 }], "FR")}
+        isLast={false}
+        onNext={() => {}}
+      />,
+    );
+    expect(screen.queryByText(/shortlist/)).toBeNull();
+  });
+});

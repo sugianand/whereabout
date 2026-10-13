@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
+import { countryName, shortlist } from "@/lib/countries";
 import type { RoundResult } from "@/lib/game/state";
 import { formatDistance, formatPoints } from "@/lib/geo";
 import { REVEAL_DRAW_MS } from "@/lib/reveal";
@@ -56,6 +57,9 @@ export default function RevealCard({ result, isLast, onNext }: RevealCardProps) 
   const credit = reveal.answer.credit;
   const nextRef = useRef<HTMLButtonElement>(null);
   const said = verdict(result);
+  const shortlisted = atlas ? shortlist(atlas.topCountries ?? []) : [];
+  const truthCountry = reveal.answer.country;
+  const truthListed = shortlisted.some((c) => c.country === truthCountry);
 
   // Move focus to the next action so keyboard players can press Enter to continue.
   useEffect(() => {
@@ -96,6 +100,36 @@ export default function RevealCard({ result, isLast, onNext }: RevealCardProps) 
           Atlas guessed <span className="text-sonar">{atlas.guessedPlace}</span>,{" "}
           {Math.round(atlas.confidence * 100)}% sure of the country.
         </p>
+      )}
+
+      {atlas && shortlisted.length > 1 && (
+        <div className="mt-2 text-sm">
+          <p className="text-chalk-dim" id="atlas-shortlist">
+            Atlas&apos;s shortlist
+            {truthCountry && !truthListed ? (
+              <span> ({countryName(truthCountry)} wasn&apos;t on it)</span>
+            ) : null}
+          </p>
+          <ol aria-labelledby="atlas-shortlist" className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+            {shortlisted.map((c, i) => {
+              const right = c.country === truthCountry;
+              // Phones keep the card short: the fourth and fifth choices show on wider screens.
+              const narrow = i >= 3 && !right ? "hidden md:list-item" : "";
+              return (
+                <li
+                  key={c.country}
+                  className={`${right ? "text-gold" : "text-chalk"} ${narrow}`.trim()}
+                >
+                  {countryName(c.country)}{" "}
+                  <span className={`tabular ${right ? "" : "text-chalk-dim"}`}>
+                    {Math.max(1, Math.round(c.p * 100))}%
+                  </span>
+                  {right && <span className="sr-only"> (the right country)</span>}
+                </li>
+              );
+            })}
+          </ol>
+        </div>
       )}
 
       {atlas && (atlas.clues.length > 0 || atlas.looked) && (

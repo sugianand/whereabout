@@ -96,3 +96,22 @@ def test_country_only_ablation_stops_at_the_largest_city():
     guess = locator.predict_country_only(image("Peru", "Cusco"))
     assert (guess.country, guess.city) == ("PE", "Lima")
     assert guess.clues == ()
+
+
+def test_reporting_more_countries_never_widens_the_city_search():
+    narrow = ZeroShotGeolocator(KeywordEncoder(), GAZ, top_k_countries=1, concept_groups=GROUPS)
+    enc = KeywordEncoder()
+    wide = ZeroShotGeolocator(
+        enc, GAZ, top_k_countries=1, report_top_countries=2, concept_groups=GROUPS
+    )
+    before = len(enc.calls)
+    a, b = narrow.predict(image("Japan", "Kyoto")), wide.predict(image("Japan", "Kyoto"))
+    assert (a.city, a.lat, a.lon, a.confidence) == (b.city, b.lat, b.lon, b.confidence)
+    assert [c for c, _ in a.top_countries] == ["JP"]
+    assert [c for c, _ in b.top_countries] == ["JP", "PE"]
+    assert b.top_countries[0][1] >= b.top_countries[1][1]
+    # Only Japan's cities were encoded: Peru is reported, not searched.
+    assert enc.calls[before:] == [
+        ["a photo taken in Osaka, Japan.", "a photo taken in Kyoto, Japan."]
+    ]
+    assert len(wide.predict_country_only(image("Peru")).top_countries) == 2
