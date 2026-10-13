@@ -59,7 +59,7 @@ should show the model at work. These steps come before the rest of Milestone 3.
 - [x] Labels: climate-zone and land-cover lookups from raster maps behind one interface, with tests on known coordinates (`ml/src/whereabout_ml/maps.py`, sources in `data/maps/README.md`)
 - [x] Labels: in CI, download the Köppen-Geiger map and the WorldCover tiles the catalog needs, check known places against the real maps, and commit the catalog's concept labels (`.github/workflows/labels.yml`, `data/labels/`)
 - [x] Data: ingestion pipeline for image metadata (license capture, perceptual-hash dedupe) on a small sample (`ml/src/whereabout_ml/ingest.py`, `.github/workflows/ingest.yml`, `data/ingest/`)
-- [ ] Data: geographic-block train/validation split with a leakage test
+- [x] Data: geographic-block train/validation split with a leakage test (`ml/src/whereabout_ml/split.py`, output in `data/splits/`)
 - [ ] **[needs you]** Pull 1–5M openly licensed training images (OSV-5M / MP-16) to storage
 
 ## Milestone 4 and beyond

@@ -24,6 +24,7 @@ pocket-atlas-index = "whereabout_ml.pocket_index:main"
 concept-labels = "whereabout_ml.concept_labels:main"
 ingest-commons = "whereabout_ml.ingest:main"
 scene-gate = "whereabout_ml.run_scene_gate:main"
+geo-split = "whereabout_ml.split:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
