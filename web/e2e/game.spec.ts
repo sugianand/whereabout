@@ -63,6 +63,30 @@ test("the globe renders with WebGL and accepts a click", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Guess here" })).toBeEnabled();
 });
 
+test("the photo can be zoomed and dragged", async ({ page }) => {
+  await page.goto("./");
+  const zoomIn = page.getByRole("button", { name: "Zoom in on the photo" });
+  await expect(zoomIn).toBeVisible();
+  await zoomIn.click();
+  const zoomOut = page.getByRole("button", { name: "Zoom out of the photo" });
+  await expect(zoomOut).toBeVisible();
+  const img = zoomOut.getByRole("img");
+  const before = await img.evaluate((el) => (el as HTMLElement).style.transform);
+  const box = (await zoomOut.boundingBox())!;
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  await page.mouse.move(cx - 120, cy, { steps: 8 });
+  await page.mouse.up();
+  await expect
+    .poll(() => img.evaluate((el) => (el as HTMLElement).style.transform))
+    .not.toBe(before);
+  await expect(page.getByRole("button", { name: "Zoom out of the photo" })).toBeVisible();
+  await page.getByRole("button", { name: "Reset photo view" }).click();
+  await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
+});
+
 test("everyone gets the same five photos on the same day", async ({ browser }) => {
   const first = async () => {
     const context = await browser.newContext();
