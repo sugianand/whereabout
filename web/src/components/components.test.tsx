@@ -128,27 +128,63 @@ describe("Where Atlas looked", () => {
 });
 
 describe("PhotoViewer", () => {
-  it("zooms in on the spot the player clicks, and back out", () => {
+  function setup() {
     render(<PhotoViewer src="https://example.org/p.jpg" roundKey="a" />);
     const button = screen.getByRole("button", { name: "Zoom in on the photo" });
-    const img = screen.getByRole("img");
     vi.spyOn(button, "getBoundingClientRect").mockReturnValue({
       left: 0,
       top: 0,
-      width: 200,
-      height: 100,
+      width: 400,
+      height: 300,
     } as DOMRect);
+    return { button, img: screen.getByRole("img") };
+  }
+  const zoomedName = { name: "Zoom out of the photo" };
 
-    fireEvent.click(button, { clientX: 50, clientY: 75 });
-    expect(img.style.transform).toBe(`scale(${ZOOM})`);
-    expect(img.style.transformOrigin).toBe("25% 75%");
-    expect(screen.getByRole("button", { name: "Zoom out of the photo" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+  it("zooms in on the spot the player clicks, and back out", () => {
+    const { button, img } = setup();
+    fireEvent.click(button, { clientX: 100, clientY: 75 });
+    // The tapped point stays put: 100 - (100 - 0) * 2.5 = -150.
+    expect(img.style.transform).toBe(`translate(-150px, -112.5px) scale(${ZOOM})`);
+    expect(screen.getByRole("button", zoomedName)).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", zoomedName), { clientX: 10, clientY: 10 });
+    expect(screen.getByRole("button", { name: "Zoom in on the photo" })).toBeInTheDocument();
+    expect(img.style.transform).toBe("translate(0px, 0px) scale(1)");
+  });
 
+  it("keyboard + zooms on the centre and Escape resets", () => {
+    const { button, img } = setup();
+    fireEvent.click(button); // keyboard click: no position
+    expect(img.style.transform).toBe(`translate(-300px, -225px) scale(${ZOOM})`);
     fireEvent.keyDown(button, { key: "Escape" });
-    expect(img.style.transform).toBe("");
+    expect(screen.getByRole("button", { name: "Zoom in on the photo" })).toBeInTheDocument();
+    fireEvent.keyDown(button, { key: "+" });
+    expect(img.style.transform).toContain("scale(1.5)");
+    fireEvent.keyDown(button, { key: "ArrowRight" });
+    expect(img.style.transform).toBe("translate(-140px, -75px) scale(1.5)");
+    fireEvent.keyDown(button, { key: "0" });
+    expect(img.style.transform).toBe("translate(0px, 0px) scale(1)");
+  });
+
+  it("dragging pans a zoomed photo without toggling the zoom", () => {
+    const { button, img } = setup();
+    fireEvent.click(button, { clientX: 200, clientY: 150 });
+    const zoomedTransform = img.style.transform;
+    fireEvent.pointerDown(button, { pointerId: 1, clientX: 200, clientY: 150 });
+    fireEvent.pointerMove(button, { pointerId: 1, clientX: 150, clientY: 150 });
+    fireEvent.pointerUp(button, { pointerId: 1, clientX: 150, clientY: 150 });
+    fireEvent.click(button, { clientX: 150, clientY: 150 }); // the click that follows a drag
+    expect(img.style.transform).not.toBe(zoomedTransform);
+    expect(screen.getByRole("button", zoomedName)).toBeInTheDocument();
+  });
+
+  it("shows Reset view only while zoomed", () => {
+    const { button, img } = setup();
+    expect(screen.queryByRole("button", { name: "Reset photo view" })).toBeNull();
+    fireEvent.click(button, { clientX: 50, clientY: 50 });
+    fireEvent.click(screen.getByRole("button", { name: "Reset photo view" }));
+    expect(screen.queryByRole("button", { name: "Reset photo view" })).toBeNull();
+    expect(img.style.transform).toBe("translate(0px, 0px) scale(1)");
   });
 
   it("explains what to do when the photo can't load", () => {
