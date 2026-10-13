@@ -13,6 +13,9 @@ export interface CatalogPhoto extends LngLat {
   place: string;
   country: string;
   credit: Credit;
+  /** Original file size in pixels, when known (from data/curation/quality.csv). */
+  width?: number;
+  height?: number;
 }
 
 /** What the player may see before guessing: the photo, never its location. */

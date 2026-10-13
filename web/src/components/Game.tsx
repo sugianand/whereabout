@@ -193,6 +193,7 @@ export default function Game({ apiUrl, start, today, backendFor }: GameProps) {
   const score = totals(state.results).player;
   const error = state.phase === "guessing" || state.phase === "loading" ? state.error : null;
   const roundNumber = state.index + 1;
+  const roundSize = round ? photos.find((p) => p.id === round.photo.id) : undefined;
 
   return (
     <main
@@ -203,7 +204,12 @@ export default function Game({ apiUrl, start, today, backendFor }: GameProps) {
 
       <div className="wb-photo">
         {round ? (
-          <PhotoViewer src={round.photo.imageUrl} roundKey={round.roundId} />
+          <PhotoViewer
+            src={round.photo.imageUrl}
+            roundKey={round.roundId}
+            width={roundSize?.width}
+            height={roundSize?.height}
+          />
         ) : (
           <div className="wb-shimmer h-full w-full" aria-hidden="true" />
         )}

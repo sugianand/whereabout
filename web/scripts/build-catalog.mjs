@@ -1,9 +1,10 @@
 // Converts data/curation/photos.csv into src/data/photos.json for the browser.
 // Run: npm run catalog   (CI fails if the committed JSON is out of date; see catalog.test.ts)
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const csvPath = fileURLToPath(new URL("../../data/curation/photos.csv", import.meta.url));
+const qualityPath = fileURLToPath(new URL("../../data/curation/quality.csv", import.meta.url));
 const outPath = fileURLToPath(new URL("../src/data/photos.json", import.meta.url));
 
 /** Minimal RFC 4180 parser: quoted fields, escaped quotes, commas and newlines in quotes. */
@@ -31,6 +32,36 @@ export function parseCsv(text) {
   return rows;
 }
 
+/** Parses quality.csv (id,width,height,sharpness,sharpness_global) into Map<id, {width, height}>. */
+export function parseQuality(text) {
+  const [header = [], ...body] = parseCsv(text);
+  const map = new Map();
+  for (const cells of body) {
+    const r = Object.fromEntries(header.map((h, i) => [h, cells[i]]));
+    const width = Number(r.width);
+    const height = Number(r.height);
+    if (r.id && Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0) {
+      map.set(r.id, { width, height });
+    }
+  }
+  return map;
+}
+
+/** Adds original width/height to each entry whose id is in the quality CSV text (if any). */
+export function joinQuality(catalog, qualityText) {
+  if (qualityText == null) return catalog;
+  const quality = parseQuality(qualityText);
+  return catalog.map((p) => {
+    const q = quality.get(p.id);
+    return q ? { ...p, width: q.width, height: q.height } : p;
+  });
+}
+
+/** Builds the catalog from photos.csv text, joined with quality.csv text when given. */
+export function buildCatalog(photosText, qualityText) {
+  return joinQuality(toCatalog(photosText), qualityText);
+}
+
 export function toCatalog(text) {
   const [header, ...body] = parseCsv(text);
   return body.map((cells) => {
@@ -48,7 +79,10 @@ export function toCatalog(text) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const catalog = toCatalog(readFileSync(csvPath, "utf8"));
+  const catalog = buildCatalog(
+    readFileSync(csvPath, "utf8"),
+    existsSync(qualityPath) ? readFileSync(qualityPath, "utf8") : null,
+  );
   writeFileSync(outPath, JSON.stringify(catalog, null, 1) + "\n");
   console.log(`wrote ${catalog.length} photos to src/data/photos.json`);
 }

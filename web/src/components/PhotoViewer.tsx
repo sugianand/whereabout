@@ -21,11 +21,15 @@ import {
   type Point,
   type View,
 } from "@/lib/photoView";
+import { sources } from "@/lib/photoSources";
 
 type PhotoViewerProps = {
   src: string;
   /** Changes every round, so zoom and load state reset with each new photo. */
   roundKey: string;
+  /** Original file size in pixels, when known; enables sharper sources on big screens. */
+  width?: number;
+  height?: number;
 };
 
 /** Kept so older callers can still read how far a tap zooms. */
@@ -45,7 +49,9 @@ export default function PhotoViewer(props: PhotoViewerProps) {
   return <PhotoViewerInner key={props.roundKey} {...props} />;
 }
 
-function PhotoViewerInner({ src }: PhotoViewerProps) {
+function PhotoViewerInner({ src, width }: PhotoViewerProps) {
+  const photoSources = sources({ imageUrl: src, width });
+  const [fullLoaded, setFullLoaded] = useState(false);
   const [status, setStatus] = useState<"loading" | "loaded" | "failed">("loading");
   const [view, setViewState] = useState<View>(RESET);
   const [interacting, setInteracting] = useState(false);
@@ -213,6 +219,23 @@ function PhotoViewerInner({ src }: PhotoViewerProps) {
   }
 
   const zoomed = isZoomed(view);
+
+  // Once zoomed, preload the largest source and swap to it only when ready (no flash).
+  const full = photoSources.full;
+  const wantsFull = zoomed && full !== photoSources.src;
+  useEffect(() => {
+    if (!wantsFull || fullLoaded) return;
+    let cancelled = false;
+    const img = new Image();
+    img.onload = () => {
+      if (!cancelled) setFullLoaded(true);
+    };
+    img.src = full;
+    return () => {
+      cancelled = true;
+    };
+  }, [wantsFull, fullLoaded, full]);
+
   const cursor = interacting && zoomed ? "cursor-grabbing" : zoomed ? "cursor-grab" : "cursor-zoom-in";
 
   return (
@@ -241,7 +264,10 @@ function PhotoViewerInner({ src }: PhotoViewerProps) {
             {/* A plain img: the photos are hot-linked from Wikimedia at a fixed size. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={src}
+              src={fullLoaded ? full : photoSources.src}
+              srcSet={fullLoaded ? undefined : photoSources.srcSet}
+              sizes="100vw"
+              decoding="async"
               alt="The photo to locate. Look for clues: signs, plants, roads, buildings, the sky."
               draggable={false}
               onLoad={() => setStatus("loaded")}
