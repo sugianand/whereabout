@@ -30,7 +30,7 @@ test("a whole Daily Five can be played with the keyboard", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
 
-  await page.goto("./");
+  await page.goto("./?daily");
   await expect(page.getByText(/^Daily Five, /)).toBeVisible();
   await expect(page.getByText("Round 1 of 5", { exact: true })).toBeVisible();
 
@@ -70,10 +70,33 @@ test("everyone gets the same five photos on the same day", async ({ browser }) =
     await page.route(/wikimedia\.org/, (route) =>
       route.fulfill({ body: PHOTO, contentType: "image/png" }),
     );
-    await page.goto("./");
+    await page.goto("./?daily");
     const src = await page.getByRole("img").getAttribute("src");
     await context.close();
     return src;
   };
   expect(await first()).toBe(await first());
+});
+
+test("each visit opens a fresh game that avoids recently played photos", async ({ page }) => {
+  const recent = () =>
+    page.evaluate(() => JSON.parse(localStorage.getItem("whereabout:recent-photos") ?? "[]"));
+
+  await page.goto("./");
+  await expect(page.getByText("Fresh game", { exact: true })).toBeVisible();
+  await expect(page.getByRole("img")).toHaveAttribute("src", /.+/);
+  await expect.poll(async () => (await recent()).length).toBe(5);
+
+  await page.goto("./");
+  await expect(page.getByText("Fresh game", { exact: true })).toBeVisible();
+  await expect.poll(async () => (await recent()).length).toBe(10);
+  expect(new Set(await recent()).size).toBe(10);
+});
+
+test("the Daily Five is one button away from a fresh game", async ({ page }) => {
+  await page.goto("./");
+  await page.getByRole("button", { name: "Play the Daily Five" }).click();
+  await expect(page.getByText(/^Daily Five, /)).toBeVisible();
+  await expect(page.getByText("Round 1 of 5", { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\?daily/);
 });

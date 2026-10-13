@@ -42,7 +42,7 @@ Priority from the project owner (2026-10-13): a visit should never open on the s
 the catalog should grow to about 1,000 photos screened by AI rather than by eye, and the site
 should show the model at work. These steps come before the rest of Milestone 3.
 
-- [ ] Web: every visit opens a fresh random five-photo game; the Daily Five moves behind a button, with tests for both modes
+- [x] Web: every visit opens a fresh random five-photo game; the Daily Five moves behind a button, with tests for both modes
 - [ ] ML: AI scene gate, CLIP zero-shot screening for people, indoor scenes, text that gives away the place and non-photos, with thresholds checked against the 88 hand-reviewed photos and a small labelled reject fixture (`ml/src/whereabout_ml/scene_gate.py`)
 - [ ] Data: Commons harvester in CI, geotagged quality images across landscape and street categories, grid-balanced, run through `ingest.py` (license capture, dedupe against the catalog) and the scene gate, place and country from the GeoNames gazetteer; grow `photos.csv` to about 1,000 and record pass/reject counts per reason
 - [ ] CI + Web: Atlas runs on the larger catalog within runner limits; the site loads photos and Atlas's guesses in chunks so the bundle stays small

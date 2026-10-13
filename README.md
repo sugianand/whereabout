@@ -8,8 +8,9 @@ Whereabout is a geography game played against **Atlas**, a computer-vision model
 photo, drop a pin on a 3D globe, and guess. Then the globe goes full screen: arcs draw from your
 pin and Atlas's pin to the true location, the gold pin drops, and the distances count up.
 
-Everyone gets the same **Daily Five** photos each day, so you can compare scores with friends,
-and the share text gives no spoilers.
+Each visit opens a fresh random game of five photos, avoiding ones you've played recently. The
+**Daily Five** (the same photos for everyone each day, so you can compare scores with friends) is
+one button away, or at `?daily`. The share text gives no spoilers.
 
 ## What's interesting about it
 
