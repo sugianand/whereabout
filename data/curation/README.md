@@ -36,3 +36,14 @@ fails the build if a row loses its license, attribution or valid coordinates.
 Wikimedia image URLs contain the original file name, which often names the place. A
 determined player can read it in the browser's network tab. Proxying images through the API
 under opaque ids fixes this and is on the roadmap.
+
+## Photo quality (`quality.csv`)
+
+`quality.csv` holds one row per catalog photo: `id`, the original file's `width` and `height`
+(from the Commons API, not the 1280 px thumbnail the catalog links to), and two sharpness scores.
+Sharpness is measured on a 1920 px analysis image (the original if it is smaller), converted to
+grey and resized to 1024 px wide. The Laplacian is taken with a 3x3 kernel and its variance is
+computed on each tile of a 4x4 grid. `sharpness` is the 90th percentile of the tile variances, so
+a photo with smooth sky but a sharp horizon still scores as sharp; `sharpness_global` is the
+variance over the whole image. Higher is sharper; values are only comparable between photos
+measured this way. The `Photo quality` workflow regenerates the file (`photo-quality` CLI).
