@@ -5,6 +5,8 @@ export type Actor = "player" | "atlas";
 
 export interface RevealView {
   truth: LngLat;
+  /** Atlas's country distribution (ISO alpha-2 to p) for the heatmap; absent in older data. */
+  belief?: Record<string, number>;
   guesses: { actor: Actor; at: LngLat }[];
 }
 

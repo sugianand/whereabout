@@ -33,6 +33,16 @@ describe("Atlas's precomputed guesses", () => {
     }
   });
 
+  it("have a well-formed country belief, when they have one", () => {
+    for (const [id, g] of Object.entries(atlas.guesses)) {
+      for (const [code, p] of Object.entries(g.belief ?? {})) {
+        expect(code, id).toMatch(/^[A-Z]{2}$/);
+        expect(p, id).toBeGreaterThan(0);
+        expect(p, id).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+
   it("have well-formed 'where Atlas looked' maps, when they have them", () => {
     for (const [id, g] of Object.entries(atlas.guesses)) {
       if (g.looked) expect(isValidLooked(g.looked), id).toBe(true);

@@ -73,6 +73,7 @@ interface ApiGuess {
     confidence: number;
     top_countries: { country: string; p: number }[];
     clues: { label: string; p: number }[];
+    belief?: Record<string, number> | null;
     distance_km: number;
     score: number;
   } | null;
@@ -87,6 +88,7 @@ function atlasFromApi(a: ApiGuess["atlas"]): AtlasGuess | null | undefined {
     confidence: a.confidence,
     ...(a.guessed_place ? { guessedPlace: a.guessed_place } : {}),
     topCountries: a.top_countries,
+    ...(a.belief ? { belief: a.belief } : {}),
     clues: a.clues,
   };
 }

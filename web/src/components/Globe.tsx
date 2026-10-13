@@ -5,7 +5,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import type { Map as MapLibreMap, Marker } from "maplibre-gl";
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 
-import { MAP_COLORS, buildGlobeStyle } from "@/lib/basemap";
+import { BELIEF_LAYER, MAP_COLORS, buildGlobeStyle } from "@/lib/basemap";
+import { beliefFillOpacity, type Belief } from "@/lib/belief";
 import { formatLngLat, normalize, nudge, type Direction, type LngLat } from "@/lib/geo";
 import { maplibreWorkerUrl } from "@/lib/maplibre-worker";
 import {
@@ -72,6 +73,11 @@ function addRevealLayers(map: MapLibreMap) {
 function setRevealLines(map: MapLibreMap, data: RevealLines) {
   const source = map.getSource(REVEAL_SOURCE) as { setData(d: RevealLines): void } | undefined;
   source?.setData(data);
+}
+
+/** Shades countries by Atlas's belief, or clears the heatmap when there is none. */
+function setBeliefHeat(map: MapLibreMap, belief: Belief | null | undefined) {
+  map.setPaintProperty(BELIEF_LAYER, "fill-opacity", beliefFillOpacity(belief));
 }
 
 const ARROW_KEYS: Record<string, Direction> = {
@@ -263,6 +269,19 @@ export default function Globe({
       clearMarkers();
     };
   }, [reveal, ready]);
+
+  // The heatmap: Atlas's country distribution, shown only while a reveal carries one, and
+  // cleared with the reveal so the next round starts on a plain globe.
+  const belief = reveal?.belief;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || !belief) return;
+    setBeliefHeat(map, belief);
+    return () => {
+      // The map may already be gone when the whole globe unmounts.
+      if (mapRef.current) setBeliefHeat(mapRef.current, null);
+    };
+  }, [belief, ready]);
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     const map = mapRef.current;

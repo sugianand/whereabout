@@ -3,6 +3,7 @@ import { feature, mesh } from "topojson-client";
 import type { GeometryCollection, Topology } from "topojson-specification";
 import countries110m from "world-atlas/countries-110m.json";
 
+import { COUNTRY_ID_PROPERTY } from "./belief";
 import { graticule } from "./geo";
 
 /**
@@ -20,6 +21,9 @@ export const MAP_COLORS = {
   gold: "#ffc53d",
 } as const;
 
+/** The fill layer that shades countries by Atlas's belief at the reveal (opacity 0 until then). */
+export const BELIEF_LAYER = "belief";
+
 export const BASEMAP_ATTRIBUTION =
   'Coastlines and borders: <a href="https://www.naturalearthdata.com/">Natural Earth</a> (public domain)';
 
@@ -33,6 +37,16 @@ type CountryTopology = Topology<{ countries: GeometryCollection; land: GeometryC
 export function buildGlobeStyle(): StyleSpecification {
   const topology = countries110m as unknown as CountryTopology;
   const land = feature(topology, topology.objects.land);
+  // Country polygons keyed by their ISO numeric id, for the reveal heatmap. Shapes without an
+  // id (a few disputed areas in the 110m data) can't be named by Atlas, so they are left out.
+  const countries = {
+    type: "FeatureCollection" as const,
+    features: feature(topology, topology.objects.countries).features.flatMap((f) =>
+      f.id === undefined
+        ? []
+        : [{ ...f, id: undefined, properties: { [COUNTRY_ID_PROPERTY]: String(f.id) } }],
+    ),
+  };
   const borders = mesh(topology, topology.objects.countries, (a, b) => a !== b);
 
   return {
@@ -45,6 +59,7 @@ export function buildGlobeStyle(): StyleSpecification {
     },
     sources: {
       land: { type: "geojson", data: land, attribution: BASEMAP_ATTRIBUTION },
+      countries: { type: "geojson", data: countries },
       borders: { type: "geojson", data: borders },
       graticule: { type: "geojson", data: graticule(30) },
     },
@@ -57,6 +72,12 @@ export function buildGlobeStyle(): StyleSpecification {
         paint: { "line-color": MAP_COLORS.graticule, "line-width": 0.6, "line-opacity": 0.6 },
       },
       { id: "land", type: "fill", source: "land", paint: { "fill-color": MAP_COLORS.land } },
+      {
+        id: BELIEF_LAYER,
+        type: "fill",
+        source: "countries",
+        paint: { "fill-color": MAP_COLORS.sonar, "fill-opacity": 0 },
+      },
       {
         id: "borders",
         type: "line",

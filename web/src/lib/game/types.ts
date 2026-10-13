@@ -65,6 +65,11 @@ export interface AtlasGuess extends LngLat {
   /** The place Atlas picked, e.g. "Kyoto, JP". */
   guessedPlace?: string;
   topCountries: { country: string; p: number }[];
+  /**
+   * Atlas's whole country distribution for the reveal heatmap: ISO alpha-2 to probability, only
+   * countries at p >= 0.005. Absent from atlas.json files made before the heatmap.
+   */
+  belief?: Record<string, number>;
   clues: AtlasClue[];
 }
 

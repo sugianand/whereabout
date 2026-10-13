@@ -164,7 +164,11 @@ export default function Game({ apiUrl, start, today, backendFor }: GameProps) {
     const { current } = state;
     const guesses: RevealView["guesses"] = [{ actor: "player", at: current.pin }];
     if (current.atlas) guesses.push({ actor: "atlas", at: current.atlas });
-    return { truth: current.reveal.answer, guesses };
+    return {
+      truth: current.reveal.answer,
+      guesses,
+      ...(current.atlas?.belief ? { belief: current.atlas.belief } : {}),
+    };
   }, [state]);
 
   if (state.phase === "finished") {

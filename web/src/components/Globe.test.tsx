@@ -206,5 +206,31 @@ describe("Globe", () => {
       expect(lines(map).features).toHaveLength(0);
       expect(markerClasses()).toEqual([]);
     });
+
+    describe("Atlas's belief heatmap", () => {
+      const withBelief: RevealView = { ...view, belief: { JP: 0.64, KR: 0.09 } };
+      const heat = (map: FakeMap) => map.paint.belief?.["fill-opacity"];
+
+      it("shades Atlas's countries at the reveal and clears them for the next round", async () => {
+        setReducedMotion(true);
+        const rendered = render(<Harness reveal={null} />);
+        await waitFor(() => expect(FakeMap.instances).toHaveLength(1));
+        const map = FakeMap.instances[0];
+        act(() => map.emit("load"));
+        expect(heat(map)).toBeUndefined();
+
+        rendered.rerender(<Harness reveal={withBelief} />);
+        expect(heat(map)).toEqual(["match", ["get", "n"], "392", 0.44, "410", 0.165, 0]);
+
+        rendered.rerender(<Harness reveal={null} />);
+        expect(heat(map)).toBe(0);
+      });
+
+      it("shades nothing when the reveal has no belief (atlas.json from before the heatmap)", async () => {
+        setReducedMotion(true);
+        const { map } = await renderGlobe({ reveal: view });
+        expect(heat(map)).toBeUndefined();
+      });
+    });
   });
 });

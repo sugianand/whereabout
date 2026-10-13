@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { BASEMAP_ATTRIBUTION, MAP_COLORS, buildGlobeStyle } from "./basemap";
+import { BASEMAP_ATTRIBUTION, BELIEF_LAYER, MAP_COLORS, buildGlobeStyle } from "./basemap";
 
 describe("buildGlobeStyle", () => {
   const style = buildGlobeStyle();
@@ -27,8 +27,21 @@ describe("buildGlobeStyle", () => {
       "ocean",
       "graticule",
       "land",
+      "belief",
       "borders",
     ]);
+  });
+
+  it("has a belief layer in the Atlas colour, invisible until the reveal sets it", () => {
+    const belief = style.layers.find((layer) => layer.id === BELIEF_LAYER);
+    expect(belief?.type).toBe("fill");
+    expect(belief?.paint).toEqual({ "fill-color": MAP_COLORS.sonar, "fill-opacity": 0 });
+    const source = style.sources.countries as unknown as {
+      data: { features: { properties: { n: string } }[] };
+    };
+    const ids = source.data.features.map((f) => f.properties.n);
+    expect(ids).toContain("250"); // France
+    expect(ids.every((id) => /^\d{3}$/.test(id))).toBe(true);
   });
 
   it("paints the sea with the ocean design token", () => {

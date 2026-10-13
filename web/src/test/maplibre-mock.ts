@@ -17,6 +17,8 @@ export class FakeMap {
   jumpToCalls: Array<{ center: LngLatLike; zoom?: number }> = [];
   sources: Record<string, { data: unknown; setData(data: unknown): void }> = {};
   layers: Array<{ id: string; source?: string }> = [];
+  /** Paint values set after load, by layer id then property. */
+  paint: Record<string, Record<string, unknown>> = {};
 
   constructor(options: Record<string, unknown>) {
     this.options = options;
@@ -72,6 +74,10 @@ export class FakeMap {
 
   addLayer(layer: { id: string; source?: string }) {
     this.layers.push(layer);
+  }
+
+  setPaintProperty(layer: string, property: string, value: unknown) {
+    (this.paint[layer] ??= {})[property] = value;
   }
 
   resize() {

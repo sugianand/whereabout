@@ -138,6 +138,7 @@ describe("ApiBackend", () => {
             confidence: 0.9,
             top_countries: [{ country: "SG", p: 0.9 }],
             clues: [{ label: "City", p: 0.95 }],
+            belief: { SG: 0.9, MY: 0.05 },
             distance_km: 11408,
             score: 2,
           },
@@ -154,6 +155,7 @@ describe("ApiBackend", () => {
       confidence: 0.9,
       guessedPlace: "Singapore, SG",
       topCountries: [{ country: "SG", p: 0.9 }],
+      belief: { SG: 0.9, MY: 0.05 },
       clues: [{ label: "City", p: 0.95 }],
     });
     expect((await backend.guess("r", { lng: 2, lat: 1 })).atlas).toBeNull();
