@@ -1,6 +1,6 @@
 # Atlas v0 results
 
-Generated 2026-10-12T13:11:28+00:00 by `.github/workflows/atlas.yml` on 88 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
+Generated 2026-10-13T17:47:51+00:00 by `.github/workflows/atlas.yml` on 88 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
 
 **Playing in the game:** ViT-L-14/openai, country then city (lowest median error).
 
