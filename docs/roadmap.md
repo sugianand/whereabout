@@ -36,6 +36,21 @@ numbers anywhere. Benchmark results only appear when produced by `eval/` from a 
 - [x] Web + ML: Pocket Atlas, "test Atlas on your own photo" entirely in the browser, with a browser-vs-PyTorch parity test (docs/decisions/0004)
 - [ ] **[needs you]** Download Im2GPS3k / YFCC4k test sets and run the first public benchmark
 
+## Milestone 2.5 — Fresh games, a bigger world, visibly AI
+
+Priority from the project owner (2026-10-13): a visit should never open on the same photos,
+the catalog should grow to about 1,000 photos screened by AI rather than by eye, and the site
+should show the model at work. These steps come before the rest of Milestone 3.
+
+- [ ] Web: every visit opens a fresh random five-photo game; the Daily Five moves behind a button, with tests for both modes
+- [ ] ML: AI scene gate, CLIP zero-shot screening for people, indoor scenes, text that gives away the place and non-photos, with thresholds checked against the 88 hand-reviewed photos and a small labelled reject fixture (`ml/src/whereabout_ml/scene_gate.py`)
+- [ ] Data: Commons harvester in CI, geotagged quality images across landscape and street categories, grid-balanced, run through `ingest.py` (license capture, dedupe against the catalog) and the scene gate, place and country from the GeoNames gazetteer; grow `photos.csv` to about 1,000 and record pass/reject counts per reason
+- [ ] CI + Web: Atlas runs on the larger catalog within runner limits; the site loads photos and Atlas's guesses in chunks so the bundle stays small
+- [ ] Web: "Atlas's thinking" at the reveal, a probability heatmap over the globe and Atlas's top five countries with confidences (atlas.json carries the distribution)
+- [ ] Web: "How Atlas works" gets an AI-curation section with the gate's real pass/reject counts and example rejects
+- [ ] Web: Pocket Atlas on the home page, "Try Atlas on your photo" (CLIP in the browser) as a first-screen card
+- [ ] ML: retrieval refinement, kNN over CLIP embeddings of geotagged reference photos (harvested, never game photos), compared with Atlas v0 by the paired bootstrap in `eval/`; ships only if it wins
+
 ## Milestone 3 — Data pipeline
 
 - [x] Geocells: adaptive cell builder with tests (cells split until each has enough images; a lat/lon quadtree in the spirit of S2, `ml/src/whereabout_ml/geocells.py`)
