@@ -44,6 +44,7 @@ should show the model at work. These steps come before the rest of Milestone 3.
 
 - [x] Web: every visit opens a fresh random five-photo game; the Daily Five moves behind a button, with tests for both modes
 - [x] ML: AI scene gate, CLIP zero-shot screening for people, indoor scenes, text that gives away the place and non-photos, with thresholds checked against the 88 hand-reviewed photos and a small labelled reject fixture (`ml/src/whereabout_ml/scene_gate.py`)
+- [ ] ML: make the gate's indoor and not-a-photo reasons useful: the first calibration run (`data/scene_gate/report.md`) capped both thresholds at 1.0 because catalog photos scored near 1 (indoor: wm077; not-a-photo: wm126), so neither caught its labelled rejects; try better prompts or a calibrated small false-reject budget, and review those catalog photos
 - [ ] Data: Commons harvester in CI, geotagged quality images across landscape and street categories, grid-balanced, run through `ingest.py` (license capture, dedupe against the catalog) and the scene gate, place and country from the GeoNames gazetteer; grow `photos.csv` to about 1,000 and record pass/reject counts per reason
 - [ ] CI + Web: Atlas runs on the larger catalog within runner limits; the site loads photos and Atlas's guesses in chunks so the bundle stays small
 - [ ] Web: "Atlas's thinking" at the reveal, a probability heatmap over the globe and Atlas's top five countries with confidences (atlas.json carries the distribution)
