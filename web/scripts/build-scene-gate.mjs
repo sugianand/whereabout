@@ -26,9 +26,10 @@ export function fileTitle(title) {
 /**
  * Summarise the report. Examples are rejects whose score for their own label is over that
  * label's threshold (caught for the right reason), highest score first; ties break by title so
- * the output is stable. scores.csv is rounded to six decimals, so a score just under a threshold
- * of 1.0 can read as 1.000000: the report's own count of catches decides how many examples a
- * reason may show, and a reason that caught nothing shows none.
+ * the output is stable. Scores and thresholds are log-odds (any real number); scores.csv is
+ * rounded to six decimals, so the report's own count of catches decides how many examples a
+ * reason may show, and a reason that caught nothing shows none. Only the catalog's counts are
+ * kept: the report's list of closest keepers is for review, not for the site.
  */
 export function toSceneGate(report, rejectsCsv, scoresCsv) {
   const rejects = new Map(rows(rejectsCsv).map((r) => [r.title, r]));
@@ -53,7 +54,11 @@ export function toSceneGate(report, rejectsCsv, scoresCsv) {
   }
   return {
     thresholds: report.thresholds,
-    catalog: report.catalog,
+    catalog: {
+      n: report.catalog.n,
+      passed: report.catalog.passed,
+      rejected_by: report.catalog.rejected_by,
+    },
     rejects: Object.fromEntries(REASONS.map((r) => [r, report.rejects[r]])),
     examples,
   };

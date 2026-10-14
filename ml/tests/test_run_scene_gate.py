@@ -118,18 +118,24 @@ def test_cli_end_to_end_writes_all_outputs(workspace, capsys):
     assert set(th["thresholds"]) == set(REASONS)
     assert th["model"] == "stub/none"
     assert th["max_false_reject"] == 0.0
+    assert th["score"] == "log-odds"
 
     report = json.loads((out / "report.json").read_text())
     assert report["catalog"]["n"] == 3 and report["catalog"]["passed"] == 3
     assert report["rejects"]["people"]["caught_for_label"] == 1
     assert report["rejects"]["text"]["caught"] == 1
+    closest = report["catalog"]["closest"]
+    assert set(closest) == set(REASONS)
+    assert sorted(p["id"] for p in closest["people"]) == ["c1", "c2", "c3"]
 
     rows = list(csv.DictReader((out / "scores.csv").open()))
     assert [r["set"] for r in rows] == ["catalog"] * 3 + ["reject"] * 3
     assert rows[3]["id"] == "t0"
     assert rows[3]["label"] == "people"
     assert set(rows[0]) == {"id", "set", "label", *REASONS}
-    assert "of 3" in (out / "report.md").read_text()
+    md = (out / "report.md").read_text()
+    assert "of 3" in md
+    assert "closest to each threshold" in md
 
 
 def test_unknown_reject_label_is_an_error(workspace):

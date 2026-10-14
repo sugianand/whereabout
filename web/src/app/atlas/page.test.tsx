@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import atlasData from "@/data/atlas.json";
 import catalog from "@/data/photos.json";
 import sceneGate from "@/data/scene_gate.json";
+import { gateStrength } from "@/lib/sceneGate";
 import { niceMax } from "@/components/ContinentChart";
 import type { AtlasData, CatalogPhoto } from "@/lib/game/types";
 
@@ -102,5 +103,14 @@ describe("Choosing the photos", () => {
     expect(within(people).getAllByRole("cell")[0]).toHaveTextContent(`${caught_for_label} of ${n}`);
     const gallery = screen.getByRole("list", { name: "Images the screen turned away" });
     expect(within(gallery).getAllByRole("listitem")).toHaveLength(sceneGate.examples.length);
+  });
+
+  it("says which reasons still slip past from the real counts, not fixed text", () => {
+    const { container } = render(<AtlasPage />);
+    const reasons = ["people", "text", "indoor", "not_photo"] as const;
+    const { strong, weak } = gateStrength(sceneGate.rejects, reasons);
+    const text = container.textContent ?? "";
+    expect(text.includes("It catches most")).toBe(strong.length > 0);
+    expect(text.includes("still slip past it")).toBe(weak.length > 0);
   });
 });

@@ -9,6 +9,7 @@ import sceneGateData from "@/data/scene_gate.json";
 import { POCKET_SYSTEM, systemLabel } from "@/lib/atlas";
 import { byContinent, extremes, scoreGuesses } from "@/lib/atlasReport";
 import type { AtlasData, AtlasSystemResult, CatalogPhoto } from "@/lib/game/types";
+import { gateStrength, listPhrase } from "@/lib/sceneGate";
 
 export const metadata: Metadata = {
   title: "How Atlas guesses — Whereabout",
@@ -38,12 +39,18 @@ type SceneGate = {
   }[];
 };
 const gate = sceneGateData as SceneGate;
-const GATE_REASONS: { key: GateReason; label: string }[] = [
-  { key: "people", label: "People in the shot" },
-  { key: "text", label: "Text that names the place" },
-  { key: "indoor", label: "Indoor scenes" },
-  { key: "not_photo", label: "Not a photo (maps, art, screenshots)" },
+const GATE_REASONS: { key: GateReason; label: string; short: string }[] = [
+  { key: "people", label: "People in the shot", short: "people" },
+  { key: "text", label: "Text that names the place", short: "text" },
+  { key: "indoor", label: "Indoor scenes", short: "indoor scenes" },
+  { key: "not_photo", label: "Not a photo (maps, art, screenshots)", short: "non-photos" },
 ];
+const gateShort = (keys: GateReason[]) =>
+  listPhrase(keys.map((k) => GATE_REASONS.find((g) => g.key === k)?.short ?? k));
+const gateStrong = gateStrength(
+  gate.rejects,
+  GATE_REASONS.map((g) => g.key),
+);
 
 const pct = (x: number | null | undefined) =>
   x === null || x === undefined ? "–" : `${(x * 100).toFixed(1)}%`;
@@ -315,8 +322,11 @@ export default function AtlasPage() {
       </div>
       <p className="mt-3 text-sm text-chalk-dim">
         The test images come from Wikimedia Commons categories, not from a person checking each one,
-        so a few may be labelled wrong. The screen is good at people and text already; indoor scenes
-        and non-photos still slip past it, and that is the next thing to fix.
+        so a few may be labelled wrong.
+        {gateStrong.strong.length > 0 &&
+          ` It catches most ${gateShort(gateStrong.strong)} already.`}
+        {gateStrong.weak.length > 0 &&
+          ` Most ${gateShort(gateStrong.weak)} still slip past it, and that is the next thing to fix.`}
       </p>
       {gate.examples.length > 0 && (
         <ul

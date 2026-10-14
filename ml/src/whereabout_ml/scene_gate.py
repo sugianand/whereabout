@@ -4,13 +4,22 @@ A good game photo is an outdoor scene with no people, no readable signs and no m
 check this zero-shot. For every reject reason ("people", "indoor", "text", "not_photo") we
 write several prompts, encode and average them (prompt ensembling) and compare the photo with
 that reason against an equally ensembled "good photo" prompt set. A reason's score is the
-probability that the reason beats "good photo":
+log-odds that the reason beats "good photo":
 
-    score_r = softmax(logit_scale * [img . reject_r, img . accept])[0]
+    score_r = logit_scale * (img . reject_r - img . accept)
+
+the logit of the two-way softmax `softmax(logit_scale * [img . reject_r, img . accept])[0]`
+(`probability` converts back). Scores stay in log-odds because CLIP's logit scale pushes clear
+cases to probabilities within 1e-4 of 1. The first calibration run stored probability thresholds
+at three decimals, so a keeper just under 1 rounded its reason's threshold up to 1.0 and the
+indoor and not-a-photo reasons caught nothing; in log-odds those photos are several units apart
+and three decimals are plenty.
 
 A photo is rejected for every reason whose score reaches its threshold. Thresholds are
 calibrated on the hand-reviewed catalog (all known-good, so no catalog photo should be
-rejected) and checked on a small labelled fixture of known rejects. No training happens.
+rejected) and checked on a small labelled fixture of known rejects. The report also lists the
+catalog photos that come closest to each threshold, so they can be reviewed by eye. No training
+happens.
 """
 
 from __future__ import annotations
@@ -21,7 +30,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from whereabout_ml.zeroshot import Encoder, normalise, softmax
+from whereabout_ml.zeroshot import Encoder, normalise
 
 REASONS = ("people", "indoor", "text", "not_photo")
 
@@ -68,8 +77,12 @@ ACCEPT_PROMPTS: tuple[str, ...] = (
     "a photo of a river and fields",
 )
 
-# A placeholder until calibration (run_scene_gate) writes real thresholds.
-DEFAULT_THRESHOLDS: dict[str, float] = {r: 0.5 for r in REASONS}
+# A placeholder until calibration (run_scene_gate) writes real thresholds: log-odds 0 is "the
+# reason and 'good photo' are equally likely".
+DEFAULT_THRESHOLDS: dict[str, float] = {r: 0.0 for r in REASONS}
+
+# How many of the highest-scoring catalog photos per reason the report lists for review.
+CLOSEST_KEEPERS = 3
 
 LOGIT_SCALE = 100.0
 
@@ -78,7 +91,15 @@ LOGIT_SCALE = 100.0
 class Verdict:
     passed: bool
     reasons: tuple[str, ...]  # reasons whose score reached the threshold, in REASONS order
-    scores: dict[str, float]
+    scores: dict[str, float]  # log-odds per reason
+
+
+def probability(score: float) -> float:
+    """The two-way softmax probability behind a log-odds score (a numerically stable sigmoid)."""
+    if score >= 0:
+        return 1.0 / (1.0 + math.exp(-score))
+    z = math.exp(score)
+    return z / (1.0 + z)
 
 
 def _ensemble(encoder: Encoder, prompts: Sequence[str]) -> np.ndarray:
@@ -102,22 +123,14 @@ class SceneGate:
         self.accept_embedding = _ensemble(encoder, ACCEPT_PROMPTS)
 
     def score_embeddings(self, image_embs: np.ndarray) -> list[dict[str, float]]:
+        """Log-odds per reason for each image (see the module docstring)."""
         images = normalise(np.atleast_2d(np.asarray(image_embs, dtype=np.float64)))
-        out = []
-        for image in images:
-            accept = float(self.accept_embedding @ image)
-            out.append(
-                {
-                    r: float(
-                        softmax(
-                            self.logit_scale
-                            * np.array([float(self.reject_embeddings[r] @ image), accept])
-                        )[0]
-                    )
-                    for r in REASONS
-                }
-            )
-        return out
+        accept = images @ self.accept_embedding
+        margins = {r: images @ self.reject_embeddings[r] - accept for r in REASONS}
+        return [
+            {r: float(self.logit_scale * margins[r][i]) for r in REASONS}
+            for i in range(len(images))
+        ]
 
     def judge(self, scores: Mapping[str, float]) -> Verdict:
         reasons = tuple(r for r in REASONS if scores[r] >= self.thresholds[r])
@@ -133,7 +146,7 @@ def calibrate(
     """Per reason, the smallest threshold that rejects at most `max_false_reject` of keepers.
 
     A photo is rejected when its score is >= the threshold, so with 0.0 the threshold sits just
-    above the highest keep score (rounded up to 3 decimals, capped at 1.0).
+    above the highest keep score, rounded up to 3 decimals of log-odds (always strictly above).
     """
     if not keep_scores:
         raise ValueError("calibrate needs at least one keep photo")
@@ -143,10 +156,12 @@ def calibrate(
     allowed = math.floor(max_false_reject * n + 1e-9)  # keepers we may reject
     out = {}
     for r in REASONS:
-        ordered = sorted((s[r] for s in keep_scores), reverse=True)
+        ordered = sorted((float(s[r]) for s in keep_scores), reverse=True)
+        if not all(math.isfinite(v) for v in ordered):
+            raise ValueError(f"non-finite {r} score among the keep photos")
         # Rejecting `allowed` keepers is fine: the threshold must exceed the (allowed+1)th highest.
         above = ordered[allowed]
-        out[r] = min(1.0, round((math.floor(above * 1000 + 1e-9) + 1) / 1000, 3))
+        out[r] = round((math.floor(above * 1000 + 1e-9) + 1) / 1000, 3)
     return out
 
 
@@ -154,9 +169,16 @@ def evaluate(
     keep_scores: Sequence[Mapping[str, float]],
     rejects: Sequence[tuple[str, Mapping[str, float]]],
     thresholds: Mapping[str, float],
+    keep_ids: Sequence[str] | None = None,
 ) -> dict:
+    """Counts for the catalog and the fixture. With `keep_ids`, the report also names the
+    `CLOSEST_KEEPERS` highest-scoring catalog photos per reason (ties by id) for review."""
+
     def reasons_for(scores: Mapping[str, float]) -> list[str]:
         return [r for r in REASONS if scores[r] >= thresholds[r]]
+
+    if keep_ids is not None and len(keep_ids) != len(keep_scores):
+        raise ValueError("keep_ids and keep_scores differ in length")
 
     rejected_by = dict.fromkeys(REASONS, 0)
     passed = 0
@@ -174,11 +196,18 @@ def evaluate(
         row["caught"] += bool(hit)
         row["caught_for_label"] += label in hit
 
-    return {
-        "thresholds": dict(thresholds),
-        "catalog": {"n": len(keep_scores), "passed": passed, "rejected_by": rejected_by},
-        "rejects": labels,
-    }
+    catalog: dict = {"n": len(keep_scores), "passed": passed, "rejected_by": rejected_by}
+    if keep_ids is not None:
+        catalog["closest"] = {
+            r: [
+                {"id": i, "score": round(float(s[r]), 3)}
+                for i, s in sorted(
+                    zip(keep_ids, keep_scores, strict=True), key=lambda p: (-p[1][r], p[0])
+                )[:CLOSEST_KEEPERS]
+            ]
+            for r in REASONS
+        }
+    return {"thresholds": dict(thresholds), "catalog": catalog, "rejects": labels}
 
 
 def to_markdown(report: dict) -> str:
@@ -187,6 +216,9 @@ def to_markdown(report: dict) -> str:
         "# Scene gate",
         "",
         f"Catalog photos passed: {cat['passed']} of {cat['n']}.",
+        "",
+        "Scores and thresholds are log-odds that a photo matches the reason rather than a good "
+        "game photo (0 means even odds).",
         "",
         "| Reason | Threshold | Catalog photos rejected | Fixture n | Caught (any reason) "
         "| Caught (this reason) |",
@@ -201,5 +233,20 @@ def to_markdown(report: dict) -> str:
             f"| {r} | {report['thresholds'][r]} | {cat['rejected_by'][r]} | {n} | {caught} "
             f"| {exact} |"
         )
+    closest = cat.get("closest")
+    if closest:
+        lines += [
+            "",
+            "## Catalog photos closest to each threshold",
+            "",
+            "Hand-reviewed keepers with the highest score per reason: the ones that set the bar. "
+            "Worth a look by eye; a keeper that is really a reject should leave the catalog.",
+            "",
+            "| Reason | Threshold | Photos (score) |",
+            "| --- | ---: | --- |",
+        ]
+        for r in REASONS:
+            photos = ", ".join(f"{p['id']} ({p['score']})" for p in closest[r])
+            lines.append(f"| {r} | {report['thresholds'][r]} | {photos} |")
     lines.append("")
     return "\n".join(lines)

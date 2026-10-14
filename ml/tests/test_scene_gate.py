@@ -1,5 +1,7 @@
 """The scene gate's maths with a stub encoder: hand-built embeddings, no model weights."""
 
+import math
+
 import numpy as np
 import pytest
 
@@ -11,8 +13,10 @@ from whereabout_ml.scene_gate import (
     SceneGate,
     calibrate,
     evaluate,
+    probability,
     to_markdown,
 )
+from whereabout_ml.zeroshot import softmax
 
 DIM = len(REASONS) + 1  # one axis per reason, plus one for "good photo"
 
@@ -38,18 +42,39 @@ def axis_image(axis, strength=1.0):
     return v
 
 
-def test_scores_are_probabilities_and_peak_on_the_matching_reason():
+def test_scores_are_log_odds_and_peak_on_the_matching_reason():
     gate = SceneGate(AxisEncoder())
     embs = np.array([axis_image(j) for j in range(DIM)])
     scores = gate.score_embeddings(embs)
     for s in scores:
         assert set(s) == set(REASONS)
-        assert all(0.0 <= v <= 1.0 for v in s.values())
     for j, reason in enumerate(REASONS):
-        assert scores[j][reason] > 0.99
+        assert scores[j][reason] > 0
+        assert probability(scores[j][reason]) > 0.99
         assert scores[j][reason] == max(scores[j].values())
-    # the "good photo" image scores low for every reason
-    assert max(scores[-1].values()) < 0.01
+    # the "good photo" image is more like a good photo than like any reason
+    assert max(scores[-1].values()) < 0
+    assert max(probability(v) for v in scores[-1].values()) < 0.01
+
+
+def test_score_is_the_logit_of_the_two_way_softmax():
+    gate = SceneGate(AxisEncoder())
+    rng = np.random.default_rng(0)
+    embs = rng.normal(size=(5, DIM))
+    images = embs / np.linalg.norm(embs, axis=1, keepdims=True)
+    for image, s in zip(images, gate.score_embeddings(embs), strict=True):
+        accept = float(gate.accept_embedding @ image)
+        for r in REASONS:
+            reject = float(gate.reject_embeddings[r] @ image)
+            expected = softmax(gate.logit_scale * np.array([reject, accept]))[0]
+            assert probability(s[r]) == pytest.approx(expected, rel=1e-9)
+
+
+def test_probability_is_stable_at_large_magnitudes():
+    assert probability(0.0) == 0.5
+    assert probability(800.0) == 1.0
+    assert probability(-800.0) == 0.0
+    assert probability(2.0) + probability(-2.0) == pytest.approx(1.0)
 
 
 def test_prompt_ensembling_averages_then_renormalises():
@@ -98,13 +123,35 @@ def test_calibrate_sits_just_above_max_keep_score():
     assert all(s[r] < t[r] for s in keep for r in REASONS)
 
 
-def test_calibrate_caps_at_one_and_handles_per_reason_maxima():
-    keep = [{"people": 1.0, "indoor": 0.0, "text": 0.5, "not_photo": 0.9996}]
+def test_calibrate_handles_per_reason_maxima_and_negative_scores():
+    keep = [{"people": 12.3456, "indoor": -4.2, "text": 0.5, "not_photo": 0.0}]
     t = calibrate(keep)
-    assert t["people"] == 1.0
-    assert t["indoor"] == pytest.approx(0.001)
+    assert t["people"] == pytest.approx(12.346)
+    assert t["indoor"] == pytest.approx(-4.199)
     assert t["text"] == pytest.approx(0.501)
-    assert t["not_photo"] == 1.0
+    assert t["not_photo"] == pytest.approx(0.001)
+    assert all(keep[0][r] < t[r] for r in REASONS)
+
+
+def _logit(p):
+    return math.log(p / (1 - p))
+
+
+def test_near_certain_scores_stay_apart_in_log_odds():
+    """Regression: keepers and rejects whose probabilities differ only past the fourth decimal
+    (the first calibration run) used to share a threshold of 1.0, so nothing was caught."""
+    keep = [dict.fromkeys(REASONS, _logit(0.999894))]
+    rejects = [("indoor", dict.fromkeys(REASONS, _logit(0.999904)))]
+    t = calibrate(keep)
+    assert all(probability(t[r]) < 1.0 for r in REASONS)
+    report = evaluate(keep, rejects, t)
+    assert report["catalog"]["passed"] == 1
+    assert report["rejects"]["indoor"]["caught_for_label"] == 1
+
+
+def test_calibrate_rejects_non_finite_scores():
+    with pytest.raises(ValueError, match="non-finite"):
+        calibrate([{**dict.fromkeys(REASONS, 0.0), "text": math.inf}])
 
 
 def test_calibrate_respects_max_false_reject():
@@ -113,6 +160,7 @@ def test_calibrate_respects_max_false_reject():
     loose = calibrate(keep, 0.2)["people"]  # may reject the top 2 of 10
     assert strict == pytest.approx(0.901)
     assert loose == pytest.approx(0.701)
+    assert calibrate([dict.fromkeys(REASONS, -v) for v in range(10)], 0.0)["people"] == 0.001
     rejected = sum(s["people"] >= loose for s in keep)
     assert rejected / len(keep) <= 0.2
 
@@ -163,3 +211,29 @@ def test_markdown_contains_the_reports_counts():
     assert [c.strip() for c in row.strip("|").split("|")] == ["indoor", "0.5", "0", "4", "4", "4"]
     people = next(line for line in md.splitlines() if line.startswith("| people"))
     assert "| - | - | - |" in people
+
+
+def test_evaluate_names_the_closest_keepers_per_reason():
+    keep = [_scores(people=v, indoor=-v) for v in (1.0, 3.0, 2.0, 3.0, -1.0)]
+    ids = ["a", "b", "c", "d", "e"]
+    report = evaluate(keep, [], dict.fromkeys(REASONS, 5.0), keep_ids=ids)
+    closest = report["catalog"]["closest"]
+    assert [p["id"] for p in closest["people"]] == ["b", "d", "c"]  # ties broken by id
+    assert [p["score"] for p in closest["people"]] == [3.0, 3.0, 2.0]
+    assert [p["id"] for p in closest["indoor"]] == ["e", "a", "c"]
+    assert set(closest) == set(REASONS)
+    assert "closest" not in evaluate(keep, [], dict.fromkeys(REASONS, 5.0))["catalog"]
+
+
+def test_evaluate_checks_keep_ids_length():
+    with pytest.raises(ValueError, match="keep_ids"):
+        evaluate([_scores()], [], dict.fromkeys(REASONS, 0.0), keep_ids=["a", "b"])
+
+
+def test_markdown_lists_closest_keepers():
+    keep = [_scores(indoor=9.152), _scores(indoor=1.0)]
+    md = to_markdown(evaluate(keep, [], dict.fromkeys(REASONS, 9.153), keep_ids=["wm077", "x"]))
+    assert "log-odds" in md
+    assert "## Catalog photos closest to each threshold" in md
+    row = next(line for line in md.splitlines() if line.startswith("| indoor | 9.153 | wm"))
+    assert "wm077 (9.152), x (1.0)" in row

@@ -4,7 +4,9 @@
                --images .cache/images --out data/scene_gate
 
 The catalog photos were all reviewed by hand and are known-good, so each reason's threshold is
-set just above the highest score any of them gets (`--max-false-reject` relaxes that). The
+set just above the highest score any of them gets (`--max-false-reject` relaxes that); scores
+and thresholds are log-odds (see `whereabout_ml.scene_gate`). The report names the catalog photos
+closest to each threshold so they can be reviewed. The
 fixture (columns title,label,image_url,author,license,source_url; label is a reason) then
 shows how many known-bad photos that threshold catches. Writes thresholds.json, report.json,
 report.md and scores.csv into `--out`.
@@ -99,6 +101,7 @@ def run(
         keep_scores,
         [(lab, s) for (_, lab, _), s in zip(rejects, reject_scores, strict=True)],
         thresholds,
+        keep_ids=[key for key, _ in catalog],
     )
     report["skipped"] = {
         "catalog": len(catalog_rows) - len(catalog),
@@ -108,7 +111,12 @@ def run(
     out.mkdir(parents=True, exist_ok=True)
     (out / "thresholds.json").write_text(
         json.dumps(
-            {"thresholds": thresholds, "model": model, "max_false_reject": max_false_reject},
+            {
+                "thresholds": thresholds,
+                "score": "log-odds",
+                "model": model,
+                "max_false_reject": max_false_reject,
+            },
             indent=2,
         )
         + "\n"

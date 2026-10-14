@@ -10,8 +10,8 @@ the [Scene gate workflow](../../.github/workflows/scene_gate.yml), which commits
 | File | Contents |
 | --- | --- |
 | `rejects.csv` | The labelled reject fixture: `title`, `label`, `image_url`, `author`, `license`, `source_url` |
-| `thresholds.json` | The calibrated thresholds |
-| `report.json`, `report.md` | The calibration report, machine- and human-readable |
+| `thresholds.json` | The calibrated thresholds (log-odds) |
+| `report.json`, `report.md` | The calibration report, machine- and human-readable, with the catalog photos closest to each threshold |
 | `scores.csv` | Per-image gate scores for the catalog photos and the rejects |
 
 ## How rejects are labelled
@@ -25,11 +25,25 @@ Only openly licensed JPEG and PNG files are kept (CC0, public domain, CC BY, CC 
 per row in `rejects.csv`; attribution links back to the Commons page in `source_url`. The fixture
 is built once and reused; pass `--force` to rebuild it.
 
+## Scores are log-odds
+
+A reason's score is `logit_scale * (cos(image, reason prompts) - cos(image, good-photo prompts))`:
+the log-odds that the photo matches the reason rather than a good game photo. 0 is even odds,
+positive leans towards rejecting. Scores used to be stored as probabilities, but CLIP's logit
+scale of 100 pushes clear cases to within 1e-4 of 1, and thresholds were rounded up to three
+decimals; in the first calibration run the highest-scoring catalog photos for indoor and
+not-a-photo were just under 1, so both thresholds rounded to 1.0 and caught nothing. Log-odds
+keep those photos apart, so three decimals are enough. `scene_gate.probability` converts a
+score back to a probability.
+
 ## How thresholds are calibrated
 
 Every hand-reviewed photo in `data/curation/photos.csv` must pass the gate, so thresholds are set
 with `max_false_reject` 0 on the catalog. Within that limit, the rejects fixture shows how many
-unwanted images each label would still let through.
+unwanted images each label would still let through. The report also lists the three catalog photos
+with the highest score per reason: those set the bar, so they are the ones to look at by eye (a
+roofless church ruin can look like an interior to CLIP; if a keeper is really a reject, it should
+leave the catalog and the bar drops).
 
 ## Running locally
 
