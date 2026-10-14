@@ -1,9 +1,9 @@
 {
   "thresholds": {
-    "people": 0.999,
-    "indoor": 1.0,
-    "text": 0.891,
-    "not_photo": 1.0
+    "people": 6.863,
+    "indoor": 9.154,
+    "text": 2.095,
+    "not_photo": 9.704
   },
   "catalog": {
     "n": 88,
@@ -13,6 +13,64 @@
       "indoor": 0,
       "text": 0,
       "not_photo": 0
+    },
+    "closest": {
+      "people": [
+        {
+          "id": "wm126",
+          "score": 6.863
+        },
+        {
+          "id": "wm128",
+          "score": 6.196
+        },
+        {
+          "id": "wm078",
+          "score": 5.425
+        }
+      ],
+      "indoor": [
+        {
+          "id": "wm077",
+          "score": 9.154
+        },
+        {
+          "id": "wm091",
+          "score": 4.953
+        },
+        {
+          "id": "wm126",
+          "score": 4.678
+        }
+      ],
+      "text": [
+        {
+          "id": "wm150",
+          "score": 2.094
+        },
+        {
+          "id": "wm126",
+          "score": 0.988
+        },
+        {
+          "id": "wm078",
+          "score": 0.874
+        }
+      ],
+      "not_photo": [
+        {
+          "id": "wm126",
+          "score": 9.703
+        },
+        {
+          "id": "wm128",
+          "score": 6.972
+        },
+        {
+          "id": "wm048",
+          "score": 6.76
+        }
+      ]
     }
   },
   "rejects": {
@@ -23,8 +81,8 @@
     },
     "indoor": {
       "n": 12,
-      "caught": 4,
-      "caught_for_label": 0
+      "caught": 12,
+      "caught_for_label": 12
     },
     "text": {
       "n": 12,
@@ -33,8 +91,8 @@
     },
     "not_photo": {
       "n": 12,
-      "caught": 7,
-      "caught_for_label": 0
+      "caught": 11,
+      "caught_for_label": 9
     }
   },
   "skipped": {

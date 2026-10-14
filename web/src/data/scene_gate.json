@@ -1,9 +1,9 @@
 {
  "thresholds": {
-  "people": 0.999,
-  "indoor": 1,
-  "text": 0.891,
-  "not_photo": 1
+  "people": 6.863,
+  "indoor": 9.154,
+  "text": 2.095,
+  "not_photo": 9.704
  },
  "catalog": {
   "n": 88,
@@ -23,8 +23,8 @@
   },
   "indoor": {
    "n": 12,
-   "caught": 4,
-   "caught_for_label": 0
+   "caught": 12,
+   "caught_for_label": 12
   },
   "text": {
    "n": 12,
@@ -33,8 +33,8 @@
   },
   "not_photo": {
    "n": 12,
-   "caught": 7,
-   "caught_for_label": 0
+   "caught": 11,
+   "caught_for_label": 9
   }
  },
  "examples": [
@@ -42,7 +42,7 @@
    "reason": "people",
    "title": "'Touch' by Gavin Evans, 2009",
    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/14/%27Touch%27_by_Gavin_Evans%2C_2009.jpg/330px-%27Touch%27_by_Gavin_Evans%2C_2009.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-   "score": 1,
+   "score": 15.555748,
    "credit": {
     "author": "Redeytraveler",
     "license": "CC BY 4.0",
@@ -53,7 +53,7 @@
    "reason": "people",
    "title": "\"Silhouette image of a young Iranian man\" 07",
    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/78/%22Silhouette_image_of_a_young_Iranian_man%22_07.jpg/330px-%22Silhouette_image_of_a_young_Iranian_man%22_07.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-   "score": 0.999987,
+   "score": 11.213894,
    "credit": {
     "author": "Mostafameraji",
     "license": "CC BY-SA 4.0",
@@ -61,10 +61,32 @@
    }
   },
   {
+   "reason": "indoor",
+   "title": "AHI Treasures of Southern Africa 3-07 0146 N (686216480)",
+   "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/46/AHI_Treasures_of_Southern_Africa_3-07_0146_N_%28686216480%29.jpg/330px-AHI_Treasures_of_Southern_Africa_3-07_0146_N_%28686216480%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "score": 15.982518,
+   "credit": {
+    "author": "Joe Ross from Lansing, Michigan",
+    "license": "CC BY-SA 2.0",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:AHI_Treasures_of_Southern_Africa_3-07_0146_N_(686216480).jpg"
+   }
+  },
+  {
+   "reason": "indoor",
+   "title": "AbuQirChurchAbuQirInside",
+   "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/94/AbuQirChurchAbuQirInside.jpg/330px-AbuQirChurchAbuQirInside.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "score": 14.99894,
+   "credit": {
+    "author": "Roland Unger",
+    "license": "CC BY-SA 3.0",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:AbuQirChurchAbuQirInside.jpg"
+   }
+  },
+  {
    "reason": "text",
    "title": "24-5 sign",
    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/62/24-5_sign.jpg/330px-24-5_sign.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-   "score": 1,
+   "score": 16.301873,
    "credit": {
     "author": "Nbarth",
     "license": "CC0",
@@ -75,11 +97,33 @@
    "reason": "text",
    "title": "Ackergasse 16 (D)-02",
    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/58/Ackergasse_16_%28D%29-02.jpg/330px-Ackergasse_16_%28D%29-02.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-   "score": 0.999999,
+   "score": 14.224443,
    "credit": {
     "author": "Erwin Beilfuss",
     "license": "CC BY-SA 4.0",
     "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ackergasse_16_(D)-02.jpg"
+   }
+  },
+  {
+   "reason": "not_photo",
+   "title": "'Blauw ei'",
+   "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/18/%27Blauw_ei%27.jpg/330px-%27Blauw_ei%27.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "score": 13.925146,
+   "credit": {
+    "author": "Jackidko",
+    "license": "CC BY 4.0",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:%27Blauw_ei%27.jpg"
+   }
+  },
+  {
+   "reason": "not_photo",
+   "title": "\"Quick, Draw!\" Endgame Screen",
+   "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0b/%22Quick%2C_Draw%21%22_Endgame_Screen.png/330px-%22Quick%2C_Draw%21%22_Endgame_Screen.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "score": 13.816788,
+   "credit": {
+    "author": "Not mycircus605",
+    "license": "CC BY-SA 4.0",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:%22Quick,_Draw!%22_Endgame_Screen.png"
    }
   }
  ]
