@@ -53,6 +53,20 @@ should show the model at work. These steps come before the rest of Milestone 3.
 - [x] Web: Pocket Atlas on the home page, "Try Atlas on your photo" (CLIP in the browser) as a first-screen card in the game header, one line on phones so the photo stays the hero
 - [ ] ML: retrieval refinement, kNN over CLIP embeddings of geotagged reference photos (harvested, never game photos), compared with Atlas v0 by the paired bootstrap in `eval/`; ships only if it wins
 
+## Milestone 2.6 — Game layers
+
+Priority from the project owner (2026-10-14): the game opens straight into round one, then grows
+layers that give players reasons to come back. Everything here runs in the static site with no
+accounts; anything stored about a player stays in their browser.
+
+- [ ] Web: first screen is round one: a blurred placeholder holds the photo's place while it loads (no spinner, no splash), and first-time visitors get a small card over the photo, "Guess where this was taken. Atlas, our AI, is guessing too. Beat it.", dismissed by their first tap on the photo or globe and never shown again (browser storage in try/catch, so the game works without it); an end-to-end test that the photo is the first thing on screen and the card does not come back
+- [ ] Web + API: hints for points: up to three clues per round, each lowering the round's maximum score: continent, then driving side, then climate group, from `data/labels/concept_labels.csv` bundled at build; the API's guess request accepts the hints used and scores them server-side, with tests on both sides that the same hints give the same score
+- [ ] Web: Daily Five share card: a spoiler-free result (a distance band per round and whether you beat Atlas, no photos or place names) copied to the clipboard or sent with the Web Share API, with tests that nothing in it gives a location away
+- [ ] Web: your record against Atlas: games played, rounds won against Atlas, best game and Daily Five streak, kept only in this browser, shown on the summary screen with a reset button, with tests for streaks across days and time zones
+- [ ] Web: difficulty tiers: Easy, Medium and Hard games picked by how far Atlas v0 actually missed each photo (thirds of the real errors in `atlas.json`, labelled "how hard it was for Atlas"), chosen next to the Daily Five; tests that tiers come from the data and every tier can fill a five-photo game
+- [ ] Web: Country Streak: name the country by tapping it on the globe, one photo after another until the first miss; best streak kept in the browser; tests for the country hit test and the streak rules
+- [ ] **[needs you]** Rooms: friends play the same five photos live and see each other's pins at the reveal; needs a hosted API with Redis (`docs/architecture.md`) and a choice of host
+
 ## Milestone 3 — Data pipeline
 
 - [x] Geocells: adaptive cell builder with tests (cells split until each has enough images; a lat/lon quadtree in the spirit of S2, `ml/src/whereabout_ml/geocells.py`)
