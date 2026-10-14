@@ -74,6 +74,12 @@ milestone starts.
 
 (The daily job lists blocked steps here with what it needs.)
 
+- **Look at two catalog photos by eye.** They set the scene gate's bars (`data/scene_gate/report.md`,
+  "closest to each threshold"): `wm077` (St Olof's church ruin, Sigtuna) is the only keeper near the
+  indoor bar, and `wm126` (El Gouna, Egypt) is the top keeper for people, not-a-photo and second for
+  text. If either is really a reject, drop it from `data/curation/photos.csv` and the gate tightens
+  on its own when CI recalibrates. (The daily job cannot open Commons images from its sandbox.)
+
 - **Short site address on Vercel.** Sign in at vercel.com with GitHub, *Add New → Project*,
   import `sugianand/whereabout`, set **Root Directory** to `web` and leave the rest as detected
   (the static export needs no base path there). Name the project `whereabout`, or add a free
