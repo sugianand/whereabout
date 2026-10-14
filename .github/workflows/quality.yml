@@ -51,13 +51,18 @@ jobs:
           sed -n '/^## Photo quality/,$p' quality_summary.txt >> "$GITHUB_STEP_SUMMARY"
           rm quality_summary.txt
 
+      # The site's catalog (web/src/data/photos.json) carries each photo's measured size; keep it
+      # in step (a web test fails if it drifts). The script needs only Node, which the runner has.
+      - name: Update the site's catalog
+        run: node web/scripts/build-catalog.mjs
+
       - name: Commit results
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/curation/quality.csv
+          git add data/curation/quality.csv web/src/data/photos.json
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
