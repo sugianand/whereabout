@@ -376,6 +376,12 @@ class IngestResult:
         return [r for r in self.rows if r["duplicate_of"]]
 
 
+def thumb_path(cache_dir: Path, pageid: int | str, thumb_url: str) -> Path:
+    """Where `ingest` caches a file's thumbnail, so later stages can reuse it."""
+    suffix = Path(urllib.parse.urlparse(thumb_url).path).suffix.lower() or ".img"
+    return cache_dir / f"{pageid}{suffix}"
+
+
 def ingest(
     titles: Iterable[str],
     cache_dir: Path,
@@ -412,8 +418,7 @@ def ingest(
 
     hashed: dict[str, tuple[Accepted, int]] = {}
     for i, a in enumerate(accepted, start=1):
-        suffix = Path(urllib.parse.urlparse(a.file.thumb_url).path).suffix.lower() or ".img"
-        path = cache_dir / f"{a.file.pageid}{suffix}"
+        path = thumb_path(cache_dir, a.file.pageid, a.file.thumb_url)
         if not path.exists() and not fetch(a.file.thumb_url, path):
             result.rejected.append({"title": a.file.title, "reason": "thumbnail not available"})
             continue
