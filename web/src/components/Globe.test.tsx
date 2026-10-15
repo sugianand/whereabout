@@ -6,7 +6,7 @@ import { FakeMap, FakeMarker, resetFakes, workerUrls } from "@/test/maplibre-moc
 import type { LngLat } from "@/lib/geo";
 import type { RevealLines, RevealView } from "@/lib/reveal";
 
-import Globe from "./Globe";
+import Globe, { INITIAL_VIEW, NO_PADDING } from "./Globe";
 
 vi.mock("maplibre-gl", async () => (await import("@/test/maplibre-mock")).maplibreMock);
 
@@ -135,6 +135,46 @@ describe("Globe", () => {
     expect(map.removed).toBe(true);
   });
 
+  describe("view controls", () => {
+    it("keeps the globe north up: no tilting or twisting", async () => {
+      const { map } = await renderGlobe();
+      expect(map.options).toMatchObject({
+        dragRotate: false,
+        pitchWithRotate: false,
+        touchPitch: false,
+        maxPitch: 0,
+      });
+      expect(map.rotationDisabled).toBe(true);
+    });
+
+    it("zooms with the on-screen buttons", async () => {
+      const { map } = await renderGlobe();
+      fireEvent.click(screen.getByRole("button", { name: "Zoom in on the globe" }));
+      fireEvent.click(screen.getByRole("button", { name: "Zoom in on the globe" }));
+      fireEvent.click(screen.getByRole("button", { name: "Zoom out of the globe" }));
+      expect([map.zoomInCalls, map.zoomOutCalls]).toEqual([2, 1]);
+    });
+
+    it("recenters on the whole world after the player has wandered off", async () => {
+      const { map } = await renderGlobe();
+      act(() => map.jumpTo({ center: [150, -60], zoom: 6 }));
+      fireEvent.click(screen.getByRole("button", { name: "Recenter the globe" }));
+      expect(map.easeToCalls.at(-1)).toMatchObject({
+        center: [INITIAL_VIEW.center.lng, INITIAL_VIEW.center.lat],
+        zoom: INITIAL_VIEW.zoom,
+        padding: NO_PADDING,
+        bearing: 0,
+        pitch: 0,
+      });
+    });
+
+    it("recenters while the pin is locked, since looking around is always allowed", async () => {
+      const { map } = await renderGlobe({ disabled: true });
+      fireEvent.click(screen.getByRole("button", { name: "Recenter the globe" }));
+      expect(map.easeToCalls).toHaveLength(1);
+    });
+  });
+
   describe("reveal", () => {
     const KYOTO = { lng: 135.7681, lat: 35.0116 };
     const view: RevealView = {
@@ -205,6 +245,46 @@ describe("Globe", () => {
       view2.rerender(<Harness reveal={null} />);
       expect(lines(map).features).toHaveLength(0);
       expect(markerClasses()).toEqual([]);
+    });
+
+    it("puts the whole world back in the middle of the frame for the next round", async () => {
+      // Regression: the reveal pads one side of the camera to make room for its card, and
+      // MapLibre keeps padding between moves, so later rounds showed the globe off-centre.
+      setReducedMotion(false);
+      const rendered = render(<Harness reveal={null} />);
+      await waitFor(() => expect(FakeMap.instances).toHaveLength(1));
+      const map = FakeMap.instances[0];
+      act(() => map.emit("load"));
+      rendered.rerender(<Harness reveal={view} />);
+      expect(map.getPadding()).not.toEqual(NO_PADDING);
+
+      rendered.rerender(<Harness reveal={null} />);
+      const back = map.easeToCalls.at(-1)!;
+      expect(back.center).toEqual([INITIAL_VIEW.center.lng, INITIAL_VIEW.center.lat]);
+      expect(back).toMatchObject({ zoom: INITIAL_VIEW.zoom, padding: NO_PADDING, bearing: 0 });
+      expect(map.getPadding()).toEqual(NO_PADDING);
+      const frame = screen.getByRole("application");
+      expect(frame.dataset.padding).toBe("0,0,0,0");
+      expect(frame.dataset.zoom).toBe(INITIAL_VIEW.zoom.toFixed(2));
+    });
+
+    it("does not move the camera when a round starts without a reveal before it", async () => {
+      const { map } = await renderGlobe();
+      expect(map.easeToCalls).toHaveLength(0);
+      expect(map.jumpToCalls).toHaveLength(0);
+    });
+
+    it("reframes the answer when Show the answer again is pressed", async () => {
+      setReducedMotion(true);
+      const { map } = await renderGlobe({ reveal: view });
+      const framed = map.jumpToCalls[0];
+      act(() => map.jumpTo({ center: [0, 0], zoom: 5, padding: NO_PADDING })); // player wanders off
+      fireEvent.click(screen.getByRole("button", { name: "Show the answer again" }));
+      expect(map.easeToCalls.at(-1)).toMatchObject({
+        center: framed.center,
+        zoom: framed.zoom,
+        padding: framed.padding,
+      });
     });
 
     describe("Atlas's belief heatmap", () => {

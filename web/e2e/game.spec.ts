@@ -124,3 +124,47 @@ test("the Daily Five is one button away from a fresh game", async ({ page }) => 
   await expect(page.getByText("Round 1 of 5", { exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\?daily/);
 });
+
+test("every round starts with the whole globe centred, after any reveal", async ({ page }) => {
+  // Regression: the reveal's camera padding used to stick, pushing later rounds' globe aside.
+  await page.goto("./?daily");
+  const frame = page.locator(".globe[data-ready]");
+  await expect(frame).toBeVisible({ timeout: 20_000 });
+  const centred = { padding: "0,0,0,0", zoom: "1.40" };
+  await expect(frame).toHaveAttribute("data-padding", centred.padding);
+
+  for (let round = 1; round <= 3; round++) {
+    const card = await playRoundWithKeyboard(page);
+    await expect(frame).not.toHaveAttribute("data-padding", centred.padding);
+    // The view controls stay usable at the reveal, never hidden under the result card.
+    await page.getByRole("button", { name: "Show the answer again" }).click({ trial: true });
+    await card.getByRole("button", { name: "Next photo" }).click();
+    await expect(page.getByText(`Round ${round + 1} of 5`, { exact: true })).toBeVisible();
+    await expect(frame).toHaveAttribute("data-padding", centred.padding);
+    await expect(frame).toHaveAttribute("data-zoom", centred.zoom);
+  }
+});
+
+test("the globe can be spun, zoomed and recentred", async ({ page }) => {
+  await page.goto("./");
+  const frame = page.locator(".globe[data-ready]");
+  await expect(frame).toBeVisible({ timeout: 20_000 });
+
+  await page.getByRole("button", { name: "Zoom in on the globe" }).click();
+  await expect(frame).not.toHaveAttribute("data-zoom", "1.40");
+
+  // Drag to spin the globe somewhere else.
+  const box = (await frame.boundingBox())!;
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  await page.mouse.move(cx - box.width / 4, cy + 20, { steps: 8 });
+  await page.mouse.up();
+
+  await page.getByRole("button", { name: "Recenter the globe" }).click();
+  await expect(frame).toHaveAttribute("data-zoom", "1.40");
+  await expect(frame).toHaveAttribute("data-padding", "0,0,0,0");
+  // Spinning is not a pin drop.
+  await expect(page.getByText("Place your pin", { exact: true })).toBeVisible();
+});

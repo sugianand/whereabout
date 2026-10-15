@@ -4,6 +4,15 @@
  */
 type Handler = (event?: unknown) => void;
 type LngLatLike = [number, number];
+type Padding = { top: number; bottom: number; left: number; right: number };
+type CameraOptions = {
+  center: LngLatLike;
+  zoom?: number;
+  padding?: Padding;
+  bearing?: number;
+  pitch?: number;
+  duration?: number;
+};
 
 export class FakeMap {
   static instances: FakeMap[] = [];
@@ -13,8 +22,16 @@ export class FakeMap {
   removed = false;
   zoomInCalls = 0;
   zoomOutCalls = 0;
-  easeToCalls: Array<{ center: LngLatLike; zoom?: number }> = [];
-  jumpToCalls: Array<{ center: LngLatLike; zoom?: number }> = [];
+  easeToCalls: Array<CameraOptions> = [];
+  jumpToCalls: Array<CameraOptions> = [];
+  zoom = 1.4;
+  padding: Padding = { top: 0, bottom: 0, left: 0, right: 0 };
+  rotationDisabled = false;
+  touchZoomRotate = {
+    disableRotation: () => {
+      this.rotationDisabled = true;
+    },
+  };
   sources: Record<string, { data: unknown; setData(data: unknown): void }> = {};
   layers: Array<{ id: string; source?: string }> = [];
   /** Paint values set after load, by layer id then property. */
@@ -50,12 +67,30 @@ export class FakeMap {
     this.zoomOutCalls += 1;
   }
 
-  easeTo(options: { center: LngLatLike; zoom?: number }) {
-    this.easeToCalls.push(options);
+  /** Like MapLibre, a camera move keeps its padding until another move changes it. */
+  private move(options: CameraOptions) {
+    this.center = { lng: options.center[0], lat: options.center[1] };
+    if (options.zoom !== undefined) this.zoom = options.zoom;
+    if (options.padding) this.padding = { ...options.padding };
+    this.emit("moveend");
   }
 
-  jumpTo(options: { center: LngLatLike; zoom?: number }) {
+  easeTo(options: CameraOptions) {
+    this.easeToCalls.push(options);
+    this.move(options);
+  }
+
+  jumpTo(options: CameraOptions) {
     this.jumpToCalls.push(options);
+    this.move(options);
+  }
+
+  getPadding() {
+    return { ...this.padding };
+  }
+
+  getZoom() {
+    return this.zoom;
   }
 
   addSource(id: string, spec: { data: unknown }) {
