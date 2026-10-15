@@ -1,0 +1,77 @@
+{
+  "settings": {
+    "target": 1000,
+    "cell_deg": 10.0,
+    "seeds_per_cell": 4,
+    "candidates_per_cell": 12,
+    "max_per_cell": 12,
+    "near_km": 15.0,
+    "max_place_km": 150.0,
+    "seed": 0,
+    "pause_s": 0.3
+  },
+  "discovery": {
+    "seeds": 820,
+    "seeds_skipped_api_busy": 0,
+    "cells_with_seeds": 235,
+    "assessed_files_found": 1046,
+    "already_in_catalog": 0,
+    "candidates": 564
+  },
+  "rejected_by_stage": {
+    "metadata": {
+      "license not allowed": 5,
+      "narrower than 1280 px": 2,
+      "not landscape": 148,
+      "personality rights (identifiable people)": 6
+    },
+    "ingest": {
+      "near-duplicate of another candidate": 1
+    },
+    "scene_gate": {
+      "scene gate": 95
+    }
+  },
+  "scene_gate": {
+    "screened": 402,
+    "passed": 307,
+    "rejected": 95,
+    "rejected_by_reason": {
+      "people": 35,
+      "indoor": 7,
+      "text": 41,
+      "not_photo": 42
+    },
+    "thresholds": {
+      "people": 6.863,
+      "indoor": 9.154,
+      "text": 2.095,
+      "not_photo": 9.704
+    },
+    "model": "ViT-B-32/laion2b_s34b_b79k"
+  },
+  "passed_all_checks": 307,
+  "harvested": 307,
+  "catalog_before": 88,
+  "catalog_after": 395,
+  "cells_after": 118,
+  "countries_harvested": 52,
+  "assessments": {
+    "featured": 27,
+    "quality": 280
+  },
+  "licenses": {
+    "CC BY 2.5 au": 1,
+    "CC BY 3.0": 3,
+    "CC BY 4.0": 27,
+    "CC BY-SA 2.0 de": 3,
+    "CC BY-SA 3.0": 48,
+    "CC BY-SA 3.0 lu": 1,
+    "CC BY-SA 4.0": 216,
+    "CC0": 8
+  },
+  "sources": {
+    "photos": "Wikimedia Commons API (geosearch, categories, imageinfo + extmetadata)",
+    "places": "GeoNames cities15000 and countryInfo (CC BY 4.0)"
+  }
+}
