@@ -1,7 +1,7 @@
 {
  "model": "ViT-L-14/openai, country then city",
  "version": "atlas-v0-zeroshot",
- "generatedAt": "2026-10-14T13:06:50+00:00",
+ "generatedAt": "2026-10-15T13:16:32+00:00",
  "guesses": {
   "wm000": {
    "lng": 102.44784,
@@ -41,7 +41,7 @@
     },
     {
      "label": "Temperate",
-     "p": 0.7322
+     "p": 0.7321
     }
    ],
    "belief": {
@@ -1157,12 +1157,12 @@
   "wm022": {
    "lng": -62.21058,
    "lat": 16.79183,
-   "confidence": 0.5197,
+   "confidence": 0.5198,
    "guessedPlace": "Brades, MS",
    "topCountries": [
     {
      "country": "MA",
-     "p": 0.5197
+     "p": 0.5198
     },
     {
      "country": "DZ",
@@ -3041,12 +3041,12 @@
   "wm051": {
    "lng": -62.72499,
    "lat": 17.2955,
-   "confidence": 0.793,
+   "confidence": 0.7931,
    "guessedPlace": "Basseterre, KN",
    "topCountries": [
     {
      "country": "KN",
-     "p": 0.793
+     "p": 0.7931
     },
     {
      "country": "BQ",
