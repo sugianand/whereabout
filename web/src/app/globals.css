@@ -161,6 +161,16 @@ body {
   border: 0;
 }
 
+/* On phones the reveal card covers the lower half of the globe, so its controls move up into
+   the strip that stays visible below the header, in a row. */
+@media (max-width: 767px) {
+  .wb-stage[data-phase="revealed"] .globe-controls {
+    top: 8.25rem;
+    translate: none;
+    flex-direction: row;
+  }
+}
+
 /* At the reveal the card names the place, so the coordinates line is for screen readers only. */
 .wb-stage[data-phase="revealed"] #globe-pin-status {
   width: 1px;
