@@ -119,6 +119,19 @@ and commits [`data/ingest/`](data/ingest/README.md); locally (`ml[ingest]`):
 ingest-commons --catalog data/curation/photos.csv --out-dir data/ingest --name sample
 ```
 
+New game photos come from a harvester that searches Commons around GeoNames places in every
+10° grid cell for community-assessed Quality and Featured images, runs them through the same
+license and duplicate checks (against the catalog too) and the CLIP scene gate, names each
+place from GeoNames and balances the result across the grid.
+[`.github/workflows/harvest.yml`](.github/workflows/harvest.yml) runs it and commits
+[`data/harvest/`](data/harvest/README.md) with every rejection and its reason; locally
+(`ml[clip,ingest]` and the GeoNames files):
+
+```bash
+harvest-commons --gazetteer data/geonames --catalog data/curation/photos.csv \
+    --thresholds data/scene_gate/thresholds.json --out-dir data/harvest --target 1000
+```
+
 ## Tests
 
 Every push runs the Python suites, the web unit tests, a production build, a type-check, a
