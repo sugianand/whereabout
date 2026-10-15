@@ -112,6 +112,47 @@ def test_assessed_near_raises_on_api_errors():
         hv.assessed_near(0, 0, http=lambda url: {"error": {"code": "badvalue"}})
 
 
+BUSY = {"error": {"code": "cirrussearch-too-busy-error", "info": "Search is too busy"}}
+
+
+def test_transient_api_errors_are_retried_with_backoff():
+    answers = [BUSY, BUSY, {"query": {"pages": [geo_page("File:A.jpg", QUALITY)]}}]
+    slept = []
+    found = hv.assessed_near(0, 0, http=lambda url: answers.pop(0), sleep=slept.append)
+    assert found == {"File:A.jpg": "quality"}
+    assert slept == [hv.API_BACKOFF_S, 2 * hv.API_BACKOFF_S]
+
+
+def test_other_api_errors_are_not_retried():
+    calls = []
+
+    def http(url):
+        calls.append(url)
+        return {"error": {"code": "badvalue"}}
+
+    with pytest.raises(hv.CommonsApiError, match="badvalue"):
+        hv.assessed_near(0, 0, http=http, sleep=lambda s: None)
+    assert len(calls) == 1
+
+
+def test_discover_skips_a_seed_that_stays_busy():
+    busy = hv.Seed("Busy", "FR", 5.0, 5.0, "r9c18")
+    fine = hv.Seed("Fine", "FR", 1.0, 2.0, "r9c18")
+    near = {"1.00000|2.00000": [geo_page("File:Q1.jpg", QUALITY)]}
+
+    def http(url):
+        q = urllib.parse.parse_qs(urllib.parse.urlparse(url).query)
+        return (
+            BUSY
+            if q["ggscoord"] == ["5.00000|5.00000"]
+            else {"query": {"pages": near[q["ggscoord"][0]]}}
+        )
+
+    found, stats = hv.discover([busy, fine], 5, http=http, sleep=lambda s: None)
+    assert [c.title for c in found] == ["File:Q1.jpg"]
+    assert stats["seeds_skipped_api_busy"] == 1
+
+
 def test_discover_dedupes_skips_the_catalog_and_caps_featured_first():
     a = hv.Seed("A", "FR", 1.0, 2.0, "r9c18")
     b = hv.Seed("B", "FR", 1.5, 2.5, "r9c18")
@@ -137,6 +178,7 @@ def test_discover_dedupes_skips_the_catalog_and_caps_featured_first():
     assert found[1].seed == a  # the first seed to find a file keeps it
     assert stats == {
         "seeds": 2,
+        "seeds_skipped_api_busy": 0,
         "cells_with_seeds": 1,
         "assessed_files_found": 4,
         "already_in_catalog": 1,
@@ -418,6 +460,7 @@ def test_harvest_end_to_end(world, tmp_path):
     rep = result.report
     assert rep["discovery"] == {
         "seeds": 2,
+        "seeds_skipped_api_busy": 0,
         "cells_with_seeds": 2,
         "assessed_files_found": 11,
         "already_in_catalog": 1,

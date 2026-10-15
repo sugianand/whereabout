@@ -107,6 +107,14 @@ REJECTED_FIELDS = ("title", "stage", "reason")
 STAGES = ("metadata", "ingest", "scene_gate", "place")
 
 Http = Callable[[str], Mapping]
+
+# API error codes that mean "try again later" rather than "this request is wrong". Geosearch runs
+# on CirrusSearch, which sheds load with the first one.
+TRANSIENT_API_ERRORS = frozenset(
+    {"cirrussearch-too-busy-error", "maxlag", "ratelimited", "readonly", "internal_api_error"}
+)
+API_ATTEMPTS = 5
+API_BACKOFF_S = 5.0
 T = TypeVar("T")
 
 
@@ -120,7 +128,7 @@ class Settings:
     near_km: float = 15.0
     max_place_km: float = 150.0
     seed: int = 0
-    pause_s: float = 0.1
+    pause_s: float = 0.3
 
 
 # --- grid and seeds --------------------------------------------------------------------------
@@ -178,17 +186,51 @@ def geosearch_params(lat: float, lon: float) -> dict[str, str]:
     }
 
 
+class CommonsApiError(RuntimeError):
+    def __init__(self, error: Mapping) -> None:
+        super().__init__(f"Commons API error: {dict(error)}")
+        self.code = str(error.get("code", ""))
+
+    @property
+    def transient(self) -> bool:
+        return self.code in TRANSIENT_API_ERRORS
+
+
+def query_api(
+    url: str,
+    http: Http,
+    *,
+    attempts: int = API_ATTEMPTS,
+    backoff_s: float = API_BACKOFF_S,
+    sleep: Callable[[float], None] = time.sleep,
+) -> Mapping:
+    """`http(url)`, retrying with exponential backoff while the API answers with a transient
+    error (HTTP-level retries are `http`'s own job). Other API errors raise at once."""
+    for attempt in range(attempts):
+        data = http(url)
+        if "error" not in data:
+            return data
+        err = CommonsApiError(data["error"])
+        if not err.transient or attempt == attempts - 1:
+            raise err
+        sleep(backoff_s * 2**attempt)
+    raise AssertionError("unreachable")
+
+
 def assessed_near(
-    lat: float, lon: float, *, http: Http = http_get_json, api_url: str = COMMONS_API
+    lat: float,
+    lon: float,
+    *,
+    http: Http = http_get_json,
+    api_url: str = COMMONS_API,
+    sleep: Callable[[float], None] = time.sleep,
 ) -> dict[str, str]:
     """{title: assessment} for assessed files near a point. Category lists can be split over
     several responses (`continue`); they are merged, and "featured" wins over "quality"."""
     params = geosearch_params(lat, lon)
     found: dict[str, str] = {}
     while True:
-        data = http(f"{api_url}?{urllib.parse.urlencode(params)}")
-        if "error" in data:
-            raise RuntimeError(f"Commons API error: {data['error']}")
+        data = query_api(f"{api_url}?{urllib.parse.urlencode(params)}", http, sleep=sleep)
         for page in data.get("query", {}).get("pages", []):
             for cat in page.get("categories", []):
                 grade = ASSESSMENTS.get(cat.get("title", ""))
@@ -223,10 +265,19 @@ def discover(
     by_cell: dict[str, dict[str, Candidate]] = defaultdict(dict)
     seen: set[str] = set()
     skipped = 0
+    failed = 0
     for i, s in enumerate(seeds):
         if i and pause_s:
             sleep(pause_s)
-        for title, grade in assessed_near(s.lat, s.lon, http=http, api_url=api_url).items():
+        try:
+            near = assessed_near(s.lat, s.lon, http=http, api_url=api_url, sleep=sleep)
+        except CommonsApiError as err:
+            if not err.transient:
+                raise
+            failed += 1  # still busy after the retries: skip this seed, keep the run going
+            print(f"skipping seed {s.name}, {s.country}: {err}")
+            continue
+        for title, grade in near.items():
             if title in seen:
                 continue
             seen.add(title)
@@ -240,6 +291,7 @@ def discover(
         out += ranked[:per_cell]
     stats = {
         "seeds": len(seeds),
+        "seeds_skipped_api_busy": failed,
         "cells_with_seeds": len({s.cell for s in seeds}),
         "assessed_files_found": len(seen),
         "already_in_catalog": skipped,
@@ -576,6 +628,7 @@ def to_markdown(report: Mapping) -> str:
         "| Step | Count |",
         "| --- | ---: |",
         f"| Seed places searched | {d['seeds']} (in {d['cells_with_seeds']} cells) |",
+        f"| Seeds skipped (search still busy after retries) | {d['seeds_skipped_api_busy']} |",
         f"| Assessed files found (Quality or Featured) | {d['assessed_files_found']} |",
         f"| Already in the catalog | {d['already_in_catalog']} |",
         f"| Candidates after the per-cell cap | {d['candidates']} |",
