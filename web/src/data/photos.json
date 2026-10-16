@@ -3580,7 +3580,9 @@
    "author": "Eusebius",
    "license": "CC BY 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Mosqu%C3%A9e_des_Omeyyades_d%27Alep.jpg"
-  }
+  },
+  "width": 3659,
+  "height": 2166
  },
  {
   "id": "wh10503345",
@@ -3593,7 +3595,9 @@
    "author": "Eusebius",
    "license": "CC BY 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pano_Alep_1.jpg"
-  }
+  },
+  "width": 28179,
+  "height": 3500
  },
  {
   "id": "wh10533516",
@@ -3606,7 +3610,9 @@
    "author": "Eusebius",
    "license": "CC BY 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pano_Alep_2.jpg"
-  }
+  },
+  "width": 25551,
+  "height": 3000
  },
  {
   "id": "wh15078201",
@@ -3619,7 +3625,9 @@
    "author": "King of Hearts",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Quarry_Lakes_April_2011_panorama.jpg"
-  }
+  },
+  "width": 11800,
+  "height": 2600
  },
  {
   "id": "wh21322891",
@@ -3632,7 +3640,9 @@
    "author": "King of Hearts",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:I-880_Hayward_May_2011_001.jpg"
-  }
+  },
+  "width": 4260,
+  "height": 2840
  },
  {
   "id": "wh21322892",
@@ -3645,7 +3655,9 @@
    "author": "King of Hearts",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:I-880_Hayward_May_2011_002.jpg"
-  }
+  },
+  "width": 3960,
+  "height": 2640
  },
  {
   "id": "wh36856420",
@@ -3658,7 +3670,9 @@
    "author": "Marcin Konsek",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Zesp%C3%B3%C5%82_klasztoru_Gandan_(51).jpg"
-  }
+  },
+  "width": 3040,
+  "height": 2028
  },
  {
   "id": "wh38290022",
@@ -3671,7 +3685,9 @@
    "author": "Arild Vågen",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bryggeriet_Nyk%C3%B6ping_February_2015_01.jpg"
-  }
+  },
+  "width": 5729,
+  "height": 3824
  },
  {
   "id": "wh38295652",
@@ -3684,7 +3700,9 @@
    "author": "Arild Vågen",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nyk%C3%B6pingshus_February_2015.jpg"
-  }
+  },
+  "width": 5259,
+  "height": 2958
  },
  {
   "id": "wh38330305",
@@ -3697,7 +3715,9 @@
    "author": "Arild Vågen",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bryggeriet_Nyk%C3%B6ping_February_2015_02.jpg"
-  }
+  },
+  "width": 5922,
+  "height": 3984
  },
  {
   "id": "wh38331535",
@@ -3710,7 +3730,9 @@
    "author": "ArildV",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nyk%C3%B6ping_February_2015.jpg"
-  }
+  },
+  "width": 4655,
+  "height": 3108
  },
  {
   "id": "wh38360674",
@@ -3723,7 +3745,9 @@
    "author": "Arild Vågen",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sankt_Nicolai_kyrka_February_2015_01.jpg"
-  }
+  },
+  "width": 4506,
+  "height": 3604
  },
  {
   "id": "wh39083470",
@@ -3736,7 +3760,9 @@
    "author": "Arild Vågen",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nyk%C3%B6pingshus_Feburary_2015_09.jpg"
-  }
+  },
+  "width": 4917,
+  "height": 3283
  },
  {
   "id": "wh39859843",
@@ -3749,7 +3775,9 @@
    "author": "Bernard Gagnon",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hadrian%27s_Gate,_Antalya_01.jpg"
-  }
+  },
+  "width": 4742,
+  "height": 3231
  },
  {
   "id": "wh41167786",
@@ -3762,7 +3790,9 @@
    "author": "DXR",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bod%C3%B8_Cathedral,_South_view_20150608_1.jpg"
-  }
+  },
+  "width": 6390,
+  "height": 3896
  },
  {
   "id": "wh41168584",
@@ -3775,7 +3805,9 @@
    "author": "DXR",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bod%C3%B8_Cathedral,_Southeast_view_20150608_1.jpg"
-  }
+  },
+  "width": 6446,
+  "height": 4485
  },
  {
   "id": "wh41534807",
@@ -3788,7 +3820,9 @@
    "author": "Jebulon",
    "license": "CC0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:From_Temple_of_Olympian_Zeus_to_Lycabetus_Athens_Greece.jpg"
-  }
+  },
+  "width": 3519,
+  "height": 2575
  },
  {
   "id": "wh42117450",
@@ -3801,7 +3835,9 @@
    "author": "Bernard Gagnon",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Basilica_of_St._John_in_Ephesus_03.jpg"
-  }
+  },
+  "width": 4868,
+  "height": 3249
  },
  {
   "id": "wh42117463",
@@ -3814,7 +3850,9 @@
    "author": "Bernard Gagnon",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Basilica_of_St._John_in_Ephesus_04.jpg"
-  }
+  },
+  "width": 5184,
+  "height": 3456
  },
  {
   "id": "wh42117496",
@@ -3827,7 +3865,9 @@
    "author": "Bernard Gagnon",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Basilica_of_St._John_in_Ephesus_05.jpg"
-  }
+  },
+  "width": 5064,
+  "height": 3336
  },
  {
   "id": "wh42117533",
@@ -3840,7 +3880,9 @@
    "author": "Bernard Gagnon",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Basilica_of_St._John_in_Ephesus_06.jpg"
-  }
+  },
+  "width": 5104,
+  "height": 3403
  },
  {
   "id": "wh42117591",
@@ -3853,7 +3895,9 @@
    "author": "Bernard Gagnon",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Basilica_of_St._John_in_Ephesus_08.jpg"
-  }
+  },
+  "width": 5184,
+  "height": 3456
  },
  {
   "id": "wh42117612",
@@ -3866,7 +3910,9 @@
    "author": "Bernard Gagnon",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Basilica_of_St._John_in_Ephesus_09.jpg"
-  }
+  },
+  "width": 5184,
+  "height": 3456
  },
  {
   "id": "wh42187298",
@@ -3879,7 +3925,9 @@
    "author": "[Tycho] talk , http://shansov.net",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Noibai_New_Terminal.jpg"
-  }
+  },
+  "width": 2592,
+  "height": 1728
  },
  {
   "id": "wh42275232",
@@ -3892,7 +3940,9 @@
    "author": "[Tycho] talk , http://shansov.net",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Noibai_T2_gates.jpg"
-  }
+  },
+  "width": 2592,
+  "height": 1728
  },
  {
   "id": "wh42637626",
@@ -3905,7 +3955,9 @@
    "author": "Villy Fink Isaksen",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Church_and_rainbow_in_Akureyri.jpg"
-  }
+  },
+  "width": 5360,
+  "height": 3015
  },
  {
   "id": "wh44107330",
@@ -3918,7 +3970,9 @@
    "author": "Martin Falbisoner",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Government_House_Port_Louis.JPG"
-  }
+  },
+  "width": 2567,
+  "height": 1615
  },
  {
   "id": "wh44107331",
@@ -3931,7 +3985,9 @@
    "author": "Martin Falbisoner",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Umbrellas_at_Caudan_Waterfront_Mall.JPG"
-  }
+  },
+  "width": 4798,
+  "height": 3009
  },
  {
   "id": "wh44107332",
@@ -3944,7 +4000,9 @@
    "author": "Martin Falbisoner",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Blue_Penny_Museum.JPG"
-  }
+  },
+  "width": 3969,
+  "height": 2575
  },
  {
   "id": "wh44107335",
@@ -3957,7 +4015,9 @@
    "author": "Martin Falbisoner",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:The_Champ_de_Mars_Racecourse.JPG"
-  }
+  },
+  "width": 5601,
+  "height": 3389
  },
  {
   "id": "wh45801253",
@@ -3970,7 +4030,9 @@
    "author": "PIERRE ANDRE LECLERCQ",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dambulla_Temple_d%27or_(2).jpg"
-  }
+  },
+  "width": 4837,
+  "height": 3213
  },
  {
   "id": "wh45801258",
@@ -3983,7 +4045,9 @@
    "author": "PIERRE ANDRE LECLERCQ",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dambulla_Temple_d%27or_(3).jpg"
-  }
+  },
+  "width": 4912,
+  "height": 3264
  },
  {
   "id": "wh46082923",
@@ -3996,7 +4060,9 @@
    "author": "PIERRE ANDRE LECLERCQ",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Isurumuniya_Rock_Temple_(1).jpg"
-  }
+  },
+  "width": 4912,
+  "height": 3264
  },
  {
   "id": "wh46082930",
@@ -4009,7 +4075,9 @@
    "author": "PIERRE ANDRE LECLERCQ",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Isurumuniya_Rock_Temple_(2).jpg"
-  }
+  },
+  "width": 4912,
+  "height": 3264
  },
  {
   "id": "wh46890555",
@@ -4022,7 +4090,9 @@
    "author": "Bernard Gagnon",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tumbas_Reales_de_Sip%C3%A1n_Museum_01.jpg"
-  }
+  },
+  "width": 5104,
+  "height": 3403
  },
  {
   "id": "wh46892456",
@@ -4035,7 +4105,9 @@
    "author": "Bernard Gagnon",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cathedral_of_Lambayeque.jpg"
-  }
+  },
+  "width": 3909,
+  "height": 2606
  },
  {
   "id": "wh46911664",
@@ -4048,7 +4120,9 @@
    "author": "Bernard Gagnon",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Town_hall_of_Catacaos.jpg"
-  }
+  },
+  "width": 4112,
+  "height": 2741
  },
  {
   "id": "wh46942014",
@@ -4061,7 +4135,9 @@
    "author": "Bernard Gagnon",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hotel_Ramada_Costa_del_Sol,_Tumbes.jpg"
-  }
+  },
+  "width": 4139,
+  "height": 2758
  },
  {
   "id": "wh46942636",
@@ -4074,7 +4150,9 @@
    "author": "Bernard Gagnon",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Street_in_Tumbes_02.jpg"
-  }
+  },
+  "width": 4022,
+  "height": 2681
  },
  {
   "id": "wh46942666",
@@ -4087,7 +4165,9 @@
    "author": "Bernard Gagnon",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Street_in_Tumbes_03.jpg"
-  }
+  },
+  "width": 5184,
+  "height": 3456
  },
  {
   "id": "wh47247036",
@@ -4100,7 +4180,9 @@
    "author": "Alexxx1979",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Amursk_Amursk_combined_heat_and_power_plant_P7270022_2450.jpg"
-  }
+  },
+  "width": 3316,
+  "height": 2450
  },
  {
   "id": "wh47392651",
@@ -4113,7 +4195,9 @@
    "author": "Alexxx1979",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Amursk_Amursk_combined_heat_and_power_plant_P7280067_2200.jpg"
-  }
+  },
+  "width": 3330,
+  "height": 2200
  },
  {
   "id": "wh47412780",
@@ -4126,7 +4210,9 @@
    "author": "Alexxx1979",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Amursk_Amursk_combined_heat_and_power_plant_P7290079_2200.jpg"
-  }
+  },
+  "width": 3300,
+  "height": 2200
  },
  {
   "id": "wh47528669",
@@ -4139,7 +4225,9 @@
    "author": "Alexxx1979",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Amursk_Amur_River_P7290102_2200.jpg"
-  }
+  },
+  "width": 3299,
+  "height": 2200
  },
  {
   "id": "wh47891034",
@@ -4152,7 +4240,9 @@
    "author": "Martin Falbisoner",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tulum_-_Temple_of_the_Descending_God.JPG"
-  }
+  },
+  "width": 4174,
+  "height": 2633
  },
  {
   "id": "wh48370104",
@@ -4165,7 +4255,9 @@
    "author": "DXR",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Buildings_at_Nyholmen,_Bod%C3%B8_20150608_1.jpg"
-  }
+  },
+  "width": 6798,
+  "height": 3824
  },
  {
   "id": "wh48411974",
@@ -4178,7 +4270,9 @@
    "author": "Elisardojm",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Goi%C3%A1ns_de_Arriba.JPG"
-  }
+  },
+  "width": 3648,
+  "height": 2736
  },
  {
   "id": "wh48411977",
@@ -4191,7 +4285,9 @@
    "author": "Elisardojm",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Igrexa_Goi%C3%A1ns.JPG"
-  }
+  },
+  "width": 3648,
+  "height": 2736
  },
  {
   "id": "wh48510826",
@@ -4204,7 +4300,9 @@
    "author": "Alexxx1979",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Amursk_Amur_River_P8010333_2200.jpg"
-  }
+  },
+  "width": 3300,
+  "height": 2200
  },
  {
   "id": "wh48559027",
@@ -4217,7 +4315,9 @@
    "author": "Alexxx1979",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Amursk_Amur_River_P8010336_2200.jpg"
-  }
+  },
+  "width": 3300,
+  "height": 2200
  },
  {
   "id": "wh48604521",
@@ -4230,7 +4330,9 @@
    "author": "Alexxx1979",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Amursk_Amur_River_P8010340_2475.jpg"
-  }
+  },
+  "width": 3300,
+  "height": 2475
  },
  {
   "id": "wh49235469",
@@ -4243,7 +4345,9 @@
    "author": "Alexxx1979",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Vladivostok_Communication_boat_Uragan_P8050478_2200.jpg"
-  }
+  },
+  "width": 3837,
+  "height": 2200
  },
  {
   "id": "wh49284553",
@@ -4256,7 +4360,9 @@
    "author": "Alexxx1979",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Vladivostok_Cruiser_Varyag_P8050482_2200.jpg"
-  }
+  },
+  "width": 4013,
+  "height": 2200
  },
  {
   "id": "wh49985691",
@@ -4269,7 +4375,9 @@
    "author": "AlixSaz",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:A_view_of_the_Baku_bay,_Azerbaijan.jpg"
-  }
+  },
+  "width": 4265,
+  "height": 2843
  },
  {
   "id": "wh50297531",
@@ -4282,7 +4390,9 @@
    "author": "Ninaras",
    "license": "CC BY 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Talnakh.jpg"
-  }
+  },
+  "width": 2999,
+  "height": 1999
  },
  {
   "id": "wh50324769",
@@ -4295,7 +4405,9 @@
    "author": "DXR",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:South_Carolina_State_House,_Columbia,_Southeast_view_with_Strom_Thurmond_Statue_20160702_1.jpg"
-  }
+  },
+  "width": 5020,
+  "height": 3949
  },
  {
   "id": "wh50324845",
@@ -4308,7 +4420,9 @@
    "author": "DXR",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Marion_Gressette_Building,_Columbia_SC,_Southeast_view_20160702_1.jpg"
-  }
+  },
+  "width": 5494,
+  "height": 4395
  },
  {
   "id": "wh50756342",
@@ -4321,7 +4435,9 @@
    "author": "Dllu",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pitt_River_Bridge_2016.jpg"
-  }
+  },
+  "width": 7257,
+  "height": 3923
  },
  {
   "id": "wh51542905",
@@ -4334,7 +4450,9 @@
    "author": "Arild Vågen",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nyk%C3%B6pingshus_Feburary_2015_10.jpg"
-  }
+  },
+  "width": 5465,
+  "height": 3648
  },
  {
   "id": "wh52336679",
@@ -4347,7 +4465,9 @@
    "author": "Marcin Konsek",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Budynki_nad_rzek%C4%85_Malakka_(01).jpg"
-  }
+  },
+  "width": 5472,
+  "height": 3648
  },
  {
   "id": "wh52336794",
@@ -4360,7 +4480,9 @@
    "author": "Marcin Konsek",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Budynki_nad_rzek%C4%85_Malakka_(10).jpg"
-  }
+  },
+  "width": 5472,
+  "height": 3648
  },
  {
   "id": "wh52336809",
@@ -4373,7 +4495,9 @@
    "author": "Marcin Konsek",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Budynki_nad_rzek%C4%85_Malakka_(13).jpg"
-  }
+  },
+  "width": 5056,
+  "height": 3371
  },
  {
   "id": "wh52336910",
@@ -4386,7 +4510,9 @@
    "author": "Marcin Konsek",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Budynki_nad_rzek%C4%85_Malakka_(19).jpg"
-  }
+  },
+  "width": 5230,
+  "height": 3487
  },
  {
   "id": "wh52336946",
@@ -4399,7 +4525,9 @@
    "author": "Marcin Konsek",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Budynki_nad_rzek%C4%85_Malakka_(20).jpg"
-  }
+  },
+  "width": 5415,
+  "height": 3619
  },
  {
   "id": "wh52336983",
@@ -4412,7 +4540,9 @@
    "author": "Marcin Konsek",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Budynki_nad_rzek%C4%85_Malakka_(21).jpg"
-  }
+  },
+  "width": 4949,
+  "height": 3297
  },
  {
   "id": "wh52337019",
@@ -4425,7 +4555,9 @@
    "author": "Marcin Konsek",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Budynki_nad_rzek%C4%85_Malakka_(22).jpg"
-  }
+  },
+  "width": 5415,
+  "height": 3610
  },
  {
   "id": "wh52337064",
@@ -4438,7 +4570,9 @@
    "author": "Marcin Konsek",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Budynki_nad_rzek%C4%85_Malakka_(23).jpg"
-  }
+  },
+  "width": 5464,
+  "height": 3643
  },
  {
   "id": "wh52337104",
@@ -4451,7 +4585,9 @@
    "author": "Marcin Konsek",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Budynki_nad_rzek%C4%85_Malakka_(24).jpg"
-  }
+  },
+  "width": 5472,
+  "height": 3648
  },
  {
   "id": "wh52337143",
@@ -4464,7 +4600,9 @@
    "author": "Marcin Konsek",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Budynki_nad_rzek%C4%85_Malakka_(25).jpg"
-  }
+  },
+  "width": 5470,
+  "height": 3077
  },
  {
   "id": "wh52375624",
@@ -4477,7 +4615,9 @@
    "author": "Marcin Konsek",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Bastion_Middleburg_(01).jpg"
-  }
+  },
+  "width": 4959,
+  "height": 3306
  },
  {
   "id": "wh52375750",
@@ -4490,7 +4630,9 @@
    "author": "Marcin Konsek",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Bastion_Middleburg_(03).jpg"
-  }
+  },
+  "width": 5472,
+  "height": 3078
  },
  {
   "id": "wh52375765",
@@ -4503,7 +4645,9 @@
    "author": "Marcin Konsek",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Bastion_Middleburg_(04).jpg"
-  }
+  },
+  "width": 5263,
+  "height": 3509
  },
  {
   "id": "wh52551484",
@@ -4516,7 +4660,9 @@
    "author": "Marcin Konsek",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Budynki_nad_rzek%C4%85_Malakka_(28).jpg"
-  }
+  },
+  "width": 5472,
+  "height": 3648
  },
  {
   "id": "wh52843611",
@@ -4529,7 +4675,9 @@
    "author": "AlixSaz",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ateshgah_of_Baku.jpg"
-  }
+  },
+  "width": 3000,
+  "height": 1968
  },
  {
   "id": "wh53773638",
@@ -4542,7 +4690,9 @@
    "author": "H. Zell",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Romeria_de_los_Labradores_-_Santa_Luc%C3%ADa_de_Tirajana.jpg"
-  }
+  },
+  "width": 3454,
+  "height": 2608
  },
  {
   "id": "wh53923596",
@@ -4555,7 +4705,9 @@
    "author": "H. Zell",
    "license": "CC BY 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Roque_Nublo_-_Barranco_de_Tejeda.JPG"
-  }
+  },
+  "width": 13939,
+  "height": 3666
  },
  {
   "id": "wh56323313",
@@ -4568,7 +4720,9 @@
    "author": "Carlos Valenzuela",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:La_paz_malecon_1702p1.jpg"
-  }
+  },
+  "width": 5976,
+  "height": 2800
  },
  {
   "id": "wh56747484",
@@ -4581,7 +4735,9 @@
    "author": "Cvmontuy",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:La_Paz_malecon_1702_p2.jpg"
-  }
+  },
+  "width": 4362,
+  "height": 3124
  },
  {
   "id": "wh58446129",
@@ -4594,7 +4750,9 @@
    "author": "Alexxx1979",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Svir_River_P7210779_2200.jpg"
-  }
+  },
+  "width": 3300,
+  "height": 2200
  },
  {
   "id": "wh59292418",
@@ -4607,7 +4765,9 @@
    "author": "Jérémie Silvestro (If you can improve this photo development, ask me the RAW.)",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Rade_de_Papeete.jpg"
-  }
+  },
+  "width": 6016,
+  "height": 4000
  },
  {
   "id": "wh59345846",
@@ -4620,7 +4780,9 @@
    "author": "Gabriel Resende Veiga",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:HMS_Justice_W140_(St._Christopher).jpg"
-  }
+  },
+  "width": 5000,
+  "height": 3413
  },
  {
   "id": "wh62182211",
@@ -4633,7 +4795,9 @@
    "author": "Krzysztof Golik",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Building_at_44_Rue_Emile_Grand_in_Albi.jpg"
-  }
+  },
+  "width": 5279,
+  "height": 4000
  },
  {
   "id": "wh62213504",
@@ -4646,7 +4810,9 @@
    "author": "Krzysztof Golik",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Building_at_1_place_du_Vigan_in_Albi.jpg"
-  }
+  },
+  "width": 5491,
+  "height": 3151
  },
  {
   "id": "wh62270176",
@@ -4659,7 +4825,9 @@
    "author": "Azim Khan Ronnie",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hardinge_Bridge_02.jpg"
-  }
+  },
+  "width": 5472,
+  "height": 3648
  },
  {
   "id": "wh62311059",
@@ -4672,7 +4840,9 @@
    "author": "Arild Vågen",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Falu_koppargruva_July_2017_01.jpg"
-  }
+  },
+  "width": 5858,
+  "height": 3295
  },
  {
   "id": "wh62671094",
@@ -4685,7 +4855,9 @@
    "author": "Tuomas Vitikainen",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Imatran_Valtionhotelli_2017_02.jpg"
-  }
+  },
+  "width": 7520,
+  "height": 5640
  },
  {
   "id": "wh62748460",
@@ -4698,7 +4870,9 @@
    "author": "Sampo Kiviniemi",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Helsinki-Malmin_lentoasema_ja_lentokonesuoja.jpg"
-  }
+  },
+  "width": 4912,
+  "height": 3256
  },
  {
   "id": "wh62865420",
@@ -4711,7 +4885,9 @@
    "author": "Da Llien",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Battleship_Texas001.jpg"
-  }
+  },
+  "width": 5472,
+  "height": 3648
  },
  {
   "id": "wh62934815",
@@ -4724,7 +4900,9 @@
    "author": "Arild Vågen",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Falun_August_2017_01.jpg"
-  }
+  },
+  "width": 5617,
+  "height": 3878
  },
  {
   "id": "wh62977853",
@@ -4737,7 +4915,9 @@
    "author": "Olga Shuklina",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:%D0%A3%D1%81%D0%B0%D0%B4%D1%8C%D0%B1%D0%B0_%D0%A0%D1%83%D1%81%D0%B8%D0%BD%D0%BE%D0%B2%D0%BE%D0%B9_%D0%B2_%D0%9C%D0%B0%D0%BB%D1%8B%D1%85_%D0%9A%D0%BE%D1%80%D0%B5%D0%BB%D0%B0%D1%85.jpg"
-  }
+  },
+  "width": 3060,
+  "height": 2040
  },
  {
   "id": "wh63340069",
@@ -4750,7 +4930,9 @@
    "author": "Arild Vågen",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Falu_centralstation_July_2017_01.jpg"
-  }
+  },
+  "width": 5537,
+  "height": 3115
  },
  {
   "id": "wh63340080",
@@ -4763,7 +4945,9 @@
    "author": "Arild Vågen",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Falu_centralstation_July_2017_02.jpg"
-  }
+  },
+  "width": 5631,
+  "height": 3759
  },
  {
   "id": "wh63823421",
@@ -4776,7 +4960,9 @@
    "author": "Sanjay Acharya",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Barley_Seeds.jpg"
-  }
+  },
+  "width": 6000,
+  "height": 4000
  },
  {
   "id": "wh64012952",
@@ -4789,7 +4975,9 @@
    "author": "Sixflashphoto",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hayden_Falls_1.jpg"
-  }
+  },
+  "width": 4288,
+  "height": 2848
  },
  {
   "id": "wh64036228",
@@ -4802,7 +4990,9 @@
    "author": "Sixflashphoto",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hayden_Falls_Walkway_2.jpg"
-  }
+  },
+  "width": 4288,
+  "height": 2848
  },
  {
   "id": "wh64036229",
@@ -4815,7 +5005,9 @@
    "author": "Sixflashphoto",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hayden_Falls_Walkway_1.jpg"
-  }
+  },
+  "width": 4288,
+  "height": 2848
  },
  {
   "id": "wh64036231",
@@ -4828,7 +5020,9 @@
    "author": "Sixflashphoto",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hayden_Falls_Walkway_3.jpg"
-  }
+  },
+  "width": 4262,
+  "height": 2832
  },
  {
   "id": "wh64687720",
@@ -4841,7 +5035,9 @@
    "author": "Ermell",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Frutillar-Theatro-del-Lago-1030906-PSD.jpg"
-  }
+  },
+  "width": 4608,
+  "height": 2711
  },
  {
   "id": "wh65837069",
@@ -4854,7 +5050,9 @@
    "author": "Bernard Gagnon",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Christ_Church_Cathedral,_Darwin,_Australia.jpg"
-  }
+  },
+  "width": 5083,
+  "height": 3389
  },
  {
   "id": "wh65837239",
@@ -4867,7 +5065,9 @@
    "author": "Bernard Gagnon",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Darwin_Convention_Center.jpg"
-  }
+  },
+  "width": 3839,
+  "height": 2559
  },
  {
   "id": "wh66017115",
@@ -4880,7 +5080,9 @@
    "author": "Bernard Gagnon",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cairns_(Queensland).jpg"
-  }
+  },
+  "width": 4776,
+  "height": 3184
  },
  {
   "id": "wh66172081",
@@ -4893,7 +5095,9 @@
    "author": "Isiwal",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Foce_del_Isonzo_horses.jpg"
-  }
+  },
+  "width": 5568,
+  "height": 3712
  },
  {
   "id": "wh68155257",
@@ -4906,7 +5110,9 @@
    "author": "Gordon Leggett",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:18-04-08_NORDKAPP_IMO_9107772_11-06-03.jpg"
-  }
+  },
+  "width": 3590,
+  "height": 2403
  },
  {
   "id": "wh68355654",
@@ -4919,7 +5125,9 @@
    "author": "Bernard Gagnon",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Shrine_Complex_of_Sheikh_%27Abd_al-Samad,_Natanz_01.jpg"
-  }
+  },
+  "width": 4080,
+  "height": 2720
  },
  {
   "id": "wh69553418",
@@ -4932,7 +5140,9 @@
    "author": "Daniel L. Lu (user:dllu)",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Aerial_view_of_Apple_Park_dllu.jpg"
-  }
+  },
+  "width": 7729,
+  "height": 5160
  },
  {
   "id": "wh70835677",
@@ -4945,7 +5155,9 @@
    "author": "Sixflashphoto",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hilliard_City_Hall_1.jpg"
-  }
+  },
+  "width": 6002,
+  "height": 3080
  },
  {
   "id": "wh70860934",
@@ -4958,7 +5170,9 @@
    "author": "Sixflashphoto",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Homestead_-_Covered_Bridge_1.jpg"
-  }
+  },
+  "width": 6016,
+  "height": 4016
  },
  {
   "id": "wh70861049",
@@ -4971,7 +5185,9 @@
    "author": "Sixflashphoto",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Homestead_-_Gazebo_and_Covered_Bridge_1.jpg"
-  }
+  },
+  "width": 6016,
+  "height": 3711
  },
  {
   "id": "wh70890029",
@@ -4984,7 +5200,9 @@
    "author": "Sixflashphoto",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Homestead_-_Nature_Center_1.jpg"
-  }
+  },
+  "width": 4800,
+  "height": 2736
  },
  {
   "id": "wh70964185",
@@ -4997,7 +5215,9 @@
    "author": "Sixflashphoto",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dublin_Justice_Center_1.jpg"
-  }
+  },
+  "width": 6016,
+  "height": 4016
  },
  {
   "id": "wh71784080",
@@ -5010,7 +5230,9 @@
    "author": "Sixflashphoto",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dublin_Methodist_Hospital_East_Wing_1.jpg"
-  }
+  },
+  "width": 5645,
+  "height": 3400
  },
  {
   "id": "wh71784227",
@@ -5023,7 +5245,9 @@
    "author": "Sixflashphoto",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dublin_Methodist_Hospital_-_Front_1.jpg"
-  }
+  },
+  "width": 6016,
+  "height": 2090
  },
  {
   "id": "wh72701628",
@@ -5036,7 +5260,9 @@
    "author": "Bahnfrend",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:National_Anzac_Centre,_2018_(01).jpg"
-  }
+  },
+  "width": 4793,
+  "height": 3175
  },
  {
   "id": "wh73018828",
@@ -5049,7 +5275,9 @@
    "author": "Shahriar Amin Fahim247",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hardinge_Bridge_12.jpg"
-  }
+  },
+  "width": 6804,
+  "height": 4537
  },
  {
   "id": "wh73172303",
@@ -5062,7 +5290,9 @@
    "author": "Alexxx1979",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Samara_P8160405_2200.jpg"
-  }
+  },
+  "width": 3301,
+  "height": 2200
  },
  {
   "id": "wh73214779",
@@ -5075,7 +5305,9 @@
    "author": "IssamBarhoumi",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Trois_temples_de_Sbeitla.jpg"
-  }
+  },
+  "width": 6000,
+  "height": 4000
  },
  {
   "id": "wh73371891",
@@ -5088,7 +5320,9 @@
    "author": "Laitche",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Japanese_garden_pond_at_Daisen_Park_in_Sakai,_October_2018_-_381.jpg"
-  }
+  },
+  "width": 5472,
+  "height": 3648
  },
  {
   "id": "wh73728879",
@@ -5101,7 +5335,9 @@
    "author": "Laitche",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Japanese_garden_at_Daisen_Park_in_Sakai,_October_2018_-_662.jpg"
-  }
+  },
+  "width": 5160,
+  "height": 2621
  },
  {
   "id": "wh73798028",
@@ -5114,7 +5350,9 @@
    "author": "Laitche",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Japanese_garden_at_Daisen_Park_in_Sakai,_October_2018_-_662_II.jpg"
-  }
+  },
+  "width": 5160,
+  "height": 3155
  },
  {
   "id": "wh73825184",
@@ -5127,7 +5365,9 @@
    "author": "Trougnouf (Benoit Brummer)",
    "license": "CC BY 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dendermonde_town_hall_and_belfry_during_golden_hour_(DSCF0501).jpg"
-  }
+  },
+  "width": 3926,
+  "height": 3087
  },
  {
   "id": "wh73930830",
@@ -5140,7 +5380,9 @@
    "author": "Trougnouf (Benoit Brummer)",
    "license": "CC BY 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Gerechtsgebouw,_Dendermonde_(DSCF0521).jpg"
-  }
+  },
+  "width": 4306,
+  "height": 3197
  },
  {
   "id": "wh75611917",
@@ -5153,7 +5395,9 @@
    "author": "This Photo was taken by Supanut Arunoprayote. Feel free to use any of my images, but please mention me as the author and may send me a message. (สามารถใช้ภาพได้อิสระ แต่กรุณาใส่เครดิตผู้ถ่ายและอาจส่งข้อความบอกกล่าวด้วย) Please do not upload an updated image here without consultation with the Author. The author would like to make corrections only at his own source. This ensures that the changes are preserved.Please if you think that any changes should be required, please inform the author.Otherwise you can upload a new image with a new name. Please use one of the templates derivative or extract.",
    "license": "CC BY 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Wat_Traphang_Thong_(I).jpg"
-  }
+  },
+  "width": 4969,
+  "height": 3313
  },
  {
   "id": "wh75612340",
@@ -5166,7 +5410,9 @@
    "author": "This Photo was taken by Supanut Arunoprayote. Feel free to use any of my images, but please mention me as the author and may send me a message. (สามารถใช้ภาพได้อิสระ แต่กรุณาใส่เครดิตผู้ถ่ายและอาจส่งข้อความบอกกล่าวด้วย) Please do not upload an updated image here without consultation with the Author. The author would like to make corrections only at his own source. This ensures that the changes are preserved.Please if you think that any changes should be required, please inform the author.Otherwise you can upload a new image with a new name. Please use one of the templates derivative or extract.",
    "license": "CC BY 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Wat_Traphang_Thong_(II).jpg"
-  }
+  },
+  "width": 8237,
+  "height": 4338
  },
  {
   "id": "wh76094133",
@@ -5179,7 +5425,9 @@
    "author": "Krzysztof Golik",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Auckland_Botanic_Gardens_41.jpg"
-  }
+  },
+  "width": 4035,
+  "height": 2690
  },
  {
   "id": "wh76094140",
@@ -5192,7 +5440,9 @@
    "author": "Krzysztof Golik",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Auckland_Botanic_Gardens_46.jpg"
-  }
+  },
+  "width": 4988,
+  "height": 3325
  },
  {
   "id": "wh76094141",
@@ -5205,7 +5455,9 @@
    "author": "Krzysztof Golik",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Auckland_Botanic_Gardens_47.jpg"
-  }
+  },
+  "width": 4905,
+  "height": 2851
  },
  {
   "id": "wh76126959",
@@ -5218,7 +5470,9 @@
    "author": "King of Hearts",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Branta_canadensis_Fremont_April_2011_002.jpg"
-  }
+  },
+  "width": 2800,
+  "height": 2000
  },
  {
   "id": "wh76748488",
@@ -5231,7 +5485,9 @@
    "author": "Scotch Mist",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ventspils_21.jpg"
-  }
+  },
+  "width": 5772,
+  "height": 3838
  },
  {
   "id": "wh77387737",
@@ -5244,7 +5500,9 @@
    "author": "Frank Schulenburg",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Walters_Ranch_Hop_Kiln_in_2019,_4%C3%975.jpg"
-  }
+  },
+  "width": 5175,
+  "height": 4140
  },
  {
   "id": "wh77719953",
@@ -5257,7 +5515,9 @@
    "author": "Krzysztof Golik",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Broadway_Avenue_in_Palmerston_North_02.jpg"
-  }
+  },
+  "width": 3556,
+  "height": 2545
  },
  {
   "id": "wh78744082",
@@ -5270,7 +5530,9 @@
    "author": "Bahnfrend",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dog_Rock,_2019_(01).jpg"
-  }
+  },
+  "width": 3776,
+  "height": 2520
  },
  {
   "id": "wh79179308",
@@ -5283,7 +5545,9 @@
    "author": "H. Zell",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:View_from_Mirador_El_Time_-_La_Palma.jpg"
-  }
+  },
+  "width": 14345,
+  "height": 3341
  },
  {
   "id": "wh79497670",
@@ -5296,7 +5560,9 @@
    "author": "This Photo was taken by Supanut Arunoprayote. Feel free to use any of my images, but please mention me as the author and may send me a message. (สามารถใช้ภาพได้อิสระ แต่กรุณาใส่เครดิตผู้ถ่ายและอาจส่งข้อความบอกกล่าวด้วย) Please do not upload an updated image here without consultation with the Author. The author would like to make corrections only at his own source. This ensures that the changes are preserved.Please if you think that any changes should be required, please inform the author.Otherwise you can upload a new image with a new name. Please use one of the templates derivative or extract.",
    "license": "CC BY 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Phra_Nakhon_Khiri_(I).jpg"
-  }
+  },
+  "width": 5602,
+  "height": 3735
  },
  {
   "id": "wh79498008",
@@ -5309,7 +5575,9 @@
    "author": "This Photo was taken by Supanut Arunoprayote. Feel free to use any of my images, but please mention me as the author and may send me a message. (สามารถใช้ภาพได้อิสระ แต่กรุณาใส่เครดิตผู้ถ่ายและอาจส่งข้อความบอกกล่าวด้วย) Please do not upload an updated image here without consultation with the Author. The author would like to make corrections only at his own source. This ensures that the changes are preserved.Please if you think that any changes should be required, please inform the author.Otherwise you can upload a new image with a new name. Please use one of the templates derivative or extract.",
    "license": "CC BY 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Phra_Nakhon_Khiri_(II).jpg"
-  }
+  },
+  "width": 5513,
+  "height": 3675
  },
  {
   "id": "wh79599299",
@@ -5322,7 +5590,9 @@
    "author": "H. Zell",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pergola_-_Plaza_de_Espa%C3%B1a_-_Tazacorte_03.jpg"
-  }
+  },
+  "width": 5470,
+  "height": 3924
  },
  {
   "id": "wh79677427",
@@ -5335,7 +5605,9 @@
    "author": "Michielverbeek",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bij_Ivoz-Ramet,_zicht_op_de_Maas_IMG_9614_2019-06-01_12.46.jpg"
-  }
+  },
+  "width": 5164,
+  "height": 3219
  },
  {
   "id": "wh79815847",
@@ -5348,7 +5620,9 @@
    "author": "Daniel Kraft",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Swakopmund_Jetty_HDR.jpg"
-  }
+  },
+  "width": 4577,
+  "height": 3434
  },
  {
   "id": "wh79906195",
@@ -5361,7 +5635,9 @@
    "author": "Gordon Leggett",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2015-09-06_Summit_Airlines_BA_Avro_RJ85_C-FLRJ.jpg"
-  }
+  },
+  "width": 5883,
+  "height": 3922
  },
  {
   "id": "wh80015174",
@@ -5374,7 +5650,9 @@
    "author": "Abdulmominbd",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lawachara_Forest.jpg"
-  }
+  },
+  "width": 4563,
+  "height": 3197
  },
  {
   "id": "wh80309489",
@@ -5387,7 +5665,9 @@
    "author": "Gordon Leggett",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2019-03-16_01_Aquaculture_in_Chile.jpg"
-  }
+  },
+  "width": 6000,
+  "height": 2016
  },
  {
   "id": "wh80309490",
@@ -5400,7 +5680,9 @@
    "author": "Gordon Leggett",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2019-03-16_03_Aquaculture_in_Chile.jpg"
-  }
+  },
+  "width": 6000,
+  "height": 1599
  },
  {
   "id": "wh80760428",
@@ -5413,7 +5695,9 @@
    "author": "Daniel Kraft",
    "license": "CC BY-SA 3.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Swakopmund_Dune.jpg"
-  }
+  },
+  "width": 4600,
+  "height": 3456
  },
  {
   "id": "wh80834283",
@@ -5426,7 +5710,9 @@
    "author": "СССР",
    "license": "CC BY-SA 2.5 ca",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bread_and_Roses_Co-op_Homes.jpg"
-  }
+  },
+  "width": 5800,
+  "height": 3001
  },
  {
   "id": "wh80929572",
@@ -5439,7 +5725,9 @@
    "author": "Bernard Gagnon",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bodega_Dante_Robino,_Mendoza.jpg"
-  }
+  },
+  "width": 5104,
+  "height": 3403
  },
  {
   "id": "wh81179003",
@@ -5452,7 +5740,9 @@
    "author": "Alexxx1979",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Arkhangelsk_P7151205_2200.jpg"
-  }
+  },
+  "width": 3300,
+  "height": 2200
  },
  {
   "id": "wh81495859",
@@ -5465,7 +5755,9 @@
    "author": "Gzzz",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Calle_Matamoros_Tonal%C3%A1.jpg"
-  }
+  },
+  "width": 5568,
+  "height": 3712
  },
  {
   "id": "wh82566382",
@@ -5478,7 +5770,9 @@
    "author": "Yare zaman2000",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Vakil_Mosque,_13_July_2017.jpg"
-  }
+  },
+  "width": 5500,
+  "height": 3667
  },
  {
   "id": "wh82679251",
@@ -5491,7 +5785,9 @@
    "author": "Sagorphotos",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hardinge_Bridge,_paksi.jpg"
-  }
+  },
+  "width": 4800,
+  "height": 3200
  },
  {
   "id": "wh82680527",
@@ -5504,7 +5800,9 @@
    "author": "Sagorphotos",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hardinge_Bridge_Paksi.jpg"
-  }
+  },
+  "width": 4674,
+  "height": 3116
  },
  {
   "id": "wh82708128",
@@ -5517,6 +5815,8 @@
    "author": "Abdulmominbd",
    "license": "CC BY-SA 4.0",
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hardinge_2.jpg"
-  }
+  },
+  "width": 3754,
+  "height": 2473
  }
 ]
