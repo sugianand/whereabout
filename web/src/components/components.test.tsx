@@ -262,3 +262,61 @@ describe("RevealCard shortlist", () => {
     expect(screen.queryByText(/shortlist/)).toBeNull();
   });
 });
+
+describe("RevealCard on phones", () => {
+  function thinking(r: RoundResult): RoundResult {
+    return {
+      ...r,
+      atlas: {
+        ...r.atlas!,
+        guessedPlace: "Hanoi, VN",
+        topCountries: [
+          { country: "VN", p: 0.6 },
+          { country: "LA", p: 0.3 },
+        ],
+        clues: [{ label: "Rice paddies", p: 0.8 }],
+      },
+    };
+  }
+
+  it("folds Atlas's reasoning behind a toggle so the globe stays in view", () => {
+    render(<RevealCard result={thinking(result(5, 100, 4900))} isLast={false} onNext={() => {}} />);
+    const toggle = screen.getByRole("button", { name: "How Atlas guessed" });
+    const panel = screen.getByTestId("atlas-thinking");
+    // Hidden on phones, always shown from the md breakpoint up.
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(toggle).toHaveAttribute("aria-controls", panel.id);
+    expect(panel).toHaveClass("hidden", "md:block");
+    expect(within(panel).getByText("Rice paddies")).toBeInTheDocument();
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(toggle).toHaveAccessibleName("Hide how Atlas guessed");
+    expect(panel).not.toHaveClass("hidden");
+  });
+
+  it("keeps the score and the verdict outside the fold", () => {
+    render(<RevealCard result={thinking(result(5, 100, 4900))} isLast={false} onNext={() => {}} />);
+    const panel = screen.getByTestId("atlas-thinking");
+    const verdictLine = screen.getByText("Atlas got closer this time.");
+    expect(panel).not.toContainElement(verdictLine);
+    expect(panel).not.toContainElement(screen.getByRole("button", { name: "Next photo" }));
+  });
+
+  it("folds again for the next round", () => {
+    const first = thinking(result(5, 100, 4900));
+    const { rerender } = render(<RevealCard result={first} isLast={false} onNext={() => {}} />);
+    fireEvent.click(screen.getByRole("button", { name: "How Atlas guessed" }));
+    const second = { ...thinking(result(7, 200, 4000)) };
+    rerender(<RevealCard result={second} isLast={false} onNext={() => {}} />);
+    expect(screen.getByRole("button", { name: "How Atlas guessed" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+  });
+
+  it("has no toggle when Atlas did not play the photo", () => {
+    render(<RevealCard result={result(5, 100)} isLast={false} onNext={() => {}} />);
+    expect(screen.queryByRole("button", { name: /How Atlas guessed/ })).toBeNull();
+  });
+});

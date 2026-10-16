@@ -95,7 +95,9 @@ export interface Padding {
  */
 export function revealPadding(width: number, height: number): Padding {
   if (width < 768) {
-    return { top: 72, bottom: Math.round(height * 0.45), left: 16, right: 16 };
+    // The game header (title, mode button, round and score) takes the top 136 px on phones,
+    // and the folded result card stays within the bottom 45%.
+    return { top: 136, bottom: Math.round(height * 0.45), left: 16, right: 16 };
   }
   return { top: 72, bottom: 48, left: Math.round(Math.min(500, width * 0.36)), right: 48 };
 }

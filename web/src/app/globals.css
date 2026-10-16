@@ -293,6 +293,13 @@ body {
   bottom: auto;
 }
 
+/* At the reveal the frame fills the screen and the game header owns the top, so the credits
+   go back to the bottom corner instead of running over the round progress. */
+.wb-stage[data-phase="revealed"] .wb-globe-frame .maplibregl-ctrl-bottom-right {
+  top: auto;
+  bottom: 0;
+}
+
 /* Pocket Atlas "looking" at a photo: a sonar-coloured sweep down the image. */
 .wb-scan {
   background: linear-gradient(

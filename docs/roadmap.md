@@ -8,6 +8,13 @@ or a judgment call, so the job skips them and leaves a note under "Waiting on yo
 Rules for every step: tests pass, lint passes, small conventional commits, and no invented
 numbers anywhere. Benchmark results only appear when produced by `eval/` from a real run.
 
+**Every commit must change the game for players** (project owner, 2026-10-16): it either adds a
+layer players can use (a mode, a control, a screen, more photos) or fixes a problem players hit
+while playing, proven by a test that fails without it. Roadmap edits, docs and refactors ride
+along inside that commit; they never go in a commit of their own. The commit message says what a
+player now sees or can do. Before picking a roadmap step, play a full game on a phone and a
+desktop viewport (the Playwright suite) and fix what is broken first.
+
 ## Milestone 1 — Playable shell
 
 - [x] Repository, README, license, architecture notes
@@ -66,6 +73,7 @@ accounts; anything stored about a player stays in their browser.
 - [ ] Web: your record against Atlas: games played, rounds won against Atlas, best game and Daily Five streak, kept only in this browser, shown on the summary screen with a reset button, with tests for streaks across days and time zones
 - [ ] Web: difficulty tiers: Easy, Medium and Hard games picked by how far Atlas v0 actually missed each photo (thirds of the real errors in `atlas.json`, labelled "how hard it was for Atlas"), chosen next to the Daily Five; tests that tiers come from the data and every tier can fill a five-photo game
 - [ ] Web: Country Streak: name the country by tapping it on the globe, one photo after another until the first miss; best streak kept in the browser; tests for the country hit test and the streak rules
+- [x] Web: on phones the reveal keeps the answer in view: the result card shows the place, both distances and the verdict, Atlas's reasoning folds behind "How Atlas guessed", the camera frames the arcs between the header and the card, and the map credits no longer run over the round progress (e2e test plays five rounds on a phone viewport)
 - [ ] **[needs you]** Rooms: friends play the same five photos live and see each other's pins at the reveal; needs a hosted API with Redis (`docs/architecture.md`) and a choice of host
 
 ## Milestone 3 — Data pipeline

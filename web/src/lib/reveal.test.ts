@@ -96,10 +96,11 @@ describe("easeOut", () => {
 });
 
 describe("revealPadding", () => {
-  it("keeps the bottom of a phone screen for the result card", () => {
+  it("keeps the bottom of a phone screen for the result card and the top for the header", () => {
     const p = revealPadding(390, 844);
     expect(p.bottom).toBe(380);
-    expect(visibleFrame(390, 844, p)).toBe(358);
+    expect(p.top).toBe(136);
+    expect(visibleFrame(390, 844, p)).toBe(328);
   });
 
   it("keeps the left of a wide screen for the result card", () => {

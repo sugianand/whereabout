@@ -181,7 +181,9 @@ describe("Game", { timeout: 20000 }, () => {
     const map = await mapReady();
     for (let i = 0; i < ROUNDS_PER_GAME; i++) {
       const card = await playRound(map, { lng: 0, lat: 0 });
-      fireEvent.click(within(card).getAllByRole("button")[0]);
+      fireEvent.click(
+        within(card).getByRole("button", { name: /^(Next photo|See your results)$/ }),
+      );
     }
     await screen.findByRole("button", { name: "Play a fresh game" }, WAIT);
     expect(screen.queryByRole("button", { name: "Play the Daily Five" })).not.toBeInTheDocument();
@@ -194,7 +196,9 @@ describe("Game", { timeout: 20000 }, () => {
     expect(second).not.toBe(map);
     for (let i = 0; i < ROUNDS_PER_GAME; i++) {
       const card = await playRound(second, { lng: 0, lat: 0 });
-      fireEvent.click(within(card).getAllByRole("button")[0]);
+      fireEvent.click(
+        within(card).getByRole("button", { name: /^(Next photo|See your results)$/ }),
+      );
     }
     fireEvent.click(await screen.findByRole("button", { name: "Play the Daily Five" }, WAIT));
     expect(await screen.findByText("Daily Five, October 9", {}, WAIT)).toBeInTheDocument();

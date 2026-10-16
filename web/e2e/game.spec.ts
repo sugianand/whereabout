@@ -168,3 +168,41 @@ test("the globe can be spun, zoomed and recentred", async ({ page }) => {
   // Spinning is not a pin drop.
   await expect(page.getByText("Place your pin", { exact: true })).toBeVisible();
 });
+
+test("on a phone the answer stays in view above the result card", async ({ page }) => {
+  test.skip(
+    (page.viewportSize()?.width ?? 1000) >= 768,
+    "the card sits beside the globe on wide screens",
+  );
+  await page.goto("./?daily");
+  for (let round = 1; round <= 5; round++) {
+    const card = await playRoundWithKeyboard(page);
+    const truth = page.locator(".globe-pin--truth");
+    await expect(truth).toBeVisible({ timeout: 5_000 });
+    // Let the camera finish framing the answer before measuring.
+    await page.waitForTimeout(800);
+    const cardBox = (await card.boundingBox())!;
+    const pinBox = (await truth.boundingBox())!;
+    expect(pinBox.y + pinBox.height, `round ${round}: gold pin above the card`).toBeLessThan(
+      cardBox.y,
+    );
+    expect(
+      cardBox.height,
+      `round ${round}: card leaves most of the screen to the globe`,
+    ).toBeLessThan(page.viewportSize()!.height / 2);
+    // The map credits never run over the game header at the reveal.
+    const credits = (await page.locator(".maplibregl-ctrl-attrib").boundingBox())!;
+    const header = (await page.locator("header").first().boundingBox())!;
+    expect(credits.y, `round ${round}: credits below the header`).toBeGreaterThan(
+      header.y + header.height,
+    );
+    // Atlas's reasoning is one tap away.
+    const toggle = card.getByRole("button", { name: "How Atlas guessed" });
+    if (await toggle.count()) {
+      await toggle.click();
+      await expect(card.getByRole("button", { name: "Hide how Atlas guessed" })).toBeVisible();
+    }
+    await card.getByRole("button", { name: round < 5 ? "Next photo" : "See your results" }).click();
+  }
+  await expect(page.getByText("out of 25,000 points")).toBeVisible();
+});
