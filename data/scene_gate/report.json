@@ -3,7 +3,8 @@
     "people": 6.863,
     "indoor": 9.154,
     "text": 2.095,
-    "not_photo": 9.704
+    "not_photo": 9.704,
+    "close_up": -0.334
   },
   "catalog": {
     "n": 88,
@@ -12,7 +13,8 @@
       "people": 0,
       "indoor": 0,
       "text": 0,
-      "not_photo": 0
+      "not_photo": 0,
+      "close_up": 0
     },
     "closest": {
       "people": [
@@ -70,13 +72,27 @@
           "id": "wm048",
           "score": 6.76
         }
+      ],
+      "close_up": [
+        {
+          "id": "wm126",
+          "score": -0.335
+        },
+        {
+          "id": "wm128",
+          "score": -1.619
+        },
+        {
+          "id": "wm139",
+          "score": -2.428
+        }
       ]
     }
   },
   "rejects": {
     "people": {
       "n": 12,
-      "caught": 10,
+      "caught": 11,
       "caught_for_label": 10
     },
     "indoor": {
@@ -93,6 +109,11 @@
       "n": 12,
       "caught": 11,
       "caught_for_label": 9
+    },
+    "close_up": {
+      "n": 12,
+      "caught": 12,
+      "caught_for_label": 12
     }
   },
   "skipped": {

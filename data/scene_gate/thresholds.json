@@ -3,7 +3,8 @@
     "people": 6.863,
     "indoor": 9.154,
     "text": 2.095,
-    "not_photo": 9.704
+    "not_photo": 9.704,
+    "close_up": -0.334
   },
   "score": "log-odds",
   "model": "ViT-B-32/laion2b_s34b_b79k",
