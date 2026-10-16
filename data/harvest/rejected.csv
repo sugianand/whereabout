@@ -20,8 +20,6 @@ File:18-08-31-Helsingin Pitäjän Kirkonkylän Mylly-Keravanjoki RRK8255.jpg,met
 "File:2018-05-21 USA, CA, Pacific Grove DSC 5259 DxO.jpg",metadata,not landscape
 "File:2022-03-27 Iran, Shiraz DSC 0985 DxO.jpg",metadata,not landscape
 "File:2022-03-27 Iran, Shiraz DSC 1101 DxO.jpg",metadata,not landscape
-File:20230212 Neuburger Straße 60 Passau.jpg,metadata,no camera coordinates
-File:20230213 Kraftwerk Passau-Ingling 02.jpg,metadata,no camera coordinates
 File:20241115 white tailed deer cedar hill cemetery PD203703.jpg,metadata,not landscape
 File:20241125 white tailed deer cedar hill cemetery PD204822.jpg,metadata,not landscape
 File:20241125 white tailed deer cedar hill cemetery PD205041.jpg,metadata,not landscape
@@ -57,7 +55,6 @@ File:At At Santa Cruz de Tenerife 2023 085.jpg,metadata,not landscape
 File:At At Santa Cruz de Tenerife 2023 109.jpg,metadata,not landscape
 File:At Chicago 2024 063.jpg,metadata,not landscape
 File:At Durham 2025 043 - Durham Light Infantry Memorial Statue.jpg,metadata,not landscape
-File:At La Orotava 2022 024.jpg,metadata,no author to credit
 File:Attica 06-13 Paleo Faliro 07 Our Lady Church.jpg,metadata,not landscape
 File:Attica 06-13 Piraeus 03 Megaron Navtikou.jpg,metadata,not landscape
 File:Attica 06-13 Piraeus 04 Trinity Church.jpg,metadata,not landscape
@@ -68,6 +65,7 @@ File:Basilica of Superga - front view.jpg,metadata,not landscape
 File:Beach Morning Glory Blossom Uthandi Chennai Oct21 R16 04999.jpg,metadata,not landscape
 File:Beach Morning Glory Half Open Flower Uthandi Chennai Oct21 R16 05005.jpg,metadata,not landscape
 File:Beach Morning Glory Immature Blossoms Uthandi Chennai Oct21 R16 04990.jpg,metadata,not landscape
+File:Bee September 2007-15.jpg,metadata,not landscape
 File:Bell Tower CSI Church Kirathoor Nithiravilai Mar24 A7C 10343.jpg,metadata,not landscape
 File:Bell Tower Catherine Church Eraviputhenthurai Mar24 A7C 09983.jpg,metadata,not landscape
 File:Bell Tower Station XIV Thomas Mount Chennai Aug22 A7C 02255.jpg,metadata,not landscape
@@ -106,6 +104,8 @@ File:Building at 26 rue Mariès in Albi.jpg,metadata,not landscape
 File:Building at 32 rue de l'Hotel de Ville in Albi.jpg,metadata,not landscape
 File:Building at 8 rue Maries in Albi 02.jpg,metadata,not landscape
 File:Building at 8 rue Maries in Albi 03.jpg,metadata,not landscape
+File:Building at 8 rue Maries in Albi 04.jpg,metadata,not landscape
+File:Building at 8 rue de la Grand'Côte in Albi 01.jpg,metadata,not landscape
 "File:Bust of Pierre Poivre (Sir Seewoosagur Ramgoolam Botanical Garden), March 2020 (2).jpg",metadata,not landscape
 File:Busto Arturo Prat - A74069820240106.jpg,metadata,not landscape
 "File:Busto Arturo Prat, Ancud A74127920240109.jpg",metadata,not landscape
@@ -321,6 +321,8 @@ File:Main Road NW Eraviputhenthurai Mar24 A7C 09982.jpg,metadata,not landscape
 File:Malachite kingfisher (Corythornis cristatus galerita).jpg,metadata,not landscape
 File:Maniola jurtina male Bytom.jpg,metadata,not landscape
 File:Mary Magdalene cathedral in Desenzano (1).jpg,metadata,not landscape
+File:Mary Magdalene cathedral in Desenzano (5).jpg,metadata,not landscape
+File:Mary Magdalene cathedral in Desenzano (7).jpg,metadata,not landscape
 File:Mauritius grey white-eye (Zosterops mauritianus).jpg,metadata,not landscape
 "File:McKissick Museum, USC, Columbia, West view 20160702 1.jpg",metadata,not landscape
 File:Moai de la gratitud.jpg,metadata,not landscape
@@ -345,6 +347,8 @@ File:Mumbai 03-2016 54 Kings Circle station.jpg,metadata,license not allowed: FA
 File:Mural Octavo Decálogo.jpg,metadata,not landscape
 File:Muñeco de navidad.09.12.2022.jpg,metadata,not landscape
 File:Neochmia temporalis Cleland 2009 - 1.jpg,metadata,not landscape
+File:Nile Litter R01.jpg,metadata,not landscape
+File:Nile Luxor R17.jpg,metadata,not landscape
 File:Old Hindu Temple Nithiravilai Mar24 A7C 10220.jpg,metadata,not landscape
 File:Oustalet's chameleon (Furcifer oustaleti) male feeding Anja Community Reserve 1e.jpg,metadata,not landscape
 File:Oustalet's chameleon (Furcifer oustaleti) male feeding Anja Community Reserve 2e.jpg,metadata,not landscape
@@ -385,6 +389,8 @@ File:Ruby Princess moored in Bridgetown.JPG,metadata,not landscape
 File:Rufous sabrewing (Pampa rufa) Finca El Pilar 2.jpg,metadata,not landscape
 File:SL Anuradhapura asv2020-01 img24 Jetavanaramaya Stupa.jpg,metadata,license not allowed: FAL
 File:SL Anuradhapura asv2020-01 img31 Abhayagiriya Stupa.jpg,metadata,license not allowed: FAL
+File:Saint Lichaa 1.jpg,metadata,not landscape
+File:Saint Lichaa 2.jpg,metadata,not landscape
 "File:Salt Lake City (UT, USA), Trolley Square, Weather Forecast Tower -- 2022 -- 171045.jpg",metadata,not landscape
 File:San Breixo de Oza2.JPG,metadata,not landscape
 File:Santo Estevo Goiáns.JPG,metadata,not landscape
@@ -450,7 +456,9 @@ File:Trillium erectum - Stephen's Gulch CA.jpg,metadata,not landscape
 File:Two-barred flasher (Astraptes fulgerator azul).jpg,metadata,not landscape
 File:Ulan Bator.- Gandan Monastery (2).JPG,metadata,not landscape
 File:Une bouche incendie à Caudan Waterfront (Port Louis).jpg,metadata,not landscape
+File:Upper Duden Falls.jpg,metadata,not landscape
 File:Ventspils 19.jpg,metadata,not landscape
+"File:Viacrucis Cuarta Estación, “Jesús se encuentra con su Madre”.jpg",metadata,not landscape
 "File:Victoria cruziana pond at Sir Seewoosagur Ramgoolam Botanical Garden, March 2020 (5).jpg",metadata,not landscape
 File:Wasp colony.jpg,metadata,not landscape
 File:Wat Chedi Yot Thong วัดเจดีย์ยอดทอง (March 2022) - IMG 05.jpg,metadata,not landscape
@@ -502,6 +510,8 @@ File:Zinnia elegans flower in jaffna.JPG,metadata,not landscape
 "File:Жаркент, дунганская мечеть, северные ворота, барельеф (2).jpg",metadata,not landscape
 "File:Жаркент, дунганская мечеть, северные ворота.jpg",metadata,not landscape
 "File:Жаркент, дунганская мечеть, угловая колонна на главных воротах.jpg",metadata,not landscape
+File:Ломоносов. Люк на Иликовском.jpg,metadata,not landscape
+"File:Люк в Ломоносове, 12окт2025.jpg",metadata,not landscape
 File:Люки 11.06.24 СПб 01.jpg,metadata,not landscape
 File:Люки 11.06.24 СПб 02.jpg,metadata,not landscape
 File:Люки 11.06.24 СПб 03.jpg,metadata,not landscape
@@ -593,6 +603,7 @@ File:Arona-Zentrum-Teneriffa-BMW-2002.jpg,scene_gate,scene gate: text
 File:Asiatic blood tail (Lathrecista asiatica) male Viti Levu.jpg,scene_gate,scene gate: close_up
 File:At At Santa Cruz de Tenerife 2023 078.jpg,scene_gate,scene gate: close_up
 File:At La Orotava 2022 021.jpg,scene_gate,scene gate: people
+File:At La Orotava 2022 024.jpg,scene_gate,"scene gate: people, close_up"
 File:Attica 06-13 Paleo Faliro 02 tram at SEF.jpg,scene_gate,scene gate: text
 File:Attica 06-13 Piraeus 07 Port.jpg,scene_gate,scene gate: text
 File:August dart (Oriens augustula) Viti Levu 2.jpg,scene_gate,"scene gate: not_photo, close_up"
@@ -620,6 +631,7 @@ File:Black-faced ibis (Theristicus melanopis) in flight Laguna Nimez 2.jpg,scene
 File:Black-faced ibis (Theristicus melanopis) in flight Laguna Nimez.jpg,scene_gate,"scene gate: people, close_up"
 File:Black-headed gull (Chroicocephalus ridibundus) winter plumage Ethiopia.jpg,scene_gate,scene gate: close_up
 File:Black-winged stilt (Himantopus himantopus) Ethiopia.jpg,scene_gate,scene gate: close_up
+File:Blue star 1 chimneys Piraeus Greece.jpg,scene_gate,"scene gate: people, text, not_photo, close_up"
 File:Bolsa de cuero de lobo marino.jpg,scene_gate,scene gate: close_up
 File:Brown pansy (Junonia hedonia zelima) Koror.jpg,scene_gate,scene gate: close_up
 File:Brown-headed Gull Swimming River Allahabad Jan24 A7C 08577.jpg,scene_gate,"scene gate: not_photo, close_up"
@@ -762,6 +774,7 @@ File:Green skimmer (Orthetrum serapia) Viti Levu.jpg,scene_gate,scene gate: clos
 "File:Grilled pork, Ecuador.jpg",scene_gate,"scene gate: people, text, not_photo, close_up"
 File:Groupe de flamants roses - lac de Tunis - 2.jpg,scene_gate,scene gate: close_up
 "File:Guernica reproduction on tiled wall, Guernica, Spain (PPL3-Altered) julesvernex2.jpg",scene_gate,"scene gate: text, not_photo"
+File:HSF Festos Palace wisnia6522.jpg,scene_gate,scene gate: text
 "File:Hadrian's Gate, Antalya 05.jpg",scene_gate,scene gate: close_up
 "File:Hadrian's Gate, Antalya 06.jpg",scene_gate,"scene gate: people, indoor, close_up"
 "File:Hahndorf (AU), Bakery Wunderbar -- 2019 -- 0680.jpg",scene_gate,"scene gate: text, close_up"
@@ -825,6 +838,7 @@ File:Marabou stork (Leptoptilos crumenifer) spreading wings 2.jpg,scene_gate,sce
 File:Market in Mörön 04.jpg,scene_gate,scene gate: text
 File:Masked Lapwing sand.jpg,scene_gate,"scene gate: people, close_up"
 File:Meadow argus (Junonia villida) Upolu.jpg,scene_gate,scene gate: close_up
+File:Memphis BW 2.jpg,scene_gate,scene gate: people
 "File:MiG-17 Take to the Skies Airfest Durant, Oklahoma 4.jpg",scene_gate,"scene gate: not_photo, close_up"
 File:MiG-17 Takes to the Sky (cropped).jpg,scene_gate,"scene gate: not_photo, close_up"
 File:Montane leopard frog (Lithobates taylori) 1.jpg,scene_gate,"scene gate: people, not_photo, close_up"
@@ -832,6 +846,7 @@ File:Montane leopard frog (Lithobates taylori) 2.jpg,scene_gate,"scene gate: not
 File:Montane leopard frog (Lithobates taylori) 3.jpg,scene_gate,"scene gate: people, not_photo, close_up"
 File:Montane leopard frog (Lithobates taylori) 4.jpg,scene_gate,scene gate: close_up
 File:Montane sister (Adelpha donysa) Guatemala.jpg,scene_gate,scene gate: close_up
+File:Moon Jelly.jpg,scene_gate,"scene gate: people, not_photo, close_up"
 File:Moray Leisure Centre Sign.jpg,scene_gate,scene gate: text
 File:Moray Leisure Centre.jpg,scene_gate,scene gate: text
 "File:Mosaïque Façade de la porte de la mosquée de Sidi El-Haloui, Tlemcen.jpg",scene_gate,scene gate: text
@@ -918,6 +933,7 @@ File:Samoan blue tiger (Tirumala hamata melittula) female underside Upolu.jpg,sc
 File:Samoan blue tiger (Tirumala hamata melittula) male underside Upolu.jpg,scene_gate,scene gate: close_up
 File:School of sardines at the Monterey Bay Aquarium (12056).jpg,scene_gate,scene gate: people
 File:Scorpions - 07.jpg,scene_gate,"scene gate: people, close_up"
+File:Seeds of Cumin.jpg,scene_gate,scene gate: close_up
 File:Semi-Sub - Eden Island Marina - Mahe -Seychelles - 2025.jpg,scene_gate,scene gate: text
 File:Senegal thick-knee (Burhinus senegalensis).jpg,scene_gate,scene gate: close_up
 File:SeñaldeTransitoPendienteAscendenre.jpg,scene_gate,scene gate: text
@@ -938,6 +954,7 @@ File:Speckled pigeon (Columba guinea guinea) Ethiopia.jpg,scene_gate,"scene gate
 File:Spectacled tyrant (Hymenops perspicillatus perspicillatus) male Laguna Nimez.jpg,scene_gate,scene gate: close_up
 File:Spider and bee June 2008-1.jpg,scene_gate,"scene gate: people, text, not_photo, close_up"
 File:Spider and fly March 2008-2.jpg,scene_gate,"scene gate: people, text, not_photo, close_up"
+File:Split Red Lentil.jpg,scene_gate,"scene gate: not_photo, close_up"
 File:Spondylus varius.jpg,scene_gate,"scene gate: people, text, not_photo, close_up"
 File:Spotted-backed weaver (Ploceus cucullatus spilonotus) male Mauritius.jpg,scene_gate,"scene gate: people, not_photo, close_up"
 File:St George fresco - St George Church museum - Kyustendil..jpg,scene_gate,"scene gate: people, text, not_photo"
@@ -992,6 +1009,7 @@ File:Yellow-spotted Agama in Kuwait 4.jpg,scene_gate,scene gate: close_up
 File:Yellow-spotted Agama in Kuwait.jpg,scene_gate,scene gate: close_up
 File:Z3.215 + B2.2028 swanston.JPG,scene_gate,scene gate: text
 File:Zespół klasztoru Gandan (01).jpg,scene_gate,scene gate: text
+File:Zespół klasztoru Gandan (44).jpg,scene_gate,"scene gate: people, text, not_photo, close_up"
 "File:Жаркент, Ильинская церковь, окно (2).jpg",scene_gate,scene gate: text
 "File:Жаркент, автобус в тупике Ынтымак.jpg",scene_gate,scene gate: text
 "File:Жаркент, дунганская мечеть (4).jpg",scene_gate,scene gate: close_up
@@ -999,6 +1017,16 @@ File:Zespół klasztoru Gandan (01).jpg,scene_gate,scene gate: text
 "File:Жаркент, дунганская мечеть, фреска.jpg",scene_gate,"scene gate: text, close_up"
 File:Ломоносов. Бархатцы у ДК.jpg,scene_gate,scene gate: close_up
 File:Ломоносов. Георгины на Александровской 01.jpg,scene_gate,scene gate: close_up
+File:Ломоносов. Георгины на Александровской 02.jpg,scene_gate,scene gate: close_up
+File:Ломоносов. Жимолость на Александровской 01.jpg,scene_gate,scene gate: close_up
+File:Ломоносов. Жимолость на Александровской 02.jpg,scene_gate,scene gate: close_up
+File:Ломоносов. Люк на Александровской 01.jpg,scene_gate,scene gate: text
+File:Ломоносов. Люк на Александровской 02.jpg,scene_gate,"scene gate: text, close_up"
+File:Ломоносов. Люк на Александровской 03.jpg,scene_gate,"scene gate: text, close_up"
+File:Ломоносов. Люк на Александровской 04.jpg,scene_gate,"scene gate: text, close_up"
+File:Ломоносов. Настурция у ДК 01.jpg,scene_gate,scene gate: close_up
+File:Ломоносов. Настурция у ДК 02.jpg,scene_gate,scene gate: close_up
+File:Ломоносов. Петуния у ДК.jpg,scene_gate,scene gate: close_up
 File:Молодий кулик-довгоніг в дельті Дунаю.jpg,scene_gate,scene gate: close_up
 File:Пойма Иртыша косуля.jpg,scene_gate,scene gate: close_up
 File:Пойма Иртыша стая косуль.jpg,scene_gate,scene gate: people

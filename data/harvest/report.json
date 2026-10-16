@@ -15,36 +15,35 @@
     "seeds_skipped_api_busy": 0,
     "cells_with_seeds": 235,
     "assessed_files_found": 2650,
-    "already_in_catalog": 1,
-    "candidates": 1720
+    "already_in_catalog": 151,
+    "candidates": 1627
   },
   "rejected_by_stage": {
     "metadata": {
       "license not allowed": 21,
       "narrower than 1280 px": 6,
-      "no author to credit": 3,
-      "no camera coordinates": 2,
+      "no author to credit": 2,
       "not a JPEG photo": 2,
-      "not landscape": 461,
+      "not landscape": 474,
       "personality rights (identifiable people)": 14
     },
     "ingest": {
       "near-duplicate of another candidate": 2
     },
     "scene_gate": {
-      "scene gate": 493
+      "scene gate": 511
     }
   },
   "scene_gate": {
-    "screened": 1209,
-    "passed": 716,
-    "rejected": 493,
+    "screened": 1106,
+    "passed": 595,
+    "rejected": 511,
     "rejected_by_reason": {
-      "people": 127,
+      "people": 132,
       "indoor": 28,
-      "text": 164,
-      "not_photo": 107,
-      "close_up": 345
+      "text": 171,
+      "not_photo": 111,
+      "close_up": 360
     },
     "thresholds": {
       "people": 6.863,
@@ -55,30 +54,24 @@
     },
     "model": "ViT-B-32/laion2b_s34b_b79k"
   },
-  "passed_all_checks": 716,
-  "harvested": 645,
-  "catalog_before": 88,
-  "catalog_after": 733,
+  "passed_all_checks": 595,
+  "harvested": 504,
+  "catalog_before": 238,
+  "catalog_after": 742,
   "cells_after": 138,
-  "countries_harvested": 67,
+  "countries_harvested": 59,
   "assessments": {
-    "featured": 46,
-    "quality": 599
+    "featured": 31,
+    "quality": 473
   },
   "licenses": {
-    "CC BY 2.5": 20,
-    "CC BY 2.5 au": 1,
-    "CC BY 3.0": 18,
-    "CC BY 4.0": 81,
+    "CC BY 3.0": 4,
+    "CC BY 4.0": 82,
     "CC BY-SA 2.0": 1,
     "CC BY-SA 2.5 ca": 4,
-    "CC BY-SA 3.0": 109,
-    "CC BY-SA 3.0 at": 1,
-    "CC BY-SA 3.0 ee": 1,
-    "CC BY-SA 3.0 lu": 1,
-    "CC BY-SA 4.0": 385,
-    "CC0": 22,
-    "Public domain": 1
+    "CC BY-SA 3.0": 30,
+    "CC BY-SA 4.0": 362,
+    "CC0": 21
   },
   "sources": {
     "photos": "Wikimedia Commons API (geosearch, categories, imageinfo + extmetadata)",
