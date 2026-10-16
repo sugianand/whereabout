@@ -1,6 +1,6 @@
 {
   "system": "atlas-v0-zeroshot",
-  "generatedAt": "2026-10-15T13:16:32+00:00",
+  "generatedAt": "2026-10-16T13:23:55+00:00",
   "dataset": "whereabout-curated (data/curation/photos.csv)",
   "n": 88,
   "skipped": {},
