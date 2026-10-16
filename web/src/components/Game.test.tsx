@@ -141,8 +141,9 @@ describe("Game", { timeout: 20000 }, () => {
     await mapReady();
     expect(await screen.findByText("Fresh game", {}, WAIT)).toBeInTheDocument();
     const src = (await screen.findByRole("img")).getAttribute("src");
-    const recent = JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]") as string[];
-    expect(recent).toHaveLength(ROUNDS_PER_GAME);
+    const read = () => JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]") as string[];
+    await waitFor(() => expect(read()).toHaveLength(ROUNDS_PER_GAME), WAIT);
+    const recent = read();
     const byId = new Map((catalog as CatalogPhoto[]).map((p) => [p.id, p]));
     expect(recent.map((id) => byId.get(id)!.imageUrl)).toContain(src);
     expect(window.location.search).toBe("");
@@ -152,15 +153,19 @@ describe("Game", { timeout: 20000 }, () => {
     const first = render(<Game />);
     await mapReady();
     await screen.findByText("Fresh game", {}, WAIT);
+    await waitFor(() => expect(localStorage.getItem(RECENT_KEY)).not.toBeNull(), WAIT);
     const before = JSON.parse(localStorage.getItem(RECENT_KEY)!) as string[];
     first.unmount();
 
     render(<Game />);
     await mapReady();
     await screen.findByText("Fresh game", {}, WAIT);
-    const after = JSON.parse(localStorage.getItem(RECENT_KEY)!) as string[];
+    // The deal is saved in an effect after the title renders; with a bigger catalog that can
+    // land a beat later, so wait for it rather than read storage once.
+    const read = () => JSON.parse(localStorage.getItem(RECENT_KEY)!) as string[];
+    await waitFor(() => expect(read()).toHaveLength(2 * ROUNDS_PER_GAME), WAIT);
+    const after = read();
     const dealt = after.slice(-ROUNDS_PER_GAME);
-    expect(after).toHaveLength(2 * ROUNDS_PER_GAME);
     for (const id of dealt) expect(before).not.toContain(id);
   });
 
