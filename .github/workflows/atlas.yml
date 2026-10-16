@@ -26,8 +26,9 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    # Occlusion maps cost ~50 forward passes per new photo; cached ones are free.
-    timeout-minutes: 150
+    # Occlusion maps cost ~50 forward passes per new photo; cached ones are free. The first run
+    # on the 238-photo catalog spent 116 minutes in "Run Atlas v0" alone, so 150 left no room.
+    timeout-minutes: 240
     steps:
       - uses: actions/checkout@v4
 
@@ -52,9 +53,10 @@ jobs:
           restore-keys: atlas-
 
       # Saliency maps get their own cache with a per-run key, so maps computed in this run are
-      # always saved (a cache whose key already exists is never re-saved).
-      - name: Cache saliency maps
-        uses: actions/cache@v4
+      # always saved (a cache whose key already exists is never re-saved). They are saved even
+      # when a later step fails, so an expensive run is not lost to a failing test.
+      - name: Restore saliency maps
+        uses: actions/cache/restore@v4
         with:
           path: .cache/saliency
           key: saliency-${{ github.run_id }}
@@ -95,6 +97,13 @@ jobs:
             echo "::warning title=Saliency failed::$(grep -A3 '^saliency failed' atlas-stderr.log | annotate)"
           fi
           grep "^saliency:" atlas-stdout.log | sed 's/^/::notice title=Saliency::/' || true
+
+      - name: Save saliency maps
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/saliency
+          key: saliency-${{ github.run_id }}
 
       # Pocket Atlas: the text half of the ViT-B/32 (OpenAI) pipeline, scored above as
       # "ViT-B-32/openai, country then city", precomputed for the browser. One catalog photo's

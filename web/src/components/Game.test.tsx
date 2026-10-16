@@ -38,6 +38,9 @@ async function mapReady() {
   return map;
 }
 
+/** Authors are free text from Commons, e.g. "Marc Ryckaert (MJJR)": match them literally. */
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 // Generous waits: a five-round game is many renders, and CI machines are slow and busy.
 const WAIT = { timeout: 4000 };
 
@@ -91,7 +94,7 @@ describe("Game", { timeout: 20000 }, () => {
       expect(announced).toHaveTextContent(/^You were 0 m away and scored 5,000 points\.$/);
     }
     expect(
-      within(card).getByRole("link", { name: new RegExp(first.credit.author) }),
+      within(card).getByRole("link", { name: new RegExp(escapeRegExp(first.credit.author)) }),
     ).toHaveAttribute("href", first.credit.sourceUrl);
     // Focus moves in a passive effect, which can flush just after the card reaches the DOM.
     const next = within(card).getByRole("button", { name: "Next photo" });
