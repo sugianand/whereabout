@@ -1,53 +1,56 @@
 {
-  "photos": 88,
+  "photos": 238,
   "coverage": {
     "climate": {
       "Af": 3,
-      "Am": 5,
-      "Aw": 3,
-      "BSh": 3,
-      "BSk": 5,
-      "BWh": 4,
-      "BWk": 5,
-      "Cfa": 3,
-      "Cfb": 5,
-      "Csa": 3,
-      "Csb": 4,
+      "Am": 9,
+      "Aw": 7,
+      "BSh": 15,
+      "BSk": 14,
+      "BWh": 26,
+      "BWk": 6,
+      "Cfa": 31,
+      "Cfb": 11,
+      "Csa": 12,
+      "Csb": 14,
       "Cwb": 3,
-      "Dfa": 1,
-      "Dfb": 11,
-      "Dfc": 7,
+      "Dfa": 4,
+      "Dfb": 32,
+      "Dfc": 12,
       "Dsc": 1,
       "Dwa": 1,
       "Dwc": 1,
-      "ET": 6,
-      "unlabelled": 14
+      "ET": 8,
+      "unlabelled": 28
     },
     "climate_group": {
-      "Arid": 17,
-      "Continental": 22,
-      "Polar": 6,
-      "Temperate": 18,
-      "Tropical": 11,
-      "unlabelled": 14
+      "Arid": 61,
+      "Continental": 51,
+      "Polar": 8,
+      "Temperate": 71,
+      "Tropical": 19,
+      "unlabelled": 28
     },
     "land_cover": {
-      "Bare / sparse vegetation": 11,
-      "Built-up": 15,
-      "Grassland": 21,
+      "Bare / sparse vegetation": 20,
+      "Built-up": 84,
+      "Cropland": 1,
+      "Grassland": 42,
+      "Mangroves": 1,
       "Moss and lichen": 2,
-      "Permanent water bodies": 14,
+      "Permanent water bodies": 40,
       "Shrubland": 2,
       "Snow and ice": 1,
-      "Tree cover": 22
+      "Tree cover": 45
     },
     "driving_side": {
-      "left": 25,
-      "right": 63
+      "left": 58,
+      "right": 179,
+      "unlabelled": 1
     }
   },
   "known_places_checked": 13,
-  "worldcover_tiles_needed": 96,
+  "worldcover_tiles_needed": 147,
   "worldcover_tiles_absent": [],
   "sources": {
     "climate": "Köppen-Geiger 1991-2020, 1 km, Beck et al. (2023), CC BY 4.0",

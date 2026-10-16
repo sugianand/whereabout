@@ -87,3 +87,153 @@ wm151,ET,Polar,Moss and lichen,right
 wm154,,,Tree cover,right
 wm157,,,Permanent water bodies,right
 wm158,Dfc,Continental,Bare / sparse vegetation,right
+wh1299437,Cfa,Temperate,Built-up,left
+wh1299447,Cfa,Temperate,Built-up,left
+wh1299460,Cfa,Temperate,Built-up,left
+wh1299479,Cfa,Temperate,Tree cover,left
+wh1555889,BSk,Arid,Grassland,right
+wh2368717,Csa,Temperate,Grassland,left
+wh2680583,Dfa,Continental,Tree cover,left
+wh3677747,Cfb,Temperate,Grassland,left
+wh3693965,Dfb,Continental,Tree cover,right
+wh4066115,,,Bare / sparse vegetation,left
+wh4261388,Dfa,Continental,Permanent water bodies,right
+wh4271613,Cfb,Temperate,Tree cover,right
+wh4272232,Cfb,Temperate,Tree cover,right
+wh4277921,Cfb,Temperate,Built-up,left
+wh5411905,Cfa,Temperate,Tree cover,left
+wh5592836,Cfa,Temperate,Permanent water bodies,left
+wh5653582,,,Permanent water bodies,left
+wh6588040,Cfa,Temperate,Permanent water bodies,right
+wh6629434,BSh,Arid,Built-up,right
+wh6714189,Cfa,Temperate,Tree cover,left
+wh6755162,Cfa,Temperate,Permanent water bodies,right
+wh6851999,Cfa,Temperate,Permanent water bodies,right
+wh6988057,Cfa,Temperate,Built-up,left
+wh6988105,Cfa,Temperate,Built-up,left
+wh7029225,Cfa,Temperate,Tree cover,right
+wh7053341,Cfa,Temperate,Built-up,right
+wh7179854,Cfa,Temperate,Permanent water bodies,right
+wh7963128,Csb,Temperate,Built-up,left
+wh8888551,Csb,Temperate,Tree cover,left
+wh9645741,Aw,Tropical,Permanent water bodies,left
+wh9649676,BWh,Arid,Permanent water bodies,right
+wh9649696,BWh,Arid,Permanent water bodies,right
+wh9837506,Cfa,Temperate,Tree cover,left
+wh10128352,BSh,Arid,Built-up,right
+wh11576552,BSh,Arid,Built-up,right
+wh11581901,BSh,Arid,Built-up,right
+wh11581913,BSh,Arid,Built-up,right
+wh11593822,BSh,Arid,Grassland,right
+wh11596930,BSh,Arid,Built-up,right
+wh11601539,BSh,Arid,Built-up,right
+wh11626898,BSh,Arid,Built-up,right
+wh11654128,BSh,Arid,Grassland,right
+wh11670418,Cfa,Temperate,Grassland,left
+wh12184482,ET,Polar,Permanent water bodies,
+wh12189009,Dfc,Continental,Grassland,right
+wh12189396,Dfc,Continental,Permanent water bodies,right
+wh12223904,Cfa,Temperate,Built-up,left
+wh12905454,,,Built-up,right
+wh12915875,,,Built-up,right
+wh13214093,BWh,Arid,Built-up,right
+wh13214772,BWh,Arid,Built-up,right
+wh13266388,BWh,Arid,Cropland,right
+wh13266410,BWh,Arid,Built-up,right
+wh13799373,BWh,Arid,Permanent water bodies,right
+wh14236999,BWh,Arid,Permanent water bodies,right
+wh14518843,Cfb,Temperate,Grassland,left
+wh14540663,BWh,Arid,Permanent water bodies,right
+wh14671941,BWh,Arid,Built-up,right
+wh14672000,BWh,Arid,Built-up,right
+wh14672834,BWh,Arid,Built-up,right
+wh14681470,BWh,Arid,Built-up,right
+wh15116418,Csb,Temperate,Grassland,right
+wh15116588,Csb,Temperate,Grassland,right
+wh15116731,Csb,Temperate,Permanent water bodies,right
+wh15294397,Dfb,Continental,Built-up,right
+wh15370608,Cfa,Temperate,Tree cover,left
+wh15815766,Cfa,Temperate,Built-up,left
+wh15916014,Cfa,Temperate,Built-up,left
+wh16380592,Csb,Temperate,Built-up,right
+wh17397605,,,Tree cover,left
+wh17425300,Cfa,Temperate,Tree cover,right
+wh17430494,Cfa,Temperate,Built-up,right
+wh17620825,Cfa,Temperate,Built-up,right
+wh17624100,Cfa,Temperate,Built-up,right
+wh17712534,Aw,Tropical,Built-up,right
+wh19076470,Am,Tropical,Built-up,left
+wh19194913,Dfb,Continental,Tree cover,right
+wh19214691,Dfb,Continental,Built-up,right
+wh19262252,BWh,Arid,Permanent water bodies,right
+wh19262571,BWh,Arid,Permanent water bodies,right
+wh19270876,,,Permanent water bodies,left
+wh19332721,Dfb,Continental,Built-up,right
+wh19491745,BWh,Arid,Bare / sparse vegetation,right
+wh19506754,Csb,Temperate,Tree cover,right
+wh19516429,BWh,Arid,Bare / sparse vegetation,right
+wh19517209,BWh,Arid,Bare / sparse vegetation,right
+wh19520115,BWh,Arid,Built-up,right
+wh19658711,Dfb,Continental,Tree cover,right
+wh19933379,Csb,Temperate,Grassland,right
+wh20020319,BWh,Arid,Grassland,right
+wh20721594,Dfb,Continental,Built-up,right
+wh20986071,,,Permanent water bodies,right
+wh21110630,Aw,Tropical,Permanent water bodies,right
+wh21234664,Dfb,Continental,Tree cover,right
+wh22068720,Cfa,Temperate,Grassland,right
+wh22627049,BSh,Arid,Built-up,right
+wh22627051,,,Mangroves,right
+wh22651968,Cfa,Temperate,Permanent water bodies,right
+wh22844833,Cfb,Temperate,Tree cover,right
+wh23445289,BSh,Arid,Built-up,right
+wh24440171,ET,Polar,Grassland,right
+wh25397092,BWh,Arid,Built-up,right
+wh25760278,Csb,Temperate,Grassland,right
+wh26458813,Dfb,Continental,Tree cover,right
+wh27617450,Dfb,Continental,Tree cover,right
+wh27698807,Csa,Temperate,Built-up,right
+wh27698978,Csa,Temperate,Built-up,right
+wh27699048,,,Built-up,right
+wh27699170,Csa,Temperate,Built-up,right
+wh27699221,Csa,Temperate,Built-up,right
+wh27751807,Dfb,Continental,Built-up,right
+wh27751808,Dfb,Continental,Built-up,right
+wh27751814,Dfb,Continental,Grassland,right
+wh27751824,Dfb,Continental,Built-up,right
+wh27751827,Dfb,Continental,Grassland,right
+wh27751835,Dfb,Continental,Grassland,right
+wh27751842,Dfb,Continental,Grassland,right
+wh27752608,Dfb,Continental,Tree cover,right
+wh27775868,Csa,Temperate,Built-up,right
+wh27775895,Csa,Temperate,Built-up,right
+wh27775916,Csa,Temperate,Built-up,right
+wh28195637,,,Built-up,right
+wh28424780,Dfb,Continental,Built-up,right
+wh28538335,BWk,Arid,Bare / sparse vegetation,right
+wh29166167,Dfb,Continental,Tree cover,left
+wh29166195,Dfb,Continental,Tree cover,left
+wh29247887,Csa,Temperate,Built-up,right
+wh29497529,Dfc,Continental,Bare / sparse vegetation,right
+wh30350135,,,Bare / sparse vegetation,left
+wh30503941,Aw,Tropical,Built-up,right
+wh30986414,Dfa,Continental,Built-up,right
+wh31601262,Am,Tropical,Grassland,right
+wh31774366,Am,Tropical,Grassland,right
+wh31782095,Am,Tropical,Built-up,right
+wh31959291,Dfc,Continental,Built-up,right
+wh32252228,Csb,Temperate,Built-up,right
+wh33424138,Dfc,Continental,Bare / sparse vegetation,right
+wh33506407,,,Permanent water bodies,left
+wh34958877,Cfa,Temperate,Permanent water bodies,left
+wh36257241,BWh,Arid,Bare / sparse vegetation,right
+wh36738978,BSk,Arid,Built-up,right
+wh36809430,BSk,Arid,Built-up,right
+wh36809443,BSk,Arid,Built-up,right
+wh36809456,BSk,Arid,Built-up,right
+wh36809472,BSk,Arid,Built-up,right
+wh36822431,BSk,Arid,Built-up,right
+wh36822613,BSk,Arid,Built-up,right
+wh36839793,BSk,Arid,Built-up,right
+wh37819546,,,Permanent water bodies,right
+wh37819775,,,Permanent water bodies,right
