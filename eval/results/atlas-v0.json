@@ -1,221 +1,221 @@
 {
   "system": "atlas-v0-zeroshot",
-  "generatedAt": "2026-10-16T13:23:55+00:00",
+  "generatedAt": "2026-10-16T20:50:43+00:00",
   "dataset": "whereabout-curated (data/curation/photos.csv)",
-  "n": 88,
+  "n": 238,
   "skipped": {},
   "playing_in_game": "ViT-L-14/openai, country then city",
   "systems": {
     "Random city (baseline)": {
-      "n": 88,
+      "n": 238,
       "accuracy_at_km": {
         "1": 0.0,
         "25": 0.0,
-        "200": 0.0,
-        "750": 0.0114,
-        "2500": 0.0795
+        "200": 0.0042,
+        "750": 0.021,
+        "2500": 0.1008
       },
       "median_km": 7836.3,
-      "mean_km": 8152.4,
-      "mean_score": 268.3,
-      "country_accuracy": 0.0227,
+      "mean_km": 8082.9,
+      "mean_score": 328.4,
+      "country_accuracy": 0.0126,
       "median_km_ci95": [
-        7080.5,
-        8721.9
+        7304.8,
+        8440.8
       ]
     },
     "Best constant guess (baseline)": {
-      "n": 88,
+      "n": 238,
       "accuracy_at_km": {
-        "1": 0.0114,
-        "25": 0.0114,
-        "200": 0.0114,
-        "750": 0.0341,
-        "2500": 0.2386
+        "1": 0.0042,
+        "25": 0.0042,
+        "200": 0.0126,
+        "750": 0.0714,
+        "2500": 0.2269
       },
-      "median_km": 6469.6,
-      "mean_km": 6350.4,
-      "mean_score": 590.9,
-      "country_accuracy": 0.0227,
+      "median_km": 6151.3,
+      "mean_km": 6127.1,
+      "mean_score": 669.3,
+      "country_accuracy": 0.0126,
       "median_km_ci95": [
-        4467.5,
-        7354.8
+        5122.9,
+        7037.6
       ]
     },
     "ViT-B-32/laion2b_s34b_b79k, country only": {
-      "n": 88,
+      "n": 238,
       "accuracy_at_km": {
-        "1": 0.0114,
-        "25": 0.0568,
-        "200": 0.125,
-        "750": 0.2841,
-        "2500": 0.4886
+        "1": 0.0126,
+        "25": 0.0546,
+        "200": 0.0966,
+        "750": 0.2983,
+        "2500": 0.5126
       },
-      "median_km": 2589.9,
-      "mean_km": 4461.6,
-      "mean_score": 1644.7,
-      "country_accuracy": 0.3068,
+      "median_km": 2389.4,
+      "mean_km": 4610.3,
+      "mean_score": 1680.8,
+      "country_accuracy": 0.2731,
       "median_km_ci95": [
-        1833.0,
-        3963.1
+        1791.9,
+        3094.0
       ]
     },
     "ViT-B-32/laion2b_s34b_b79k, country then city": {
-      "n": 88,
+      "n": 238,
       "accuracy_at_km": {
-        "1": 0.0341,
-        "25": 0.0909,
-        "200": 0.2045,
-        "750": 0.2727,
-        "2500": 0.4886
+        "1": 0.021,
+        "25": 0.063,
+        "200": 0.1303,
+        "750": 0.3067,
+        "2500": 0.5378
       },
-      "median_km": 2592.9,
-      "mean_km": 4612.4,
-      "mean_score": 1739.1,
-      "country_accuracy": 0.2727,
+      "median_km": 2174.2,
+      "mean_km": 4212.5,
+      "mean_score": 1824.1,
+      "country_accuracy": 0.2605,
       "median_km_ci95": [
-        1633.0,
-        4097.7
+        1510.2,
+        2709.2
       ]
     },
     "ViT-B-32/openai, country only": {
-      "n": 88,
+      "n": 238,
       "accuracy_at_km": {
-        "1": 0.0114,
-        "25": 0.0341,
-        "200": 0.0795,
-        "750": 0.2273,
-        "2500": 0.4545
+        "1": 0.0126,
+        "25": 0.0378,
+        "200": 0.0798,
+        "750": 0.2899,
+        "2500": 0.5
       },
-      "median_km": 2936.4,
-      "mean_km": 4880.1,
-      "mean_score": 1519.6,
-      "country_accuracy": 0.2045,
+      "median_km": 2482.5,
+      "mean_km": 4774.8,
+      "mean_score": 1653.1,
+      "country_accuracy": 0.2269,
       "median_km_ci95": [
         1777.3,
-        4171.2
+        3677.4
       ]
     },
     "ViT-B-32/openai, country then city": {
-      "n": 88,
+      "n": 238,
       "accuracy_at_km": {
-        "1": 0.0341,
-        "25": 0.0568,
-        "200": 0.1023,
-        "750": 0.1932,
-        "2500": 0.4205
+        "1": 0.0168,
+        "25": 0.0378,
+        "200": 0.1345,
+        "750": 0.2689,
+        "2500": 0.4874
       },
-      "median_km": 3425.7,
-      "mean_km": 4931.7,
-      "mean_score": 1428.1,
-      "country_accuracy": 0.1591,
+      "median_km": 2700.4,
+      "mean_km": 4964.1,
+      "mean_score": 1632.9,
+      "country_accuracy": 0.1975,
       "median_km_ci95": [
-        2047.0,
-        4566.0
+        1905.3,
+        4419.9
       ]
     },
     "ViT-L-14/openai, country only": {
-      "n": 88,
+      "n": 238,
       "accuracy_at_km": {
-        "1": 0.0114,
-        "25": 0.0682,
-        "200": 0.1818,
-        "750": 0.4205,
-        "2500": 0.5795
+        "1": 0.0378,
+        "25": 0.105,
+        "200": 0.1597,
+        "750": 0.458,
+        "2500": 0.6681
       },
-      "median_km": 1156.0,
-      "mean_km": 3489.1,
-      "mean_score": 2148.8,
-      "country_accuracy": 0.4318,
+      "median_km": 1005.5,
+      "mean_km": 3019.9,
+      "mean_score": 2367.6,
+      "country_accuracy": 0.4454,
       "median_km_ci95": [
-        701.0,
-        2822.6
+        695.0,
+        1222.8
       ]
     },
     "ViT-L-14/openai, country then city": {
-      "n": 88,
+      "n": 238,
       "accuracy_at_km": {
-        "1": 0.0455,
-        "25": 0.1364,
-        "200": 0.2841,
-        "750": 0.4318,
-        "2500": 0.5795
+        "1": 0.0336,
+        "25": 0.0966,
+        "200": 0.2521,
+        "750": 0.458,
+        "2500": 0.6765
       },
-      "median_km": 949.0,
-      "mean_km": 3324.7,
-      "mean_score": 2358.8,
-      "country_accuracy": 0.4205,
+      "median_km": 914.1,
+      "mean_km": 3018.3,
+      "mean_score": 2489.5,
+      "country_accuracy": 0.4076,
       "median_km_ci95": [
-        648.7,
-        2834.5
+        645.5,
+        1290.2
       ]
     }
   },
   "best_vs_others": [
     {
       "versus": "Random city (baseline)",
-      "median_km_delta": -6887.3,
+      "median_km_delta": -6922.2,
       "ci95": [
-        -7748.9,
-        -5006.1
+        -7526.7,
+        -6346.2
       ]
     },
     {
       "versus": "Best constant guess (baseline)",
-      "median_km_delta": -5520.7,
+      "median_km_delta": -5237.2,
       "ci95": [
-        -6562.5,
-        -2925.4
+        -6090.3,
+        -4080.0
       ]
     },
     {
       "versus": "ViT-B-32/laion2b_s34b_b79k, country only",
-      "median_km_delta": -1640.9,
+      "median_km_delta": -1475.3,
       "ci95": [
-        -2764.8,
-        -116.7
+        -2095.9,
+        -867.2
       ]
     },
     {
       "versus": "ViT-B-32/laion2b_s34b_b79k, country then city",
-      "median_km_delta": -1643.9,
+      "median_km_delta": -1260.2,
       "ci95": [
-        -2773.1,
-        -9.5
+        -1749.3,
+        -638.0
       ]
     },
     {
       "versus": "ViT-B-32/openai, country only",
-      "median_km_delta": -1987.4,
+      "median_km_delta": -1568.4,
       "ci95": [
-        -3224.0,
-        -246.6
+        -2616.7,
+        -895.8
       ]
     },
     {
       "versus": "ViT-B-32/openai, country then city",
-      "median_km_delta": -2476.7,
+      "median_km_delta": -1786.4,
       "ci95": [
-        -3589.8,
-        -775.8
+        -3356.9,
+        -966.6
       ]
     },
     {
       "versus": "ViT-L-14/openai, country only",
-      "median_km_delta": -207.0,
+      "median_km_delta": -91.5,
       "ci95": [
-        -1335.2,
-        870.1
+        -285.7,
+        203.5
       ]
     }
   ],
   "saliency": {
-    "n": 88,
+    "n": 238,
     "k": 5,
     "grid": 7,
-    "mean_top_k_drop": 0.5962,
-    "mean_random_k_drop": 0.3079,
-    "share_top_worse": 0.8864
+    "mean_top_k_drop": 0.631,
+    "mean_random_k_drop": 0.3154,
+    "share_top_worse": 0.9034
   },
-  "table": "| System | n | 25 km | 200 km | 750 km | 2,500 km | Median km (95% CI) | Country | Mean score |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n| Random city (baseline) | 88 | 0.0% | 0.0% | 1.1% | 8.0% | 7,836 (7,081–8,722) | 2.3% | 268 |\n| Best constant guess (baseline) | 88 | 1.1% | 1.1% | 3.4% | 23.9% | 6,470 (4,467–7,355) | 2.3% | 591 |\n| ViT-B-32/laion2b_s34b_b79k, country only | 88 | 5.7% | 12.5% | 28.4% | 48.9% | 2,590 (1,833–3,963) | 30.7% | 1,645 |\n| ViT-B-32/laion2b_s34b_b79k, country then city | 88 | 9.1% | 20.5% | 27.3% | 48.9% | 2,593 (1,633–4,098) | 27.3% | 1,739 |\n| ViT-B-32/openai, country only | 88 | 3.4% | 8.0% | 22.7% | 45.5% | 2,936 (1,777–4,171) | 20.5% | 1,520 |\n| ViT-B-32/openai, country then city | 88 | 5.7% | 10.2% | 19.3% | 42.0% | 3,426 (2,047–4,566) | 15.9% | 1,428 |\n| ViT-L-14/openai, country only | 88 | 6.8% | 18.2% | 42.0% | 58.0% | 1,156 (701–2,823) | 43.2% | 2,149 |\n| ViT-L-14/openai, country then city | 88 | 13.6% | 28.4% | 43.2% | 58.0% | 949 (649–2,834) | 42.0% | 2,359 |"
+  "table": "| System | n | 25 km | 200 km | 750 km | 2,500 km | Median km (95% CI) | Country | Mean score |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n| Random city (baseline) | 238 | 0.0% | 0.4% | 2.1% | 10.1% | 7,836 (7,305–8,441) | 1.3% | 328 |\n| Best constant guess (baseline) | 238 | 0.4% | 1.3% | 7.1% | 22.7% | 6,151 (5,123–7,038) | 1.3% | 669 |\n| ViT-B-32/laion2b_s34b_b79k, country only | 238 | 5.5% | 9.7% | 29.8% | 51.3% | 2,389 (1,792–3,094) | 27.3% | 1,681 |\n| ViT-B-32/laion2b_s34b_b79k, country then city | 238 | 6.3% | 13.0% | 30.7% | 53.8% | 2,174 (1,510–2,709) | 26.1% | 1,824 |\n| ViT-B-32/openai, country only | 238 | 3.8% | 8.0% | 29.0% | 50.0% | 2,483 (1,777–3,677) | 22.7% | 1,653 |\n| ViT-B-32/openai, country then city | 238 | 3.8% | 13.4% | 26.9% | 48.7% | 2,700 (1,905–4,420) | 19.7% | 1,633 |\n| ViT-L-14/openai, country only | 238 | 10.5% | 16.0% | 45.8% | 66.8% | 1,006 (695–1,223) | 44.5% | 2,368 |\n| ViT-L-14/openai, country then city | 238 | 9.7% | 25.2% | 45.8% | 67.6% | 914 (646–1,290) | 40.8% | 2,489 |"
 }
