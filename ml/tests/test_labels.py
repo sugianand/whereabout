@@ -134,9 +134,16 @@ def test_empty_inputs():
 
 
 def test_every_catalog_photo_gets_a_driving_side():
-    """The curated catalog's country column must be real codes with a known rule."""
+    """The catalog's country column must be real codes with a known rule. A territory with no
+    public road convention (NO_ROAD_TRAFFIC, e.g. South Georgia, which the Commons harvest
+    reached) is a real place to photograph: it just has no driving side to learn."""
     with CATALOG.open(encoding="utf-8") as fh:
         rows = list(csv.DictReader(fh))
     assert rows
-    missing = {r["id"]: r["country"] for r in rows if driving_side(r["country"]) is None}
+    missing = {
+        r["id"]: r["country"]
+        for r in rows
+        if driving_side(r["country"]) is None and r["country"] not in NO_ROAD_TRAFFIC
+    }
     assert not missing
+    assert all(r["country"] in ISO_3166_ALPHA2 for r in rows)

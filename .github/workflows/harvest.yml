@@ -134,6 +134,14 @@ jobs:
           node web/scripts/build-catalog.mjs
           echo "::notice title=Catalog::$(cat merge.log)"
 
+      # The bot's push won't trigger CI, so check the grown catalog here with the tests that
+      # read it (API catalog loader, driving-side rules, the merge) before committing it.
+      - name: Test the grown catalog
+        if: steps.ready.outputs.ok == 'true'
+        run: |
+          python -m pip install -e "api[dev]"
+          python -m pytest -q api/tests ml/tests/test_labels.py ml/tests/test_merge_harvest.py
+
       - name: Commit results
         if: steps.ready.outputs.ok == 'true'
         shell: bash
