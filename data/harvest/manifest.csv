@@ -1,308 +1,646 @@
-id,pageid,title,cell,seed,assessment,width,height,place_km,phash,gate_people,gate_indoor,gate_text,gate_not_photo
-wh1230085,1230085,File:Tree frog Fern Forest.jpg,r11c9,"North Lauderdale, US",featured,1394,1046,2.7,f3e2f2279e1438b0,6.599,2.240,-0.080,8.256
-wh1555889,1555889,File:CSU IMFields2 edited2.jpg,r13c7,"Fort Collins, US",quality,2014,1079,1.3,9cb96cce8c22d369,-4.723,-8.452,-8.990,-3.033
-wh2368717,2368717,File:Westfield winery baskerville gnangarra.JPG,r5c29,"Ellenbrook, AU",quality,3008,2000,5.8,9d9cb7913174b82c,3.036,7.958,0.148,7.448
-wh3555183,3555183,File:Rainbow over the house in the sugar cane fields.JPG,r6c23,"Sainte-Suzanne, RE",quality,2698,1797,2.5,e4b138cc3b4d930f,-5.018,-8.036,-9.096,-2.275
-wh3731660,3731660,File:Anolis carolinensis brown.jpg,r11c9,"North Lauderdale, US",quality,2730,1790,1.6,ff7cc46d9000ed1a,4.694,2.124,-2.203,5.768
-wh4271613,4271613,File:Gamlehaugen1.jpg,r15c18,"Nesttun, NO",featured,2650,1762,2.9,ccc98b0fba709927,-1.404,-0.460,-4.759,2.100
-wh4272232,4272232,File:GamlehaugenGardens.jpg,r15c18,"Nesttun, NO",quality,3500,1138,2.9,a68682ea75778cb8,-8.169,-9.534,-10.388,-2.192
-wh4434994,4434994,File:Anolis equestris - bright close 3-4.jpg,r11c9,"North Lauderdale, US",featured,3235,2498,1.6,c5b125cb7ac4c36c,6.477,2.381,0.077,9.114
-wh4470810,4470810,File:Centaurea jacea Ruissalo.jpg,r15c20,"Raisio, FI",quality,3685,2449,5.8,c5ba4fb48344916f,1.078,-2.190,-4.905,4.335
-wh4732240,4732240,File:Argemone mexicana flower 2.jpg,r6c23,"Saint-Pierre, RE",quality,2990,1995,3.2,cdc9716495f223d8,3.587,1.647,-1.915,6.752
-wh4863275,4863275,File:Persea americana new foliage 3.JPG,r6c23,"Saint-Pierre, RE",quality,2533,1689,1.1,9b4c5678a8a55e59,3.136,2.819,-1.960,8.773
-wh4869155,4869155,File:Hibiscus boryanus fruit flower & bud.JPG,r6c23,"Saint-Pierre, RE",quality,2662,1775,1.1,9dcb2779c4a15a85,4.423,1.917,-3.287,8.493
-wh5149899,5149899,File:2K12 KUB radiolocator.jpg,r14c19,"Dejvice, CZ",quality,3872,2592,0.2,e0d8db387cf56182,5.088,3.310,0.783,9.060
-wh6014664,6014664,File:Juvenile Rhipidura leucophrys - Ingle Farm - 4.jpg,r5c31,"Parafield Gardens, AU",quality,1955,1403,6.8,98c0c22769d9dea7,5.656,0.172,-1.988,8.485
-wh6187653,6187653,File:Luenen Bruecken IMGP9684 wp.jpg,r14c18,"Luenen, DE",quality,2000,1340,2.2,a8eac71d16057baa,-1.160,-0.359,-1.835,3.586
-wh6187661,6187661,File:Luenen Bruecken IMGP9686 wp.jpg,r14c18,"Luenen, DE",quality,2012,1333,2.2,bfb4d8d88881e167,-1.675,1.055,-2.411,4.253
-wh6187674,6187674,File:Luenen Bruecken IMGP9710 wp.jpg,r14c18,"Luenen, DE",quality,2000,1339,2.1,a1a39d960da5f16a,-1.071,2.115,-0.883,4.143
-wh6493166,6493166,"File:Lietsalan koulu, Naantali, 11.4 (3).JPG",r15c20,"Raisio, FI",quality,2816,2112,3.0,9c6f83d054e639d8,-0.241,2.412,-1.503,3.510
-wh7404791,7404791,"File:MS Oasis of the Seas, Turku, 26.7.2009.JPG",r15c20,"Raisio, FI",quality,2816,2112,4.5,f3ec1c3af0c50d32,6.623,3.624,-2.035,8.888
-wh7894310,7894310,File:Canal du Vassé - Annecy.JPG,r13c18,"Annecy, FR",quality,2496,1664,0.9,c9a32d9c11d9993e,-0.420,-4.863,-7.350,1.049
-wh9645741,9645741,File:Stadt München moored in Bridgetown.JPG,r10c12,"Bridgetown, BB",quality,4000,3000,1.1,b3c88c4713bcc92f,1.490,0.565,-2.906,6.605
-wh10555712,10555712,File:Pano Baalbek 1.jpg,r12c21,"Baalbek, LB",featured,24726,5000,1.3,e949b4ba94b92639,-0.066,0.380,-4.097,3.634
-wh11358225,11358225,File:Loxodonta africana crossing the Zambesi.jpg,r7c20,"Livingstone, ZM",featured,2624,1968,5.9,991b66e45e626cc9,5.127,0.623,-4.497,8.356
-wh12184482,12184482,File:Whaler Ship Petrel Grytviken.jpg,r3c14,"Grytviken, GS",quality,4253,2848,0.1,fa8435eb921de11a,0.531,0.512,-2.323,6.462
-wh12189396,12189396,File:St John's Lower Battery 2.jpg,r13c12,"Mount Pearl, CA",quality,2809,1854,1.5,c11818e1e53b37fc,-1.833,-3.700,-5.103,1.110
-wh19270876,19270876,"File:Shagang Haili at Port Hedland, 2012.JPG",r6c29,"Port Hedland, AU",quality,3008,2000,3.8,878ff051706ae387,-0.423,-2.065,-0.401,4.531
-wh19491745,19491745,File:Cape Verde Sal vista S Espargos.jpg,r10c15,"Espargos, CV",quality,4179,1425,2.1,96e9d15219662cd7,-6.218,-9.440,-9.773,-1.241
-wh19516429,19516429,File:Cape Verde Sal Pedra de Lume salt cable car.jpg,r10c15,"Espargos, CV",quality,3741,1533,5.8,9be4558726d91c66,-5.126,-6.122,-5.226,-1.452
-wh19517209,19517209,File:Cape Verde Sal Pedra de Lume salt cable car arrival.jpg,r10c15,"Espargos, CV",quality,4113,2005,5.8,ec2d8750d89e3897,-0.198,2.944,-1.142,4.022
-wh19520115,19520115,File:Cape Verde Sal Espargos a.jpg,r10c15,"Espargos, CV",quality,4168,1659,1.0,80907e3fd0077fd4,-3.666,-5.712,-0.442,0.649
-wh20020319,20020319,File:Cape Verde Santiago Fort Real de S Filipe.jpg,r10c15,"Praia, CV",quality,4256,2484,9.8,92dde23c07386fc8,-3.391,0.329,-7.840,0.883
-wh20986071,20986071,File:Île du Père-Conan.jpg,r14c11,"Sept-Iles, CA",quality,5184,3456,8.9,abb20d9c697a4b94,-5.625,-5.937,-11.331,-2.452
-wh24440171,24440171,File:University Centre in Svalbard (UNIS) 2003.jpg,r16c19,"Longyearbyen, SJ",quality,4072,2599,0.3,f9f092a6454e78d8,-4.779,-3.385,-7.049,-0.930
-wh24622612,24622612,File:San Juan Valley.jpg,r10c11,"La Asuncion, VE",featured,4288,2848,0.7,8db9c556b60929ec,-8.784,-11.133,-9.357,-5.716
-wh25867645,25867645,File:Camara de Lobos Madeira.jpg,r12c16,"Camara de Lobos, PT",quality,2889,1927,0.4,9fc801c3be9f04f8,-0.786,-7.304,-7.891,-0.651
-wh26079741,26079741,File:Anacardium occidentale from Margarita island.jpg,r10c11,"La Asuncion, VE",quality,3925,2699,0.6,eba938c50731949f,2.025,0.764,-2.182,6.258
-wh27052200,27052200,File:Camara de Lobos lagoon view.jpg,r12c16,"Camara de Lobos, PT",quality,4252,2835,0.3,aaa5dbb46863a316,-0.281,-7.430,-9.185,-2.075
-wh27698775,27698775,File:Attica 06-13 Piraeus 01 Port.jpg,r12c20,"Perama, GR",quality,4580,2910,0.7,afc3c0693e833655,5.381,-0.196,1.968,6.047
-wh27698807,27698807,File:Attica 06-13 Piraeus 02 Akti Kallimasioti.jpg,r12c20,"Perama, GR",quality,4991,3233,0.7,8f8bb66ac5b8b04a,-2.909,-2.906,-3.874,0.721
-wh27698913,27698913,File:Attica 06-13 Piraeus 08 Port.jpg,r12c20,"Perama, GR",quality,4714,2904,0.4,c8e3df94912a7ad0,4.225,1.222,0.208,7.309
-wh27775868,27775868,File:Attica 06-13 Ano Liosia train station.jpg,r12c20,"Kamateron, GR",quality,4847,2951,1.7,c6a0993abbe16e0e,-1.314,2.389,0.596,5.507
-wh27775895,27775895,File:Attica 06-13 SKA train stop 01.jpg,r12c20,"Kamateron, GR",quality,5085,3257,1.8,e6b8c7633c5481b5,0.615,-0.468,-1.855,3.248
-wh27775916,27775916,File:Attica 06-13 SKA train stop 02 view to Parnitha.jpg,r12c20,"Kamateron, GR",quality,5021,3098,1.8,82659d3a0a33e5dd,-7.502,-5.647,-7.827,-2.822
-wh28538335,28538335,File:SQM GE 289A Boxcab Quillagua - Barriles.jpg,r6c10,"Tocopilla, CL",featured,5542,3421,7.3,c19f52392f72c12d,1.021,-2.206,-3.359,3.388
-wh29497529,29497529,File:Diamond mine. Mirny in Yakutia. 04.jpg,r15c29,"Mirny, RU",quality,7136,2393,2.5,e132dc2d98f227d8,-0.495,-0.816,0.315,5.616
-wh31959291,31959291,File:Church of the Holy Trinity. Mirny.jpg,r15c29,"Mirny, RU",quality,4832,3792,0.7,d96ea740df578026,0.744,0.962,-3.537,4.050
-wh32368327,32368327,"File:Basílica Menor de Nuestra Señora del Valle, Margarita Island.jpg",r10c11,"La Asuncion, VE",quality,4288,2848,3.2,91b62849ed3c497b,0.870,-3.293,-6.513,1.348
-wh32773399,32773399,File:Antiguo Hotel Concorde.jpg,r10c11,"La Asuncion, VE",quality,3961,2647,4.9,9c456395639e319d,-2.523,0.304,-4.586,4.300
-wh33038478,33038478,File:360° Panoramic view of Santa Rosa de la Eminencia Castle.jpg,r10c11,"La Asuncion, VE",quality,20857,2765,0.9,9ec9cae66361039e,-3.668,-2.199,-7.570,1.710
-wh33424138,33424138,File:Mirny in Yakutia.jpg,r15c29,"Mirny, RU",featured,7668,3745,2.3,b3decde1c8d0c2c8,0.037,0.937,-4.025,4.368
-wh36236487,36236487,File:Canis lupus signatus - 01.jpg,r13c17,"Azuqueca de Henares, ES",quality,5090,3054,3.8,bf71c0829f3d5858,4.730,-1.121,-1.053,8.961
-wh36257241,36257241,File:SQM GE 289A Boxcab Carmelita - Reverso.jpg,r6c10,"Tocopilla, CL",featured,5513,3676,2.7,bea3606717c87c26,-2.581,-5.043,-6.200,-0.908
-wh36711840,36711840,File:Tyto alba - Cetrería - 02.jpg,r13c17,"Azuqueca de Henares, ES",featured,3532,2119,3.8,c46d13931f64a4ed,4.733,1.422,-1.476,8.300
-wh36738978,36738978,"File:Wyoming Supreme Court Building, Cheyenne, Southwest view 20110823 1.jpg",r13c7,"Cheyenne, US",quality,4916,2458,0.1,8c9870613e3f87a7,2.494,3.764,-1.572,4.899
-wh37327936,37327936,File:Cotopaxi 01.jpg,r8c10,"Machachi, EC",quality,3847,2565,9.3,a0905e4ffdb332e0,-2.459,-5.638,-8.663,-1.628
-wh39693758,39693758,File:We-Ko-Pa Golf Club (Saguaro) no 15.jpg,r12c6,"Fountain Hills, US",quality,5456,2478,2.8,dab1c59268669bf0,-7.127,-6.691,-8.097,-1.206
-wh41186069,41186069,"File:Nordlyskatedralen, Alta, Northeast view 20150611 2.jpg",r15c20,"Alta, NO",quality,5672,4254,0.4,b6ca48ad5a31e257,0.602,1.635,-5.179,3.435
-wh41609853,41609853,"File:View of Alta, near Kongsvika 20150611 1.jpg",r15c20,"Alta, NO",quality,7204,4503,2.2,b1c1cc9b6e71b1a2,-8.540,-11.670,-12.748,-5.496
-wh42637626,42637626,File:Church and rainbow in Akureyri.jpg,r15c16,"Akureyri, IS",quality,5360,3015,0.4,d18eaab1970dde22,-3.594,-4.956,-7.496,-0.851
-wh44107330,44107330,File:Government House Port Louis.JPG,r6c23,"Baie du Tombeau, MU",quality,2567,1615,0.4,d8d8f787a6a60c8c,0.491,2.029,-0.664,4.108
-wh44107331,44107331,File:Umbrellas at Caudan Waterfront Mall.JPG,r6c23,"Baie du Tombeau, MU",featured,4798,3009,0.1,d09ea335e5d165c1,6.422,2.087,-2.400,6.098
-wh44107332,44107332,File:Blue Penny Museum.JPG,r6c23,"Baie du Tombeau, MU",quality,3969,2575,0.2,aa87907cda208bbf,5.801,6.513,1.615,6.095
-wh45396538,45396538,File:Blick vom Hafen Richtung Eismeerkathedrale Tromsø.jpg,r15c19,"Tromso, NO",quality,4400,2475,0.3,c718d594d66394e5,-0.126,-4.168,-4.941,3.965
-wh45801253,45801253,File:Dambulla Temple d'or (2).jpg,r9c26,"Dambulla, LK",quality,4837,3213,0.6,86961879ada51a5f,1.305,0.829,-2.247,2.931
-wh45801258,45801258,File:Dambulla Temple d'or (3).jpg,r9c26,"Dambulla, LK",quality,4912,3264,0.6,8d8361bc72d239e5,5.710,2.911,0.440,6.712
-wh46911664,46911664,File:Town hall of Catacaos.jpg,r8c9,"San Martin, PE",quality,4112,2741,0.8,80a3bf52de0ec13d,2.425,3.753,-0.689,4.910
-wh47247036,47247036,File:Amursk Amursk combined heat and power plant P7270022 2450.jpg,r14c31,"Amursk, RU",quality,3316,2450,1.2,b6e8599649319f68,-3.731,-2.700,-5.667,0.149
-wh47392651,47392651,File:Amursk Amursk combined heat and power plant P7280067 2200.jpg,r14c31,"Amursk, RU",quality,3330,2200,1.2,adabd3540cad7314,-3.130,-3.596,-5.793,0.701
-wh47412780,47412780,File:Amursk Amursk combined heat and power plant P7290079 2200.jpg,r14c31,"Amursk, RU",quality,3300,2200,1.2,eee7c3e308c099d2,-4.647,-5.291,-7.527,-0.651
-wh47528669,47528669,File:Amursk Amur River P7290102 2200.jpg,r14c31,"Amursk, RU",quality,3299,2200,1.3,9ebef16122486579,-11.129,-10.976,-12.803,-5.578
-wh48241457,48241457,File:Cotopaxi 02.jpg,r8c10,"Machachi, EC",quality,3959,2639,8.7,d3963424e7c5ec2c,-0.260,-3.737,-7.204,0.395
-wh48446784,48446784,"File:Panoramic view of Altafjorden, near Rafsbotn 20150612 1.jpg",r16c20,"Alta, NO",quality,20000,3757,9.9,98d4eb2b4350d87e,-5.109,-7.364,-10.233,0.882
-wh48510826,48510826,File:Amursk Amur River P8010333 2200.jpg,r14c31,"Amursk, RU",quality,3300,2200,1.2,d8b6a95e2631661b,-9.449,-9.836,-11.734,-5.136
-wh48559027,48559027,File:Amursk Amur River P8010336 2200.jpg,r14c31,"Amursk, RU",quality,3300,2200,1.3,d0bce19a754b26c3,-8.965,-9.872,-12.244,-6.264
-wh48604521,48604521,File:Amursk Amur River P8010340 2475.jpg,r14c31,"Amursk, RU",quality,3300,2475,1.4,bf9cc4c170c1d8ae,-6.099,-9.837,-9.947,-4.391
-wh50297531,50297531,File:Talnakh.jpg,r15c26,"Talnakh, RU",quality,2999,1999,0.5,c39af487dbb48099,-5.560,-4.710,-8.500,-2.456
-wh51251789,51251789,File:Skifa ElKahla 12.jpg,r12c19,"Zouila, TN",quality,3872,2581,0.6,d7cf45403b391e68,1.631,1.506,-5.360,2.446
-wh52384345,52384345,File:2016 Porto de Cámara de Lobos. Madeira. Portugal-115.jpg,r12c16,"Camara de Lobos, PT",quality,5370,3580,0.4,bd62ca27ad90496e,0.500,-5.060,-8.552,1.002
-wh54634170,54634170,File:Cuatro Puertas - Gran Canaria - 01.jpg,r11c16,"Telde, ES",quality,10998,2605,3.7,fd82805f78a03776,-2.125,1.959,-3.294,3.799
-wh54634363,54634363,File:Cuatro Puertas - Gran Canaria - 02.jpg,r11c16,"Telde, ES",quality,10125,2748,3.7,cc0733ccc46d339b,-0.845,3.644,-5.610,2.220
-wh54662401,54662401,File:Almogarén - Archaeological area of Cuatro Puertas.jpg,r11c16,"Telde, ES",quality,9303,5008,3.7,a9f5e48819597c69,-3.313,-3.762,-9.702,-1.319
-wh55239518,55239518,File:Aeonium glutinosum - Jardín Botánico Canario Viera y Clavijo - Gran Canaria.jpg,r11c16,"Telde, ES",quality,4386,3162,5.4,81ce3fed94aba288,-0.917,-2.657,-4.147,2.743
-wh55648017,55648017,"File:2016 Singapur, Ogrody botaniczne (116).jpg",r9c28,"Tanglin, SG",quality,4500,3050,0.3,c62379d9a40e2737,-3.475,-2.709,-7.345,0.766
-wh55717304,55717304,"File:2016 Singapur, Ogrody botaniczne (169).jpg",r9c28,"Tanglin, SG",quality,4928,3285,0.2,99e60e1b6c661b4d,-1.471,-1.586,-0.147,1.686
-wh55771732,55771732,"File:2016 Singapur, Ogrody botaniczne (256).jpg",r9c28,"Tanglin, SG",quality,3714,2477,0.4,c14bcb49958fcec8,-0.723,2.194,-4.189,2.864
-wh55881147,55881147,File:Citrus swallowtail (Papilio demodocus demodocus) underside Gam.jpg,r10c16,"Brufut, GM",quality,4883,3255,0.2,d4b05ac6170b7b87,6.663,3.416,-1.288,9.477
-wh58446129,58446129,File:Svir River P7210779 2200.jpg,r15c21,"Podporozh'ye, RU",quality,3300,2200,6.9,8ec1f178458fe8b1,-7.263,-7.002,-11.531,-3.855
-wh59292418,59292418,File:Rade de Papeete.jpg,r7c3,"Papeete, PF",quality,6016,4000,0.4,bc81abf8550f28b5,-3.708,-9.409,-9.893,-2.897
-wh59345846,59345846,File:HMS Justice W140 (St. Christopher).jpg,r3c11,"Ushuaia, AR",featured,5000,3413,0.5,daa52d5a15c32f92,1.069,-1.849,-5.019,4.211
-wh64408003,64408003,File:CongresodelaNacionArgentina-nov2017.jpg,r5c12,"Balvanera, AR",quality,5290,2265,0.5,dba7e418c61ef128,4.228,3.375,-2.156,6.187
-wh65794393,65794393,"File:African openbill, Zimbabwe.jpg",r7c20,"Livingstone, ZM",quality,4757,3171,5.3,b632cd63695912d6,2.157,-1.485,-5.081,5.535
-wh65812785,65812785,File:African sacred ibis in Zimbabwe.jpg,r7c20,"Livingstone, ZM",quality,2407,1605,5.3,c44d3bb699d63324,4.409,-0.360,-5.566,5.805
-wh65837069,65837069,"File:Christ Church Cathedral, Darwin, Australia.jpg",r7c31,"Darwin, AU",quality,5083,3389,0.6,84f3ba1ecd04f1d8,-2.227,0.468,-2.168,2.047
-wh65859403,65859403,"File:Cattle egret, Zimbabwe.jpg",r7c20,"Livingstone, ZM",quality,2666,1777,5.3,cc9b47ccf9031f28,3.318,-0.062,-3.796,6.427
-wh66017115,66017115,File:Cairns (Queensland).jpg,r7c32,"Cairns, AU",quality,4776,3184,0.7,de83d8a19e722d1a,-3.254,-4.312,-5.310,-0.996
-wh66215198,66215198,"File:2016 Rangun, Pagoda Botahtaung (01).jpg",r10c27,"Thanhlyin, MM",quality,5064,3465,0.4,9e7067ad9813f80d,4.007,1.477,0.435,4.636
-wh66215767,66215767,"File:2016 Rangun, Pagoda Botahtaung (32).jpg",r10c27,"Thanhlyin, MM",quality,4985,3323,0.4,db20827fbec1223d,1.189,4.782,-0.250,3.950
-wh66215853,66215853,"File:2016 Rangun, Pagoda Botahtaung (36).jpg",r10c27,"Thanhlyin, MM",quality,4944,3420,0.4,aa09d74ec98778e2,5.566,2.644,0.284,4.185
-wh66304742,66304742,"File:2016 Rangun, Meczet Surti Sunni Jamah (01).jpg",r10c27,"Thanhlyin, MM",quality,4264,3149,0.2,bb644439b250edba,1.632,-1.110,1.174,1.531
-wh66941975,66941975,File:Coprosma lucida in Auckland Botanic Gardens 01.jpg,r5c35,"Manukau City, NZ",quality,3720,2480,2.4,a26a20f65b5f1dc8,0.383,-1.405,-3.219,4.381
-wh68155257,68155257,File:18-04-08 NORDKAPP IMO 9107772 11-06-03.jpg,r15c18,"Molde, NO",quality,3590,2403,0.1,b7c1c9364119f4d5,1.735,-2.901,-5.603,5.029
-wh69583962,69583962,File:Очеретянка велика (англ. Great Reed Warbler; лат. Acrocephalus arundinaceus).jpg,r14c21,"Darnytsya, UA",quality,3690,2460,1.2,b3cf8c98b1533664,5.381,0.072,-1.682,7.261
-wh69705522,69705522,"File:Bandama Caldera, Gran Canaria, May 2018.jpg",r11c16,"Telde, ES",quality,5874,3163,4.4,edb9ba6a0a4597c0,-6.514,-8.337,-10.553,-3.874
-wh72105649,72105649,File:Volga River. Tolyatti P8160311 2200.jpg,r14c22,"Zhigulevsk, RU",quality,3300,2200,7.1,a7dc583ba51858ab,-3.586,-1.671,-6.974,-0.793
-wh73750621,73750621,"File:Cataratas Victoria, Zambia-Zimbabue, 2018-07-27, DD 02.jpg",r7c20,"Livingstone, ZM",quality,7868,5245,2.7,ea94a9d392cc65b1,-5.177,-4.908,-11.405,-0.100
-wh73750623,73750623,"File:Cataratas Victoria, Zambia-Zimbabue, 2018-07-27, DD 03.jpg",r7c20,"Livingstone, ZM",quality,7788,5192,2.7,9bcde69229cc322e,-1.775,-3.240,-9.138,0.987
-wh73750657,73750657,"File:Cataratas Victoria, Zambia-Zimbabue, 2018-07-27, DD 30-34 PAN.jpg",r7c20,"Livingstone, ZM",featured,16057,5192,2.1,81894e373f7cd4c2,0.816,-1.819,-9.284,2.184
-wh73864462,73864462,"File:African openbill, Zimbabwe 01.jpg",r7c20,"Livingstone, ZM",quality,4050,2700,5.3,e41eb36c26ca59a3,4.547,-0.445,-3.722,7.511
-wh75917416,75917416,File:Potamochoerus porcus at Lowry Park Zoo.JPG,r11c9,"Carrollwood, US",quality,6000,4000,3.6,ef10c2633c369b74,6.037,4.131,0.526,8.370
-wh76094133,76094133,File:Auckland Botanic Gardens 41.jpg,r5c35,"Manukau City, NZ",quality,4035,2690,2.6,e5da87a03a1dc5d2,-6.279,-6.883,-9.618,-4.719
-wh76094140,76094140,File:Auckland Botanic Gardens 46.jpg,r5c35,"Manukau City, NZ",quality,4988,3325,2.6,e5c1acaa17f0d334,-4.818,-5.832,-8.810,-2.791
-wh76094141,76094141,File:Auckland Botanic Gardens 47.jpg,r5c35,"Manukau City, NZ",quality,4905,2851,2.6,e5dac50b384599d5,-5.784,-8.541,-10.535,-4.116
-wh76303950,76303950,File:Amaurornis phoenicurus - Singapore Botanic Gardens.jpg,r9c28,"Tanglin, SG",quality,3737,2491,0.4,c78f242464ada9d7,6.536,1.920,-1.967,9.382
-wh79458044,79458044,File:Frosted flasher (Astraptes alardus latia).jpg,r9c9,"San Francisco, CR",quality,3786,2524,2.1,ce4f9cb22064d7e4,4.818,2.943,-0.834,9.001
-wh79906195,79906195,File:2015-09-06 Summit Airlines BA Avro RJ85 C-FLRJ.jpg,r15c6,"Yellowknife, CA",quality,5883,3922,3.9,c4bb3b44f23985e2,4.149,3.261,-1.510,8.904
-wh80031075,80031075,File:Montane leopard frog (Lithobates taylori) 4.jpg,r9c9,"San Francisco, CR",quality,3552,2368,2.1,b8f9e4819f7a204d,6.743,2.148,-1.477,9.011
-wh80309489,80309489,File:2019-03-16 01 Aquaculture in Chile.jpg,r4c10,"Castro, CL",quality,6000,2016,7.6,fefac4c290e19998,-5.433,-7.757,-8.795,0.368
-wh80309490,80309490,File:2019-03-16 03 Aquaculture in Chile.jpg,r4c10,"Castro, CL",featured,6000,1599,3.1,acb7e602027c7c76,-6.568,-11.420,-13.784,-3.636
-wh82303433,82303433,"File:2019 08 15 15-01Mahé, Bulbul merle.jpg",r8c23,"Victoria, SC",quality,6000,4000,4.1,e2c6c039cbbc4d6a,6.248,0.788,-1.162,8.840
-wh82813645,82813645,File:Dnieper River in Kiev. October 3rd. Ukraine.jpg,r14c21,"Nyzhnya Telychka, UA",quality,5631,4387,1.3,f1c67a2b86784396,-6.643,-7.475,-11.652,-1.659
-wh83116680,83116680,File:Thirteen tombs entance dagong gate201909.jpg,r13c29,"Changping, CN",quality,5363,3575,3.8,a48bdce69c215dca,-8.216,-9.736,-11.655,-3.171
-wh83377100,83377100,File:MingTombsReservoir.jpg,r13c29,"Changping, CN",quality,3992,2242,4.1,97e8ab942349db70,-4.412,-7.143,-11.735,-1.063
-wh85432118,85432118,"File:Darwin (AU), East Point -- 2019 -- 4331.jpg",r7c31,"Darwin, AU",quality,6720,3780,6.0,d8a79a45d8a678e2,-5.496,-5.770,-12.103,-1.744
-wh85432121,85432121,"File:Darwin (AU), Parliament House -- 2019 -- 4336-8.jpg",r7c31,"Darwin, AU",quality,7916,5810,0.6,c28f8f14b563ca59,2.039,4.579,-4.050,4.139
-wh85432125,85432125,"File:Darwin (AU), Parliament House -- 2019 -- 4343.jpg",r7c31,"Darwin, AU",quality,5660,4245,0.6,e29da87788e7c825,4.369,9.148,-0.169,7.327
-wh85432130,85432130,"File:Darwin (AU), Overland Telegraph Memorial -- 2019 -- 4349.jpg",r7c31,"Darwin, AU",quality,6720,4480,0.7,cb30b40ecc8677cb,-1.559,-3.723,1.954,1.548
-wh85432133,85432133,"File:Darwin (AU), Overland Telegraph Memorial -- 2019 -- 4350.jpg",r7c31,"Darwin, AU",quality,6720,4480,0.7,f49c8574f82fb320,2.784,1.150,0.265,5.527
-wh85432136,85432136,"File:Darwin (AU), Government House -- 2019 -- 4353.jpg",r7c31,"Darwin, AU",quality,6720,4480,0.8,c8acb7576de83015,-3.917,-2.551,-6.004,-1.174
-wh85432158,85432158,"File:Darwin (AU), Government House -- 2019 -- 4393-5.jpg",r7c31,"Darwin, AU",quality,6143,4095,0.8,be566223d918e636,-2.659,-2.498,-4.218,-0.328
-wh85432177,85432177,"File:Darwin (AU), Browns Mart Theatre -- 2019 -- 4401-3.jpg",r7c31,"Darwin, AU",quality,6699,3768,0.5,842d3fd2482f5aab,-0.615,3.411,-0.889,4.660
-wh86214876,86214876,"File:Seymour Square, Blenheim, New Zealand.jpg",r4c35,"Blenheim, NZ",quality,5472,3247,0.5,ce8eee642c5a8533,-0.926,-3.821,-5.610,-0.733
-wh86216275,86216275,"File:Blenheim School, Blenheim, New Zealand 02.jpg",r4c35,"Blenheim, NZ",quality,5380,3064,0.6,a0a9f31ede9d2161,0.036,2.429,0.820,3.022
-wh86247167,86247167,"File:Blenheim War Memorial with Seymour Square Fountain, Blenheim, New Zealand.jpg",r4c35,"Blenheim, NZ",quality,4405,3292,0.5,8fe01fc50b744aa7,1.218,-0.888,-1.718,2.611
-wh86247172,86247172,"File:Seymour Square Fountain from Blenheim War Memorial, Blenheim, New Zealand.jpg",r4c35,"Blenheim, NZ",quality,4383,3413,0.5,c40c2ed69b393a73,-0.092,3.552,-5.678,1.231
-wh86512164,86512164,File:Windhoek Panorama Three Circles 20190518.jpg,r6c19,"Windhoek, NA",quality,13948,1926,0.5,dba43d4265fa8847,-3.369,-3.270,-6.821,1.960
-wh87453467,87453467,"File:AIDAperla in Bridgetown, Barbados - February 2020.jpg",r10c12,"Bridgetown, BB",quality,5090,2073,1.4,c67b28af5ba01dd0,4.993,1.356,-2.914,8.437
-wh87575091,87575091,File:Le Costa Mediterranea dans la rade de Port Louis (Maurice) le 29 février 2020.jpg,r6c23,"Baie du Tombeau, MU",quality,3703,2244,0.3,ea8999506b4d95f1,5.257,0.802,-2.872,7.258
-wh88497790,88497790,File:Scandic Hotel und Forschungsschiff G. O Sars in Tromsø (2015).jpg,r15c19,"Tromso, NO",quality,4400,2750,0.3,b8b4cbeb34f00a39,2.022,-0.183,-1.366,4.513
-wh89412918,89412918,File:2019-03-01 MS BREMEN - IMO 8907424.jpg,r3c11,"Ushuaia, AR",quality,5641,3766,1.1,cff23a84836b1e94,4.833,-0.587,-2.731,7.717
-wh89597661,89597661,"File:2017-08-27 Breitling DC-3A (HB-IRJ) at Reykjavik, Iceland.jpg",r15c15,"Hafnarfjoerdur, IS",quality,5581,3726,1.8,b0de277892e2b199,4.982,2.846,-1.001,8.742
-wh91769287,91769287,File:2014-04-28 MV KITTITAS - IMO 7808114.jpg,r13c5,"Everett, US",quality,4779,3186,0.5,a3fe9421fee62118,2.911,0.462,-2.151,7.317
-wh92827269,92827269,File:2017-02-02 APRIL MORAN - IMO 9373711.jpg,r12c10,"Portsmouth, US",quality,5992,4000,1.0,a29c956b14a6afe1,0.828,-3.762,-4.231,5.594
-wh92832540,92832540,File:2017-02-02 02 APRIL MORAN - IMO 9373711.jpg,r12c10,"Portsmouth, US",quality,5836,3896,1.2,ead295395466eae0,2.703,-0.860,-2.175,7.988
-wh92832542,92832542,"File:2017-02-02 03 Tugboats, APRIL MORAN - IMO 9373711 and JEAN TURECAMO - IMO 7501077.jpg",r12c10,"Portsmouth, US",quality,5830,3892,1.3,9a84e5fd1a8085fb,-0.673,-3.629,-7.174,3.230
-wh93534707,93534707,"File:2017-08-27 02 Icelandair Douglas DC-3 (TF-NPK) at Reykjavik, Iceland.jpg",r15c15,"Hafnarfjoerdur, IS",quality,5285,3528,1.8,e6f8591e8e61238e,2.153,-0.105,-0.071,6.313
-wh94003544,94003544,File:Former Episcopal Palace of Annecy 02.jpg,r13c18,"Annecy, FR",quality,4799,3163,1.1,da8ac0946b7fc22e,1.092,5.606,1.036,5.278
-wh94007729,94007729,File:Owani-line.Series7000.jpg,r13c32,"Hirakawa, JP",quality,3888,2592,5.2,96abc25428d51f6d,-6.456,-7.756,-8.914,-4.600
-wh106289119,106289119,File:В осенней капле.jpg,r14c26,"Akademgorodok, RU",quality,3800,2533,3.2,bca66732e4c3c6c4,3.835,2.506,-2.913,7.958
-wh107632042,107632042,File:At Gran Canaria 2021 1143.jpg,r11c16,"Telde, ES",quality,4032,3024,3.7,827fd9033e189d74,-0.081,3.632,-4.450,1.376
-wh107754779,107754779,"File:Dona Maria Pia Lighthouse, Praia Santiago.jpg",r10c15,"Praia, CV",quality,3393,2262,3.5,f987786e009fe819,0.941,-1.091,-6.763,3.359
-wh108162502,108162502,File:2019-03-10 02 ESPS BIO HESPIRIDES A33 - IMO 8803563.jpg,r3c11,"Ushuaia, AR",quality,5678,3790,1.2,d3f284ab91241d7b,0.090,-1.552,-4.925,5.558
-wh108162503,108162503,File:2019-03-10 03 ESPS BIO HESPIRIDES A33 - IMO 8803563.jpg,r3c11,"Ushuaia, AR",quality,8613,3157,1.1,c1923f77070fa0f8,0.304,-2.320,-8.033,5.797
-wh108162504,108162504,File:2019-03-10 01 ESPS BIO HESPIRIDES A33 - IMO 8803563.jpg,r3c11,"Ushuaia, AR",quality,3785,2527,1.1,e8976bacd54a0c1d,0.648,-0.986,-4.785,5.942
-wh109398758,109398758,File:Adenium Seed Pappus Black Uthandi Aug21 D72 20862.jpg,r10c26,"Jalladiampet, IN",featured,4261,3196,2.4,966669349b636699,4.225,3.519,-0.003,9.562
-wh109692427,109692427,"File:Санкт-Петербург, набережная Кутузова, 18 (15.06.2021).jpg",r15c21,"Grazhdanka, RU",quality,4096,2730,1.0,b795c8f2280f175c,2.101,3.419,-6.032,3.780
-wh109692879,109692879,"File:Санкт-Петербург, набережная Кутузова, 26 (по центру, 15.06.2021).jpg",r15c21,"Grazhdanka, RU",quality,3161,1897,1.0,eaea0ad2359515ad,-0.204,-0.755,-6.325,0.695
-wh109693001,109693001,"File:Санкт-Петербург, набережная Кутузова, 30 (15.06.2021).jpg",r15c21,"Grazhdanka, RU",quality,4027,2684,1.0,838371dbd33cbc24,0.693,1.219,-5.494,3.743
-wh113374691,113374691,"File:Rarotonga, Club Raro Resort stairs into ocean.jpg",r6c2,"Avarua, CK",quality,3138,2354,2.2,d0f613e03f8de318,-2.091,-3.433,-9.050,-0.074
-wh114280283,114280283,File:NATO E3A AWACS Paine Field WA Jul15 DSC8405.jpg,r13c5,"Everett, US",quality,3543,2356,2.8,e34c8c73d36c2c93,4.256,2.348,-1.426,9.268
-wh115921239,115921239,File:Common redshank (Tringa totanus) Bahrain.jpg,r11c23,"Al Muharraq, BH",quality,2097,1398,1.3,b9ee4638722ace19,6.279,-0.795,-1.709,9.374
-wh115921241,115921241,File:Common greenshank (Tringa nebularia) Bahrain.jpg,r11c23,"Al Muharraq, BH",featured,3111,2074,1.3,e58a12f74d6c6293,6.588,-0.492,-1.270,8.390
-wh115951268,115951268,File:Greater flamingos (Phoenicopterus roseus) Bahrain.jpg,r11c23,"Al Muharraq, BH",featured,3193,2129,1.3,9aed65924e6d3113,5.818,0.708,-4.293,7.221
-wh116202698,116202698,File:Ming Tombs Reservoir After Snow.jpg,r13c29,"Changping, CN",quality,5472,3078,4.2,d0cfba84b621aec5,-7.150,-7.546,-12.823,-2.170
-wh116211018,116211018,File:Front Wide Dutch Church Kollam Kerala Mar22 A7C 01539.jpg,r9c25,"Perunad, IN",quality,4953,3859,3.2,d3c98d90bcb5e50c,2.830,1.920,0.685,5.525
-wh116211022,116211022,File:Rear Dutch Church Kollam Kerala Mar22 A7C 01547.jpg,r9c25,"Perunad, IN",quality,6000,4000,3.2,82c7e6c0b54a357d,-0.201,2.807,-3.695,3.741
-wh116900340,116900340,File:George Shrine Front Casimir Church Kadavoor Mar22 A7C 01813.jpg,r9c25,"Perunad, IN",quality,5344,3563,2.4,83c57cf08f0bbec0,1.588,1.949,-1.142,4.250
-wh116900344,116900344,File:Parish House Casimirs Church Kollam Mar22 A7C 01835.jpg,r9c25,"Perunad, IN",quality,5854,3903,2.4,9684e493c6bb6b68,0.908,5.314,-0.560,6.358
-wh116900347,116900347,File:Right Side Transept Casimir Church Kadavoor Mar22 A7C 01818.jpg,r9c25,"Perunad, IN",quality,4812,3008,2.4,9f8040e730f96cee,1.170,7.110,-4.208,5.374
-wh117208135,117208135,File:Houseboat Thevally Bridge Ashtamudi Kollam Mar22 R16 05860.jpg,r9c25,"Perunad, IN",quality,5401,3601,2.1,8588fe7f0780687e,-3.740,-4.513,-7.389,-2.133
-wh117208137,117208137,File:Thevally Bridge Ashtamudi Kollam Mar22 R16 05856.jpg,r9c25,"Perunad, IN",quality,5431,3055,2.1,81c4fc7f4b80a07f,-3.072,-4.689,-7.929,-1.362
-wh117214387,117214387,File:Thevally Bridge Lighted Kollam Mar22 A7C 01722.jpg,r9c25,"Perunad, IN",quality,4940,2779,2.1,c4853b8bc43f3bc8,-0.875,-3.319,-7.195,2.297
-wh117251616,117251616,File:2017-02-02 01 JEAN TURECAMO - IMO 7501077.jpg,r12c10,"Portsmouth, US",quality,5526,3689,1.0,ee95933a44e59b50,0.848,-2.537,-2.136,4.772
-wh117251625,117251625,File:2017-02-02 02 JEAN TURECAMO - IMO 7501077.jpg,r12c10,"Portsmouth, US",quality,5992,4000,1.2,eed2c5395226bcc4,2.895,-0.050,-4.996,7.119
-wh117255223,117255223,File:Thevally Bridge Lighted Closeup Kollam Mar22 A7C 01726.jpg,r9c25,"Perunad, IN",quality,5908,3939,2.1,d12ea6c13abd6691,-0.768,-3.256,-6.343,1.239
-wh117603840,117603840,File:Spirit Way Pass Through Emperor Pavilion in Thirteen Tombs of Ming Dynasty.jpg,r13c29,"Changping, CN",quality,5472,3078,4.3,9a85839cf9e39c25,-4.830,-5.911,-10.257,-1.284
-wh118466528,118466528,File:China University Of Petroleum in Changping.jpg,r13c29,"Changping, CN",quality,5456,3069,0.9,c4fb95ea2546701d,-2.881,-3.763,-8.836,-0.600
-wh123199122,123199122,File:At the port of Las Palmas 2022 038.jpg,r11c16,"Centro, ES",quality,6960,4640,1.3,92cc4c1eb3e31ba3,2.202,0.740,-4.011,7.752
-wh123242221,123242221,File:Western Bowerbird 0A2A0436.jpg,r6c31,"Alice Springs, AU",featured,5681,3787,1.0,dce6266151c986fc,6.097,3.517,0.160,8.880
-wh128413217,128413217,"File:2022-08-15 01 Wide angle view of Halifax skyline, Nova Scotia, Canada.jpg",r13c11,"Woodlawn, CA",quality,10444,3325,0.5,f2851d7166ce9931,-2.638,-4.310,-8.056,2.309
-wh129051246,129051246,File:066a Britannia in Port of Bridgetown at night - Barbados - 3 1 - V-P.jpg,r10c12,"Bridgetown, BB",quality,14469,6381,1.4,e22d56e805d22fbc,5.512,1.053,-3.861,7.316
-wh129170201,129170201,"File:0509 Nordlys leaving Tromso, Norway - V-P.jpg",r15c19,"Tromso, NO",quality,6704,4472,0.3,93e4ec1211e5c767,-0.431,-4.687,-6.167,3.077
-wh129170203,129170203,"File:0510 Nordlys passing Tromsdalen church - Tromso, Norway - V-P.jpg",r15c19,"Tromso, NO",quality,7044,4699,0.3,87b5facb412d1782,1.078,-3.097,-2.034,4.807
-wh129170204,129170204,"File:0511 Nordlys approaching Tromso Bridge - Tromso, Norway - V-P.jpg",r15c19,"Tromso, NO",quality,6831,4557,0.3,91ce8a5f76c2034f,-2.649,-6.502,-7.058,1.011
-wh129172245,129172245,"File:09512 Tromsdalen church and bridge - Tromso, Norway - V-P.jpg",r15c19,"Tromso, NO",quality,7639,5095,0.3,c9b63b406c9d326e,-6.486,-8.259,-10.871,-3.165
-wh129172249,129172249,"File:09516 Tromsdalen church and eastern half of Tromso bridge - Tromso, Norway - V-P.jpg",r15c19,"Tromso, NO",quality,7614,5078,0.3,e5b2820d7df2f881,-6.086,-7.977,-8.417,-2.739
-wh130077659,130077659,File:Doha Qatar - Souq Waqif.jpg,r11c23,"Farij Kulayb, QA",quality,4032,3024,0.5,904937b564f2adc6,2.610,4.731,-0.387,5.671
-wh131739217,131739217,File:Сердце Югры.jpg,r15c25,"Kogalym, RU",featured,3200,2134,1.4,929a9b8713c2ebd8,-7.024,-9.464,-10.354,-1.590
-wh132400727,132400727,"File:Coast of Ósar Bay, Iceland, 20230430 1150 3503.jpg",r15c15,"Reykjanesbaer, IS",quality,4306,2875,8.0,d0df05635e7087e1,-8.741,-9.594,-10.627,-2.188
-wh135285281,135285281,File:CasadeTucuman-julio2023 01.jpg,r6c11,"Alderetes, AR",quality,6008,4008,2.0,f3d4ccad0a824cfc,4.388,5.208,1.329,7.151
-wh135535083,135535083,File:CatedraldeTucuman-campanario.jpg,r6c11,"Alderetes, AR",quality,5756,3924,1.9,dc326cdb35cd2264,2.783,-0.126,-0.991,5.565
-wh136125014,136125014,File:Av24deSeptiembre-TucumanArg.jpg,r6c11,"Alderetes, AR",quality,6008,4008,1.8,9785c5432ba8779c,-0.155,-2.569,-1.035,1.765
-wh137911940,137911940,File:Vestgar in Bergen 02.jpg,r15c18,"Bergen, NO",quality,3956,2637,0.3,8eb3386ac6775852,5.051,1.794,-1.318,8.970
-wh137911941,137911941,File:Vestgar in Bergen 03.jpg,r15c18,"Bergen, NO",quality,3863,2575,0.3,889339eace734867,4.846,1.684,-0.545,9.085
-wh138141497,138141497,"File:Oallenjárga of Kvenvika in Alta, Troms og Finnmark, Norway, 2023 September.jpg",r15c20,"Alta, NO",featured,3600,2398,7.4,97ba38707987c38a,-3.504,-5.449,-5.857,3.192
-wh138141501,138141501,"File:Kvenvika at Kvenvik in Alta, Troms og Finnmark, Norway, 2023 September.jpg",r15c20,"Alta, NO",quality,3600,2457,7.9,faf2868283bc8e9a,-6.141,-9.593,-12.696,-4.068
-wh138141512,138141512,"File:Kvenvika at Kvenvik in Alta, Troms og Finnmark, Norway, 2023 September - 2.jpg",r15c20,"Alta, NO",quality,3600,2414,7.1,81cfc497f2a47cb0,-5.982,-9.072,-12.646,-3.334
-wh138466798,138466798,File:03613 ISL Akureyri cruise vessel vapors V P.jpg,r15c16,"Akureyri, IS",quality,6298,3149,0.4,daa7cab00f624cd9,-3.870,-6.430,-8.713,-1.160
-wh141133923,141133923,"File:2023-05-18 TAUPIRI - IMO 9854064, near Kristiansund, Norway.jpg",r15c18,"Kristiansund, NO",quality,2339,1556,6.7,90aff4402bf4cf38,2.280,-1.064,-5.066,7.096
-wh141901602,141901602,File:Moussem moulay abdellah - Moulay Abdallah Amghar commune 20.jpg,r12c17,"El Jadida, MA",quality,4979,3081,9.6,ee311f4e90ba281f,-1.040,1.863,-2.975,2.771
-wh141901620,141901620,File:Barb Horses from Moussem Moulay Abdallah Amghar.jpg,r12c17,"El Jadida, MA",quality,4170,2750,9.6,d054eceaca8393b3,3.437,0.204,-2.792,5.835
-wh143260951,143260951,File:At Memorial Aeroespacial Brasileiro 2023 012.jpg,r6c13,"Sao Jose dos Campos, BR",quality,6657,4011,5.5,a99296296d5673e1,1.995,1.238,-0.474,4.835
-wh143261059,143261059,File:At Memorial Aeroespacial Brasileiro 2023 021.jpg,r6c13,"Sao Jose dos Campos, BR",quality,6960,4640,5.5,bba2936b34877a11,3.270,3.424,1.763,4.917
-wh145512650,145512650,"File:2022-08-15 01 Halifax Transit ferry, VINCENT COLEMAN - IMO 9850317 - Canada.jpg",r13c11,"Woodlawn, CA",quality,5753,3828,0.6,9cc6789933e6891b,5.820,-1.567,-3.033,8.883
-wh148640323,148640323,File:Vue aerienne des marais salants et de la cote tunisienne proche de Mahdia.jpg,r12c19,"Zouila, TN",quality,9504,6336,6.1,8ccc7a3a8d6f3611,-6.760,-6.195,-8.895,-0.026
-wh148640325,148640325,File:Vue aerienne large des marais salants et de la cote tunisienne proche de Mahdia.jpg,r12c19,"Zouila, TN",quality,9504,6336,6.1,c0703f9399ce9c2e,-5.833,-6.545,-8.829,-0.089
-wh149450938,149450938,File:Faucon crecerelle - Mahdia.jpg,r12c19,"Zouila, TN",quality,4463,2975,4.0,e64a992699c9369b,4.411,0.607,0.314,7.726
-wh149570163,149570163,File:Faucon crecerelle - Mahdia 2.jpg,r12c19,"Zouila, TN",quality,4463,2975,4.0,e56c989396646d69,3.571,-0.105,-1.057,8.392
-wh150314223,150314223,File:2024-06-30 01 SILVA OF HALIFAX - IMO 5327996 - Halifax NS CAN.jpg,r13c11,"Woodlawn, CA",quality,5794,3855,1.7,f885755a857887a5,4.733,1.233,-2.991,7.938
-wh150374792,150374792,File:2024-06-30 02 SILVA OF HALIFAX - IMO 5327996 - Halifax NS CAN.jpg,r13c11,"Woodlawn, CA",quality,5802,3860,1.5,c196699e96699669,6.235,1.436,-3.337,8.626
-wh151604089,151604089,"File:Kia K9, Astana (P1190736).jpg",r14c25,"Astana, KZ",quality,4350,2719,2.9,f8c0b333bde88037,3.793,2.040,2.051,6.274
-wh151604111,151604111,"File:Garages, Astana (P1190739).jpg",r14c25,"Astana, KZ",quality,4608,3456,2.9,cc8e27c5c8e21f99,-3.324,1.149,-2.349,2.243
-wh151815860,151815860,"File:Houses, Astana (P1190737).jpg",r14c25,"Astana, KZ",quality,3784,2523,2.8,9616b91986ea335b,-1.007,1.349,1.009,2.801
-wh151882364,151882364,"File:Boat, Astana (P1190730).jpg",r14c25,"Astana, KZ",quality,4608,3456,3.4,955593b2fbc9aa08,-0.059,-3.346,-4.199,2.532
-wh151882368,151882368,"File:Li L6, Astana (P1190742).jpg",r14c25,"Astana, KZ",quality,4608,3456,2.9,8e1af0a5cfda3185,2.955,0.330,1.546,4.824
-wh151882495,151882495,"File:Bridges, Astana (P1190727).jpg",r14c25,"Astana, KZ",quality,4608,3456,3.3,f0b4cb2e0f41f833,-2.195,-2.366,-2.903,0.906
-wh151967042,151967042,"File:Footbridge, Astana (P1190764).jpg",r14c25,"Astana, KZ",quality,4608,3456,2.7,9ad3ad284270f2bd,-2.138,-4.272,-8.532,-0.973
-wh151967051,151967051,"File:Outdor gym, Astana (P1190767).jpg",r14c25,"Astana, KZ",quality,4383,2922,2.7,8a9ed7cd6d858468,-0.637,1.302,-3.533,3.221
-wh152861780,152861780,File:A bench on the path leading to Coringa Wildlife Sanctuary.jpg,r10c26,"Kakinada, IN",quality,6000,4000,7.2,b87bc526ee147883,-1.704,-1.336,-4.505,1.238
-wh154716361,154716361,File:Pacific golden plover (Pluvialis fulva) Rarotonga 2.jpg,r6c2,"Avarua, CK",quality,5565,3710,2.9,91e7c61c38e3c63c,2.396,-3.085,-4.455,5.490
-wh154716363,154716363,File:Pacific golden plover (Pluvialis fulva) non breeding Rarotonga.jpg,r6c2,"Avarua, CK",quality,5168,3445,1.7,e612196c663adbe1,2.076,-3.701,-4.657,4.651
-wh154790217,154790217,File:Narrow-wing damselfly (Agriocnemis exsudans) immature male Rarotonga.jpg,r6c2,"Avarua, CK",quality,3871,2581,2.9,c1869b1072f1f763,4.844,2.719,0.384,7.752
-wh154790540,154790540,File:Rarotonga treeskink (Emoia tuitarere) Rarotonga 2.jpg,r6c2,"Avarua, CK",quality,4990,2495,2.9,f9272b713ce01479,3.127,0.085,0.082,7.194
-wh154790541,154790541,File:Rarotonga treeskink (Emoia tuitarere) Rarotonga.jpg,r6c2,"Avarua, CK",quality,5938,3982,5.9,c262b69cce0a2eee,4.340,-1.432,-1.726,4.866
-wh155021847,155021847,File:Fiji parrotfinch (Erythrura pealii) juvenile Viti Levu.jpg,r7c35,"Lami, FJ",quality,3790,2526,5.7,a79bca62b923906d,5.769,2.279,-1.451,9.532
-wh155027841,155027841,File:Asiatic blood tail (Lathrecista asiatica) male Viti Levu.jpg,r7c35,"Lami, FJ",quality,5039,3359,5.7,9ad7d56360059967,5.109,2.377,0.701,8.476
-wh155028997,155028997,File:Green skimmer (Orthetrum serapia) Viti Levu.jpg,r7c35,"Lami, FJ",quality,5161,3441,5.7,b7c095ef6160d9a4,4.832,1.348,1.194,7.244
-wh155141968,155141968,File:Western wattled-honeyeater (Foulehaio procerior) on octopus tree (Heptapleurum actinophyllum) Colo-I-Suva.jpg,r7c35,"Lami, FJ",featured,3354,2236,5.7,e02e9934dc10cf5f,5.697,0.852,0.054,9.274
-wh155539066,155539066,File:Copper-tailed skink (Emoia cyanura) Rarotonga.jpg,r6c2,"Avarua, CK",quality,7588,5058,2.9,e27252cd24663773,5.704,1.601,-0.351,8.045
-wh155799510,155799510,"File:2024-06-09 03 Halifax Transit ferry, RITA JOE - IMO 9850329 – Halifax, NS Canada.jpg",r13c11,"Woodlawn, CA",quality,5481,3647,0.6,b2cbb60f59b08b2c,2.884,-1.033,-3.009,7.371
-wh155799513,155799513,"File:2022-08-15 02 Halifax Transit ferry, RITA JOE - IMO 9850329 – Halifax, NS Canada.jpg",r13c11,"Woodlawn, CA",quality,5379,3579,1.0,e0963b7b8668135b,4.229,0.077,-3.365,9.617
-wh155799514,155799514,"File:2022-08-14 01 Halifax Transit ferry, RITA JOE - IMO 9850329 – Halifax, NS Canada.jpg",r13c11,"Woodlawn, CA",quality,5784,3848,1.0,d6e67e10d83ad027,2.095,1.994,-3.400,6.308
-wh156099927,156099927,File:A painted public bench in the Coringa reserve.jpg,r10c26,"Kakinada, IN",quality,6000,4000,7.2,dc1e837689f2235a,-1.985,0.842,-3.492,1.847
-wh156099929,156099929,File:A ruined boat in the backwaters of Coringa reserve.jpg,r10c26,"Kakinada, IN",quality,5550,3700,7.2,8d2ad76a33d56492,-3.800,-1.610,-6.903,0.682
-wh156099934,156099934,File:A bridge to leftside at the Entrance of Coringa Forest.jpg,r10c26,"Kakinada, IN",quality,6000,4000,7.2,dcdf222081fe0db9,-6.680,-5.866,-9.065,-1.990
-wh156099961,156099961,File:A bridge to the leftside at the Entrance of Coringa Forest.jpg,r10c26,"Kakinada, IN",quality,6000,4000,7.2,dc8e273781fe401d,-6.916,-5.607,-8.538,-2.437
-wh156108066,156108066,File:A glass bridge in Coringa reserve.jpg,r10c26,"Kakinada, IN",quality,6000,3375,7.3,bf0efd004f91ab05,-3.482,-1.553,-6.179,0.689
-wh156108067,156108067,File:A wooden suspention bridge near Aquarium in Coringa reserve.jpg,r10c26,"Kakinada, IN",quality,5931,3954,7.3,9c8e9340e6c75e72,-3.613,-3.158,-5.838,-0.681
-wh156633728,156633728,File:Red postman (Heliconius erato cyrbia) Rarotonga.jpg,r6c2,"Avarua, CK",quality,5209,3472,2.9,bf81c03b30d8c63f,6.094,2.760,-1.065,9.471
-wh156712031,156712031,File:Long-horned meadow katydid (Conocephalus saltator) female nymph Viti Levu.jpg,r7c35,"Lami, FJ",quality,5246,3498,2.6,c939b0793ae6c325,6.242,2.702,-1.662,6.875
-wh157062887,157062887,"File:South view of Brookfield Place, Telus Sky and The Bow, from Calgary Tower 20240819 1.jpg",r14c6,"Beltline, CA",quality,6999,4925,0.8,abcbb6197454ad90,-2.232,-0.969,-7.037,1.243
-wh157256945,157256945,File:Black emo skink (Emoia nigra) Upolu.jpg,r7c0,"Apia, WS",quality,6000,3000,3.0,c037471e77204bde,4.051,-0.338,0.699,5.838
-wh157260687,157260687,File:Meadow argus (Junonia villida) Upolu.jpg,r7c0,"Apia, WS",quality,5422,3615,3.0,b68be17a78658315,4.386,1.598,-0.544,8.513
-wh157262497,157262497,File:Polynesian triller (Lalage maculosa maculosa) Upolu.jpg,r7c0,"Apia, WS",quality,4394,2930,3.0,99c6bc895b325e23,2.284,-3.132,-3.353,6.626
-wh157365974,157365974,File:Samoan blue tiger (Tirumala hamata melittula) male underside Upolu.jpg,r7c0,"Apia, WS",featured,5340,3560,3.0,8378dd4bb4242f93,5.266,2.485,-1.445,9.120
-wh157683585,157683585,"File:Close wing Basking of Hypolimnas bolina (Linnaeus, 1758) - Great Eggfly (Male) WLB DSC 9048a.jpg",r11c26,"Naihati, IN",quality,1840,1345,1.2,a2391e9237de3e03,3.892,1.277,-1.371,7.700
-wh157683587,157683587,"File:Close wing Basking posture of Junonia iphita (Cramer, (1779)) - Chocolate Pansy WLB DSC 9071a.jpg",r11c26,"Naihati, IN",quality,3660,2578,1.2,f532cc18ecd32c99,6.742,4.561,-1.322,9.488
-wh157683600,157683600,"File:Close wing position Nectaring activity of Junonia atlites (Linnaeus, 1763) - Grey Pansy WLB DSC 9194a.jpg",r11c26,"Naihati, IN",quality,3430,2500,1.2,d2432d93b46b78b4,6.348,2.464,-1.168,8.867
-wh157683611,157683611,"File:Close wing position Nectaring activity of Junonia atlites (Linnaeus, 1763) - Grey Pansy WLB DSC 9198a.jpg",r11c26,"Naihati, IN",quality,3684,2430,1.2,d2586d69b392b3a4,4.367,1.299,-1.834,8.032
-wh158941335,158941335,"File:2019-03-12 02 CNS PUERTO NATALES LSG-1617 – Puerto Natales, Chile.jpg",r3c10,"Puerto Natales, CL",quality,4551,3038,0.7,fccb407e8572a626,3.579,-1.597,-2.592,7.229
-wh158941336,158941336,"File:2019-03-12 01 CNS PUERTO NATALES LSG-1617 – Puerto Natales, Chile.jpg",r3c10,"Puerto Natales, CL",quality,4988,3522,0.7,f101e959863e1e8f,1.841,-0.814,-2.547,6.125
-wh162748876,162748876,File:Fountain in Kish.jpg,r13c22,"Sheki, AZ",quality,4081,2915,6.5,e1e65c889d257665,2.338,5.409,0.796,6.980
-wh162987357,162987357,File:Edoardo Leone finish at the 2025 Draft-Legal National Championships.jpg,r11c9,"Homestead, US",quality,2066,1468,1.5,b39919b3f3898992,4.546,-0.307,-1.337,8.511
-wh164410497,164410497,"File:2019-03-10 03 MS FRAM - IMO 9370018 - Ushuaia, Argentina.jpg",r3c11,"Ushuaia, AR",quality,5541,3699,1.1,80b7a762c01d7fe4,2.881,-1.236,-1.645,7.108
-wh166742430,166742430,File:A bench and camaflouged dustbin in Coringa reserve.jpg,r10c26,"Kakinada, IN",quality,5562,3708,7.3,dc90296fdd4456d8,-4.169,-0.799,-3.387,0.431
-wh170131107,170131107,"File:Close wing Nectaring posture of Catopsilia pyranthe (Linnaeus, 1758) - Mottled Emigrant (Male) WLB DSC 5299a.jpg",r11c26,"Naihati, IN",quality,2566,1857,1.2,c644398fca78af38,3.593,1.896,-0.776,8.595
-wh170131147,170131147,"File:Close wing Basking posture of Hypolimnas bolina (Linnaeus, 1758) - Great Eggfly (Female) WLB DSC 5506a.jpg",r11c26,"Naihati, IN",quality,4227,2678,1.2,853b9a726b197619,5.894,2.431,-1.559,8.802
-wh170131182,170131182,"File:Close wing Nectaring activity of Papilio polytes Linnaeus, 1758 - Common Mormon (Female) Form - romulus WLB IMG 0147a.jpg",r11c26,"Naihati, IN",quality,3010,2040,1.2,93548f20b78ee3ac,5.559,2.949,-1.397,8.999
-wh170472179,170472179,"File:Telus Sky (detail) from Calgary Tower, Calgary, Alberta, 2025-07-14.jpg",r14c6,"Beltline, CA",featured,5871,3664,0.8,91876a933b2b353c,3.759,4.994,-1.480,4.743
-wh170472189,170472189,"File:4th Ave and Reconciliation Bridge from Calgary Tower, Calgary, Alberta, 2025-07-14.jpg",r14c6,"Beltline, CA",quality,5652,3936,0.8,9ce322d91c561b73,-3.051,-3.173,-2.172,2.622
-wh171162794,171162794,File:2022-09-04 03 K.J. GARDNER - IMO 9420150 - St. John's NL CAN.jpg,r13c12,"Mount Pearl, CA",quality,5066,3371,1.7,d5d62a2927c9c81f,-3.292,-8.214,-8.163,0.864
-wh174918297,174918297,File:ChiloeWigeonMale.jpg,r3c10,"Punta Arenas, CL",quality,2518,1799,5.7,b8b983c6e6b08c6d,6.048,-0.272,-0.994,6.271
-wh175413462,175413462,File:Eurasian wigeon (Mareca penelope) female Akureyri.jpg,r15c16,"Akureyri, IS",quality,4583,3055,2.6,a4cb9b34c51c12fe,5.534,0.958,-2.350,7.576
-wh177361323,177361323,File:2022-10-21 Armée de l'air 68-IO (France) plane – Saint-Pierre Airport.jpg,r13c12,"Saint-Pierre, PM",quality,5571,3707,1.7,e2c515364b993c4f,2.807,3.789,-1.550,9.292
-wh177493870,177493870,File:Borj El Kebir Mahdia.jpg,r12c19,"Zouila, TN",quality,4496,3000,1.3,c53e7a343868c55b,0.008,3.348,-6.854,1.382
-wh178524709,178524709,File:Black-faced ibis (Theristicus melanopis) in flight Laguna Nimez 2.jpg,r3c10,"El Calafate, AR",quality,4662,3110,1.3,f14c8c67d3999cc4,5.886,1.215,-3.953,8.266
-wh178939562,178939562,"File:Câmara de Lobos (Madeira, Portugal), Ortsansicht -- 2025 -- 1882.jpg",r12c16,"Camara de Lobos, PT",quality,6720,4480,1.0,afd16069bd52a271,-1.096,-6.435,-8.907,-0.808
-wh178939564,178939564,"File:Câmara de Lobos (Madeira, Portugal), Ortsansicht -- 2025 -- 1883.jpg",r12c16,"Camara de Lobos, PT",quality,6720,4480,1.0,becd783b912e9441,-0.816,-6.447,-9.250,-1.318
-wh178939569,178939569,"File:Câmara de Lobos (Madeira, Portugal), Porto de Câmara de Lobos -- 2025 -- 1885.jpg",r12c16,"Camara de Lobos, PT",quality,6472,3640,0.3,8482f67f0f82e0fc,0.269,-5.214,-6.444,1.460
-wh178939572,178939572,"File:Câmara de Lobos (Madeira, Portugal), Ortsansicht -- 2025 -- 1886.jpg",r12c16,"Camara de Lobos, PT",quality,6720,4480,1.0,b2a94da5193267cd,-4.251,-9.202,-8.007,-2.264
-wh178939574,178939574,"File:Câmara de Lobos (Madeira, Portugal), Porto de Câmara de Lobos -- 2025 -- 1887.jpg",r12c16,"Camara de Lobos, PT",quality,6670,4447,0.4,a633b59c991b5859,3.181,-5.168,-6.106,3.576
-wh178939576,178939576,"File:Câmara de Lobos (Madeira, Portugal), Ortsansicht -- 2025 -- 1891.jpg",r12c16,"Camara de Lobos, PT",quality,6720,4480,1.0,cca82befd4792823,0.036,-5.441,-7.450,-0.598
-wh178976081,178976081,"File:Câmara de Lobos (Madeira, Portugal), Porto de Câmara de Lobos -- 2025 -- 1890.jpg",r12c16,"Camara de Lobos, PT",quality,6720,4480,0.5,c1c96dc5f8c3b198,3.987,-1.458,-4.468,4.367
-wh179028478,179028478,File:Correndera pipit (Anthus correndera chilensis) Laguna Nimez.jpg,r3c10,"El Calafate, AR",quality,5130,3421,1.3,8bce26d1c18f9b49,4.024,-2.052,-3.306,5.946
-wh179069672,179069672,File:Coscoroba swans (Coscoroba coscoroba) pair with cygnet Laguna Nimez.jpg,r3c10,"El Calafate, AR",quality,5999,4000,1.3,d86462d8679aada3,2.172,-3.020,-5.854,2.435
-wh179069673,179069673,File:Coscoroba swan (Coscoroba coscoroba) Laguna Nimez.jpg,r3c10,"El Calafate, AR",quality,5816,3878,1.3,ce27b10ae9718e69,1.871,-2.743,-3.314,4.802
-wh179069674,179069674,File:Coscoroba swans (Coscoroba coscoroba) pair with cygnets Laguna Nimez.jpg,r3c10,"El Calafate, AR",featured,4398,2932,1.3,f64b493436db7424,5.653,-0.542,-4.076,6.279
-wh179073439,179073439,File:Brown-hooded gull (Chroicocephalus maculipennis) in flight Chiloe.jpg,r4c10,"Castro, CL",quality,4464,2976,8.6,f2626cf2309c391f,4.108,0.934,-4.429,8.124
-wh179073441,179073441,File:Brown-hooded gull (Chroicocephalus maculipennis) Puerto Varas.jpg,r4c10,"Llanquihue, CL",quality,5396,3599,0.9,8c863363cc9d33e3,3.372,-1.359,-3.995,6.328
-wh179073444,179073444,File:Brown-hooded gull (Chroicocephalus maculipennis) with Grimothea monodon Chiloe 2.jpg,r4c10,"Castro, CL",quality,4446,2966,8.6,b99b669699c92712,5.930,-0.577,-3.568,8.796
-wh179073446,179073446,File:Brown-hooded gull (Chroicocephalus maculipennis) with Grimothea monodon Chiloe.jpg,r4c10,"Castro, CL",quality,4270,2846,8.6,9cb831b78dc838b9,5.850,0.208,-2.727,8.900
-wh179392217,179392217,File:Upland goose (Chloephaga picta picta) male Laguna Nimez.jpg,r3c10,"El Calafate, AR",featured,6000,4000,1.3,cc9623c9be13c762,1.152,-5.713,-5.104,1.801
-wh179611447,179611447,File:Charles de Foucauld's house 04.jpg,r11c18,"Tamanghasset, DZ",quality,3313,2209,0.3,9961c6fc5629ea29,-1.277,0.985,-2.342,2.727
-wh179627016,179627016,File:Bordj of Tamanrasset 03.jpg,r11c18,"Tamanghasset, DZ",quality,3641,2427,0.5,a51e4a65758a471f,0.887,1.562,-2.135,3.799
-wh179627021,179627021,File:Bordj of Tamanrasset 04.jpg,r11c18,"Tamanghasset, DZ",quality,3649,2433,0.5,920b6d7450ae1f1f,2.026,2.067,-1.896,3.912
-wh179627374,179627374,File:Bordj of Tamanrasset 07.jpg,r11c18,"Tamanghasset, DZ",quality,4017,2660,0.5,9b408e7166d9e3d8,0.540,3.542,-4.462,3.315
-wh179627378,179627378,File:Bordj of Tamanrasset 08.jpg,r11c18,"Tamanghasset, DZ",quality,3410,2094,0.5,d52a72150b76dc1d,2.927,4.997,-2.355,5.540
-wh179627383,179627383,File:Bordj of Tamanrasset 09.jpg,r11c18,"Tamanghasset, DZ",quality,4032,2880,0.5,815bf82d1f60837e,3.871,5.444,-2.193,4.942
-wh179627385,179627385,File:Bordj of Tamanrasset 10.jpg,r11c18,"Tamanghasset, DZ",quality,3664,2268,0.5,8fe03a71ff7bc000,4.191,5.306,-1.037,6.612
-wh179627390,179627390,File:Bordj of Tamanrasset 14.jpg,r11c18,"Tamanghasset, DZ",quality,3369,2246,0.5,e919ce32dc8c33c6,1.556,2.299,1.174,4.620
-wh179627956,179627956,File:Bordj of Tamanrasset 16.jpg,r11c18,"Tamanghasset, DZ",quality,3333,2112,0.5,803f3b00efe4d0cf,-1.699,1.026,-5.133,2.313
-wh180895560,180895560,File:A MYA Langkawi Yacht - Seychelles - 2025 - 10.jpg,r8c23,"Victoria, SC",quality,5800,3381,3.7,daeaa4933765c01b,2.505,0.354,-8.943,7.855
-wh180895561,180895561,File:A MYA Langkawi Yacht - Seychelles - 2025 - 11.jpg,r8c23,"Victoria, SC",quality,6000,3354,3.7,b9bdc48a2a24d373,3.115,0.362,-9.246,8.010
-wh180897917,180897917,File:Big Ben Clock Tower - Victoria - Mahe - Seychelles - 01.jpg,r8c23,"Victoria, SC",quality,5300,3893,0.5,cc7ba326b3194c65,-0.156,-5.668,-2.032,-0.937
-wh181097102,181097102,File:Arul Mihu Navashakti Vinayakar Temple - Victoria - Seychelles - 02.jpg,r8c23,"Victoria, SC",quality,5220,4016,0.5,bab6c4d8aae95452,-1.197,-1.672,-4.442,-0.152
-wh181205761,181205761,File:Sunset - Port Launey Road - Port Glaud - Mahe - Seychelles - 2.jpg,r8c23,"Victoria, SC",featured,5861,2469,6.7,8d94f9b3b26a0c4e,2.200,-4.049,-6.328,3.435
-wh183424217,183424217,File:Eden Island Villa - Eden Island - Mahe - Seychelles - 02.jpg,r8c23,"Victoria, SC",quality,6192,4128,3.2,cdc2f27b8d158385,-5.544,-5.073,-10.454,-3.835
-wh183424219,183424219,File:Beach houses - Eden Island - Mahe - Seychelles.jpg,r8c23,"Victoria, SC",quality,5709,3781,4.3,a523a69656d2d32b,-5.632,-8.327,-9.932,-3.384
-wh185012557,185012557,File:2023-09-02 02 GPO GRACE - IMO 9760421 - Halifax NS CAN.jpg,r13c11,"Woodlawn, CA",quality,5285,3516,2.1,8cd39768cdb3324c,1.515,-0.231,-3.994,8.121
-wh188600351,188600351,"File:Sheppard Avenue at Old Leslie Street, April 8 2026 (01).jpg",r13c10,"Willowdale East, CA",quality,6592,4395,1.2,d4aad1027db1ae56,-4.987,-6.097,-7.058,-2.013
-wh188986820,188986820,"File:Highway 401 EB in North York, April 11 2026 (10).jpg",r13c10,"Willowdale East, CA",quality,6887,4132,1.3,d98ef5814e790798,-1.818,-4.255,-2.045,1.953
-wh190268723,190268723,File:Chestnut munia (Lonchura atricapilla jagori) juvenile Koror.jpg,r9c31,"Ngerulmud, PW",quality,3055,2037,9.3,e7cb358cb2a0b8ca,4.680,-0.084,-2.929,7.886
-wh190268725,190268725,File:Chestnut munia (Lonchura atricapilla jagori) Koror.jpg,r9c31,"Ngerulmud, PW",quality,3810,2542,9.3,aae7ce3abeca3020,5.576,-0.047,-2.145,8.484
-wh190719322,190719322,File:Brown pansy (Junonia hedonia zelima) Koror.jpg,r9c31,"Ngerulmud, PW",quality,4797,3198,9.3,ad76d20d728b7c81,5.400,3.316,-0.825,9.543
-wh190814995,190814995,File:Palau frog (Cornufer pelewensis) female Koror.jpg,r9c31,"Ngerulmud, PW",quality,4942,3295,9.3,abd5918ad105ed3c,5.157,0.825,-1.696,6.655
-wh191071734,191071734,File:Straight-edge red parasol (Neurothemis terminata) male Koror.jpg,r9c31,"Ngerulmud, PW",featured,4620,3080,9.3,ab3a93113ce55a6a,5.351,3.298,0.438,8.882
-wh198038304,198038304,File:2025-08-15 01 BCF Island K'ulut'a (ISLAND KULUTA) - IMO 9900588 – BC CAN.jpg,r14c5,"Campbell River, CA",quality,3990,2660,1.6,9197e8f8976ac185,3.000,-0.440,-3.562,6.388
-wh199343239,199343239,"File:Transperth B-series train at Thornlie Station, September 2026 (cropped).jpg",r5c29,"Gosnells, AU",quality,5480,3649,1.5,dba014157d6f7149,3.048,0.222,-0.194,5.990
+id,pageid,title,cell,seed,assessment,width,height,place_km,phash,gate_people,gate_indoor,gate_text,gate_not_photo,gate_close_up
+wh1299437,1299437,File:Horyu-ji01s3200.jpg,r12c31,"Kanmaki, JP",quality,4592,3056,0.4,c2446daf7887da26,0.691,4.076,-2.929,3.936,-6.630
+wh1299447,1299447,File:Horyu-ji02s3200.jpg,r12c31,"Kanmaki, JP",quality,4470,2980,0.4,ffcac0752ad701d0,0.712,6.098,-2.077,4.857,-6.592
+wh1299460,1299460,File:Horyu-ji10s3200.jpg,r12c31,"Kanmaki, JP",quality,4500,3000,0.4,ccb4cb26f74d1862,1.809,1.956,-5.287,3.249,-7.716
+wh1299479,1299479,File:Horyu-ji18s3200.jpg,r12c31,"Kanmaki, JP",quality,4592,3056,0.5,c1e4d47a6cad12f2,-0.384,2.777,-3.605,3.429,-7.381
+wh1555889,1555889,File:CSU IMFields2 edited2.jpg,r13c7,"Fort Collins, US",quality,2014,1079,1.3,9cb96cce8c22d369,-4.723,-8.452,-8.990,-3.033,-13.670
+wh2368717,2368717,File:Westfield winery baskerville gnangarra.JPG,r5c29,"Ellenbrook, AU",quality,3008,2000,5.8,9d9cb7913174b82c,3.036,7.958,0.148,7.448,-4.605
+wh2680583,2680583,File:194michinoku folk village3872.jpg,r12c32,"Kitakami, JP",quality,3832,2541,1.8,d27325b43c9ec22d,-2.135,-0.432,-7.627,1.886,-7.659
+wh3677747,3677747,File:AucklandPano MC.jpg,r5c35,"Mount Eden, NZ",featured,15000,2271,0.4,b1aed0631c27c9d3,-6.496,-8.681,-9.671,-0.506,-12.124
+wh3693965,3693965,File:Warszawa-Dolny Mokotów.jpg,r14c20,"Mokotow, PL",quality,5493,1871,0.6,d097ea590fd48179,-6.848,-9.173,-10.902,-2.423,-14.874
+wh4066115,4066115,File:Puvar 20080220-1.jpg,r9c25,"Kollancode, IN",featured,4368,2912,4.7,e3989c27da649669,-0.407,0.113,-4.069,1.871,-6.858
+wh4261388,4261388,"File:Railroad bridge wide 2, Cedar Rapids, June 22 2008.jpg",r13c8,"Cedar Rapids, US",quality,3264,2448,3.8,e8c4873c3873eb4a,-1.857,-0.510,-3.639,3.383,-13.182
+wh4271613,4271613,File:Gamlehaugen1.jpg,r15c18,"Ytrebygda, NO",featured,2650,1762,2.9,ccc98b0fba709927,-1.404,-0.460,-4.759,2.100,-6.805
+wh4272232,4272232,File:GamlehaugenGardens.jpg,r15c18,"Ytrebygda, NO",quality,3500,1138,2.9,a68682ea75778cb8,-8.169,-9.534,-10.388,-2.192,-13.889
+wh4277921,4277921,"File:Municipal Offices & Public Library, Timaru.jpg",r4c35,"Timaru, NZ",quality,3822,2854,0.2,d8d407ef698d3622,3.576,4.037,0.009,7.508,-5.732
+wh5411905,5411905,File:Wakayama Castle Nishinomaru Garden04bs3200.jpg,r12c31,"Minato, JP",quality,3200,2130,0.7,8d8ad6b48c69c3b6,1.138,3.538,-6.390,4.385,-4.261
+wh5592836,5592836,File:Wakayama Yosuien06bs4272.jpg,r12c31,"Minato, JP",quality,4272,2848,2.5,d0a4c29ef54f7a42,-6.815,-6.369,-11.127,-0.791,-10.549
+wh5653582,5653582,File:Saikazaki Wakaura01bs4272.jpg,r12c31,"Minato, JP",quality,4272,2848,3.4,b8d1c23c315ea0fd,-3.889,-8.552,-10.881,-2.259,-9.276
+wh6588040,6588040,File:Lima Lima Flight team flying Beechcraft Mentors.jpg,r12c9,"Louisville, US",quality,4288,2848,0.6,cc1b32e678803f76,4.782,1.474,-1.564,8.528,-0.618
+wh6629434,6629434,File:Sbeitla 04.jpg,r12c18,"Sbeitla, TN",quality,2288,1712,0.6,dc20811fdc6037ef,1.642,4.755,-0.859,4.491,-6.520
+wh6714189,6714189,File:Naha Shikinaen21n4272.jpg,r11c30,"Yaese, JP",quality,4592,3056,1.3,d1569dc8372c1e65,-3.181,0.996,-4.406,2.409,-5.864
+wh6755162,6755162,File:PennsylvaniaRailroadBridgePanorama.jpg,r12c9,"Louisville, US",quality,24260,1494,0.6,8e8ad57d23de4c21,-1.517,-1.723,-1.775,2.336,-4.563
+wh6851999,6851999,File:PortlandCanalEntrance.jpg,r12c9,"Louisville, US",featured,5460,1461,0.6,d6bdca4215d5a92a,-1.211,-3.140,-6.483,2.830,-9.999
+wh6988057,6988057,File:Naha Shuri Castle02s5s3200.jpg,r11c30,"Kanegusuku, JP",quality,4500,3000,2.5,d0b6c469c94fb364,-0.058,2.125,0.008,3.222,-5.716
+wh6988105,6988105,File:Naha Shuri Castle16s5s3200.jpg,r11c30,"Kanegusuku, JP",quality,4592,3056,2.3,f4588f0631f4db1a,3.167,4.946,-3.432,5.208,-3.494
+wh7029225,7029225,File:San Jacinto monument.jpg,r11c8,"Cloverleaf, US",quality,4368,2912,4.8,8573d30ca2db3587,-2.904,-2.924,-3.745,0.173,-8.814
+wh7053341,7053341,File:Arkansas State Capitol.jpg,r12c8,"Little Rock, US",featured,9235,3708,0.2,ecbb06ec1344bd43,2.171,3.279,-2.967,7.393,-1.663
+wh7179854,7179854,File:Albi panorama morning Wikimedia Commons.jpg,r13c18,"Albi, FR",quality,15160,3695,0.3,b0a2c47b6f1c23e6,-3.720,-8.047,-9.449,0.145,-10.211
+wh7963128,7963128,File:Adelaide 2009 201.JPG,r5c31,"Adelaide Hills, AU",quality,2764,1752,1.5,ebd7c0c03a702f0f,-1.297,4.917,-2.235,5.676,-5.929
+wh8888551,8888551,File:Black hill conservation park track.JPG,r5c31,"Adelaide Hills, AU",quality,3000,1993,5.8,e3e3ac94504b6d65,-9.820,-10.258,-9.784,-2.830,-13.446
+wh9645741,9645741,File:Stadt München moored in Bridgetown.JPG,r10c12,"Bridgetown, BB",quality,4000,3000,1.1,b3c88c4713bcc92f,1.490,0.565,-2.906,6.605,-7.239
+wh9649676,9649676,File:Esna 30.jpg,r11c21,"Esna, EG",quality,4416,3308,1.5,9ec9611a307f9f21,-4.071,-4.183,-8.940,-1.552,-13.351
+wh9649696,9649696,File:Esna 31.jpg,r11c21,"Esna, EG",quality,4389,3289,1.5,9de742236f391ca4,-3.037,-2.948,-4.256,0.214,-11.508
+wh9837506,9837506,File:Kinjocho ishidatami-michi Shuri Naha01n4272.jpg,r11c30,"Kanegusuku, JP",quality,4500,3000,1.9,d2b39c9dad8e8544,-6.107,-5.855,-4.746,-1.280,-11.434
+wh10128352,10128352,File:Citadelle d'Alep.jpg,r12c21,"Aleppo, SY",quality,3623,2000,0.3,ddaad41a2dd62915,-0.714,-0.845,-5.406,2.077,-8.601
+wh11576552,11576552,"File:Khusruwiyah Mosque, Aleppo.jpg",r12c21,"Aleppo, SY",quality,3351,2399,0.5,c63b552ad748bb44,2.737,1.749,-3.204,4.994,-3.464
+wh11581901,11581901,File:Aleppo Citadel 06 - Inner gate.jpg,r12c21,"Aleppo, SY",quality,3338,2548,0.3,82551d2e64bd42fb,3.648,3.574,-2.639,4.571,-4.276
+wh11581913,11581913,File:Aleppo Citadel 07 - Inner gate.jpg,r12c21,"Aleppo, SY",quality,2927,1998,0.3,a6191964cd4ee13f,5.608,7.284,-0.509,6.452,-0.982
+wh11593822,11593822,File:Aleppo Citadel 13 - Great Mosque.jpg,r12c21,"Aleppo, SY",quality,2916,2138,0.2,d72c19c02ed9e52e,-0.427,-1.890,-3.847,2.234,-9.352
+wh11596930,11596930,File:Aleppo 03.jpg,r12c21,"Aleppo, SY",quality,3456,2400,0.2,b986ec93914e6599,-3.433,-4.130,-5.748,-1.049,-10.480
+wh11601539,11601539,File:Aleppo Citadel 19 - Tower.jpg,r12c21,"Aleppo, SY",quality,3117,2308,0.2,dee409fb52166589,-0.724,0.032,-4.850,1.819,-8.956
+wh11626898,11626898,File:Aleppo Citadel 26 - Bridge.jpg,r12c21,"Aleppo, SY",quality,3456,2592,0.3,e51ae65caa5511ec,-0.567,1.882,-5.250,1.713,-8.211
+wh11654128,11654128,"File:Hammam Yalbougha al-Nasri, Aleppo.jpg",r12c21,"Aleppo, SY",quality,3138,2085,0.4,c52eba514496ab5b,3.214,3.127,-2.016,4.900,-5.690
+wh11670418,11670418,File:Nakatsu-bansho-en Marugame Kagawa pref01n4350.jpg,r12c31,"Utazu, JP",quality,4350,2900,1.2,9c9de7e96a62421a,-2.444,-4.440,-6.983,0.503,-6.469
+wh12184482,12184482,File:Whaler Ship Petrel Grytviken.jpg,r3c14,"Grytviken, GS",quality,4253,2848,0.1,fa8435eb921de11a,0.531,0.512,-2.323,6.462,-7.229
+wh12189009,12189009,File:Signal Hill Tattoo.jpg,r13c12,"St. John's, CA",quality,2901,2000,1.8,b81882ebc54699ef,4.653,-1.532,-3.260,5.704,-7.170
+wh12189396,12189396,File:St John's Lower Battery 2.jpg,r13c12,"St. John's, CA",quality,2809,1854,1.5,c11818e1e53b37fc,-1.833,-3.700,-5.103,1.110,-12.381
+wh12223904,12223904,File:Horyu-ji46n3990.jpg,r12c31,"Kanmaki, JP",quality,3990,2660,0.4,da1e616d9b54a41b,1.854,3.714,-2.622,4.795,-6.661
+wh12905454,12905454,File:Ecuador Manta beach restaurants.jpg,r8c9,"Manta, EC",quality,4115,2348,1.0,d2d3c52c8c3b6794,-2.474,-0.976,-2.106,1.049,-8.287
+wh12915875,12915875,File:Ecuador Manta Murciélago beach 01.jpg,r8c9,"Manta, EC",quality,4236,2515,1.0,90c79c785cd63335,-1.232,-2.730,1.144,1.334,-12.553
+wh13214093,13214093,File:Luxor R01.jpg,r11c21,"Al Bayadiyah, EG",quality,3992,2792,0.3,fce01f50867d64c6,6.421,3.994,0.015,6.640,-3.874
+wh13214772,13214772,File:Luxor R02.jpg,r11c21,"Al Bayadiyah, EG",quality,3988,2589,0.3,8787747cd2c574a8,-0.468,-5.079,-4.674,-0.509,-9.667
+wh13266388,13266388,File:Egyptian Countryside R03.jpg,r11c21,"Al Bayadiyah, EG",quality,3976,2540,0.7,83f96c12631d778c,-8.296,-7.677,-8.932,-4.044,-13.979
+wh13266410,13266410,File:Egyptian Countryside R02.jpg,r11c21,"Al Bayadiyah, EG",quality,3952,2599,0.7,959caa6b46d4d133,-2.145,-6.273,-8.817,-1.842,-11.288
+wh13799373,13799373,File:Manta Ec playa Murciélago.jpg,r8c9,"Manta, EC",quality,4237,2776,1.7,a0acffe30122f8dc,-4.109,-7.530,-10.036,-1.923,-13.457
+wh14236999,14236999,File:Manta Ecuador playa Murciélago 02.jpg,r8c9,"Manta, EC",quality,4256,2832,1.2,a49ade5f25249a1d,-3.510,-6.135,-5.544,0.200,-11.325
+wh14518843,14518843,File:Mount Eden crater with Auckland CBD and Rangitoto skyline.jpg,r5c35,"Mount Eden, NZ",quality,2300,1548,0.4,9595d1aaab2a5a74,-4.571,-7.199,-8.625,-1.336,-9.097
+wh14540663,14540663,File:Manta Ecuador playa Murciélago 03.jpg,r8c9,"Manta, EC",quality,4256,2832,1.2,e9e9c5571236b056,-0.306,-2.027,-8.578,1.056,-10.826
+wh14671941,14671941,File:El-Tod 03.JPG,r11c21,"Armant, EG",quality,4004,3002,0.1,d191a4eebe1f6038,2.077,3.916,-3.750,3.702,-6.839
+wh14672000,14672000,File:El-Tod 06.JPG,r11c21,"Armant, EG",quality,4365,3269,0.1,c891b17dcf7a1ac0,0.664,4.187,-4.359,2.728,-7.845
+wh14672834,14672834,File:El-Tod 23.JPG,r11c21,"Armant, EG",quality,3977,2980,0.1,9c08e39f95e30f25,-0.021,1.409,-4.100,2.474,-8.806
+wh14681470,14681470,File:El-Tod 30.JPG,r11c21,"Armant, EG",quality,4344,3253,0.2,80c94f63d9fa9692,1.259,2.924,-4.462,3.006,-6.855
+wh15116418,15116418,File:Fremont Central Park April 2011 001.jpg,r12c5,"Fremont, US",quality,4368,2912,1.9,d29aa5a5296d16da,-8.194,-9.540,-11.298,-3.148,-10.729
+wh15116588,15116588,File:Fremont Central Park April 2011 002.jpg,r12c5,"Fremont, US",quality,4368,2912,1.9,c8cc2d391d92e36d,-3.148,-7.248,-7.975,-2.317,-12.935
+wh15116731,15116731,File:Fremont Central Park April 2011 003.jpg,r12c5,"Fremont, US",quality,4268,2812,2.0,be9f8d4842f223c5,-7.811,-6.296,-8.129,-3.699,-11.707
+wh15294397,15294397,File:Metro SPB Line1 Politechnicheskaya pavilion.jpg,r15c21,"Akademicheskoe, RU",quality,2400,1600,1.4,f970865e76838974,2.277,4.988,-0.049,5.801,-5.658
+wh15370608,15370608,File:Naha Shuri Castle11s3s4592.jpg,r11c30,"Kanegusuku, JP",quality,4592,3056,2.4,d2f1900c3727e7ca,-1.032,1.025,-4.274,2.655,-8.644
+wh15815766,15815766,File:Naha Shuri Castle32bs5s4592.jpg,r11c30,"Kanegusuku, JP",quality,4592,3056,2.5,c1e0d41dde1af331,0.297,2.597,0.476,3.622,-4.637
+wh15916014,15916014,File:Naha Shuri Castle50s3s4500.jpg,r11c30,"Kanegusuku, JP",quality,4500,3000,2.3,e7d998360d33c4d8,-0.575,-0.120,-6.746,2.281,-8.653
+wh16380592,16380592,File:Apple Headquarters in Cupertino.jpg,r12c5,"Cupertino, US",quality,2885,2008,1.0,c8b6b769a1c21c9e,0.295,2.341,-0.558,3.537,-5.657
+wh17397605,17397605,File:Batticaloa Lagoon.jpg,r9c26,"Batticaloa, LK",quality,2526,1600,5.0,809d7e27bca087d9,-5.844,-5.817,-9.842,-0.642,-9.125
+wh17425300,17425300,File:St Athanasius Church - Sovolyano.jpg,r13c20,"Kyustendil, BG",quality,2867,1900,6.5,ccf1334c71a70ef0,-1.708,-1.476,-5.115,1.896,-9.214
+wh17430494,17430494,File:St Michael the Archangel church - Shishkovtsi.jpg,r13c20,"Kyustendil, BG",quality,2656,1900,7.5,dc21629e651399ee,0.818,0.983,-3.985,4.669,-6.887
+wh17620825,17620825,File:Church of St George - Kyustendil.jpg,r13c20,"Kyustendil, BG",featured,3244,2300,1.9,c3bc3e833cc42769,1.970,1.505,-5.125,4.877,-5.858
+wh17624100,17624100,File:Kyustendil Town Hall.jpg,r13c20,"Kyustendil, BG",quality,2544,1875,0.4,84ef3b502d7de610,3.758,4.678,-1.030,7.726,-4.452
+wh17712534,17712534,File:Dawn in Puerto Encantado.jpg,r10c11,"Higuerote, VE",featured,5997,2229,2.4,89c5c96667936c6c,-2.830,-3.705,-9.276,1.394,-11.220
+wh19076470,19076470,File:Parumala Church.jpg,r9c25,"Meppadam, IN",quality,3098,2065,4.7,d090fe77559f2a20,0.800,4.665,-2.743,3.300,-8.658
+wh19194913,19194913,File:Riviere-du-Loup - Presbytere (1).jpg,r13c11,"Riviere-du-Loup, CA",quality,4601,3155,1.3,f1810e6a35e493f6,0.622,2.856,-1.084,3.925,-5.996
+wh19214691,19214691,File:Riviere-du-Loup - Maison Louis-Philippe-Lizotte (3).jpg,r13c11,"Riviere-du-Loup, CA",quality,4377,2899,1.5,85f94aa12d96714f,-0.473,4.514,-2.108,5.169,-5.528
+wh19262252,19262252,File:Luxor Nile R02.jpg,r11c21,"Al Bayadiyah, EG",quality,3876,2431,1.5,cc91b24d2d94d73a,-8.423,-9.947,-12.724,-4.177,-12.678
+wh19262571,19262571,File:Luxor Kings Island R01.jpg,r11c21,"Al Bayadiyah, EG",quality,3772,2524,1.6,cd2dbbc656138c2a,-4.540,-6.372,-9.680,-1.650,-12.991
+wh19270876,19270876,"File:Shagang Haili at Port Hedland, 2012.JPG",r6c29,"Port Hedland, AU",quality,3008,2000,3.8,878ff051706ae387,-0.423,-2.065,-0.401,4.531,-8.446
+wh19332721,19332721,File:Riviere-du-Loup - Hotel de Ville (1).jpg,r13c11,"Riviere-du-Loup, CA",quality,4221,2901,1.1,f9c6d42da442bd54,0.021,1.308,0.864,4.414,-7.503
+wh19491745,19491745,File:Cape Verde Sal vista S Espargos.jpg,r10c15,"Espargos, CV",quality,4179,1425,2.1,96e9d15219662cd7,-6.218,-9.440,-9.773,-1.241,-14.773
+wh19506754,19506754,"File:Hop Kiln (Walters Ranch), May 2012.jpg",r12c5,"Windsor, US",quality,4124,2757,4.6,a13cdc63b89c4f64,-3.323,2.533,-4.511,3.580,-8.537
+wh19516429,19516429,File:Cape Verde Sal Pedra de Lume salt cable car.jpg,r10c15,"Espargos, CV",quality,3741,1533,5.8,9be4558726d91c66,-5.126,-6.122,-5.226,-1.452,-10.670
+wh19517209,19517209,File:Cape Verde Sal Pedra de Lume salt cable car arrival.jpg,r10c15,"Espargos, CV",quality,4113,2005,5.8,ec2d8750d89e3897,-0.198,2.944,-1.142,4.022,-7.944
+wh19520115,19520115,File:Cape Verde Sal Espargos a.jpg,r10c15,"Espargos, CV",quality,4168,1659,1.0,80907e3fd0077fd4,-3.666,-5.712,-0.442,0.649,-12.108
+wh19658711,19658711,File:Rauma panorama.jpg,r15c20,"Rauma, FI",quality,14000,2600,0.7,b0cbc6ccf03b3730,-6.387,-7.456,-7.506,0.502,-14.301
+wh19933379,19933379,File:Dawn Patrol.jpg,r12c5,"Windsor, US",featured,4150,2856,0.5,95b37a4559638738,4.829,3.059,-1.792,6.734,-1.319
+wh20020319,20020319,File:Cape Verde Santiago Fort Real de S Filipe.jpg,r10c15,"Praia, CV",quality,4256,2484,9.8,92dde23c07386fc8,-3.391,0.329,-7.840,0.883,-10.844
+wh20721594,20721594,File:Rostov Rostov Kremlin Church of the Resurrection of Christ IMG 0851 1725.jpg,r14c21,"Rostov Veliky, RU",quality,2626,1725,0.7,d6be2bc0748ba570,2.024,0.841,-5.419,4.283,-4.724
+wh20986071,20986071,File:Île du Père-Conan.jpg,r14c11,"Sept-Iles, CA",quality,5184,3456,8.9,abb20d9c697a4b94,-5.625,-5.937,-11.331,-2.452,-10.777
+wh21110630,21110630,File:Brasília Palacio da Alvorada from Paranoá Lake.jpg,r7c13,"Paranoa, BR",quality,4130,2691,4.7,92c1fd7d434fa128,-5.180,0.240,-10.125,0.925,-8.181
+wh21234664,21234664,File:Maardu mõisa peahoone1.jpg,r14c20,"Maardu, EE",quality,5834,2566,4.6,8587e2c82ab0ffcc,0.524,1.996,-3.984,5.282,-5.020
+wh22068720,22068720,File:1 zhangjiajie huangshizhai wulingyuan panorama 2012.jpg,r11c29,"Wulingyuan, CN",featured,13206,6676,1.6,f692b9c129566e32,-2.552,-6.162,-14.592,-3.163,-10.241
+wh22627049,22627049,File:Aquaventura Park (Parque Acuático).jpg,r10c10,"Santa Cruz de Mara, VE",quality,4030,2873,9.2,9069c706f9bd44e5,-3.060,-2.318,-3.600,-0.343,-12.059
+wh22627051,22627051,File:Cañada.jpg,r10c10,"Santa Cruz de Mara, VE",quality,4830,3210,8.9,97d9ac1269d4ab19,-9.319,-10.455,-11.734,-3.568,-13.429
+wh22651968,22651968,File:Albi Panorama Sunset.jpg,r13c18,"Albi, FR",quality,9079,3181,0.3,c3a8ca766f94b04b,-1.683,-6.152,-10.548,0.408,-9.724
+wh22844833,22844833,File:Vista Panorámica de La Ciudad de Caracas desde El Paseo el Avila.jpg,r10c11,"La Guaira, VE",quality,5799,1500,5.7,b38570317cd3acb8,-5.162,-9.262,-9.854,-1.286,-7.999
+wh23445289,23445289,File:Adornos navideños III.jpg,r10c10,"Santa Cruz de Mara, VE",quality,4681,2456,9.3,bc6583b823465fb1,6.575,8.503,-0.300,8.062,-0.992
+wh24440171,24440171,File:University Centre in Svalbard (UNIS) 2003.jpg,r16c19,"Longyearbyen, SJ",quality,4072,2599,0.3,f9f092a6454e78d8,-4.779,-3.385,-7.049,-0.930,-10.883
+wh25397092,25397092,File:Luxor Maritim Jolie Ville Hotel R04.jpg,r11c21,"Al Bayadiyah, EG",quality,3857,2541,1.5,ed66e384e74e2c06,-2.361,-0.405,-2.992,1.019,-7.313
+wh25760278,25760278,File:Colombo April 2013-2.jpg,r12c17,"Alfornelos, PT",featured,4592,2984,1.1,8870063b7745fad5,3.216,5.262,-1.989,5.983,-5.840
+wh26458813,26458813,File:Acer platanoides drummondii BG Tallinn.jpg,r14c20,"Maardu, EE",quality,5100,3400,2.5,d1c0e4e41a1e8f3f,-3.344,-5.197,-5.102,1.851,-3.578
+wh27617450,27617450,File:Kuznetsk fortress 001.jpg,r14c26,"Novokuznetsk, RU",quality,8195,2444,3.5,b4fb2514f6e10d64,-2.606,-2.534,-4.195,3.604,-10.405
+wh27698807,27698807,File:Attica 06-13 Piraeus 02 Akti Kallimasioti.jpg,r12c20,"Korydallos, GR",quality,4991,3233,0.7,8f8bb66ac5b8b04a,-2.909,-2.906,-3.874,0.721,-12.496
+wh27698978,27698978,File:Attica 06-13 Paleo Faliro 03 tram at Flisvos.jpg,r12c20,"Elliniko, GR",quality,4892,3166,0.9,94e3c97d27844cd3,3.554,-1.202,-0.997,3.907,-8.462
+wh27699048,27699048,File:Attica 06-13 Paleo Faliro 05 tram at Leoforos Posidonos.jpg,r12c20,"Elliniko, GR",quality,4690,3169,0.9,dbf3b42c685a1615,-0.126,-1.423,-0.579,2.073,-7.895
+wh27699170,27699170,File:Attica 06-13 Paleo Faliro 08 war cemetery.jpg,r12c20,"Elliniko, GR",quality,5022,2982,1.3,ada4d0de2f2fa091,-1.228,-3.658,-4.584,0.307,-8.345
+wh27699221,27699221,File:Attica 06-13 Paleo Faliro 09 war cemetery.jpg,r12c20,"Elliniko, GR",quality,5067,2946,1.3,d3f6f4840a07af2c,1.283,3.316,-1.907,4.067,-6.631
+wh27751807,27751807,File:Oranienbaum Railway Station 01.jpg,r14c20,"Lomonosov, RU",quality,3700,2452,1.3,c02b3f94c06bb59e,3.186,4.587,0.449,5.708,-7.688
+wh27751808,27751808,File:Oranienbaum Railway Station 02.jpg,r14c20,"Lomonosov, RU",quality,3700,2450,1.2,f22d4c93b24df522,0.962,3.068,-1.263,4.055,-9.069
+wh27751814,27751814,File:Menshikovsky Palace in Oranienbaum 01.jpg,r14c20,"Lomonosov, RU",featured,3700,2451,1.4,9ead61d2da29a625,1.813,2.328,-4.223,4.264,-4.107
+wh27751824,27751824,File:Lower Garden of Oranienbaum 04.jpg,r14c20,"Lomonosov, RU",quality,3700,2451,1.4,927bc84707baf341,-0.672,0.042,-6.301,1.449,-7.789
+wh27751827,27751827,File:Lower Garden of Oranienbaum 01.jpg,r14c20,"Lomonosov, RU",quality,3700,2451,1.3,da72e22db4c26d23,-3.872,-2.846,-10.475,-2.358,-12.024
+wh27751835,27751835,File:Chevalier Building in Oranienbaum.jpg,r14c20,"Lomonosov, RU",quality,3700,2451,1.4,802f3f7a10076ff8,0.366,2.131,-4.195,1.832,-8.851
+wh27751842,27751842,File:Lower Garden of Oranienbaum 06.jpg,r14c20,"Lomonosov, RU",quality,3700,2451,1.4,c6be29635e15e268,-0.426,-1.140,-5.383,-0.270,-6.969
+wh27752608,27752608,File:Peter III Palace in Oranienbaum.jpg,r14c20,"Lomonosov, RU",quality,4200,2781,0.9,d73d7dc0a8802bad,1.982,4.576,-4.991,2.989,-6.167
+wh27775868,27775868,File:Attica 06-13 Ano Liosia train station.jpg,r12c20,"Acharnes, GR",quality,4847,2951,1.7,c6a0993abbe16e0e,-1.314,2.389,0.596,5.507,-7.550
+wh27775895,27775895,File:Attica 06-13 SKA train stop 01.jpg,r12c20,"Acharnes, GR",quality,5085,3257,1.8,e6b8c7633c5481b5,0.615,-0.468,-1.855,3.248,-6.321
+wh27775916,27775916,File:Attica 06-13 SKA train stop 02 view to Parnitha.jpg,r12c20,"Acharnes, GR",quality,5021,3098,1.8,82659d3a0a33e5dd,-7.502,-5.647,-7.827,-2.822,-12.774
+wh28195637,28195637,File:Церковь Иоанна Предтечи (Керчь) 01.jpg,r13c21,"Kerch, UA",featured,5930,4069,0.6,d0ffa5142895273e,3.283,1.108,-2.497,6.998,-4.214
+wh28424780,28424780,"File:Japan pavilion of Grand Menshikov Palace, Oranienbaum (1).jpg",r14c20,"Lomonosov, RU",quality,4566,2982,1.0,d4b7b369e14ab412,2.385,1.735,-6.167,3.442,-4.738
+wh28538335,28538335,File:SQM GE 289A Boxcab Quillagua - Barriles.jpg,r6c10,"Tocopilla, CL",featured,5542,3421,7.3,c19f52392f72c12d,1.021,-2.206,-3.359,3.388,-7.941
+wh29166167,29166167,File:131012 Midorigaoka Park Obihiro Hokkaido Japan01s3.jpg,r13c32,"Obihiro, JP",quality,4912,3264,1.9,8ea8799c8f4c7839,-6.731,-5.393,-10.137,-1.987,-10.560
+wh29166195,29166195,File:131012 Midorigaoka Park Obihiro Hokkaido Japan02s3.jpg,r13c32,"Obihiro, JP",quality,4912,3264,1.9,c5d078fd6f4b2824,-6.113,-4.900,-9.121,-2.656,-11.278
+wh29247887,29247887,File:Amfiteatr rzymski w Durrës 4.jpg,r13c19,"Rrashbull, AL",quality,2915,2210,1.5,9bb574688513bc3a,-1.107,2.697,-2.516,1.145,-8.364
+wh29497529,29497529,File:Diamond mine. Mirny in Yakutia. 04.jpg,r15c29,"Mirny, RU",quality,7136,2393,2.5,e132dc2d98f227d8,-0.495,-0.816,0.315,5.616,-8.611
+wh30350135,30350135,File:Surfers Paradise Dec 2013.JPG,r6c33,"Surfers Paradise, AU",quality,5572,3744,1.5,c07f0fa07f09f00f,-4.078,-5.235,-7.743,-1.677,-12.344
+wh30503941,30503941,File:Slums in Caracas.jpg,r10c11,"La Guaira, VE",quality,4232,2811,7.8,94c5c29a3ecec9b1,-3.878,-8.956,-8.265,-3.186,-9.702
+wh30986414,30986414,File:BKVT 611 Pozsony ut.jpg,r13c19,"Rakospalota, HU",quality,3899,2633,0.3,a5a4ee9cd9948e0b,-0.701,-0.650,-1.595,2.596,-11.487
+wh31601262,31601262,File:Kourou River estuary from Pointe des roches 2013.jpg,r9c12,"Kourou, GF",quality,4367,2597,1.9,fec1c33cb14194bc,-5.799,-6.824,-10.422,-2.724,-12.269
+wh31774366,31774366,File:Kourou pointe des Roches plage hôtel des Roches.jpg,r9c12,"Kourou, GF",quality,5090,3286,1.8,d58195d43ce08fba,-3.767,-5.204,-8.537,-0.236,-10.950
+wh31782095,31782095,File:Kourou centre 2013.jpg,r9c12,"Kourou, GF",quality,7132,2748,1.1,f38abc5564320b6e,-1.300,-0.782,-3.872,2.955,-7.681
+wh31959291,31959291,File:Church of the Holy Trinity. Mirny.jpg,r15c29,"Mirny, RU",quality,4832,3792,0.7,d96ea740df578026,0.744,0.962,-3.537,4.050,-8.590
+wh32252228,32252228,File:Humboldt State University Entrance.jpg,r13c5,"Bayside, US",quality,3767,2521,0.6,91fbcc40313feea0,-4.627,-3.630,-5.319,-1.809,-12.607
+wh33424138,33424138,File:Mirny in Yakutia.jpg,r15c29,"Mirny, RU",featured,7668,3745,2.3,b3decde1c8d0c2c8,0.037,0.937,-4.025,4.368,-4.197
+wh33506407,33506407,File:Lagoon Pier June 2014.jpg,r5c32,"Port Melbourne, AU",quality,4608,3456,0.6,dcf3694c0df08659,-0.056,-3.056,-5.037,-0.185,-12.630
+wh34958877,34958877,File:JP-Kagawa-Great-Seto-Bridge-Minami Bisan-Seto-Bridge.jpg,r12c31,"Utazu, JP",quality,3332,2222,3.6,ce95243ace98b1ea,-2.381,-2.687,-7.608,1.386,-9.619
+wh36257241,36257241,File:SQM GE 289A Boxcab Carmelita - Reverso.jpg,r6c10,"Tocopilla, CL",featured,5513,3676,2.7,bea3606717c87c26,-2.581,-5.043,-6.200,-0.908,-11.443
+wh36738978,36738978,"File:Wyoming Supreme Court Building, Cheyenne, Southwest view 20110823 1.jpg",r13c7,"Cheyenne, US",quality,4916,2458,0.1,8c9870613e3f87a7,2.494,3.764,-1.572,4.899,-3.995
+wh36809430,36809430,File:Widok na Ułan Bator z Gana's Guest House (01).jpg,r13c28,"Ulan Bator, MN",quality,3292,2199,1.7,832d48a7ec5b650f,-5.325,-4.665,-8.563,-3.226,-13.383
+wh36809443,36809443,File:Widok na Ułan Bator z Gana's Guest House (02).jpg,r13c28,"Ulan Bator, MN",quality,3304,2203,1.7,9097b34096e37c4f,-4.711,-4.971,-6.333,-1.769,-12.796
+wh36809456,36809456,File:Widok na Ułan Bator z Gana's Guest House (03).jpg,r13c28,"Ulan Bator, MN",quality,3059,2115,1.7,da2ddbc5849a259a,-3.882,-2.778,-6.645,0.145,-11.862
+wh36809472,36809472,File:Widok na Ułan Bator z Gana's Guest House (04).jpg,r13c28,"Ulan Bator, MN",quality,3324,2280,1.7,f4ca9dd836c8b681,-4.343,-5.370,-6.467,-1.496,-11.766
+wh36822431,36822431,File:Zespół klasztoru Gandan (03).jpg,r13c28,"Ulan Bator, MN",quality,3286,2191,1.8,800df6371f89e07b,2.391,2.627,-1.031,4.345,-7.130
+wh36822613,36822613,File:Zespół klasztoru Gandan (07).jpg,r13c28,"Ulan Bator, MN",quality,2867,2156,1.8,82a7d51c68852fdb,4.713,1.217,-2.348,3.220,-2.835
+wh36839793,36839793,File:Zespół klasztoru Gandan (34).jpg,r13c28,"Ulan Bator, MN",quality,3092,2241,1.9,f1ecc490ce63a59c,2.752,3.881,-2.442,5.214,-3.857
+wh37819546,37819546,File:Kourou pointe des Roches A.jpg,r9c12,"Kourou, GF",quality,7291,3349,2.0,8080de7e27939f6c,-4.673,-8.059,-11.291,-1.289,-11.611
+wh37819775,37819775,File:Kourou pointe des Roches B.jpg,r9c12,"Kourou, GF",quality,6841,2522,2.1,b2f0cd0730f0ef07,-2.322,-5.348,-7.478,0.592,-12.943
+wh38290022,38290022,File:Bryggeriet Nyköping February 2015 01.jpg,r14c19,"Nykoeping, SE",quality,5729,3824,0.4,c7e6d92acc086ed1,-0.939,0.261,-6.570,1.883,-9.477
+wh38295652,38295652,File:Nyköpingshus February 2015.jpg,r14c19,"Nykoeping, SE",quality,5259,2958,0.4,af817a7c53c3b430,0.007,-1.145,-8.577,2.510,-9.471
+wh38330305,38330305,File:Bryggeriet Nyköping February 2015 02.jpg,r14c19,"Nykoeping, SE",quality,5922,3984,0.4,c0ef3c4b304fe499,-0.584,3.063,-2.870,3.502,-8.615
+wh38331535,38331535,File:Nyköping February 2015.jpg,r14c19,"Nykoeping, SE",quality,4655,3108,0.4,e4861f1b71cd0f62,1.689,4.329,0.185,5.621,-7.007
+wh38360674,38360674,File:Sankt Nicolai kyrka February 2015 01.jpg,r14c19,"Nykoeping, SE",quality,4506,3604,0.1,cea730b00ff4c87a,2.667,1.247,-3.122,3.157,-7.547
+wh39083470,39083470,File:Nyköpingshus Feburary 2015 09.jpg,r14c19,"Nykoeping, SE",quality,4917,3283,0.5,fa2a8705b1b45cb3,0.803,2.400,-3.225,2.631,-7.361
+wh39859843,39859843,"File:Hadrian's Gate, Antalya 01.jpg",r12c21,"Muratpasa, TR",quality,4742,3231,2.8,df95940f9f480d68,3.589,3.797,-1.216,4.700,-6.931
+wh41167786,41167786,"File:Bodø Cathedral, South view 20150608 1.jpg",r15c19,"Bodo, NO",quality,6390,3896,0.3,d93065a46d799959,-0.663,3.281,-1.117,4.217,-5.635
+wh41168584,41168584,"File:Bodø Cathedral, Southeast view 20150608 1.jpg",r15c19,"Bodo, NO",quality,6446,4485,0.3,8f286ac88cdf345d,-0.668,1.204,-2.323,3.179,-6.526
+wh41534807,41534807,File:From Temple of Olympian Zeus to Lycabetus Athens Greece.jpg,r12c20,"Dhafni, GR",featured,3519,2575,1.8,ceb14e4639be30cc,-2.085,-3.587,-6.059,-0.693,-8.538
+wh42117450,42117450,File:Basilica of St. John in Ephesus 03.jpg,r12c20,"Selcuk, TR",quality,4868,3249,0.2,c8bf964217f96826,-0.901,2.988,-1.698,1.204,-10.305
+wh42117463,42117463,File:Basilica of St. John in Ephesus 04.jpg,r12c20,"Selcuk, TR",quality,5184,3456,0.2,d9c8c263f2cbd0d2,-2.508,1.733,-5.942,0.771,-12.241
+wh42117496,42117496,File:Basilica of St. John in Ephesus 05.jpg,r12c20,"Selcuk, TR",quality,5064,3336,0.2,ccecf89337358548,-0.324,4.145,-3.435,2.454,-8.046
+wh42117533,42117533,File:Basilica of St. John in Ephesus 06.jpg,r12c20,"Selcuk, TR",quality,5104,3403,0.2,ca4acae04d6d67c5,1.507,6.664,-2.893,3.826,-8.245
+wh42117591,42117591,File:Basilica of St. John in Ephesus 08.jpg,r12c20,"Selcuk, TR",quality,5184,3456,0.2,b218b098b9b19dbd,2.123,6.752,-1.509,3.870,-6.970
+wh42117612,42117612,File:Basilica of St. John in Ephesus 09.jpg,r12c20,"Selcuk, TR",quality,5184,3456,0.1,aaabdca597532d40,2.916,6.342,-2.124,4.216,-6.703
+wh42187298,42187298,File:Noibai New Terminal.jpg,r11c28,"Quang Minh, VN",quality,2592,1728,4.0,c984196f249bcc7e,0.430,3.475,-1.788,5.437,-8.875
+wh42275232,42275232,File:Noibai T2 gates.jpg,r11c28,"Quang Minh, VN",quality,2592,1728,4.0,aab524c6d6e01e73,0.219,4.636,-1.903,4.672,-8.718
+wh42637626,42637626,File:Church and rainbow in Akureyri.jpg,r15c16,"Akureyri, IS",quality,5360,3015,0.4,d18eaab1970dde22,-3.594,-4.956,-7.496,-0.851,-10.037
+wh44107330,44107330,File:Government House Port Louis.JPG,r6c23,"Baie du Tombeau, MU",quality,2567,1615,0.4,d8d8f787a6a60c8c,0.491,2.029,-0.664,4.108,-7.468
+wh44107331,44107331,File:Umbrellas at Caudan Waterfront Mall.JPG,r6c23,"Baie du Tombeau, MU",featured,4798,3009,0.1,d09ea335e5d165c1,6.422,2.087,-2.400,6.098,-6.838
+wh44107332,44107332,File:Blue Penny Museum.JPG,r6c23,"Baie du Tombeau, MU",quality,3969,2575,0.2,aa87907cda208bbf,5.801,6.513,1.615,6.095,-4.437
+wh44107335,44107335,File:The Champ de Mars Racecourse.JPG,r6c23,"Baie du Tombeau, MU",quality,5601,3389,1.2,d1bab5c2650f6472,-7.246,-9.228,-8.973,-3.839,-12.344
+wh45801253,45801253,File:Dambulla Temple d'or (2).jpg,r9c26,"Dambulla, LK",quality,4837,3213,0.6,86961879ada51a5f,1.305,0.829,-2.247,2.931,-6.158
+wh45801258,45801258,File:Dambulla Temple d'or (3).jpg,r9c26,"Dambulla, LK",quality,4912,3264,0.6,8d8361bc72d239e5,5.710,2.911,0.440,6.712,-2.007
+wh46082923,46082923,File:Isurumuniya Rock Temple (1).jpg,r9c26,"Anuradhapura, LK",quality,4912,3264,3.5,90a7af7b9010ef1c,-3.014,-2.349,-7.000,-0.735,-10.629
+wh46082930,46082930,File:Isurumuniya Rock Temple (2).jpg,r9c26,"Anuradhapura, LK",quality,4912,3264,3.5,86c7b191b373cc34,0.638,1.458,-2.383,2.889,-6.288
+wh46890555,46890555,File:Tumbas Reales de Sipán Museum 01.jpg,r8c10,"Lambayeque, PE",quality,5104,3403,0.8,bfa2406c3f83cc4d,0.072,2.125,-4.261,3.871,-6.227
+wh46892456,46892456,File:Cathedral of Lambayeque.jpg,r8c10,"Lambayeque, PE",quality,3909,2606,0.3,85f6491b917e254e,1.463,0.666,-3.905,2.377,-6.769
+wh46911664,46911664,File:Town hall of Catacaos.jpg,r8c9,"Piura, PE",quality,4112,2741,0.8,80a3bf52de0ec13d,2.425,3.753,-0.689,4.910,-6.496
+wh46942014,46942014,"File:Hotel Ramada Costa del Sol, Tumbes.jpg",r8c9,"Tumbes, PE",quality,4139,2758,2.1,d491a5a7db681696,0.051,0.844,0.856,3.222,-7.550
+wh46942636,46942636,File:Street in Tumbes 02.jpg,r8c9,"Tumbes, PE",quality,4022,2681,2.1,d5962bf2ed180e61,-0.453,-1.884,-2.387,0.463,-12.377
+wh46942666,46942666,File:Street in Tumbes 03.jpg,r8c9,"Tumbes, PE",quality,5184,3456,2.1,91954eea2ff15035,-1.907,-2.716,-1.204,0.225,-10.626
+wh47247036,47247036,File:Amursk Amursk combined heat and power plant P7270022 2450.jpg,r14c31,"Amursk, RU",quality,3316,2450,1.2,b6e8599649319f68,-3.731,-2.700,-5.667,0.149,-9.884
+wh47392651,47392651,File:Amursk Amursk combined heat and power plant P7280067 2200.jpg,r14c31,"Amursk, RU",quality,3330,2200,1.2,adabd3540cad7314,-3.130,-3.596,-5.793,0.701,-9.084
+wh47412780,47412780,File:Amursk Amursk combined heat and power plant P7290079 2200.jpg,r14c31,"Amursk, RU",quality,3300,2200,1.2,eee7c3e308c099d2,-4.647,-5.291,-7.527,-0.651,-10.150
+wh47528669,47528669,File:Amursk Amur River P7290102 2200.jpg,r14c31,"Amursk, RU",quality,3299,2200,1.3,9ebef16122486579,-11.129,-10.976,-12.803,-5.578,-14.070
+wh47891034,47891034,File:Tulum - Temple of the Descending God.JPG,r11c9,"Tulum, MX",quality,4174,2633,3.5,d79ce20a5473bd60,-0.627,0.987,-6.818,1.300,-7.312
+wh48370104,48370104,"File:Buildings at Nyholmen, Bodø 20150608 1.jpg",r15c19,"Bodo, NO",quality,6798,3824,0.4,f8d98f8614696b86,-6.570,-6.260,-7.972,-0.807,-12.629
+wh48411974,48411974,File:Goiáns de Arriba.JPG,r13c17,"Carballo, ES",quality,3648,2736,4.1,d2d6ad09227b6d86,-6.814,-8.561,-11.074,-4.737,-15.653
+wh48411977,48411977,File:Igrexa Goiáns.JPG,r13c17,"Carballo, ES",quality,3648,2736,4.1,d1b54e056a932f78,0.175,-0.758,-5.294,1.857,-7.785
+wh48510826,48510826,File:Amursk Amur River P8010333 2200.jpg,r14c31,"Amursk, RU",quality,3300,2200,1.2,d8b6a95e2631661b,-9.449,-9.836,-11.734,-5.136,-13.116
+wh48559027,48559027,File:Amursk Amur River P8010336 2200.jpg,r14c31,"Amursk, RU",quality,3300,2200,1.3,d0bce19a754b26c3,-8.965,-9.872,-12.244,-6.264,-13.449
+wh48604521,48604521,File:Amursk Amur River P8010340 2475.jpg,r14c31,"Amursk, RU",quality,3300,2475,1.4,bf9cc4c170c1d8ae,-6.099,-9.837,-9.947,-4.391,-11.257
+wh49235469,49235469,File:Vladivostok Communication boat Uragan P8050478 2200.jpg,r13c31,"Vladivostok, RU",quality,3837,2200,1.6,b5d0a70457f16a87,3.640,-0.939,-5.032,6.910,-4.033
+wh49284553,49284553,File:Vladivostok Cruiser Varyag P8050482 2200.jpg,r13c31,"Vladivostok, RU",quality,4013,2200,1.6,bc828367bc3c8b35,2.688,0.679,-3.666,6.947,-3.970
+wh49985691,49985691,"File:A view of the Baku bay, Azerbaijan.jpg",r13c22,"Baku, AZ",quality,4265,2843,2.8,c597524d2db6d609,-6.212,-5.546,-10.228,-2.764,-13.310
+wh50297531,50297531,File:Talnakh.jpg,r15c26,"Talnakh, RU",quality,2999,1999,0.5,c39af487dbb48099,-5.560,-4.710,-8.500,-2.456,-11.604
+wh50324769,50324769,"File:South Carolina State House, Columbia, Southeast view with Strom Thurmond Statue 20160702 1.jpg",r12c9,"Columbia, US",quality,5020,3949,0.3,c3839258f0e56ff0,2.849,2.378,-1.383,4.241,-4.627
+wh50324845,50324845,"File:Marion Gressette Building, Columbia SC, Southeast view 20160702 1.jpg",r12c9,"Columbia, US",quality,5494,4395,0.3,98aea7019d12f4dd,1.204,3.472,-2.345,5.677,-3.913
+wh50756342,50756342,File:Pitt River Bridge 2016.jpg,r13c5,"Maple Ridge, CA",quality,7257,3923,3.6,96a9e35618f1e698,-5.779,-6.737,-11.766,-1.951,-13.046
+wh51542905,51542905,File:Nyköpingshus Feburary 2015 10.jpg,r14c19,"Nykoeping, SE",quality,5465,3648,0.5,f223c65a9dcc394c,0.010,5.367,-2.102,4.693,-6.170
+wh52336679,52336679,"File:2016 Malakka, Budynki nad rzeką Malakka (01).jpg",r9c28,"Malacca, MY",quality,5472,3648,0.9,aedbd1210c1faea2,2.818,-0.696,-0.209,3.123,-8.479
+wh52336794,52336794,"File:2016 Malakka, Budynki nad rzeką Malakka (10).jpg",r9c28,"Malacca, MY",quality,5472,3648,0.9,979f9cf2e2627018,4.677,-0.780,-2.594,3.864,-8.081
+wh52336809,52336809,"File:2016 Malakka, Budynki nad rzeką Malakka (13).jpg",r9c28,"Malacca, MY",quality,5056,3371,1.0,d1cbac743734944b,0.809,-1.151,-2.032,1.817,-8.655
+wh52336910,52336910,"File:2016 Malakka, Budynki nad rzeką Malakka (19).jpg",r9c28,"Malacca, MY",quality,5230,3487,1.0,f7b96852952ce292,-0.351,-0.393,-5.017,2.050,-10.884
+wh52336946,52336946,"File:2016 Malakka, Budynki nad rzeką Malakka (20).jpg",r9c28,"Malacca, MY",quality,5415,3619,1.0,85fd5a2a2c45d1bc,-2.043,-1.396,-3.302,0.816,-10.011
+wh52336983,52336983,"File:2016 Malakka, Budynki nad rzeką Malakka (21).jpg",r9c28,"Malacca, MY",quality,4949,3297,1.0,e8a85f85943c78e3,1.304,1.046,-2.897,3.316,-9.197
+wh52337019,52337019,"File:2016 Malakka, Budynki nad rzeką Malakka (22).jpg",r9c28,"Malacca, MY",quality,5415,3610,1.0,ba9f9360cc29b3b0,-0.023,-2.902,-5.549,1.290,-10.873
+wh52337064,52337064,"File:2016 Malakka, Budynki nad rzeką Malakka (23).jpg",r9c28,"Malacca, MY",quality,5464,3643,1.0,fcee039185ae3a23,0.502,2.583,-1.676,4.062,-9.638
+wh52337104,52337104,"File:2016 Malakka, Budynki nad rzeką Malakka (24).jpg",r9c28,"Malacca, MY",quality,5472,3648,1.0,f383049db8f027ea,2.800,0.390,-2.182,4.875,-9.985
+wh52337143,52337143,"File:2016 Malakka, Budynki nad rzeką Malakka (25).jpg",r9c28,"Malacca, MY",quality,5470,3077,0.9,8fa2f0f84e0f3391,0.661,-1.127,-5.268,1.231,-9.824
+wh52375624,52375624,"File:2016 Malakka, Bastion Middleburg (01).jpg",r9c28,"Malacca, MY",quality,4959,3306,0.9,9fb2c54dc8cc6217,-3.798,-4.137,-5.934,-0.910,-11.564
+wh52375750,52375750,"File:2016 Malakka, Bastion Middleburg (03).jpg",r9c28,"Malacca, MY",quality,5472,3078,0.9,d7c08233ede9ad28,-2.899,-6.193,-5.704,-2.330,-12.245
+wh52375765,52375765,"File:2016 Malakka, Bastion Middleburg (04).jpg",r9c28,"Malacca, MY",quality,5263,3509,0.9,c492a125ef66d55a,-3.917,-4.797,-7.357,-2.061,-10.830
+wh52551484,52551484,"File:2016 Malakka, Budynki nad rzeką Malakka (28).jpg",r9c28,"Malacca, MY",quality,5472,3648,0.9,92f0dd4f0a68e4b3,-0.417,-0.131,-5.739,2.105,-10.987
+wh52843611,52843611,File:Ateshgah of Baku.jpg,r13c23,"Biny Selo, AZ",quality,3000,1968,2.5,b2b38c0dcc2bd31d,1.708,4.304,-2.790,3.095,-7.361
+wh53773638,53773638,File:Romeria de los Labradores - Santa Lucía de Tirajana.jpg,r11c16,"San Bartolome de Tirajana, ES",featured,3454,2608,0.1,afe2c83f960ce071,6.693,2.074,1.532,8.355,-11.369
+wh53923596,53923596,File:Roque Nublo - Barranco de Tejeda.JPG,r11c16,"San Bartolome de Tirajana, ES",featured,13939,3666,6.2,c5aa91346aeaa49f,-3.405,-7.166,-9.588,-0.259,-9.102
+wh56323313,56323313,File:La paz malecon 1702p1.jpg,r11c6,"La Paz, MX",quality,5976,2800,2.2,88a1cf732498c76f,-3.403,-6.723,-10.241,-0.481,-12.721
+wh56747484,56747484,File:La Paz malecon 1702 p2.jpg,r11c6,"La Paz, MX",quality,4362,3124,2.2,f4f4c88386ce593c,0.564,-6.100,-7.535,-0.868,-10.744
+wh58446129,58446129,File:Svir River P7210779 2200.jpg,r15c21,"Podporozh'ye, RU",quality,3300,2200,6.9,8ec1f178458fe8b1,-7.263,-7.002,-11.531,-3.855,-13.548
+wh59292418,59292418,File:Rade de Papeete.jpg,r7c3,"Papeete, PF",quality,6016,4000,0.4,bc81abf8550f28b5,-3.708,-9.409,-9.893,-2.897,-13.271
+wh59345846,59345846,File:HMS Justice W140 (St. Christopher).jpg,r3c11,"Ushuaia, AR",featured,5000,3413,0.5,daa52d5a15c32f92,1.069,-1.849,-5.019,4.210,-8.145
+wh62182211,62182211,File:Building at 44 Rue Emile Grand in Albi.jpg,r13c18,"Albi, FR",quality,5279,4000,0.2,e43b14816a671abf,1.510,3.070,-3.461,4.957,-7.736
+wh62213504,62213504,File:Building at 1 place du Vigan in Albi.jpg,r13c18,"Albi, FR",quality,5491,3151,0.3,d03dab22d41df970,4.530,1.775,-1.611,4.064,-5.741
+wh62270176,62270176,File:Hardinge Bridge 02.jpg,r11c26,"Bheramara, BD",quality,5472,3648,6.0,9966c62988d9cd76,-0.358,4.565,-2.133,4.056,-3.956
+wh62311059,62311059,File:Falu koppargruva July 2017 01.jpg,r15c19,"Falun, SE",quality,5858,3295,1.1,95e6c21d5324cdab,-3.849,-5.488,-10.183,-1.921,-8.513
+wh62671094,62671094,File:Imatran Valtionhotelli 2017 02.jpg,r15c20,"Imatra, FI",quality,7520,5640,1.0,9490e9a2b06afebc,1.025,2.570,-3.595,3.805,-6.298
+wh62748460,62748460,File:Helsinki-Malmin lentoasema ja lentokonesuoja.jpg,r15c20,"Suurmetsae, FI",quality,4912,3256,1.8,82bbd4e43b1a1ea5,0.238,0.760,-4.258,3.889,-5.839
+wh62865420,62865420,File:Battleship Texas001.jpg,r11c8,"Cloverleaf, US",quality,5472,3648,3.2,f6c2193dc258bd62,4.020,3.250,-1.160,7.695,-3.298
+wh62934815,62934815,File:Falun August 2017 01.jpg,r15c19,"Falun, SE",quality,5617,3878,1.0,d5c5612135bcf46c,-5.297,-5.686,-11.287,-2.639,-13.269
+wh62977853,62977853,File:Усадьба Русиновой в Малых Корелах.jpg,r15c22,"Novodvinsk, RU",quality,3060,2040,7.8,94c2bac66b5939e4,-4.386,-1.429,-6.865,-0.192,-11.396
+wh63340069,63340069,File:Falu centralstation July 2017 01.jpg,r15c19,"Falun, SE",quality,5537,3115,0.9,cce08659e9e47b4c,-0.916,-0.632,0.544,2.108,-9.347
+wh63340080,63340080,File:Falu centralstation July 2017 02.jpg,r15c19,"Falun, SE",quality,5631,3759,0.9,e4f6b556989b0a43,-0.024,1.057,-0.688,2.895,-8.307
+wh63823421,63823421,File:Barley Seeds.jpg,r12c5,"Fremont, US",featured,6000,4000,2.6,b984c463c3793b9c,2.458,1.982,-3.172,6.930,-0.689
+wh64012952,64012952,File:Hayden Falls 1.jpg,r13c9,"Hilliard, US",quality,4288,2848,3.6,ce9ef882c66ca4c6,-0.115,-1.598,-5.666,2.682,-5.406
+wh64036228,64036228,File:Hayden Falls Walkway 2.jpg,r13c9,"Hilliard, US",quality,4288,2848,3.6,d89992b1afe0b41b,-3.768,-2.076,-5.522,-0.299,-9.585
+wh64036229,64036229,File:Hayden Falls Walkway 1.jpg,r13c9,"Hilliard, US",quality,4288,2848,3.6,cdcf9983ca999a22,0.191,-0.198,-5.635,0.927,-6.941
+wh64036231,64036231,File:Hayden Falls Walkway 3.jpg,r13c9,"Hilliard, US",quality,4262,2832,3.6,d9ca8f87cce1a464,-1.234,0.284,-6.577,0.970,-7.299
+wh64687720,64687720,File:Frutillar-Theatro-del-Lago-1030906-PSD.jpg,r4c10,"Frutillar, CL",featured,4608,2711,3.4,d3c632e507b9525a,-0.602,1.043,-7.264,1.646,-8.902
+wh65837069,65837069,"File:Christ Church Cathedral, Darwin, Australia.jpg",r7c31,"Darwin, AU",quality,5083,3389,0.6,84f3ba1ecd04f1d8,-2.227,0.468,-2.168,2.047,-7.642
+wh65837239,65837239,File:Darwin Convention Center.jpg,r7c31,"Darwin, AU",quality,3839,2559,0.7,85f924ffb800de61,-4.463,-0.442,-7.724,0.736,-7.071
+wh66017115,66017115,File:Cairns (Queensland).jpg,r7c32,"Cairns, AU",quality,4776,3184,0.7,de83d8a19e722d1a,-3.254,-4.312,-5.310,-0.996,-11.077
+wh66172081,66172081,File:Foce del Isonzo horses.jpg,r13c19,"Monfalcone, IT",quality,5568,3712,7.0,e61d1b63538c2e59,0.243,-3.417,-8.758,2.145,-6.101
+wh68155257,68155257,File:18-04-08 NORDKAPP IMO 9107772 11-06-03.jpg,r15c18,"Molde, NO",quality,3590,2403,0.1,b7c1c9364119f4d5,1.735,-2.901,-5.603,5.029,-4.745
+wh68355654,68355654,"File:Shrine Complex of Sheikh 'Abd al-Samad, Natanz 01.jpg",r12c23,"Natanz, IR",quality,4080,2720,1.1,cabc3543db12923d,-1.622,-1.658,-6.311,1.326,-8.317
+wh69553418,69553418,File:Aerial view of Apple Park dllu.jpg,r12c5,"Cupertino, US",featured,7729,5160,1.7,80bae7c81ed5a53c,-0.712,0.230,-7.039,2.907,-6.530
+wh70835677,70835677,File:Hilliard City Hall 1.jpg,r13c9,"Hilliard, US",quality,6002,3080,0.7,9292be6dc9db18a2,-2.332,1.118,-3.077,1.765,-8.559
+wh70860934,70860934,File:Homestead - Covered Bridge 1.jpg,r13c9,"Hilliard, US",quality,6016,4016,3.1,a8939637484c93f7,-5.148,-2.788,-10.651,-1.686,-11.948
+wh70861049,70861049,File:Homestead - Gazebo and Covered Bridge 1.jpg,r13c9,"Hilliard, US",quality,6016,3711,3.1,8283a56dd5464e3f,-3.881,-2.731,-7.844,-1.669,-10.275
+wh70890029,70890029,File:Homestead - Nature Center 1.jpg,r13c9,"Hilliard, US",quality,4800,2736,3.0,e7c7a13886a5b70c,-1.702,-0.280,-4.331,-1.286,-8.980
+wh70964185,70964185,File:Dublin Justice Center 1.jpg,r13c9,"Hilliard, US",quality,6016,4016,2.3,949c996b63a60e9b,-3.352,0.312,-3.405,2.473,-10.162
+wh71784080,71784080,File:Dublin Methodist Hospital East Wing 1.jpg,r13c9,"Hilliard, US",quality,5645,3400,4.1,fad5c56eba10844d,-3.655,-0.532,-4.266,-0.567,-11.099
+wh71784227,71784227,File:Dublin Methodist Hospital - Front 1.jpg,r13c9,"Hilliard, US",quality,6016,2090,4.3,9fdf900bf9c40079,-3.482,-2.375,-3.413,3.054,-9.546
+wh72701628,72701628,"File:National Anzac Centre, 2018 (01).jpg",r5c29,"Albany, AU",quality,4793,3175,2.7,d5d4f914e2d409f4,-1.354,-1.449,0.076,1.953,-3.844
+wh73018828,73018828,File:Hardinge Bridge 12.jpg,r11c26,"Bheramara, BD",quality,6804,4537,6.0,95ea2fb84a97c285,4.741,4.404,-3.345,5.720,-3.336
+wh73172303,73172303,File:Samara P8160405 2200.jpg,r14c23,"Samara, RU",quality,3301,2200,1.4,a3e1b61c1dce7889,-2.936,-5.828,-8.943,-0.017,-10.265
+wh73214779,73214779,File:Trois temples de Sbeitla.jpg,r12c18,"Sbeitla, TN",quality,6000,4000,1.1,a1e2585834f59f0f,2.324,4.382,-6.613,2.571,-7.025
+wh73371891,73371891,"File:Japanese garden pond at Daisen Park in Sakai, October 2018 - 381.jpg",r12c31,"Sakai, JP",quality,5472,3648,2.8,c16af03f363a188f,-1.141,0.935,-8.520,0.838,-6.656
+wh73728879,73728879,"File:Japanese garden at Daisen Park in Sakai, October 2018 - 662.jpg",r12c31,"Sakai, JP",featured,5160,2621,2.7,91daae39325a9965,-2.757,-0.950,-10.582,1.397,-8.993
+wh73798028,73798028,"File:Japanese garden at Daisen Park in Sakai, October 2018 - 662 II.jpg",r12c31,"Sakai, JP",quality,5160,3155,2.7,918aae7156c9a576,-1.932,-0.488,-9.350,1.481,-6.826
+wh73825184,73825184,File:Dendermonde town hall and belfry during golden hour (DSCF0501).jpg,r14c18,"Dendermonde, BE",featured,3926,3087,0.4,a7a6487d9cd423a5,4.463,3.456,-0.152,5.335,-3.321
+wh73930830,73930830,"File:Gerechtsgebouw, Dendermonde (DSCF0521).jpg",r14c18,"Dendermonde, BE",quality,4306,3197,0.3,b1f0d04e6ed67289,0.131,0.945,-3.771,3.555,-7.427
+wh75611917,75611917,File:Wat Traphang Thong (I).jpg,r10c27,"Ban Na, TH",quality,4969,3313,2.6,ebf4c01c348faf60,-2.607,-6.478,-9.929,-3.598,-11.318
+wh75612340,75612340,File:Wat Traphang Thong (II).jpg,r10c27,"Ban Na, TH",quality,8237,4338,2.5,8f6830cfa7186d93,-0.839,-3.099,-9.341,-1.379,-9.932
+wh76094133,76094133,File:Auckland Botanic Gardens 41.jpg,r5c35,"Manukau City, NZ",quality,4035,2690,2.6,e5da87a03a1dc5d2,-6.279,-6.883,-9.618,-4.719,-11.286
+wh76094140,76094140,File:Auckland Botanic Gardens 46.jpg,r5c35,"Manukau City, NZ",quality,4988,3325,2.6,e5c1acaa17f0d334,-4.818,-5.832,-8.810,-2.791,-7.582
+wh76094141,76094141,File:Auckland Botanic Gardens 47.jpg,r5c35,"Manukau City, NZ",quality,4905,2851,2.6,e5dac50b384599d5,-5.784,-8.541,-10.535,-4.116,-10.311
+wh76126959,76126959,File:Branta canadensis Fremont April 2011 002.jpg,r12c5,"Fremont, US",quality,2800,2000,2.7,cef319c43348ceb2,3.994,-0.663,-3.313,4.112,-3.411
+wh76748488,76748488,File:Ventspils 21.jpg,r14c20,"Ventspils, LV",quality,5772,3838,0.4,9e5ae221b45a2f95,-0.923,-3.077,2.001,0.477,-10.158
+wh77387737,77387737,"File:Walters Ranch Hop Kiln in 2019, 4×5.jpg",r12c5,"Windsor, US",featured,5175,4140,4.7,89f9f0960f6f058a,-2.684,2.153,-6.053,3.667,-11.641
+wh77719953,77719953,File:Broadway Avenue in Palmerston North 02.jpg,r4c35,"Palmerston North, NZ",quality,3556,2545,0.8,94daf92446b99746,-4.139,-7.291,-6.134,-3.224,-14.147
+wh78744082,78744082,"File:Dog Rock, 2019 (01).jpg",r5c29,"Albany, AU",quality,3776,2520,0.9,8aff9300f05d2be8,-0.374,-2.119,-3.305,2.707,-7.091
+wh79179308,79179308,File:View from Mirador El Time - La Palma.jpg,r11c16,"Los Llanos de Aridane, ES",featured,14345,3341,2.4,84a2d3756935374e,-4.810,-7.926,-9.448,-0.702,-8.905
+wh79497670,79497670,File:Phra Nakhon Khiri (I).jpg,r10c27,"Phetchaburi, TH",quality,5602,3735,0.9,9fc2047fc294ef48,-5.281,-6.137,-9.225,-3.912,-12.599
+wh79498008,79498008,File:Phra Nakhon Khiri (II).jpg,r10c27,"Phetchaburi, TH",quality,5513,3675,0.9,b3c618ed92ed1863,2.293,1.434,-2.828,4.826,-1.420
+wh79599299,79599299,File:Pergola - Plaza de España - Tazacorte 03.jpg,r11c16,"Los Llanos de Aridane, ES",featured,5470,3924,2.2,eebf174889572b20,-0.360,5.657,-7.859,0.922,-8.757
+wh79677427,79677427,"File:Bij Ivoz-Ramet, zicht op de Maas IMG 9614 2019-06-01 12.46.jpg",r14c18,"Seraing, BE",quality,5164,3219,1.8,d5a2a52b6a54d595,-6.016,-6.558,-9.174,-2.657,-14.049
+wh79815847,79815847,File:Swakopmund Jetty HDR.jpg,r6c19,"Swakopmund, NA",quality,4577,3434,0.6,89a3597be29d6226,-1.878,-2.955,-10.533,0.008,-10.496
+wh79906195,79906195,File:2015-09-06 Summit Airlines BA Avro RJ85 C-FLRJ.jpg,r15c6,"Yellowknife, CA",quality,5883,3922,3.9,c4bb3b44f23985e2,4.149,3.261,-1.510,8.904,-1.244
+wh80015174,80015174,File:Lawachara Forest.jpg,r11c27,"Srimangal, BD",quality,4563,3197,5.7,866263a3ff163cc8,-2.836,-0.503,-9.447,1.017,-6.691
+wh80309489,80309489,File:2019-03-16 01 Aquaculture in Chile.jpg,r4c10,"Castro, CL",quality,6000,2016,7.6,fefac4c290e19998,-5.433,-7.757,-8.795,0.368,-10.462
+wh80309490,80309490,File:2019-03-16 03 Aquaculture in Chile.jpg,r4c10,"Castro, CL",featured,6000,1599,3.1,acb7e602027c7c76,-6.568,-11.420,-13.784,-3.636,-12.890
+wh80760428,80760428,File:Swakopmund Dune.jpg,r6c19,"Swakopmund, NA",quality,4600,3456,7.2,c887bb3f2f184334,-3.018,-5.574,-9.385,-1.967,-8.552
+wh80834283,80834283,File:Bread and Roses Co-op Homes.jpg,r13c9,"Vanier, CA",quality,5800,3001,2.7,ffffa080d58084d5,-0.321,3.751,-1.495,2.674,-8.304
+wh80929572,80929572,"File:Bodega Dante Robino, Mendoza.jpg",r5c11,"Perdriel, AR",quality,5104,3403,2.4,bbeee40156fcc085,-4.955,-4.921,-7.589,-2.552,-11.577
+wh81179003,81179003,File:Arkhangelsk P7151205 2200.jpg,r15c22,"Arkhangel'sk, RU",quality,3300,2200,1.7,8dba6ac5e33119ca,-0.066,3.556,-2.865,4.995,-6.070
+wh81495859,81495859,File:Calle Matamoros Tonalá.jpg,r11c7,"Las Pintitas, MX",quality,5568,3712,0.4,d6da8834954a97ad,0.806,1.871,-0.616,4.249,-8.558
+wh82566382,82566382,"File:Vakil Mosque, 13 July 2017.jpg",r11c23,"Shiraz, IR",quality,5500,3667,1.2,b1b2fe71646c600f,4.522,6.925,-4.668,5.478,-2.991
+wh82679251,82679251,"File:Hardinge Bridge, paksi.jpg",r11c26,"Bheramara, BD",quality,4800,3200,6.0,8ca3792cdecd1133,2.003,7.138,-1.393,5.348,-3.531
+wh82680527,82680527,File:Hardinge Bridge Paksi.jpg,r11c26,"Bheramara, BD",quality,4674,3116,6.0,becd154aacd2a9a4,1.549,4.446,-0.543,5.135,-4.234
+wh82708128,82708128,File:Hardinge 2.jpg,r11c26,"Bheramara, BD",quality,3754,2473,6.0,d9e6199121b5c637,1.870,8.170,-3.351,5.605,-3.368
+wh83466844,83466844,File:Bytom Rozbark mine Bonczyk engine house.jpg,r14c19,"Bytom, PL",quality,6277,4707,0.6,f6bd8093075f5960,-1.243,2.086,-2.009,3.990,-6.805
+wh84301250,84301250,"File:Hahndorf (AU), St Paul's Lutheran Church -- 2019 -- 0679.jpg",r5c31,"Mount Barker, AU",quality,6596,4382,6.1,9ae3dc7c2e87d021,-2.652,-1.895,-4.685,1.776,-9.958
+wh84301270,84301270,"File:Hahndorf (AU), Adelaide Hills Visitor Information Centre -- 2019 -- 0686.jpg",r5c31,"Mount Barker, AU",quality,6720,4480,6.7,d5eaf18815b52665,-1.101,3.135,-5.621,2.476,-9.399
+wh85339984,85339984,"File:Sydney (AU), George Street, General Post Office -- 2019 -- 3576.jpg",r5c33,"Sydney, AU",quality,6622,4415,0.6,9df3a885a3bd2a42,2.506,4.477,-0.686,3.683,-2.966
+wh85339987,85339987,"File:Sydney (AU), George Street, The Strand -- 2019 -- 3577.jpg",r5c33,"Sydney, AU",quality,6503,4335,0.2,dbc8f190d1d6d0a3,3.463,5.481,1.516,5.462,-2.391
+wh85432118,85432118,"File:Darwin (AU), East Point -- 2019 -- 4331.jpg",r7c31,"Darwin, AU",quality,6720,3780,6.0,d8a79a45d8a678e2,-5.496,-5.770,-12.103,-1.744,-13.787
+wh85432121,85432121,"File:Darwin (AU), Parliament House -- 2019 -- 4336-8.jpg",r7c31,"Darwin, AU",quality,7916,5810,0.6,c28f8f14b563ca59,2.039,4.579,-4.050,4.139,-2.307
+wh85432125,85432125,"File:Darwin (AU), Parliament House -- 2019 -- 4343.jpg",r7c31,"Darwin, AU",quality,5660,4245,0.6,e29da87788e7c825,4.369,9.148,-0.169,7.327,-0.643
+wh85432129,85432129,"File:Darwin (AU), Supreme Court -- 2019 -- 4347.jpg",r7c31,"Darwin, AU",quality,5773,3849,0.6,80af9324e7eb4897,1.014,5.520,-1.369,6.685,-4.132
+wh85432130,85432130,"File:Darwin (AU), Overland Telegraph Memorial -- 2019 -- 4349.jpg",r7c31,"Darwin, AU",quality,6720,4480,0.7,cb30b40ecc8677cb,-1.559,-3.723,1.954,1.548,-5.679
+wh85432133,85432133,"File:Darwin (AU), Overland Telegraph Memorial -- 2019 -- 4350.jpg",r7c31,"Darwin, AU",quality,6720,4480,0.7,f49c8574f82fb320,2.784,1.150,0.265,5.527,-2.974
+wh85432136,85432136,"File:Darwin (AU), Government House -- 2019 -- 4353.jpg",r7c31,"Darwin, AU",quality,6720,4480,0.8,c8acb7576de83015,-3.917,-2.551,-6.004,-1.174,-11.717
+wh85432158,85432158,"File:Darwin (AU), Government House -- 2019 -- 4393-5.jpg",r7c31,"Darwin, AU",quality,6143,4095,0.8,be566223d918e636,-2.659,-2.498,-4.218,-0.328,-10.939
+wh85432165,85432165,"File:Darwin (AU), Parliament House -- 2019 -- 4397-9.jpg",r7c31,"Darwin, AU",quality,6702,4468,0.6,83077e6831b49ecb,1.451,5.140,-2.433,6.133,-2.220
+wh85432170,85432170,"File:Darwin (AU), The Mall -- 2019 -- 4400.jpg",r7c31,"Darwin, AU",quality,6720,3780,0.5,f7024cbc75a7007e,0.834,-1.243,-0.992,0.600,-9.112
+wh85432177,85432177,"File:Darwin (AU), Browns Mart Theatre -- 2019 -- 4401-3.jpg",r7c31,"Darwin, AU",quality,6699,3768,0.5,842d3fd2482f5aab,-0.615,3.411,-0.889,4.660,-7.294
+wh86512164,86512164,File:Windhoek Panorama Three Circles 20190518.jpg,r6c19,"Katutura, NA",quality,13948,1926,0.5,dba43d4265fa8847,-3.369,-3.270,-6.821,1.960,-10.787
+wh87078001,87078001,"File:Viña del Mar Avenida Marina, Castillo Wulff 02.jpg",r5c10,"Vina del Mar, CL",quality,4272,2848,1.5,e2d5d591a629b986,-1.907,-6.457,-8.809,-0.075,-9.855
+wh87387883,87387883,File:Myingyan Railway Station 2.jpg,r11c27,"Myingyan, MM",quality,4200,2800,0.8,8da5b5aa2c51536e,-0.639,-2.427,-2.570,1.931,-8.375
+wh87453467,87453467,"File:AIDAperla in Bridgetown, Barbados - February 2020.jpg",r10c12,"Bridgetown, BB",quality,5090,2073,1.4,c67b28af5ba01dd0,4.993,1.356,-2.914,8.437,-4.475
+wh87563576,87563576,"File:Vista de Ålesund desde Aksla, Noruega, 2019-09-01, DD 16.jpg",r15c18,"Alesund, NO",featured,6980,4094,0.5,859f80f1e9f27249,-3.292,-5.473,-7.092,-0.716,-9.256
+wh87575091,87575091,File:Le Costa Mediterranea dans la rade de Port Louis (Maurice) le 29 février 2020.jpg,r6c23,"Baie du Tombeau, MU",quality,3703,2244,0.3,ea8999506b4d95f1,5.257,0.802,-2.872,7.258,-5.512
+wh87819015,87819015,File:Footbridge at Sir Seewoosagur Ramgoolam Botanical Garden.jpg,r6c23,"Triolet, MU",quality,3740,2673,6.3,ca51b322e5e37d24,-4.453,-1.733,-4.437,-0.256,-7.275
+wh88419367,88419367,File:Camargue horse Riserva Naturale Regionale della Foce dell’Isonzo-7382-2.jpg,r13c19,"Monfalcone, IT",quality,5369,3579,6.1,a4b01926b3ec9e9d,1.218,-1.654,-6.476,2.775,-1.958
+wh88892432,88892432,File:Lensunkallio 1.jpg,r15c20,"Rauma, FI",quality,4800,3180,1.5,defd39202e15930e,-3.743,-1.952,-6.148,0.623,-10.721
+wh88892435,88892435,File:Lensunkallio 3.jpg,r15c20,"Rauma, FI",quality,9500,3060,1.5,85cbfa5e43e32458,-4.734,-3.175,-6.669,1.045,-11.847
+wh88899908,88899908,File:Forchem Rauma 1.jpg,r15c20,"Rauma, FI",quality,5050,3200,2.9,f3d2180be6300bf7,-1.581,-0.012,-3.091,2.807,-7.055
+wh88899910,88899910,File:Forchem Rauma 2.jpg,r15c20,"Rauma, FI",quality,5005,3460,3.0,b7c041fe08f01e3f,-2.452,0.974,-4.135,2.285,-5.769
+wh89078303,89078303,File:Camargue horse Riserva Naturale Regionale della Foce dell’Isonzo-0531.jpg,r13c19,"Monfalcone, IT",quality,5658,3772,6.1,b30e4e33f1b1a90e,0.190,-2.997,-7.625,2.878,-2.076
+wh89406439,89406439,File:View from Pico dos Barcelos on Funchal 01.jpg,r12c16,"Santo Antonio, PT",featured,26167,4667,0.5,96af9ccbc04ea127,-3.577,-7.983,-7.065,0.829,-10.915
+wh89412918,89412918,File:2019-03-01 MS BREMEN - IMO 8907424.jpg,r3c11,"Ushuaia, AR",quality,5641,3766,1.1,cff23a84836b1e94,4.833,-0.587,-2.731,7.717,-1.733
+wh89597661,89597661,"File:2017-08-27 Breitling DC-3A (HB-IRJ) at Reykjavik, Iceland.jpg",r15c15,"Hafnarfjoerdur, IS",quality,5581,3726,1.8,b0de277892e2b199,4.982,2.846,-1.001,8.742,-0.520
+wh89834394,89834394,File:Aliso Hall Pomona August 2011 001.jpg,r12c6,"Walnut, US",quality,4080,2720,3.8,94258a4b4df43ceb,-2.598,1.797,-5.243,0.961,-6.978
+wh89834396,89834396,File:Aliso Hall Pomona August 2011 002.jpg,r12c6,"Walnut, US",quality,4140,2760,3.9,e152bf3a422bc999,-3.421,1.276,-3.085,0.364,-4.875
+wh89834398,89834398,File:Aliso Hall Pomona August 2011 003.jpg,r12c6,"Walnut, US",quality,4230,2820,3.9,c109ce9b3eb2ea16,-3.424,2.680,-3.608,0.492,-6.304
+wh89834400,89834400,File:College of Engineering Pomona August 2011 001.jpg,r12c6,"Walnut, US",quality,3750,2500,3.7,f4f59f0ac098684f,-2.122,1.475,-0.913,4.553,-7.593
+wh89834404,89834404,File:Encinitas Hall Pomona August 2011.jpg,r12c6,"Walnut, US",quality,4140,2760,3.8,8607d38f6861d1fc,-4.631,-2.163,-3.620,-0.947,-10.493
+wh90538922,90538922,File:Câmara de Lobos - Harbor light 01.jpg,r12c16,"Camara de Lobos, PT",quality,5902,3949,0.4,c2a7fc388bcec4a1,-1.294,-3.370,-5.299,0.721,-6.766
+wh90891342,90891342,File:Chiesa Maria Madre della Chiesa Casazza Brescia.jpg,r13c19,"Lumezzane, IT",quality,8272,6200,4.4,81a9b052dba73bc9,-0.883,1.437,-4.653,2.702,-8.183
+wh90894582,90894582,File:Chiesa di San Bartolomeo antica a San Bartolomeo retro Brescia.jpg,r13c19,"Lumezzane, IT",quality,8272,6200,3.5,c4eb1f80ec19cd1e,0.353,-0.399,-2.667,3.259,-6.665
+wh92867186,92867186,File:Câmara de Lobos - Fishing boats 03.jpg,r12c16,"Camara de Lobos, PT",quality,5892,3442,0.3,cd9e5ad134e89a15,2.181,-0.703,1.491,8.137,-2.871
+wh93198179,93198179,File:At Adeje 2020 001.jpg,r11c16,"Arona, ES",quality,6960,4640,1.2,b3c7dc68a2532b0d,1.353,-1.279,-1.169,3.127,-5.037
+wh93198401,93198401,File:At Adeje 2020 053.jpg,r11c16,"Arona, ES",quality,6960,4640,0.8,c0aeae63cd95a31a,0.232,0.389,-4.268,0.896,-11.241
+wh93198402,93198402,File:At Adeje 2020 054.jpg,r11c16,"Arona, ES",quality,6960,4640,0.8,83e8e823d5d4a3ab,-1.458,0.709,-5.509,1.006,-11.882
+wh93198405,93198405,File:At Adeje 2020 055.jpg,r11c16,"Arona, ES",quality,6960,4640,0.8,f58e8a20755f0ba3,1.145,1.799,-3.111,2.002,-9.387
+wh93534707,93534707,"File:2017-08-27 02 Icelandair Douglas DC-3 (TF-NPK) at Reykjavik, Iceland.jpg",r15c15,"Hafnarfjoerdur, IS",quality,5285,3528,1.8,e6f8591e8e61238e,2.153,-0.105,-0.071,6.313,-3.734
+wh95252901,95252901,File:Lido - Funchal 01.jpg,r12c16,"Sao Martinho, PT",quality,5913,3942,1.1,cfbf707f06834860,-3.147,-8.119,-11.016,-1.710,-12.680
+wh96024365,96024365,File:Bytom Rozbark mine Bończyk 2020.jpg,r14c19,"Bytom, PL",quality,4872,3180,0.7,a472db8c155a32f5,-4.626,1.038,-4.740,0.846,-9.723
+wh96072465,96072465,File:Tokyo-Metro-9000 Toei-6300.jpg,r12c31,"Den'enchofu, JP",quality,3817,2545,0.6,8e8aaf97c46e90e4,4.149,3.505,-0.914,7.586,-4.213
+wh97309571,97309571,File:Трегуляевский мост.jpg,r14c22,"Kotovsk, RU",quality,5184,3456,7.5,87adebf4780f1421,-5.154,-4.756,-8.912,-1.771,-7.785
+wh98021687,98021687,File:Новогодняя ёлка в Котовске.jpg,r14c22,"Kotovsk, RU",quality,4826,3218,0.5,c9731e619c66d11e,3.962,-0.028,-1.853,5.054,-4.437
+wh98651642,98651642,File:Ausblick von der Porta-Kanzel.jpg,r14c18,"Porta Westfalica, DE",quality,6264,3884,1.5,f4af8fd82a2820e7,-5.500,-8.258,-10.491,-1.971,-11.301
+wh105372425,105372425,File:World War II memorial in the Kuzmino-Gat - 1.jpg,r14c22,"Kotovsk, RU",quality,5184,3456,5.0,95855be18278fce8,0.855,-1.381,-1.089,1.580,-8.501
+wh106065960,106065960,File:001 - Dragline excavator E-10011.jpg,r14c22,"Kotovsk, RU",quality,4920,3280,5.8,87d42d53646d9b2a,-5.117,-4.279,-3.282,0.658,-7.286
+wh106066192,106066192,File:002 - Dragline excavator E-10011.jpg,r14c22,"Kotovsk, RU",quality,5184,3456,5.8,d6e829c3f5b4b085,-1.732,-2.107,-4.829,1.180,-8.366
+wh106082816,106082816,File:004 - Dragline excavator E-10011.jpg,r14c22,"Kotovsk, RU",quality,4957,3305,5.8,92dcb5f14a0f254d,-5.495,-6.168,-9.318,-4.116,-12.458
+wh106413200,106413200,File:Knyazhoe Lake - 003.jpg,r14c22,"Kotovsk, RU",quality,4694,3130,9.0,80bfed847b600e3b,-4.992,-7.012,-12.524,-2.072,-7.052
+wh106414408,106414408,File:Knyazhoe Lake - 007.jpg,r14c22,"Kotovsk, RU",quality,5030,3353,9.1,d192ec92e8ce734c,-4.750,-6.766,-7.787,-0.584,-5.783
+wh106799793,106799793,File:Shlihtinskoe Lake - 001.jpg,r14c22,"Kotovsk, RU",quality,4936,3291,7.8,90ab9c87dfc24173,-7.139,-8.496,-10.786,-3.508,-8.260
+wh106800005,106800005,File:Shlihtinskoe Lake - 002.jpg,r14c22,"Kotovsk, RU",quality,5046,3364,7.8,85a380567ef1b3e1,-7.819,-9.024,-11.106,-3.866,-8.392
+wh107097300,107097300,File:Abandoned building in Kotovsk - 001.jpg,r14c22,"Kotovsk, RU",quality,4188,2792,0.8,95eb6a846c3f1668,-1.036,4.285,-1.292,3.840,-8.084
+wh107153638,107153638,File:Pumping station in Kotovsk.jpg,r14c22,"Kotovsk, RU",quality,5184,3456,0.7,928b6d6d63652656,-1.671,-2.322,-8.279,-0.893,-7.632
+wh107205568,107205568,File:Apartment house in Kotovsk - 01.jpg,r14c22,"Kotovsk, RU",quality,4710,3140,0.5,d1b4ee09ea68135e,-3.344,-0.230,-1.820,0.379,-12.576
+wh107415890,107415890,File:Bangkok Pano (IV).jpg,r10c28,"Bang Kho Laem subdistrict, TH",quality,38811,6617,1.3,9faf59229449f628,-3.557,-3.251,-7.120,1.816,-12.165
+wh107754779,107754779,"File:Dona Maria Pia Lighthouse, Praia Santiago.jpg",r10c15,"Praia, CV",quality,3393,2262,3.5,f987786e009fe819,0.941,-1.091,-6.763,3.359,-6.850
+wh108162502,108162502,File:2019-03-10 02 ESPS BIO HESPIRIDES A33 - IMO 8803563.jpg,r3c11,"Ushuaia, AR",quality,5678,3790,1.2,d3f284ab91241d7b,0.090,-1.552,-4.925,5.558,-10.355
+wh108162503,108162503,File:2019-03-10 03 ESPS BIO HESPIRIDES A33 - IMO 8803563.jpg,r3c11,"Ushuaia, AR",quality,8613,3157,1.1,c1923f77070fa0f8,0.304,-2.320,-8.033,5.797,-10.213
+wh108162504,108162504,File:2019-03-10 01 ESPS BIO HESPIRIDES A33 - IMO 8803563.jpg,r3c11,"Ushuaia, AR",quality,3785,2527,1.1,e8976bacd54a0c1d,0.648,-0.986,-4.785,5.942,-7.904
+wh108366302,108366302,File:Samara. Volga river. Cathedral of Saint Sophia P6190221 2350.jpg,r14c23,"Samara, RU",quality,3525,2350,1.7,85d2720d4efaf10d,-5.905,-6.130,-10.493,-2.280,-12.742
+wh108557258,108557258,File:A house in Wezembeek-Oppem (DSC 5451).jpg,r14c18,"Tervuren, BE",quality,5432,3979,3.6,868f39dec6e33130,-3.158,-0.376,-2.280,1.478,-7.858
+wh108560040,108560040,File:Hoeve Verbeert (DSC 5436).jpg,r14c18,"Tervuren, BE",quality,5637,3258,3.4,e4be3f80c0dad945,1.829,3.993,-1.321,4.649,-6.193
+wh109564413,109564413,File:Bytom Upper Silesian Museum 2021.jpg,r14c19,"Bytom, PL",quality,4755,3258,0.6,92e26f1505bc786d,2.460,5.547,1.635,5.744,-6.070
+wh109692427,109692427,"File:Санкт-Петербург, набережная Кутузова, 18 (15.06.2021).jpg",r15c21,"Grazhdanka, RU",quality,4096,2730,1.0,b795c8f2280f175c,2.101,3.419,-6.032,3.780,-5.975
+wh109692879,109692879,"File:Санкт-Петербург, набережная Кутузова, 26 (по центру, 15.06.2021).jpg",r15c21,"Grazhdanka, RU",quality,3161,1897,1.0,eaea0ad2359515ad,-0.204,-0.755,-6.325,0.695,-10.991
+wh109693001,109693001,"File:Санкт-Петербург, набережная Кутузова, 30 (15.06.2021).jpg",r15c21,"Grazhdanka, RU",quality,4027,2684,1.0,838371dbd33cbc24,0.693,1.219,-5.494,3.743,-6.829
+wh109878957,109878957,File:Kerch. Church of Saint John the Baptist P5030901 2350.jpg,r13c21,"Kerch, UA",quality,3525,2350,0.6,81f02e8f6b38c5bc,2.460,1.102,-2.839,5.246,-4.166
+wh109935594,109935594,File:Goederenloods station Tervuren (DSC 5489).jpg,r14c18,"Tervuren, BE",quality,5826,3727,0.8,c0c0c1c2df9ffc34,-3.104,0.854,-1.907,1.078,-11.672
+wh109936533,109936533,File:Bandundu Water Jazz Band (DSC 5500).jpg,r14c18,"Tervuren, BE",quality,5877,3991,0.4,8c9c9d4ded07070f,6.311,2.699,-3.603,5.467,-0.770
+wh110480983,110480983,"File:Bench and Table, St Keverne's Quay, Radford Lake.jpg",r14c17,"Plymstock, GB",quality,3641,2427,1.0,8101407fb79e9fc3,-1.665,-1.252,-4.951,1.988,-6.347
+wh110544318,110544318,File:Костел Святого Николая.jpg,r14c21,"Nova Zabudova, UA",quality,4894,3263,0.2,cbc330e3b469b16a,1.658,-0.022,-6.882,2.515,-7.319
+wh110936836,110936836,File:Fishing Boat Sea Sunrise Uthandi Chennai Oct21 R16 05072.jpg,r10c26,"Jalladiampet, IN",quality,3129,1760,3.1,9b64f0946bcb9465,5.089,-3.014,-4.831,5.044,-5.556
+wh110936838,110936838,File:Fishing Boat Sky Sunrise Uthandi Chennai Oct21 R16 05071.jpg,r10c26,"Jalladiampet, IN",quality,2510,1569,3.1,956a952d526d9a66,5.191,-2.454,-4.411,6.097,-6.956
+wh112157117,112157117,File:Kotovskoe reservoir - 001.jpg,r14c22,"Kotovsk, RU",quality,5184,3456,4.8,c38d2ecf8dc0c369,-6.306,-7.693,-8.881,-1.692,-8.774
+wh112340375,112340375,File:Suigun-Line-E131.jpg,r12c32,"Daigo, JP",quality,3917,2614,4.8,846f2b8d0efe3129,-0.999,-4.058,-3.804,3.347,-8.917
+wh112725954,112725954,"File:Borrasca Filomena en el Parque de las Cruces, inicio -- 2021 -- Distrito Carabanchel, Madrid, España.jpg",r13c17,"Buenavista, ES",quality,6000,4000,1.2,9545b51f45998e3c,-3.501,-4.975,-4.606,-1.157,-10.858
+wh113374691,113374691,"File:Rarotonga, Club Raro Resort stairs into ocean.jpg",r6c2,"Avarua, CK",quality,3138,2354,2.2,d0f613e03f8de318,-2.091,-3.433,-9.050,-0.074,-11.861
+wh113701866,113701866,File:Menjemur Kerupuk Ikan.jpg,r8c28,"Indramayu, ID",featured,3000,2000,4.2,bce347387285c633,4.161,1.067,-2.430,4.420,-1.715
+wh115426950,115426950,File:Les casses de la Belle-vue 03.jpg,r9c16,"Camayenne, GN",quality,4000,3000,1.1,96a39a28c91e5577,0.491,4.123,-5.310,2.148,-6.751
+wh115426951,115426951,File:Les casses de la Belle-vue 01.jpg,r9c16,"Camayenne, GN",quality,4000,3000,1.1,f1d4d2e9e50222eb,2.394,5.361,0.142,4.193,-5.020
+wh116699674,116699674,File:Entrada Viña Concha y Toro.jpg,r5c10,"Puente Alto, CL",quality,6162,3243,2.6,dc68c63ba25f9c06,-2.899,-2.687,-6.758,-0.473,-10.247
+wh116901307,116901307,File:ELCOT Pallikaranai Marsh Flamingos Sholinganallur Apr22 R16 05911.jpg,r10c26,"Jalladiampet, IN",quality,4476,2518,1.6,e9b2b23b32e9e910,-4.866,-6.353,-10.152,-3.576,-11.109
+wh116901309,116901309,File:ELCOT Pallikaranai Marsh Sholinganallur Apr22 R16 05909.jpg,r10c26,"Jalladiampet, IN",quality,3794,2529,1.6,a3a373293cab9a19,-6.143,-6.299,-10.409,-3.579,-11.013
+wh117196287,117196287,File:Frente Casa Patronal Concha y Toro.jpg,r5c10,"Puente Alto, CL",quality,6960,3756,2.4,d2d4d57fa520e80b,0.762,3.830,-3.215,3.426,-5.114
+wh121142247,121142247,"File:Apartment buildings from the 2010s by Nukenkaulus street in Koivuhaka, Vantaa, Finland, 2022 July.jpg",r15c20,"Suutarila, FI",quality,5000,3480,1.5,80a47d69cb6f198e,-2.107,1.561,-3.744,2.639,-9.598
+wh121585700,121585700,File:Alandur Metro Station Chennai Aug22 A7C 02276.jpg,r10c26,"Poonamalle, IN",quality,5198,2924,0.3,d485eab5ea037c07,-4.801,-3.846,-6.140,-1.264,-9.658
+wh122531439,122531439,"File:Giancarlo de carlo, villaggio matteotti, 1969-74, 26.jpg",r13c19,"Terni, IT",quality,6536,4480,2.2,d5936a68271716e6,0.334,7.266,-4.234,5.692,-5.585
+wh122803984,122803984,File:2022-09-04 02 ACADIAN - IMO 9298715 tanker – St. John’s NL Canada.jpg,r13c12,"St. John's, CA",quality,6012,4000,2.0,96e948946d09b47f,-3.919,-5.894,-7.899,2.613,-8.919
+wh122902099,122902099,"File:Санкт-Петербург, 1-й профессорский дом Политеха сверху.jpg",r15c21,"Akademicheskoe, RU",quality,3622,2717,1.5,c0b33a31dd9b8475,-1.205,1.353,-3.233,4.660,-7.869
+wh123511845,123511845,File:2022-08-14 01 HMCS WILLIAM HALL (AOPV 433) - IMO 4702539 - under construction.jpg,r13c11,"Dartmouth, CA",quality,4214,2804,1.6,90c74960e77b7847,3.409,3.277,-1.815,7.601,-5.517
+wh123536665,123536665,File:PalaciodoplanaltoFR.jpg,r7c13,"Paranoa, BR",featured,3888,2592,4.9,cd3236cd3136ea85,5.389,2.971,-1.782,7.120,-4.695
+wh124120196,124120196,"File:Tikkurila Old railway station or city museum in night illumination in Tikkurila, Vantaa, Finland, 2022 October.jpg",r15c20,"Suutarila, FI",featured,5000,3537,0.4,cb3d3498788aec36,2.178,5.398,-1.894,5.761,-2.553
+wh124298462,124298462,"File:2022-10-04a Wide view of the city of Manta, Ecuador.jpg",r8c9,"Manta, EC",quality,12131,2782,2.8,c5d2461d65de5925,-1.833,-5.206,-6.341,1.965,-11.561
+wh125061455,125061455,"File:2022-10-04 03 Tugboat, TIGRE - IMO 9121479, in Manta, Ecuador.jpg",r8c9,"Manta, EC",quality,4885,3250,2.4,ab90ecbbc22dc835,5.323,0.854,-0.241,9.427,-4.377
+wh125061504,125061504,"File:2022-10-04 01 Tugboat, TIGRE - IMO 9121479, in Manta, Ecuador.jpg",r8c9,"Manta, EC",quality,5356,3564,2.4,9cc1f19ec5389e61,1.762,-1.274,-3.063,7.631,-6.119
+wh125175503,125175503,File:Albi Panorama Sunset Panini General.jpg,r13c18,"Albi, FR",featured,10334,3769,0.4,c1a0aa7a6fd59067,-2.059,-5.692,-10.399,0.857,-9.859
+wh126741148,126741148,File:Faro Monumental de La Serena. 08.12.2022.jpg,r6c10,"Coquimbo, CL",quality,6364,4243,2.3,c82e37cb2694ca6e,2.327,1.475,-2.585,3.836,-7.638
+wh126765064,126765064,File:Ocaso en la Serena.jpg,r6c10,"Coquimbo, CL",quality,6813,2413,2.3,f0e525d0ea4b15ea,-2.753,-4.776,-8.595,0.605,-10.554
+wh127053286,127053286,File:Faro Monumental de La Serena. 09.12.2022.jpg,r6c10,"Coquimbo, CL",quality,6171,4546,2.3,a6974866c8dd6ab2,0.599,0.658,-1.681,2.466,-9.160
+wh127053722,127053722,File:Adornos de navidad. Papá Noel.jpg,r6c10,"La Serena, CL",quality,6882,3451,0.4,b55a0ee54a055ef4,5.669,1.500,0.211,7.071,-2.464
+wh127164375,127164375,File:Biblioteca Regional Gabriela Mistral.jpg,r6c10,"Coquimbo, CL",quality,5670,3152,1.3,dd2fea049865d691,-0.936,3.694,0.332,4.202,-6.780
+wh127202827,127202827,File:Damasco (Fruta) copia.jpg,r6c10,"Coquimbo, CL",quality,3906,2842,1.3,cc36fd628c62c03f,-0.647,-0.642,-0.039,3.919,-1.340
+wh127605182,127605182,"File:Fuente en la Plaza de Armas, La Serena.jpg",r6c10,"La Serena, CL",quality,6940,4627,0.4,d6cfad0e5891d20d,-0.483,-1.721,-5.136,0.807,-8.856
+wh128443514,128443514,File:At At Santa Cruz de Tenerife 2023 079.jpg,r11c16,"Santa Cruz de Tenerife, ES",quality,6960,4640,0.4,9b14343b4f376cc8,-1.508,-1.035,0.538,3.237,-9.066
+wh128443521,128443521,File:At At Santa Cruz de Tenerife 2023 080.jpg,r11c16,"Santa Cruz de Tenerife, ES",quality,6960,4640,0.4,a1353a74606ccd6f,0.028,1.329,0.986,3.772,-3.595
+wh128443618,128443618,File:At At Santa Cruz de Tenerife 2023 103.jpg,r11c16,"Santa Cruz de Tenerife, ES",quality,6960,4640,0.5,9210b2ef1cb9e92d,0.346,4.002,-4.330,4.960,-5.503
+wh128443653,128443653,File:At At Santa Cruz de Tenerife 2023 111.jpg,r11c16,"Santa Cruz de Tenerife, ES",quality,6960,4640,0.4,cdc206ce8a8dd62f,5.185,1.180,0.901,4.673,-4.281
+wh128557537,128557537,File:AfricaMuseum - 2023-02-09 - 03.jpg,r14c18,"Tervuren, BE",quality,5745,3830,0.8,a6d9f9012ebe7181,3.713,4.136,-6.953,3.525,-1.110
+wh128702120,128702120,File:Atardecer en el Faro de la Serena. A740469.jpg,r6c10,"Coquimbo, CL",quality,7008,3054,2.3,c1d463c13ec39e63,-0.545,-2.466,-7.705,0.481,-10.539
+wh129051246,129051246,File:066a Britannia in Port of Bridgetown at night - Barbados - 3 1 - V-P.jpg,r10c12,"Bridgetown, BB",quality,14469,6381,1.4,e22d56e805d22fbc,5.512,1.053,-3.861,7.316,-5.756
+wh129096342,129096342,File:0605 Deutschland alongside Bontelabo jetty Bergen Norway - V-P.jpg,r15c18,"Asane, NO",quality,6440,4296,1.2,c0a5bed8c1649e5e,4.849,0.042,-2.929,7.620,-4.950
+wh129170201,129170201,"File:0509 Nordlys leaving Tromso, Norway - V-P.jpg",r15c19,"Tromsdalen, NO",quality,6704,4472,0.3,93e4ec1211e5c767,-0.431,-4.687,-6.167,3.077,-8.593
+wh129170203,129170203,"File:0510 Nordlys passing Tromsdalen church - Tromso, Norway - V-P.jpg",r15c19,"Tromsdalen, NO",quality,7044,4699,0.3,87b5facb412d1782,1.078,-3.097,-2.034,4.807,-6.922
+wh129170204,129170204,"File:0511 Nordlys approaching Tromso Bridge - Tromso, Norway - V-P.jpg",r15c19,"Tromsdalen, NO",quality,6831,4557,0.3,91ce8a5f76c2034f,-2.649,-6.502,-7.058,1.011,-11.152
+wh129172245,129172245,"File:09512 Tromsdalen church and bridge - Tromso, Norway - V-P.jpg",r15c19,"Tromsdalen, NO",quality,7639,5095,0.3,c9b63b406c9d326e,-6.486,-8.259,-10.871,-3.165,-14.043
+wh129172249,129172249,"File:09516 Tromsdalen church and eastern half of Tromso bridge - Tromso, Norway - V-P.jpg",r15c19,"Tromsdalen, NO",quality,7614,5078,0.3,e5b2820d7df2f881,-6.086,-7.977,-8.417,-2.739,-12.737
+wh129700241,129700241,File:Kerala Backwaters - Canal near Chamabakulam.jpg,r9c25,"Meppadam, IN",quality,7008,4672,8.5,cec3a2a89c3e3ea4,-6.959,-7.200,-10.640,-3.502,-10.210
+wh130077659,130077659,File:Doha Qatar - Souq Waqif.jpg,r11c23,"Ath Thumamah Khamsun, QA",quality,4032,3024,0.5,904937b564f2adc6,2.610,4.731,-0.387,5.671,-6.258
+wh130595242,130595242,File:Kolskaya-sverhglubokaya-025.jpg,r15c21,"Zapolyarnyy, RU",quality,4653,3102,8.5,953f3e7070d46649,1.424,2.386,-0.243,3.743,-1.814
+wh130621392,130621392,File:Kolskaya-sverhglubokaya-018.jpg,r15c21,"Zapolyarnyy, RU",quality,4580,3054,8.6,86a991c766e4e2b6,-2.347,-1.048,-1.563,2.466,-7.033
+wh130666513,130666513,File:Kolskaya-sverhglubokaya-021.jpg,r15c21,"Zapolyarnyy, RU",quality,4444,2963,8.5,c1631e3a9b399cca,0.881,3.112,1.757,4.715,-5.501
+wh130767534,130767534,File:Al-Hashemi-II (ship).jpg,r11c22,"Sabah as Salim, KW",quality,3000,2200,1.3,eb90943fea42b934,3.345,2.581,-1.733,7.658,-5.458
+wh130789293,130789293,File:M916 Bellis and M860 Schiedam in Bergen.jpg,r15c18,"Asane, NO",quality,5042,3361,1.2,f6c16f8130a75947,2.385,2.472,1.370,7.873,-4.469
+wh131315776,131315776,File:20230212 Poststeg Passau.jpg,r13c19,"Passau, DE",quality,6016,4016,1.7,d180afe107fc83d6,-2.002,1.129,-1.754,2.930,-9.632
+wh131675517,131675517,File:20230213 Gedächtniskapelle Innstadtfriedhof 02.jpg,r13c19,"Passau, DE",quality,6016,4016,1.9,99efe7d9a9409460,2.671,0.615,-3.340,5.392,-5.952
+wh131739217,131739217,File:Сердце Югры.jpg,r15c25,"Kogalym, RU",featured,3200,2134,1.4,929a9b8713c2ebd8,-7.024,-9.464,-10.354,-1.590,-8.517
+wh132400727,132400727,"File:Coast of Ósar Bay, Iceland, 20230430 1150 3503.jpg",r15c15,"Reykjanesbaer, IS",quality,4306,2875,8.0,d0df05635e7087e1,-8.741,-9.594,-10.627,-2.188,-10.674
+wh133527404,133527404,File:Keravanjoki east of Tikkurtie 2.jpg,r15c20,"Suutarila, FI",quality,6000,4000,1.0,d8989ab232de364d,-8.719,-8.741,-11.675,-4.439,-11.455
+wh133527417,133527417,File:Keravanjoki near Virnatie.jpg,r15c20,"Suutarila, FI",quality,6000,4000,1.0,9abaa61be3a86c85,-6.886,-7.398,-10.851,-2.809,-9.410
+wh133527429,133527429,File:Keravanjoki seen from Vernissasilta.jpg,r15c20,"Suutarila, FI",quality,6000,4000,0.5,fc90bba752a23266,-5.304,-7.149,-12.279,-3.194,-12.055
+wh133528964,133528964,File:Ditch in Väritehtaanranta 2.jpg,r15c20,"Suutarila, FI",quality,6000,4000,0.6,c7a78de425803ea7,-8.720,-6.157,-11.514,-4.100,-8.320
+wh134679291,134679291,File:20230608 Inner Mongolia Museum and Wulanqiate.jpg,r13c29,"Hohhot, CN",quality,5632,4224,7.3,b230c66639bdc669,1.443,5.380,-5.129,4.715,-6.022
+wh134784908,134784908,"File:Aerial view of the Keil do Amaral Amphitheatre, Monsanto Forest Park, Lisbon, Portugal julesvernex2.jpg",r12c17,"Alfragide, PT",quality,2889,2284,1.5,946b458b54abaa75,-5.150,-6.759,-9.490,-2.469,-7.503
+wh134785243,134785243,"File:""Ao Jardineiro de Deus"", Gonçalo Ribeiro Telles memorial, Parque do Corredor Verde, Lisbon, Portugal julesvernex2.jpg",r12c17,"Sete Rios, PT",quality,6446,4905,0.7,8778c71ca770d919,-0.186,-0.320,-1.073,2.540,-4.102
+wh135285281,135285281,File:CasadeTucuman-julio2023 01.jpg,r6c11,"San Miguel de Tucuman, AR",quality,6008,4008,2.0,f3d4ccad0a824cfc,4.388,5.208,1.329,7.151,-5.799
+wh135498251,135498251,File:The Palms Beach Hotel & Spa in Kuwait.jpg,r11c22,"Sabah as Salim, KW",quality,6000,4000,1.0,b1e8f5a2d6951570,2.452,0.063,-6.569,6.061,-7.565
+wh135535083,135535083,File:CatedraldeTucuman-campanario.jpg,r6c11,"San Miguel de Tucuman, AR",quality,5756,3924,1.9,dc326cdb35cd2264,2.783,-0.126,-0.991,5.565,-3.475
+wh135538015,135538015,File:2017-10-07 01 MAERSK DISPATCHER - IMO 9298909 in St. John's NL CAN.jpg,r13c12,"St. John's, CA",quality,5458,3644,1.6,a38e95e89c335ab4,4.452,0.980,-5.180,9.640,-3.665
+wh135605714,135605714,File:2017-10-07 03 MAERSK DISPATCHER - IMO 9298909 in St. John's NL CAN.jpg,r13c12,"St. John's, CA",quality,5992,4000,1.6,ba04146ac5d56ed7,1.424,-3.004,-6.494,6.554,-8.336
+wh135605715,135605715,File:2017-10-07 04 MAERSK DISPATCHER - IMO 9298909 in St. John's NL CAN.jpg,r13c12,"St. John's, CA",quality,5817,3883,1.6,ef12394cc7271aa9,0.413,-2.745,-7.236,6.209,-6.908
+wh136125014,136125014,File:Av24deSeptiembre-TucumanArg.jpg,r6c11,"San Miguel de Tucuman, AR",quality,6008,4008,1.8,9785c5432ba8779c,-0.155,-2.569,-1.035,1.765,-9.080
+wh136728486,136728486,"File:Yan Yean pipe reserve converging with new elevated rail looking north from Bell Station, Preston (52586374440).jpg",r5c32,"Preston, AU",quality,4000,2250,1.4,a2d9f5ceb035241b,-4.861,-5.595,-5.792,-0.885,-13.285
+wh137794097,137794097,File:St Augustine convent in Hernani (1).jpg,r13c17,"Lasarte, ES",quality,4882,3214,0.3,b7aac111da3b03c7,-0.598,2.012,-3.618,2.645,-8.975
+wh137794104,137794104,File:St Augustine convent in Hernani (5).jpg,r13c17,"Lasarte, ES",quality,5244,3622,0.3,aabb95c4211ee0fa,-0.787,1.573,-1.797,4.317,-8.813
+wh137794110,137794110,File:St Augustine convent in Hernani (9).jpg,r13c17,"Lasarte, ES",quality,5554,3866,0.2,bcf8c147238d9c9c,0.374,-0.857,-4.549,2.542,-8.710
+wh137911940,137911940,File:Vestgar in Bergen 02.jpg,r15c18,"Bergen, NO",quality,3956,2637,0.3,8eb3386ac6775852,5.051,1.794,-1.318,8.970,-3.267
+wh137911941,137911941,File:Vestgar in Bergen 03.jpg,r15c18,"Bergen, NO",quality,3863,2575,0.3,889339eace734867,4.846,1.684,-0.545,9.085,-4.745
+wh137984960,137984960,File:Castle of Desenzano del Garda (7).jpg,r13c19,"Castiglione delle Stiviere, IT",quality,5498,3665,0.3,99e73a7d8b06c0e1,-5.456,-3.701,-5.750,-1.141,-11.304
+wh138002792,138002792,File:20230214 Hammerbach Danube Bavaria.jpg,r13c19,"Passau, DE",quality,6016,4016,1.6,8c33d39946d53bc4,-3.412,-2.672,-6.236,3.434,-11.583
+wh138466798,138466798,File:03613 ISL Akureyri cruise vessel vapors V P.jpg,r15c16,"Akureyri, IS",quality,6298,3149,0.4,daa7cab00f624cd9,-3.870,-6.430,-8.713,-1.160,-11.540
+wh138583026,138583026,File:Baku Bay. The Caspian Sea.jpg,r13c22,"Baku, AZ",quality,4272,2848,1.1,fc934338bdd601e8,-6.780,-5.792,-8.365,-2.673,-11.645
+wh139200774,139200774,File:20230213 Ingling Schardenberg 03.jpg,r13c19,"Passau, DE",quality,6016,4016,1.3,9eb401636c17f1e6,-3.310,-3.979,-1.278,0.081,-9.435
+wh139201355,139201355,File:20230213 Wayside cross Voglau.jpg,r13c19,"Passau, DE",quality,6016,4016,1.9,94d6d2d4a5da4365,-2.211,-4.091,1.098,0.463,-7.884
+wh141133923,141133923,"File:2023-05-18 TAUPIRI - IMO 9854064, near Kristiansund, Norway.jpg",r15c18,"Kristiansund, NO",quality,2339,1556,6.7,90aff4402bf4cf38,2.280,-1.064,-5.066,7.096,-8.453
+wh141234021,141234021,File:Kalady Bridge Deck NW Periyar Kerala Dec22 A7C 04833.jpg,r10c25,"Koovappady, IN",quality,4992,3328,1.9,95eac40976ef2916,-4.785,-5.760,1.533,-0.861,-14.077
+wh142172265,142172265,"File:Maardu Northern lights — Estonia, 2022.jpg",r14c20,"Maardu, EE",featured,8095,3662,4.7,cb763ce0033ce533,-0.495,-3.197,-8.818,3.038,-6.223
+wh144667232,144667232,File:Centre NW Kydganj Cemetery Allahabad Jan24 A7C 08613.jpg,r11c26,"Jhusi, IN",quality,5601,3734,1.9,bbf3b38192c50b0e,1.437,0.678,-5.482,2.621,-8.542
+wh145607164,145607164,File:Cementerio de Nercón A74072620240106.jpg,r4c10,"Castro, CL",quality,7008,3385,3.4,ddd4b02f0f2868d6,-2.941,-5.821,-4.189,-1.926,-11.839
+wh145816228,145816228,File:View of Ulaanbaatar 01.jpg,r13c28,"Ulan Bator, MN",quality,3592,2188,1.9,9fe0334c33cde21c,-5.013,-5.030,-8.678,-1.428,-12.850
+wh145816231,145816231,File:View of Ulaanbaatar 02.jpg,r13c28,"Ulan Bator, MN",quality,3894,2235,1.9,82df21166ab5db25,-4.784,-5.189,-8.372,-1.547,-12.479
+wh145857337,145857337,File:Market in Mörön 01.jpg,r13c28,"Moeroen, MN",quality,4752,3168,1.4,b93a96d909a2969b,-0.518,2.009,-2.394,2.834,-10.234
+wh145857341,145857341,File:Market in Mörön 05.jpg,r13c28,"Moeroen, MN",quality,3503,2802,1.4,f8fac3ba816e810b,5.730,8.115,1.104,6.475,-5.924
+wh145857960,145857960,File:Mörön AIrport.jpg,r13c28,"Moeroen, MN",quality,2990,1993,5.8,cada9d1560ce9f11,0.147,2.381,-2.923,4.694,-9.660
+wh146050617,146050617,"File:Mu-Ryang-Sa, O‘ahu (2024)-L1004862.jpg",r11c2,"Niu Valley, US",quality,8377,5984,2.5,99e79f993342a194,-3.725,-1.292,-9.223,-0.179,-7.768
+wh146050618,146050618,"File:Mu-Ryang-Sa, O‘ahu (2024)-L1004868.jpg",r11c2,"Niu Valley, US",quality,9306,6181,2.5,901fb3c193b4a673,-5.097,-2.780,-8.535,-2.903,-9.089
+wh146051528,146051528,"File:Mu-Ryang-Sa, O‘ahu (2024)-L1004823.jpg",r11c2,"Niu Valley, US",quality,8019,5326,2.5,f9ab85949a2de0e2,1.756,3.520,-4.223,2.893,-2.228
+wh146081892,146081892,"File:Mu-Ryang-Sa, O‘ahu (2024)-L1004886.jpg",r11c2,"Niu Valley, US",quality,8440,6028,2.5,a12f3d99e7345843,-1.344,0.086,-4.815,0.896,-5.851
+wh146081893,146081893,"File:Mu-Ryang-Sa, O‘ahu (2024)-L1004813.jpg",r11c2,"Niu Valley, US",quality,8648,5405,2.5,d2c98db639fa4289,1.171,3.006,-2.541,2.386,-4.830
+wh146235928,146235928,"File:Knysna (ZA), Hütten am Hafen -- 2024 -- 2324.jpg",r5c20,"Knysna, ZA",quality,6720,4480,0.6,aed13e4b2470d36c,-1.808,-0.788,-3.538,2.226,-9.275
+wh146235930,146235930,"File:Knysna (ZA), Hafen, Masten von Segelbooten -- 2024 -- 2501.jpg",r5c20,"Knysna, ZA",quality,6562,4375,0.6,923ae14dec65e90d,-0.362,-2.555,-3.966,3.999,-9.100
+wh146337815,146337815,"File:Knysna (ZA), Küste -- 2024 -- 2270.jpg",r5c20,"Knysna, ZA",quality,6720,4480,4.9,d38348f6340bebb1,-3.484,-7.095,-10.328,-0.700,-8.525
+wh146337820,146337820,"File:Knysna (ZA), Knysna River, Marina -- 2024 -- 2305.jpg",r5c20,"Knysna, ZA",quality,6720,4480,5.9,9deb82e42672493b,-5.949,-8.594,-9.045,-1.858,-14.969
+wh146337821,146337821,"File:Knysna (ZA), Knysna River, Marina -- 2024 -- 2308.jpg",r5c20,"Knysna, ZA",quality,6720,4480,0.6,877c8843bcc873b5,1.233,-2.080,-1.588,3.972,-5.484
+wh146337824,146337824,"File:Knysna (ZA), Bahnhof -- 2024 -- 2343.jpg",r5c20,"Knysna, ZA",quality,6720,4480,0.5,e9121a3c03af87b7,-4.371,-3.411,-0.402,0.922,-7.869
+wh146337827,146337827,"File:Knysna (ZA), Bahnhof, Drehscheibe -- 2024 -- 2347.jpg",r5c20,"Knysna, ZA",quality,6720,4480,0.5,b3079ea3b1ca28d9,-3.442,-0.494,-2.296,1.878,-8.188
+wh146337828,146337828,"File:Knysna (ZA), Knysna River, Ufer -- 2024 -- 2376.jpg",r5c20,"Knysna, ZA",quality,6689,3763,5.9,af2f11d9a82593ca,-3.905,-8.554,-7.535,-1.252,-7.027
+wh146337835,146337835,"File:Knysna (ZA), Knysna River -- 2024 -- 2472.jpg",r5c20,"Knysna, ZA",quality,6720,4480,5.9,ee91a2c73097e30e,-1.803,-3.031,-6.221,0.058,-0.640
+wh146338046,146338046,"File:Knysna (ZA), Knysna River -- 2024 -- 2261+63+65+67.jpg",r5c20,"Knysna, ZA",quality,14929,4431,5.9,c4d196a4e96b7a64,-5.084,-8.672,-10.931,-0.134,-10.804
+wh146338068,146338068,"File:Knysna (ZA), Küste -- 2024 -- 2278-81.jpg",r5c20,"Knysna, ZA",quality,15935,4492,5.0,a4d3ecc5d2a46e2a,-1.556,-4.500,-8.212,2.869,-7.784
+wh146403609,146403609,"File:Cañón Fuerte San Antonio, Ancud A74121920240109.jpg",r4c10,"Ancud, CL",quality,7008,3876,1.6,dd85d13d862d2cc3,-3.389,-1.840,-2.500,0.981,-6.448
+wh146420318,146420318,File:Toyota Land Cruiser in Mongolia.jpg,r13c28,"Arvayheer, MN",quality,3900,2243,5.4,bfa3c06aca07719a,0.588,-2.858,-2.110,2.744,-3.978
+wh146437759,146437759,"File:Cañón Fuerte San Antonio, Ancud A74122020240109.jpg",r4c10,"Ancud, CL",quality,6758,3666,1.6,dcae8ee4c343720d,-3.100,-1.358,-2.392,2.240,-8.460
+wh146437760,146437760,"File:Cañón Fuerte San Antonio, Ancud A74122120240109.jpg",r4c10,"Ancud, CL",quality,7008,4672,1.6,deaf8fe8c05030ce,-1.888,-0.181,-2.108,2.360,-8.134
+wh146437761,146437761,"File:Cañones Fuerte San Antonio, Ancud A74123720240109.jpg",r4c10,"Ancud, CL",quality,7008,3110,1.6,d3adc8726805b39e,-5.428,-3.966,-6.683,-1.669,-12.812
+wh146446265,146446265,File:Central NW Kydganj Allahabad UP Jan24 A7C 08633.jpg,r11c26,"Jhusi, IN",quality,5470,3419,1.9,ed6dcdcec44642c1,1.706,-1.526,-5.078,2.422,-6.744
+wh146446266,146446266,File:Central Path North Kydganj Allahabad UP Jan24 A7C 08630.jpg,r11c26,"Jhusi, IN",quality,6000,4000,1.9,cce0c3ccf74f0e03,-5.031,-4.714,-8.768,-2.022,-11.031
+wh146461745,146461745,File:Gandantegchinlen Monastery 02.jpg,r13c28,"Ulan Bator, MN",quality,4752,3168,1.7,a43591faca51d587,-2.313,-0.854,-4.041,-0.170,-10.108
+wh146612380,146612380,"File:Casa de la Cultura, Ancud A74129620240109.jpg",r4c10,"Ancud, CL",quality,6198,2864,1.1,f1f68b8d5ce82522,2.160,3.406,1.157,5.649,-4.699
+wh146764310,146764310,"File:Knysna (ZA), Hafen, Brücke -- 2024 -- 2319.jpg",r5c20,"Knysna, ZA",quality,6720,4480,0.6,9ac4f1ec2a6e4d83,-1.916,0.288,-5.137,5.627,-7.331
+wh146764320,146764320,"File:Knysna (ZA), Knysna River, Schiff ""Paddle Cruiser"" -- 2024 -- 2415.jpg",r5c20,"Knysna, ZA",quality,6720,4480,5.9,c76e3d91b66a0938,3.551,-0.116,-4.361,6.464,-3.569
+wh146764323,146764323,"File:Knysna (ZA), Knysna River, Segelboot -- 2024 -- 2420.jpg",r5c20,"Knysna, ZA",quality,6622,4415,5.9,d3adad926ea81265,0.426,-3.698,-4.979,5.033,-6.796
+wh147126532,147126532,File:Falesia Nome e Cognome1.jpg,r12c19,"Floridia, IT",quality,4010,3000,7.4,a6648dd869db489e,0.351,-1.892,-6.665,-1.029,-6.139
+wh147419984,147419984,File:Falesia Nome e Cognome2.jpg,r12c19,"Floridia, IT",featured,4015,2890,7.4,8bec03e1fb31688e,3.200,-3.346,-5.025,2.511,-3.891
+wh148031168,148031168,"File:Pond at Lake Meridian Park in Kent, Washington - 1.jpg",r13c5,"Maple Valley, US",quality,4032,3024,1.6,b3ccdab0e4c5a1b4,-6.823,-6.484,-8.610,-1.181,-7.599
+wh148031171,148031171,"File:Pond at Lake Meridian Park in Kent, Washington - 3.jpg",r13c5,"Maple Valley, US",quality,4032,3024,1.6,ae811e61317ea1db,-0.915,-3.259,-6.919,3.303,-2.636
+wh148031172,148031172,"File:Pond at Lake Meridian Park in Kent, Washington - 2.jpg",r13c5,"Maple Valley, US",quality,4032,3024,1.6,8fb01ee8bd06b2c9,-4.511,-4.910,-7.579,0.245,-6.056
+wh148031186,148031186,"File:Lake Meridian Park in Kent, Washington - 5.jpg",r13c5,"Maple Valley, US",quality,4032,3024,1.6,905aba91ea6b5d8a,-3.756,-2.435,-2.309,-0.434,-8.561
+wh148079218,148079218,File:2024-Apr Shanghai East Nanjing Road morning 01.jpg,r12c30,"Puxi, CN",quality,4032,3024,0.5,84e1710b9fe3f216,3.753,0.780,-1.233,2.832,-7.444
+wh148217530,148217530,File:Cemetery Judes Church Chinnathurai Tamil Nadu Mar24 A7C 09997.jpg,r9c25,"Kollancode, IN",quality,5953,3969,0.2,c9c94c16b2b3f0e3,-0.642,-0.752,-3.804,3.204,-7.204
+wh148217531,148217531,File:Front Judes Church Chinnathurai Tamil Nadu Mar24 A7C 10007.jpg,r9c25,"Kollancode, IN",quality,4778,3583,0.3,d7ac3293cc37c8a4,1.590,-0.732,-2.726,3.915,-5.295
+wh148640313,148640313,File:Aigrette garzette sur le lac de Tunis en fin de journée.jpg,r12c19,"Aryanah, TN",quality,7767,5178,4.5,8719639bdba399c0,-0.248,-4.635,-8.925,2.082,-0.488
+wh149514554,149514554,File:Groupe de flamants roses - lac de Tunis.jpg,r12c19,"Aryanah, TN",quality,9076,6051,4.6,8095c7e677288bd3,-0.968,-6.053,-9.792,-0.973,-6.579
+wh149547095,149547095,File:Пойма Иртыша туман.jpg,r14c25,"Pavlodar, KZ",quality,6093,2362,4.1,8d68d183b7e89cb8,-6.471,-7.472,-12.839,-1.100,-10.392
+wh150095889,150095889,File:Lillehammer Church in June 2024.jpg,r15c19,"Lillehammer, NO",featured,8635,6178,0.4,99e14e0ce156bcf1,1.108,-2.522,-3.984,2.707,-6.771
+wh150615266,150615266,File:Thekke Kottaram Heritage Museum Mar24 A7C 10164.jpg,r9c25,"Valvachatottam, IN",quality,5923,3702,0.6,ca84c703e9ddd92a,-0.371,2.362,-6.120,2.422,-8.863
+wh150902934,150902934,File:At Chicago 2024 050.jpg,r13c9,"Englewood, US",quality,4032,3024,2.1,84fce3879f382247,-4.214,-3.200,-4.748,0.152,-13.104
+wh150902936,150902936,File:At Chicago 2024 051.jpg,r13c9,"Englewood, US",quality,4032,3024,2.1,81dce28bbd688537,-3.017,-3.172,-4.676,0.110,-13.937
+wh150902941,150902941,File:At Chicago 2024 053.jpg,r13c9,"Englewood, US",quality,4032,3024,2.1,d8e0baf2c67b7420,4.016,4.498,1.359,6.948,-4.015
+wh151587741,151587741,File:Forecourt Padmanabhapuram Palace Mar24 A7C 10099.jpg,r9c25,"Valvachatottam, IN",quality,5863,3909,0.7,be8499dbe36d12a0,0.106,2.502,-4.976,2.298,-6.497
+wh151673648,151673648,File:Cows Farm Eraviputhenthurai Mar24 A7C 10228.jpg,r9c25,"Kollancode, IN",quality,4870,3044,1.5,979b95c6681c639c,3.326,2.152,-2.651,4.429,-7.509
+wh151673650,151673650,File:Downstream Tambaraparani Mankadu Mar24 A7C 10241.jpg,r9c25,"Kollancode, IN",quality,5877,3918,2.5,9fdfd55562a0b210,-7.077,-7.640,-9.669,-2.836,-10.302
+wh151673668,151673668,File:Modern House Eraviputhenthurai Mar24 A7C 10223.jpg,r9c25,"Kollancode, IN",quality,5139,3426,1.4,bcba41c537b2689a,-2.402,0.903,-8.255,2.824,-7.347
+wh151673673,151673673,File:Road Eroded Sea Eraviputhenthurai Mar24 A7C 10196.jpg,r9c25,"Kollancode, IN",quality,5277,3518,2.0,daf0a51e78013ef1,-2.542,-6.415,-10.420,-1.015,-12.062
+wh151758084,151758084,File:Catholic Prayer Center Edappad Distant Kanyakumari Mar24 A7C 10271.jpg,r9c25,"Kollancode, IN",quality,4079,2549,2.3,86fcb0974ba490eb,-2.467,-5.068,-12.771,-0.921,-13.353
+wh151758086,151758086,File:Modern House Eraviputhenthurai Mar24 A7C 10232.jpg,r9c25,"Kollancode, IN",quality,4836,3627,1.2,b34c53891ef22579,-0.096,4.520,-3.069,6.556,-4.836
+wh152521678,152521678,File:Городская усадьба в Салехарде.jpg,r15c24,"Salekhard, RU",quality,3200,2132,1.2,90aebf7449463798,-3.832,-3.265,-7.650,-0.186,-11.632
+wh152888800,152888800,File:Porvoo Old Town Hall in September 2024.jpg,r15c20,"Porvoo, FI",quality,5513,4135,0.6,b6a2d2596924d62f,0.477,2.404,-2.653,3.655,-6.222
+wh152888823,152888823,File:Porvoo Cathedral in September 2024.jpg,r15c20,"Porvoo, FI",quality,14462,10847,0.7,e0b298cdee16a3a6,0.009,2.731,-2.265,4.511,-6.464
+wh153180983,153180983,"File:Das Torhaus von Gut Hasselburg, Feldseite.jpg",r14c19,"Neustadt in Holstein, DE",quality,6945,5555,3.7,a1e71c69e9b2869c,-0.422,0.319,-3.817,2.274,-9.428
+wh153182758,153182758,File:Die reetgedeckte Scheune von Gut Hasselburg.jpg,r14c19,"Neustadt in Holstein, DE",quality,7500,5223,3.7,afa6962623e34707,-0.326,1.986,-5.056,2.289,-9.044
+wh155033750,155033750,"File:Lake Wilderness Arboretum in Maple Valley, WA (2024) - 12.jpg",r13c5,"Maple Valley, US",quality,6000,4000,1.5,c1712238e9f4afca,-3.065,-2.987,-6.909,0.843,-4.440
+wh155033766,155033766,"File:Lake Wilderness Arboretum in Maple Valley, WA (2024) - 20.jpg",r13c5,"Maple Valley, US",quality,6000,4000,1.5,d32473d60ada65c6,-3.103,-2.291,-5.389,0.857,-6.220
+wh155799510,155799510,"File:2024-06-09 03 Halifax Transit ferry, RITA JOE - IMO 9850329 – Halifax, NS Canada.jpg",r13c11,"Dartmouth, CA",quality,5481,3647,0.6,b2cbb60f59b08b2c,2.884,-1.033,-3.009,7.370,-4.128
+wh155799513,155799513,"File:2022-08-15 02 Halifax Transit ferry, RITA JOE - IMO 9850329 – Halifax, NS Canada.jpg",r13c11,"Dartmouth, CA",quality,5379,3579,1.0,e0963b7b8668135b,4.229,0.077,-3.365,9.617,-3.904
+wh155799514,155799514,"File:2022-08-14 01 Halifax Transit ferry, RITA JOE - IMO 9850329 – Halifax, NS Canada.jpg",r13c11,"Dartmouth, CA",quality,5784,3848,1.0,d6e67e10d83ad027,2.095,1.994,-3.400,6.308,-4.266
+wh156124212,156124212,File:RDL côte st jacques.jpg,r13c11,"Riviere-du-Loup, CA",quality,5472,3648,2.2,d488ba686daafc43,-10.669,-9.522,-14.162,-7.369,-15.524
+wh156688806,156688806,File:Arona-Two-Green-Doors-2024.jpg,r11c16,"Arona, ES",featured,4222,2885,0.1,fdbd8253d109315c,2.415,4.442,-0.113,6.762,-7.222
+wh157052589,157052589,"File:Peace Bridge, Calgary, south view 20240818 1.jpg",r14c6,"Calgary, CA",quality,7456,4652,0.6,b5f8ca25645ae18d,0.829,-1.264,-4.754,5.325,-5.184
+wh157054339,157054339,"File:Peace Bridge, Calgary, north view 20240818 1.jpg",r14c6,"Calgary, CA",quality,6844,4563,0.6,ad9aa9224ba4575d,-2.710,-4.405,-8.715,0.224,-8.874
+wh157062887,157062887,"File:South view of Brookfield Place, Telus Sky and The Bow, from Calgary Tower 20240819 1.jpg",r14c6,"Beltline, CA",quality,6999,4925,0.8,abcbb6197454ad90,-2.232,-0.969,-7.037,1.243,-9.270
+wh158098980,158098980,File:Église saint-patrice.jpg,r13c11,"Riviere-du-Loup, CA",featured,8064,4536,1.1,acb14b7c0b96c52b,-1.766,-3.645,-8.554,1.075,-10.305
+wh158098989,158098989,File:Presbytère de Saint-Patrice.jpg,r13c11,"Riviere-du-Loup, CA",quality,8064,4536,1.3,9caba5e75c497510,1.723,1.446,-3.153,4.375,-6.962
+wh158099008,158099008,File:Église saint-ludger.jpg,r13c11,"Riviere-du-Loup, CA",quality,8064,4536,1.3,d8e61d08f687702f,-1.610,-3.911,-8.265,0.985,-10.579
+wh158670389,158670389,File:Riserva Fiume Ciane-Saline 2024 d.jpg,r12c19,"Floridia, IT",quality,6605,4403,5.9,c2bac0c71d61f59c,-8.803,-8.664,-6.054,-2.735,-11.544
+wh158670868,158670868,File:Riserva Fiume Ciane-Saline 2024 e.jpg,r12c19,"Floridia, IT",quality,6605,4403,5.9,d0b0b0358fefacb0,-3.560,-5.488,-5.638,0.181,-4.672
+wh158671231,158671231,File:Riserva Fiume Ciane-Saline 2024 f.jpg,r12c19,"Floridia, IT",quality,6605,4403,5.9,dcfac68c998381b3,-7.345,-8.193,-4.536,-1.682,-7.447
+wh158671936,158671936,File:Riserva Fiume Ciane-Saline 2024 g.jpg,r12c19,"Floridia, IT",quality,6029,3885,5.7,a4b4b225d6cb2dca,-1.657,-1.109,-3.349,0.773,-6.914
+wh158672097,158672097,File:Riserva Fiume Ciane-Saline 2024 h –papyrus.jpg,r12c19,"Floridia, IT",quality,6605,4403,5.7,c7a7f0d9f3838068,-3.511,-4.540,-6.004,0.115,-0.498
+wh158675389,158675389,File:Agriturismo Papyrus Sicily - environs 2024 a.jpg,r12c19,"Floridia, IT",quality,8256,2890,5.9,c5dde44c0f9ee842,-9.477,-10.216,-11.267,-4.308,-11.788
+wh158684668,158684668,File:Agriturismo Papyrus Sicily 2024 a.jpg,r12c19,"Floridia, IT",quality,6566,4326,5.9,a52dba8e9373c0d2,-3.078,-2.138,-1.009,0.028,-7.790
+wh158685195,158685195,File:Agriturismo Papyrus Sicily 2024 c.jpg,r12c19,"Floridia, IT",quality,8237,3965,5.9,b7e0a863d390c13f,-3.783,-2.458,-3.720,-0.645,-11.791
+wh158941335,158941335,"File:2019-03-12 02 CNS PUERTO NATALES LSG-1617 – Puerto Natales, Chile.jpg",r3c10,"Puerto Natales, CL",quality,4551,3038,0.7,fccb407e8572a626,3.579,-1.597,-2.592,7.229,-6.718
+wh158941336,158941336,"File:2019-03-12 01 CNS PUERTO NATALES LSG-1617 – Puerto Natales, Chile.jpg",r3c10,"Puerto Natales, CL",quality,4988,3522,0.7,f101e959863e1e8f,1.841,-0.814,-2.547,6.125,-7.632
+wh162124470,162124470,File:Ateshgah Zoroastrian Fire Temple (Baku).jpg,r13c23,"Biny Selo, AZ",quality,5013,3342,2.4,8080bf9fe38cd06f,-1.695,4.770,-8.767,1.979,-10.701
+wh162127443,162127443,File:Castle near Gala State Historical Ethnographic Reserve.jpg,r13c23,"Biny Selo, AZ",quality,4636,3091,6.3,bbe1c51e0e6d21a3,-0.262,2.214,-3.876,2.399,-7.453
+wh162127444,162127444,File:Gala State Historical Ethnographic Reserve 02.jpg,r13c23,"Biny Selo, AZ",quality,4994,3162,6.2,c786f8b94e6b1c84,-1.582,-3.770,-3.132,-0.291,-11.016
+wh162127448,162127448,File:Gala State Historical Ethnographic Reserve 03.jpg,r13c23,"Biny Selo, AZ",quality,4291,2861,6.2,bd7e6a69a0d232c4,-0.494,-2.200,-2.967,0.563,-8.453
+wh162127449,162127449,File:Gala State Historical Ethnographic Reserve 05.jpg,r13c23,"Biny Selo, AZ",quality,5018,3345,6.2,d65f28299ab5e2c1,-3.980,-2.632,-0.042,1.848,-5.363
+wh162191005,162191005,File:Petroglyph in Gala 09.jpg,r13c23,"Biny Selo, AZ",quality,4563,3042,6.2,89a0a70b189fe6f9,2.281,1.619,1.154,6.297,-3.401
+wh164410497,164410497,"File:2019-03-10 03 MS FRAM - IMO 9370018 - Ushuaia, Argentina.jpg",r3c11,"Ushuaia, AR",quality,5541,3699,1.1,80b7a762c01d7fe4,2.881,-1.236,-1.645,7.108,-5.010
+wh165523619,165523619,"File:Hof Van Saeys, Oude Vest, Dendermonde, 2025.jpg",r14c18,"Dendermonde, BE",quality,5568,3712,0.1,d3c7a42cdf8064f8,-0.959,0.915,-2.251,5.392,-9.580
+wh167929247,167929247,File:Flamingos in the Kuwait Free Trade Zone.jpg,r11c22,"Ar Rabiyah, KW",quality,8000,6000,6.7,83b397929995b4ac,-1.858,-6.847,-9.212,-2.551,-6.705
+wh170472179,170472179,"File:Telus Sky (detail) from Calgary Tower, Calgary, Alberta, 2025-07-14.jpg",r14c6,"Beltline, CA",featured,5871,3664,0.8,91876a933b2b353c,3.759,4.994,-1.480,4.743,-7.277
+wh170472189,170472189,"File:4th Ave and Reconciliation Bridge from Calgary Tower, Calgary, Alberta, 2025-07-14.jpg",r14c6,"Beltline, CA",quality,5652,3936,0.8,9ce322d91c561b73,-3.051,-3.173,-2.172,2.622,-8.481
+wh171162794,171162794,File:2022-09-04 03 K.J. GARDNER - IMO 9420150 - St. John's NL CAN.jpg,r13c12,"St. John's, CA",quality,5066,3371,1.7,d5d62a2927c9c81f,-3.292,-8.214,-8.163,0.864,-10.578
+wh172205229,172205229,"File:Arugam Bay, Heda Oya, 2025-07 CN-01.jpg",r9c26,"Pottuvil, LK",quality,4604,2890,7.4,81eca5117e85da6e,-9.443,-9.994,-13.549,-4.111,-12.277
+wh172283530,172283530,File:Nissan Skyline - 10 August 2025.jpg,r14c17,"Ilkeston, GB",quality,4226,2820,0.2,ea19bf73d082c760,5.148,5.016,1.341,8.300,-1.426
+wh175227239,175227239,"File:Labuan Bajo, Flores, Indonesia, 20250823 0718 2839.jpg",r8c29,"Labuan Bajo, ID",quality,5643,3766,0.8,8b8c60fb3c4baf14,-6.610,-8.674,-9.895,-3.217,-13.797
+wh175671803,175671803,"File:View from Kelor Island, Komodo National Park, Indonesia, 20250825 1654 3265.jpg",r8c29,"Labuan Bajo, ID",quality,5398,3603,9.9,83b9c288f64c76cd,-1.230,-5.145,-9.770,0.404,-10.918
+wh175673221,175673221,"File:Beach on Kelor Island in Komodo National Park, Indonesia, 20250825 1711 3272.jpg",r8c29,"Labuan Bajo, ID",quality,5588,3730,9.9,96c08fb16746629f,-2.276,-7.714,-11.288,-2.035,-11.236
+wh175742412,175742412,"File:View from Kelor Island, Komodo National Park, Indonesia, 20250825 1652 3259.jpg",r8c29,"Labuan Bajo, ID",quality,5890,3932,9.9,a9a985878796d2f2,-4.245,-7.729,-10.855,-1.529,-16.228
+wh175743012,175743012,"File:Boats on the sea near Kelor Island, Komodo National Park, Indonesia, 20250825 1724 3294.jpg",r8c29,"Labuan Bajo, ID",quality,4797,3202,10.0,8ab5754a1df54a1a,-5.166,-7.911,-9.769,-0.020,-13.302
+wh175846878,175846878,"File:CSI St. John's church, Puducherry.jpg",r10c25,"Kurumbapet, IN",quality,5628,3752,0.5,9294b5c6c86ff2d0,4.718,4.340,1.671,7.097,-3.691
+wh175846892,175846892,"File:A building inside The Sacred Heart Basillica church, Puducherry.jpg",r10c25,"Kurumbapet, IN",quality,5977,3984,1.0,9d8ce783c26f8233,1.839,1.977,-0.908,4.580,-5.537
+wh176131955,176131955,"File:Labuan Bajo, Indonesia, 20250825 0844 3236.jpg",r8c29,"Labuan Bajo, ID",quality,5150,3439,1.1,a1dfd7080df43453,-3.412,-8.762,-9.265,-1.631,-12.891
+wh176131956,176131956,"File:Labuan Bajo, Indonesia, 20250825 0850 3240.jpg",r8c29,"Labuan Bajo, ID",quality,5334,3562,1.2,f0f08794175af8e8,-0.008,-8.370,-7.159,0.939,-11.337
+wh176131960,176131960,"File:Labuan Bajo, Indonesia, 20250825 0850 3239.jpg",r8c29,"Labuan Bajo, ID",quality,5582,3728,1.2,ffa081075d6f6831,-2.734,-8.526,-9.861,-0.907,-12.184
+wh176858008,176858008,File:The three temples of Sbeitla 01.jpg,r12c18,"Sbeitla, TN",quality,5418,3570,1.1,8d65333b44c4fe23,2.859,4.072,-5.865,1.259,-7.004
+wh176858010,176858010,File:The three temples of Sbeitla 03.jpg,r12c18,"Sbeitla, TN",quality,4743,3162,1.1,eba9d280589dfe18,0.709,2.112,-3.527,2.592,-5.959
+wh177493870,177493870,File:Borj El Kebir Mahdia.jpg,r12c19,"Mahdia, TN",quality,4496,3000,1.3,c53e7a343868c55b,0.008,3.348,-6.854,1.382,-6.038
+wh178921457,178921457,File:Gourara Monument (Timimoun) 01.jpg,r11c18,"Timimoun, DZ",quality,3289,2337,0.7,b30f5c7027a3588f,3.769,1.192,0.159,4.305,-4.874
+wh178939562,178939562,"File:Câmara de Lobos (Madeira, Portugal), Ortsansicht -- 2025 -- 1882.jpg",r12c16,"Camara de Lobos, PT",quality,6720,4480,1.0,afd16069bd52a271,-1.096,-6.435,-8.907,-0.808,-12.677
+wh178939564,178939564,"File:Câmara de Lobos (Madeira, Portugal), Ortsansicht -- 2025 -- 1883.jpg",r12c16,"Camara de Lobos, PT",quality,6720,4480,1.0,becd783b912e9441,-0.816,-6.447,-9.250,-1.318,-12.395
+wh178939569,178939569,"File:Câmara de Lobos (Madeira, Portugal), Porto de Câmara de Lobos -- 2025 -- 1885.jpg",r12c16,"Camara de Lobos, PT",quality,6472,3640,0.3,8482f67f0f82e0fc,0.269,-5.214,-6.443,1.460,-9.155
+wh178939572,178939572,"File:Câmara de Lobos (Madeira, Portugal), Ortsansicht -- 2025 -- 1886.jpg",r12c16,"Camara de Lobos, PT",quality,6720,4480,1.0,b2a94da5193267cd,-4.251,-9.202,-8.007,-2.264,-13.325
+wh178939574,178939574,"File:Câmara de Lobos (Madeira, Portugal), Porto de Câmara de Lobos -- 2025 -- 1887.jpg",r12c16,"Camara de Lobos, PT",quality,6670,4447,0.4,a633b59c991b5859,3.181,-5.168,-6.106,3.576,-8.668
+wh178939576,178939576,"File:Câmara de Lobos (Madeira, Portugal), Ortsansicht -- 2025 -- 1891.jpg",r12c16,"Camara de Lobos, PT",quality,6720,4480,1.0,cca82befd4792823,0.036,-5.441,-7.450,-0.598,-10.800
+wh178939581,178939581,"File:Câmara de Lobos (Madeira, Portugal), Porto de Câmara de Lobos -- 2025 -- 1901.jpg",r12c16,"Camara de Lobos, PT",quality,6720,4480,0.3,95d66c60ce9d2d98,4.355,1.819,0.685,7.488,-5.152
+wh178939585,178939585,"File:Câmara de Lobos (Madeira, Portugal), Porto de Câmara de Lobos -- 2025 -- 1906.jpg",r12c16,"Camara de Lobos, PT",quality,6720,3780,0.3,dfde6a6070950b46,0.340,0.005,-1.588,2.934,-11.623
+wh178976081,178976081,"File:Câmara de Lobos (Madeira, Portugal), Porto de Câmara de Lobos -- 2025 -- 1890.jpg",r12c16,"Camara de Lobos, PT",quality,6720,4480,0.5,c1c96dc5f8c3b198,3.987,-1.458,-4.468,4.367,-8.502
+wh179069672,179069672,File:Coscoroba swans (Coscoroba coscoroba) pair with cygnet Laguna Nimez.jpg,r3c10,"El Calafate, AR",quality,5999,4000,1.3,d86462d8679aada3,2.172,-3.020,-5.854,2.435,-3.008
+wh179069674,179069674,File:Coscoroba swans (Coscoroba coscoroba) pair with cygnets Laguna Nimez.jpg,r3c10,"El Calafate, AR",featured,4398,2932,1.3,f64b493436db7424,5.653,-0.542,-4.076,6.279,-0.647
+wh179148794,179148794,File:House in Timimoun.jpg,r11c18,"Timimoun, DZ",quality,3436,2291,0.7,c3feac03953c698a,-0.906,4.591,-1.070,5.524,-8.869
+wh179242578,179242578,"File:São Martinho (Madeira, Portugal), Cais do Carvão -- 2025 -- 1943.jpg",r12c16,"Sao Martinho, PT",quality,6720,3780,1.0,a9db9426567ca9c8,-2.072,-4.487,-8.019,0.056,-10.728
+wh179310683,179310683,"File:Amudarya by Nukus, Uzbekistan (Амударья рядом города Нукус).jpg",r13c23,"Nukus, UZ",quality,4591,2597,10.0,a5954f89c4c9a13f,-7.094,-9.119,-10.239,-4.902,-12.080
+wh179318755,179318755,File:Tala Cemetery 01.jpg,r11c18,"Timimoun, DZ",quality,3727,2268,9.9,a7fcf22319221cb3,-3.631,-4.490,-7.001,-1.371,-10.588
+wh179318758,179318758,File:Tala Cemetery 02.jpg,r11c18,"Timimoun, DZ",quality,3717,2268,9.9,b3459822efb9045f,-0.676,-1.883,-5.348,1.269,-5.936
+wh179318761,179318761,File:Tala Cemetery 04.jpg,r11c18,"Timimoun, DZ",quality,3736,2491,9.9,938a8090b9e6f4fe,-4.208,-5.405,-7.526,-2.420,-10.603
+wh179319278,179319278,File:Grand Erg Occidental 01.jpg,r11c18,"Timimoun, DZ",quality,3940,2627,9.7,f46e6e6c74978a20,-3.836,-4.299,-9.790,-1.705,-8.392
+wh179319279,179319279,File:Grand Erg Occidental 02.jpg,r11c18,"Timimoun, DZ",quality,4032,2688,9.7,a5b2d86d334be492,-2.021,-3.874,-8.652,0.093,-5.908
+wh179319282,179319282,File:Grand Erg Occidental 03.jpg,r11c18,"Timimoun, DZ",quality,4032,2688,9.7,8dadaab3166c6a0d,-4.113,-5.516,-8.629,-1.840,-6.864
+wh179319285,179319285,File:Grand Erg Occidental 04.jpg,r11c18,"Timimoun, DZ",quality,4032,2688,9.7,c8a59b17645a9f85,-2.670,-3.916,-7.859,-0.348,-6.812
+wh179392213,179392213,File:Upland goose (Chloephaga picta picta) female and male in flight Laguna Nimez.jpg,r3c10,"El Calafate, AR",quality,5666,3777,1.3,9e064361cf9ae9c6,-1.098,-4.679,-7.754,2.442,-2.927
+wh179627016,179627016,File:Bordj of Tamanrasset 03.jpg,r11c18,"Tamanghasset, DZ",quality,3641,2427,0.5,a51e4a65758a471f,0.887,1.562,-2.135,3.799,-8.034
+wh179627021,179627021,File:Bordj of Tamanrasset 04.jpg,r11c18,"Tamanghasset, DZ",quality,3649,2433,0.5,920b6d7450ae1f1f,2.026,2.067,-1.896,3.912,-6.947
+wh179627374,179627374,File:Bordj of Tamanrasset 07.jpg,r11c18,"Tamanghasset, DZ",quality,4017,2660,0.5,9b408e7166d9e3d8,0.540,3.542,-4.462,3.315,-7.007
+wh179627383,179627383,File:Bordj of Tamanrasset 09.jpg,r11c18,"Tamanghasset, DZ",quality,4032,2880,0.5,815bf82d1f60837e,3.871,5.444,-2.193,4.942,-4.960
+wh179627385,179627385,File:Bordj of Tamanrasset 10.jpg,r11c18,"Tamanghasset, DZ",quality,3664,2268,0.5,8fe03a71ff7bc000,4.191,5.306,-1.037,6.612,-3.438
+wh179639048,179639048,File:2025 Marilah Ke LLRC event - 03.jpg,r9c29,"Liang, BN",quality,6900,4599,4.7,82db130a36ff7a14,1.710,-5.773,-9.871,-1.264,-11.054
+wh180895561,180895561,File:A MYA Langkawi Yacht - Seychelles - 2025 - 11.jpg,r8c23,"Victoria, SC",quality,6000,3354,3.7,b9bdc48a2a24d373,3.115,0.362,-9.246,8.010,-3.927
+wh180897917,180897917,File:Big Ben Clock Tower - Victoria - Mahe - Seychelles - 01.jpg,r8c23,"Victoria, SC",quality,5300,3893,0.5,cc7ba326b3194c65,-0.156,-5.668,-2.032,-0.937,-6.313
+wh180944219,180944219,File:Liberty House - Victoria - Mahe - Seychelles.jpg,r8c23,"Victoria, SC",quality,6000,4000,0.4,d5e3d0da0f2c5338,2.706,3.197,-1.556,5.471,-4.754
+wh180944222,180944222,File:Office of the Mayor of Victoria - Mahe - Seychelles.jpg,r8c23,"Victoria, SC",quality,5800,3867,0.5,a805f14b4f793eb0,2.309,6.117,-0.271,6.689,-5.903
+wh181097102,181097102,File:Arul Mihu Navashakti Vinayakar Temple - Victoria - Seychelles - 02.jpg,r8c23,"Victoria, SC",quality,5220,4016,0.5,bab6c4d8aae95452,-1.197,-1.672,-4.442,-0.152,-7.562
+wh181112275,181112275,File:Sidi Okba Mosque 02.jpg,r12c18,"Sidi Okba, DZ",quality,4032,2688,0.4,eb18146be805bbf1,2.389,3.483,0.415,5.142,-5.935
+wh181112276,181112276,File:Sidi Okba Mosque 01.jpg,r12c18,"Sidi Okba, DZ",quality,3389,2259,0.4,ea3e946ecab17182,0.129,1.986,-1.763,3.410,-8.802
+wh181112277,181112277,File:Sidi Okba Mosque 04.jpg,r12c18,"Sidi Okba, DZ",quality,3820,2547,0.4,cbb42749d107b663,0.500,2.364,-1.198,3.311,-5.369
+wh181112281,181112281,File:Sidi Okba Mosque 07.jpg,r12c18,"Sidi Okba, DZ",quality,3711,2240,0.4,8e61337e81bfc047,2.739,6.184,-4.819,5.270,-6.050
+wh181113922,181113922,File:Immaculate Conception Church - Cathédrale de l’Immaculée - Victoria - Seychelles.jpg,r8c23,"Victoria, SC",quality,5800,4002,0.4,c66f34136db403dc,2.213,0.929,-0.230,6.259,-5.372
+wh181201001,181201001,"File:Science World, Vancouver, south view 20240901 3.jpg",r13c5,"Mount Pleasant, CA",quality,6819,4546,0.7,f4840e6fb1795a89,0.335,0.243,-3.003,1.774,-5.132
+wh181201007,181201007,"File:Science World, Vancouver, south view 20240901 4.jpg",r13c5,"Mount Pleasant, CA",quality,7216,4487,0.7,b19e0a6297b46c9d,-0.385,0.567,-3.893,0.555,-4.580
+wh181201011,181201011,"File:Science World, Vancouver, southeast view 20240901 5.jpg",r13c5,"Mount Pleasant, CA",quality,6958,4639,0.7,eb98507796642c1f,-0.627,0.312,-3.977,2.059,-5.053
+wh181205761,181205761,File:Sunset - Port Launey Road - Port Glaud - Mahe - Seychelles - 2.jpg,r8c23,"Victoria, SC",featured,5861,2469,6.7,8d94f9b3b26a0c4e,2.200,-4.049,-6.328,3.435,-6.253
+wh182819962,182819962,File:Marina - Eden Island - Mahe - Seychelles - 2025 - 02.jpg,r8c23,"Victoria, SC",quality,6105,4070,3.4,bc91ce4e816f4fa0,-1.389,-2.570,-7.339,1.199,-12.065
+wh182819978,182819978,File:Marina - Eden Island - Mahe - Seychelles - 2025 - 08.jpg,r8c23,"Victoria, SC",quality,6192,4128,3.4,e7f882156ae58b15,-3.363,-7.771,-9.438,-2.266,-13.490
+wh182819979,182819979,File:Marina - Eden Island - Mahe - Seychelles - 2025 - 07.jpg,r8c23,"Victoria, SC",quality,5686,4092,3.4,83dd4b2b0acb7991,-3.250,-6.088,-7.280,0.747,-12.427
+wh183424217,183424217,File:Eden Island Villa - Eden Island - Mahe - Seychelles - 02.jpg,r8c23,"Victoria, SC",quality,6192,4128,3.2,cdc2f27b8d158385,-5.544,-5.073,-10.454,-3.835,-8.340
+wh183424219,183424219,File:Beach houses - Eden Island - Mahe - Seychelles.jpg,r8c23,"Victoria, SC",quality,5709,3781,4.3,a523a69656d2d32b,-5.632,-8.327,-9.932,-3.384,-10.765
+wh183424224,183424224,File:Eden Island Villa - Eden Island - Mahe - Seychelles - 04.jpg,r8c23,"Victoria, SC",quality,6114,3906,2.9,f881873da14ec66b,-3.704,-3.507,-10.529,-1.730,-7.992
+wh183424227,183424227,File:Eden Island Villa - Eden Island - Mahe - Seychelles - 03.jpg,r8c23,"Victoria, SC",quality,5869,3629,2.9,d2da81e0a68ddb56,-3.847,-3.084,-10.231,-1.126,-8.228
+wh184106529,184106529,File:Bastion-Prinsessesingel-Qpark-UWV-Venlo-2026.jpg,r14c18,"Tegelen, NL",quality,6734,4378,0.3,98fc27a3e823d654,-4.009,-0.309,-1.292,0.843,-12.338
+wh184748922,184748922,"File:St. Clair's Falls, Talawakelle, Sri Lanka, 20260206 0940 9035.jpg",r9c26,"Hatton, LK",quality,5673,3762,8.3,c6e980bf195647c9,-5.032,-7.537,-13.085,-3.352,-11.401
+wh186559907,186559907,"File:House in Sao Jose dos Pinhais, Parana.jpg",r6c13,"Sao Jose dos Pinhais, BR",quality,7483,4653,3.0,9d9da57c9210b6ca,1.354,1.952,0.848,4.126,-5.379
+wh188339141,188339141,File:Elgin Library.jpg,r14c17,"Elgin, GB",quality,5568,3712,0.4,d382866575f8ba64,0.215,3.842,-1.802,3.943,-9.507
+wh189111354,189111354,"File:Mininskiye Stolby, Divniye Gory, Yenisei River, Divnogorsk, Russia.jpg",r14c27,"Divnogorsk, RU",featured,6000,4000,1.2,94ede4c2da456535,-4.140,-8.853,-13.285,-3.113,-8.841
+wh189217581,189217581,"File:Mansion House Hotel, Elgin.jpg",r14c17,"Elgin, GB",quality,5568,3712,0.4,a5e7fa880b3f24c2,-1.265,-1.176,-3.154,1.520,-10.233
+wh189244153,189244153,File:Cooper Park Footbridge (1).jpg,r14c17,"Elgin, GB",quality,5568,3712,0.4,87d17d2a8b683671,-6.188,-3.919,-3.770,-1.916,-11.067
+wh189457144,189457144,"File:Walking Onto Lossie Wynd Footbridge, Elgin.jpg",r14c17,"Elgin, GB",quality,5568,3712,0.4,c0e49b8d6536f295,-3.568,-3.946,-1.638,-0.763,-13.123
+wh189461336,189461336,"File:Fountain On The Plainstones, Elgin.jpg",r14c17,"Elgin, GB",quality,5568,3712,0.2,d6c69550b535c965,2.574,-0.313,0.373,4.176,-4.683
+wh190875165,190875165,File:Marée Basse Zarzis.jpg,r12c19,"Zarzis, TN",quality,4946,2851,1.4,a45bd9ec241be2e4,-0.398,-5.233,-5.931,1.958,-8.641
+wh190908259,190908259,File:Stormy sunset over La Gomera.jpg,r11c16,"Guia de Isora, ES",featured,13270,2500,6.5,9de84a9f9d449495,-2.449,-3.383,-7.450,3.759,-8.189
+wh192455535,192455535,"File:Skyline of Vancouver, BC.jpg",r13c5,"Mount Pleasant, CA",quality,6662,4442,0.7,ece0fe334421d78a,-4.390,-5.799,-7.712,-1.459,-7.578
+wh193114809,193114809,"File:Жаркент, дунганская мечеть (2).jpg",r13c26,"Zharkent, KZ",quality,4956,2788,0.6,abab90523be1459e,3.253,5.035,-1.924,4.641,-5.157
+wh193114811,193114811,"File:Жаркент, дунганская мечеть (1).jpg",r13c25,"Zharkent, KZ",quality,4178,3133,0.7,f0c61f8d60b33e4c,-0.965,0.328,-4.399,0.744,-5.658
+wh193114812,193114812,"File:Жаркент, дунганская мечеть (3).jpg",r13c26,"Zharkent, KZ",quality,5472,3648,0.7,81839e3ccc856f6b,-1.213,0.803,-5.654,0.991,-6.813
+wh193114815,193114815,"File:Жаркент, дунганская мечеть (5).jpg",r13c26,"Zharkent, KZ",quality,4420,2486,0.7,cb81b424ccdb7ac5,-1.294,1.947,-7.731,1.111,-6.095
+wh193114881,193114881,"File:Жаркент, дунганская мечеть, ограда.jpg",r13c25,"Zharkent, KZ",quality,4698,3132,0.7,cdc9ca8ac3c3c9d8,-2.022,-0.313,1.549,2.861,-5.091
+wh193129960,193129960,"File:Жаркент, дунганская мечеть, стилобаты.jpg",r13c26,"Zharkent, KZ",quality,4651,3101,0.6,f313cb74f0f028c9,1.930,2.639,-1.278,5.370,-1.247
+wh194156589,194156589,File:Ugom-Chotqol togʻi yaqinidan oʻtuvchi yoʻl.jpg,r13c24,"G'azalkent, UZ",quality,6000,3664,7.4,8888c7f7e4717a98,-6.824,-10.973,-7.870,-5.604,-14.956
+wh194156603,194156603,File:Ugom-Chotqol davlat tabiat milliy bogʻidagi adirliklar.jpg,r13c24,"G'azalkent, UZ",quality,4392,1440,7.4,d5d6d2f2c360f890,-7.501,-9.996,-10.971,-4.394,-14.239
+wh196615461,196615461,"File:Село Мерке, Жамбыльская область.jpg",r13c25,"Merke, KZ",quality,3485,1960,5.6,c49ee13b42f88f34,-9.193,-11.065,-11.519,-6.540,-15.933
+wh198038304,198038304,File:2025-08-15 01 BCF Island K'ulut'a (ISLAND KULUTA) - IMO 9900588 – BC CAN.jpg,r14c5,"Campbell River, CA",quality,3990,2660,1.6,9197e8f8976ac185,3.000,-0.440,-3.562,6.388,-4.465
+wh199343239,199343239,"File:Transperth B-series train at Thornlie Station, September 2026 (cropped).jpg",r5c29,"Canning Vale, AU",quality,5480,3649,1.5,dba014157d6f7149,3.048,0.222,-0.194,5.990,-4.062
