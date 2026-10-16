@@ -67,7 +67,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install -e ml >/dev/null
+          # whereabout-ml depends on the repo's own api and eval packages, which are not on PyPI.
+          python -m pip install -e api -e eval -e ml >/dev/null
           if harvest-commons --check-thresholds --thresholds data/scene_gate/thresholds.json; then
             echo "ok=true" >> "$GITHUB_OUTPUT"
           else
