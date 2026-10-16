@@ -99,17 +99,29 @@ def test_empty_category_is_fine_and_labels_are_kept():
     cats = {"people": ("Category:Empty",), "text": ("Category:Q",)}
     rows = rf.build_fixture(5, API, 330, http, categories=cats)
     assert [(r["label"], r["title"]) for r in rows] == [("text", "File:q.jpg")]
-    assert set(rf.LABEL_CATEGORIES) == {"people", "indoor", "text", "not_photo"}
+    assert set(rf.LABEL_CATEGORIES) == {"people", "indoor", "text", "not_photo", "close_up"}
 
 
-def test_main_writes_csv_and_skips_existing(tmp_path, monkeypatch, capsys):
+BUILD_FIXTURE = rf.build_fixture
+
+
+def patch_cli(monkeypatch, http, categories):
+    """Route the CLI's build_fixture through the fake Commons (its default http was bound at
+    definition time) and record which labels it was asked for."""
+    monkeypatch.setattr(rf, "LABEL_CATEGORIES", categories)
+    asked = []
+
+    def build(n, api, width, *, categories, exclude=()):
+        asked.append(sorted(categories))
+        return BUILD_FIXTURE(n, api, width, http, categories=categories, exclude=exclude)
+
+    monkeypatch.setattr(rf, "build_fixture", build)
+    return asked
+
+
+def test_main_writes_csv_and_skips_a_complete_fixture(tmp_path, monkeypatch, capsys):
     http = FakeCommons({"Category:P": ["File:a.jpg"]}, [page("File:a.jpg", artist="<b>Ann</b>")])
-    monkeypatch.setattr(rf, "http_get_json", http)
-    monkeypatch.setattr(rf, "LABEL_CATEGORIES", ONE)
-    # build_fixture's default http was bound at definition time; pass through the CLI path instead
-    monkeypatch.setattr(
-        rf, "build_fixture", lambda n, a, w, _h=http, f=rf.build_fixture: f(n, a, w, _h, ONE)
-    )
+    asked = patch_cli(monkeypatch, http, ONE)
     out = tmp_path / "d" / "rejects.csv"
     assert rf.main(["--out", str(out), "--per-label", "3", "--api-url", API]) == 0
     with out.open(newline="", encoding="utf-8") as fh:
@@ -119,6 +131,37 @@ def test_main_writes_csv_and_skips_existing(tmp_path, monkeypatch, capsys):
     assert row["author"] == "Ann" and row["license"] == "CC BY-SA 4.0"
     assert row["image_url"] == "https://upload.test/a.jpg"
     assert "people: 1" in capsys.readouterr().out
-    out.write_text("keep\n")
+    before = out.read_text()
     assert rf.main(["--out", str(out)]) == 0
-    assert out.read_text() == "keep\n"
+    assert out.read_text() == before
+    assert asked == [["people"]]
+
+
+def test_main_appends_rows_for_a_new_label_and_keeps_the_old_ones(tmp_path, monkeypatch):
+    http = FakeCommons(
+        {"Category:P": ["File:a.jpg"], "Category:B": ["File:a.jpg", "File:bird.jpg"]},
+        [page("File:a.jpg"), page("File:bird.jpg")],
+    )
+    out = tmp_path / "rejects.csv"
+    patch_cli(monkeypatch, http, ONE)
+    assert rf.main(["--out", str(out), "--api-url", API]) == 0
+    old = out.read_text()
+
+    asked = patch_cli(monkeypatch, http, {**ONE, "close_up": ("Category:B",)})
+    assert rf.main(["--out", str(out), "--api-url", API]) == 0
+    assert asked == [["close_up"]]  # only the new label is fetched
+    text = out.read_text()
+    assert text.startswith(old)  # existing rows untouched, so other reasons' checks hold still
+    with out.open(newline="", encoding="utf-8") as fh:
+        rows = [(r["label"], r["title"]) for r in csv.DictReader(fh)]
+    # File:a.jpg is already a "people" reject, so it is not reused for the new label.
+    assert rows == [("people", "File:a.jpg"), ("close_up", "File:bird.jpg")]
+
+
+def test_missing_labels_in_label_order():
+    assert rf.missing_labels([{"label": "text"}, {"label": "people"}]) == [
+        "indoor",
+        "not_photo",
+        "close_up",
+    ]
+    assert rf.missing_labels([{"label": r} for r in rf.LABEL_CATEGORIES]) == []

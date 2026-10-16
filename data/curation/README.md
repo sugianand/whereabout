@@ -5,7 +5,7 @@ from Wikimedia Commons, credited to its author.
 
 | Column | Meaning |
 | --- | --- |
-| `id` | Stable id (`wm` + source index) |
+| `id` | Stable id: `wm` + source index for the hand-reviewed photos, `wh` + Commons page id for photos added by the [harvester](../harvest/README.md) |
 | `image_url` | 1280 px rendition served by Wikimedia |
 | `lat`, `lon` | Camera location from the file's Commons coordinates |
 | `place` | Human-readable place shown at the reveal |
@@ -30,6 +30,13 @@ from Wikimedia Commons, credited to its author.
 
 The result spans 54 countries and every inhabited continent. `api/tests/test_catalog.py`
 fails the build if a row loses its license, attribution or valid coordinates.
+
+## Photos added by the harvester
+
+Rows with `wh` ids come from the [Commons harvest](../harvest/README.md): found, checked and
+screened by machine (license, size, duplicates and the CLIP [scene gate](../scene_gate/README.md))
+rather than reviewed by eye, and appended by the harvest workflow in batches. Their place names
+come from the nearest GeoNames place. The game deals each one once Atlas has guessed it.
 
 ## Known limitation
 

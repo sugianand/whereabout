@@ -6,6 +6,7 @@ import catalog from "@/data/photos.json";
 import { LocalBackend } from "@/lib/game/backends";
 import { pickDaily } from "@/lib/game/daily";
 import { RECENT_KEY } from "@/lib/game/fresh";
+import { playablePhotos } from "@/lib/game/playable";
 import { ROUNDS_PER_GAME } from "@/lib/game/state";
 import type { AtlasData, CatalogPhoto, GameBackend } from "@/lib/game/types";
 import { FakeMap, resetFakes } from "@/test/maplibre-mock";
@@ -15,7 +16,8 @@ import Game, { modeTitle } from "./Game";
 vi.mock("maplibre-gl", async () => (await import("@/test/maplibre-mock")).maplibreMock);
 
 const TODAY = new Date("2026-10-09T15:00:00Z");
-const daily = pickDaily(catalog as CatalogPhoto[], "2026-10-09", ROUNDS_PER_GAME);
+const playable = playablePhotos(catalog as CatalogPhoto[], atlasData as AtlasData);
+const daily = pickDaily(playable, "2026-10-09", ROUNDS_PER_GAME);
 
 beforeEach(() => {
   resetFakes();

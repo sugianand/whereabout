@@ -17,6 +17,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: scene-gate
@@ -49,7 +50,7 @@ jobs:
           key: scene-gate-${{ hashFiles('data/curation/photos.csv', 'data/scene_gate/rejects.csv') }}
           restore-keys: scene-gate-
 
-      - name: Build the reject fixture (if missing)
+      - name: Build the reject fixture (labels it has no rows for yet)
         run: python -m whereabout_ml.reject_fixture --out data/scene_gate/rejects.csv
 
       - name: Calibrate the scene gate
@@ -77,6 +78,10 @@ jobs:
             echo "No changes to commit."
             exit 0
           fi
+          if ! git diff --cached --quiet -- data/scene_gate/thresholds.json; then
+            # New bars: harvest again with them (the harvest waits for this when a reason is new).
+            echo "thresholds_changed=true" >> "$GITHUB_ENV"
+          fi
           git commit -m "chore(scene-gate): calibrated thresholds and report"
           for attempt in 1 2 3; do
             git fetch --depth=50 origin main
@@ -86,3 +91,10 @@ jobs:
           done
           echo "::error title=Could not push scene-gate results::rebase or push failed three times"
           exit 1
+
+      # Pushes made with GITHUB_TOKEN don't trigger other workflows, so start the harvest here.
+      - name: Harvest with the new thresholds
+        if: env.thresholds_changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run harvest.yml --ref main

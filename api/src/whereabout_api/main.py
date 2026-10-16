@@ -7,6 +7,8 @@ never sent when a round starts; they are revealed only in the response to a gues
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
+
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -15,6 +17,7 @@ from whereabout_api import __version__
 from whereabout_api.atlas import AtlasGuess, load_atlas
 from whereabout_api.catalog import load_catalog
 from whereabout_api.geo import LatLon, haversine_km, score_distance
+from whereabout_api.photos import Photo
 from whereabout_api.rounds import RoundAlreadyGuessed, RoundNotFound, RoundStore
 from whereabout_api.settings import Settings
 
@@ -99,14 +102,24 @@ def score_atlas(guess: AtlasGuess | None, truth: LatLon) -> AtlasOut | None:
     )
 
 
+def playable(photos: Sequence[Photo], atlas: Mapping[str, AtlasGuess]) -> tuple[Photo, ...]:
+    """The photos rounds are dealt from: those Atlas has guessed, so every round is a match.
+
+    Photos merged from the Commons harvest wait in the catalog until the Atlas workflow has
+    guessed them. With no guesses at all, every photo plays (same rule as the web game,
+    web/src/lib/game/playable.ts)."""
+    guessed = tuple(p for p in photos if p.id in atlas)
+    return guessed or tuple(photos)
+
+
 def create_app(
     store: RoundStore | None = None,
     settings: Settings | None = None,
     atlas: dict[str, AtlasGuess] | None = None,
 ) -> FastAPI:
     settings = settings or Settings.from_env()
-    rounds = store or RoundStore(load_catalog(settings.catalog_path))
     atlas_guesses = load_atlas(settings.atlas_path) if atlas is None else atlas
+    rounds = store or RoundStore(playable(load_catalog(settings.catalog_path), atlas_guesses))
 
     app = FastAPI(title="Whereabout API", version=__version__)
     app.add_middleware(

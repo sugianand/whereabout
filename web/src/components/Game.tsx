@@ -8,6 +8,7 @@ import catalog from "@/data/photos.json";
 import { ApiBackend, LocalBackend } from "@/lib/game/backends";
 import { dayKey, pickDaily } from "@/lib/game/daily";
 import { loadRecent, pickFresh, rememberPlayed, saveRecent } from "@/lib/game/fresh";
+import { playablePhotos } from "@/lib/game/playable";
 import { ROUNDS_PER_GAME, gameReducer, initialState, totals } from "@/lib/game/state";
 import type { AtlasData, CatalogPhoto, GameBackend } from "@/lib/game/types";
 import { formatPoints, type LngLat } from "@/lib/geo";
@@ -18,8 +19,9 @@ import PhotoViewer from "./PhotoViewer";
 import RevealCard from "./RevealCard";
 import Summary from "./Summary";
 
-const photos = catalog as CatalogPhoto[];
 const atlas = atlasData as AtlasData;
+// Only photos Atlas has guessed open a round (photos fresh from the harvest wait for its run).
+const photos = playablePhotos(catalog as CatalogPhoto[], atlas);
 
 /** A fresh game is five photos the player hasn't seen lately; the Daily Five is shared by all. */
 export type GameMode = { kind: "daily"; day: string } | { kind: "fresh"; game: number };

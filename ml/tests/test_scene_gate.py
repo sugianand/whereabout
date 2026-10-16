@@ -97,9 +97,9 @@ def test_judge_passes_and_lists_reasons_in_order():
     gate = SceneGate(AxisEncoder(), thresholds={r: 0.5 for r in REASONS})
     ok = gate.judge(dict.fromkeys(REASONS, 0.1))
     assert ok.passed and ok.reasons == ()
-    bad = gate.judge({"people": 0.2, "indoor": 0.9, "text": 0.1, "not_photo": 0.7})
+    bad = gate.judge({"people": 0.2, "indoor": 0.9, "text": 0.1, "not_photo": 0.7, "close_up": 0.5})
     assert not bad.passed
-    assert bad.reasons == ("indoor", "not_photo")
+    assert bad.reasons == ("indoor", "not_photo", "close_up")
     assert bad.scores["indoor"] == 0.9
 
 
@@ -124,12 +124,13 @@ def test_calibrate_sits_just_above_max_keep_score():
 
 
 def test_calibrate_handles_per_reason_maxima_and_negative_scores():
-    keep = [{"people": 12.3456, "indoor": -4.2, "text": 0.5, "not_photo": 0.0}]
+    keep = [{"people": 12.3456, "indoor": -4.2, "text": 0.5, "not_photo": 0.0, "close_up": -0.5}]
     t = calibrate(keep)
     assert t["people"] == pytest.approx(12.346)
     assert t["indoor"] == pytest.approx(-4.199)
     assert t["text"] == pytest.approx(0.501)
     assert t["not_photo"] == pytest.approx(0.001)
+    assert t["close_up"] == pytest.approx(-0.499)
     assert all(keep[0][r] < t[r] for r in REASONS)
 
 
@@ -192,7 +193,7 @@ def test_evaluate_counts():
     assert report["catalog"] == {
         "n": 3,
         "passed": 1,
-        "rejected_by": {"people": 1, "indoor": 0, "text": 2, "not_photo": 0},
+        "rejected_by": {"people": 1, "indoor": 0, "text": 2, "not_photo": 0, "close_up": 0},
     }
     assert report["rejects"]["people"] == {"n": 3, "caught": 2, "caught_for_label": 1}
     assert report["rejects"]["text"] == {"n": 1, "caught": 1, "caught_for_label": 1}
@@ -203,7 +204,7 @@ def test_evaluate_counts():
 def test_markdown_contains_the_reports_counts():
     keep = [_scores()] * 7
     rejects = [("indoor", _scores(indoor=0.9))] * 4
-    thresholds = {"people": 0.321, "indoor": 0.5, "text": 0.5, "not_photo": 0.5}
+    thresholds = {"people": 0.321, "indoor": 0.5, "text": 0.5, "not_photo": 0.5, "close_up": 0.5}
     md = to_markdown(evaluate(keep, rejects, thresholds))
     assert "7 of 7" in md
     assert "0.321" in md

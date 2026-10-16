@@ -18,9 +18,10 @@ only scored, never shown in the game. License, author and the Commons page are r
 from __future__ import annotations
 
 import argparse
+import csv
 import urllib.parse
 from collections import Counter
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from pathlib import Path
 
 from whereabout_ml.ingest import (
@@ -51,6 +52,12 @@ LABEL_CATEGORIES: dict[str, tuple[str, ...]] = {
         "Category:Paintings of landscapes",
         "Category:Diagrams",
         "Category:Screenshots",
+    ),
+    "close_up": (
+        "Category:Featured pictures of birds",
+        "Category:Featured pictures of insects",
+        "Category:Featured pictures of flowers",
+        "Category:Macro photographs",
     ),
 }
 FIELDS = ("title", "label", "image_url", "author", "license", "source_url")
@@ -117,10 +124,12 @@ def build_fixture(
     thumb_width: int = THUMB_WIDTH,
     http: Http = http_get_json,
     categories: Mapping[str, Sequence[str]] | None = None,
+    exclude: Iterable[str] = (),
 ) -> list[dict[str, str]]:
-    """Up to `per_label` usable files per label, in label order then title order."""
+    """Up to `per_label` usable files per label, in label order then title order. Titles in
+    `exclude` (already in the fixture under another label) are never picked."""
     rows: list[dict[str, str]] = []
-    seen: set[str] = set()
+    seen: set[str] = set(exclude)
     for label, cats in (categories or LABEL_CATEGORIES).items():
         titles: set[str] = set()
         for cat in cats:
@@ -141,6 +150,14 @@ def build_fixture(
     return rows
 
 
+def missing_labels(rows: Sequence[Mapping[str, str]]) -> list[str]:
+    """Labels in `LABEL_CATEGORIES` with no row yet, in label order. A reason added to the scene
+    gate gets its fixture rows appended; rows already in the fixture stay as they are, so the
+    other reasons' checks do not move."""
+    have = {r["label"] for r in rows}
+    return [label for label in LABEL_CATEGORIES if label not in have]
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--out", type=Path, default=Path("data/scene_gate/rejects.csv"))
@@ -150,10 +167,22 @@ def main(argv: Sequence[str] | None = None) -> int:
     ap.add_argument("--force", action="store_true", help="rebuild even if --out exists")
     args = ap.parse_args(argv)
 
+    existing: list[dict[str, str]] = []
     if args.out.exists() and not args.force:
-        print(f"{args.out} exists; skipping (use --force to rebuild)")
+        with args.out.open(newline="", encoding="utf-8") as f:
+            existing = list(csv.DictReader(f))
+    labels = missing_labels(existing)
+    if not labels:
+        print(f"{args.out} has every label; skipping (use --force to rebuild)")
         return 0
-    rows = build_fixture(args.per_label, args.api_url, args.thumb_width)
+    added = build_fixture(
+        args.per_label,
+        args.api_url,
+        args.thumb_width,
+        categories={label: LABEL_CATEGORIES[label] for label in labels},
+        exclude={r["title"] for r in existing},
+    )
+    rows = existing + added
     write_csv(args.out, FIELDS, rows)
     counts = Counter(r["label"] for r in rows)
     for label in LABEL_CATEGORIES:

@@ -19,7 +19,8 @@
    near-identical candidates the larger original is kept.
 5. Scene gate. CLIP scores each thumbnail with the thresholds calibrated on the hand-reviewed
    catalog (`data/scene_gate/thresholds.json`) and the same CLIP model; a photo that reaches any
-   reason's threshold (people, indoor, text, not a photo) is rejected.
+   reason's threshold (people, indoor, text, not a photo, a close-up of an animal or plant) is
+   rejected.
 6. Place. The nearest GeoNames place gives the country and the place name shown at the reveal:
    "Town, Country", or "near Town, Country" when the camera is more than `near_km` away. Photos
    farther than `max_place_km` from every place are dropped (no reliable country).
@@ -122,9 +123,11 @@ T = TypeVar("T")
 class Settings:
     target: int = 1000
     cell_deg: float = 10.0
-    seeds_per_cell: int = 4
-    candidates_per_cell: int = 12
-    max_per_cell: int = 12
+    # The first run (4 seeds, 12 candidates per cell) harvested 307: discovery was the
+    # bottleneck, so search more places per cell and let more of what they find through.
+    seeds_per_cell: int = 12
+    candidates_per_cell: int = 30
+    max_per_cell: int = 15
     near_km: float = 15.0
     max_place_km: float = 150.0
     seed: int = 0
@@ -673,6 +676,17 @@ def write_outputs(result: HarvestResult, out_dir: Path) -> None:
     (out_dir / "report.md").write_text(to_markdown(result.report), encoding="utf-8")
 
 
+def missing_reasons(path: Path) -> list[str]:
+    """Scene-gate reasons with no calibrated threshold in `path` (all of them if it is absent).
+
+    A reason added to the gate has no threshold until the Scene gate workflow recalibrates, and
+    a harvest screened without it would let those photos through."""
+    if not path.exists():
+        return list(REASONS)
+    have = json.loads(path.read_text(encoding="utf-8")).get("thresholds", {})
+    return [r for r in REASONS if r not in have]
+
+
 def load_thresholds(path: Path) -> tuple[dict[str, float], tuple[str, str]]:
     """Thresholds and the (model, pretrained) pair they were calibrated with."""
     data = json.loads(path.read_text(encoding="utf-8"))
@@ -681,6 +695,9 @@ def load_thresholds(path: Path) -> tuple[dict[str, float], tuple[str, str]]:
     name, sep, pretrained = str(data.get("model", "")).partition("/")
     if not sep:
         raise ValueError(f"{path}: no calibration model recorded")
+    missing = missing_reasons(path)
+    if missing:
+        raise ValueError(f"{path}: no threshold for {missing}; recalibrate the scene gate first")
     return {r: float(data["thresholds"][r]) for r in REASONS}, (name, pretrained)
 
 
@@ -692,9 +709,14 @@ def read_catalog(path: Path) -> tuple[list[str], list[tuple[float, float]]]:
 
 def main(argv: Sequence[str] | None = None, encoder_factory=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--gazetteer", type=Path, required=True, help="dir with GeoNames files")
+    ap.add_argument("--gazetteer", type=Path, help="dir with GeoNames files")
     ap.add_argument("--catalog", type=Path, default=Path("data/curation/photos.csv"))
     ap.add_argument("--thresholds", type=Path, default=Path("data/scene_gate/thresholds.json"))
+    ap.add_argument(
+        "--check-thresholds",
+        action="store_true",
+        help="only check that --thresholds covers every scene-gate reason (exit 2 if not)",
+    )
     ap.add_argument("--out-dir", type=Path, default=Path("data/harvest"))
     ap.add_argument("--cache-dir", type=Path, default=Path(".cache/harvest"))
     defaults = Settings()
@@ -702,6 +724,12 @@ def main(argv: Sequence[str] | None = None, encoder_factory=None) -> int:
         ap.add_argument(f"--{name.replace('_', '-')}", type=type(value), default=value)
     ap.add_argument("--api-url", default=COMMONS_API)
     args = ap.parse_args(argv)
+    if args.check_thresholds:
+        missing = missing_reasons(args.thresholds)
+        print(f"no threshold yet for {missing}" if missing else "every reason has a threshold")
+        return 2 if missing else 0
+    if args.gazetteer is None:
+        ap.error("--gazetteer is required")
     settings = Settings(**{k: getattr(args, k) for k in asdict(defaults)})
 
     with (args.gazetteer / "countryInfo.txt").open(encoding="utf-8") as fh:

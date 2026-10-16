@@ -4,8 +4,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 from whereabout_api.atlas import parse_guess
+from whereabout_api.catalog import load_catalog
 from whereabout_api.geo import MAX_POINTS, LatLon, haversine_km, score_distance
-from whereabout_api.main import create_app
+from whereabout_api.main import create_app, playable
 from whereabout_api.photos import Photo
 from whereabout_api.rounds import RoundStore
 from whereabout_api.settings import Settings
@@ -155,3 +156,20 @@ def test_default_app_serves_the_real_catalog():
     app_client = TestClient(create_app(settings=Settings.from_env({})))
     body = app_client.post("/api/v1/rounds").json()
     assert body["photo"]["image_url"].startswith("https://")
+
+
+def test_rounds_are_dealt_only_from_photos_atlas_has_guessed():
+    # The real catalog, but Atlas has guessed one photo: the rest stand for photos just merged
+    # from the Commons harvest, which wait until the Atlas workflow has guessed them.
+    settings = Settings.from_env({})
+    first = load_catalog(settings.catalog_path)[0]
+    app_client = TestClient(create_app(settings=settings, atlas={first.id: OSAKA_GUESS}))
+    for _ in range(20):
+        body = app_client.post("/api/v1/rounds").json()
+        assert body["photo"]["id"] == first.id
+
+
+def test_playable_falls_back_to_every_photo_before_atlas_has_run():
+    assert playable((KYOTO,), {}) == (KYOTO,)
+    assert playable((KYOTO,), {"test-kyoto": OSAKA_GUESS}) == (KYOTO,)
+    assert playable((KYOTO,), {"other": OSAKA_GUESS}) == (KYOTO,)

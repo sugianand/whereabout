@@ -5,7 +5,14 @@ name: Commons harvest
 # size, orientation and near-duplicates (ingest), screened by the CLIP scene gate with the
 # calibrated thresholds, named from the GeoNames gazetteer and balanced across the grid.
 # Commits data/harvest/ (candidate rows in photos.csv columns, provenance, every rejection and
-# the counts per reason). Thumbnails and model weights stay on the runner.
+# the counts per reason), then grows the game catalog (data/curation/photos.csv and the bundled
+# web/src/data/photos.json) by up to `merge_limit` harvested photos, in grid-balancing order
+# (whereabout_ml.merge_harvest), and starts the workflows that derive from the catalog. The game
+# deals a new photo once Atlas has guessed it. Thumbnails and model weights stay on the runner.
+#
+# It runs after the Scene gate workflow recalibrates (that workflow starts it), on a change to the
+# harvester, or by hand. If the gate has a reason with no calibrated threshold yet, the run stops
+# early and waits for the Scene gate workflow instead of screening without it.
 
 on:
   workflow_dispatch:
@@ -14,6 +21,22 @@ on:
         description: "Catalog size to grow towards (catalog photos plus harvested ones)"
         required: false
         default: "1000"
+      seeds_per_cell:
+        description: "GeoNames places searched in each 10 degree cell"
+        required: false
+        default: "12"
+      candidates_per_cell:
+        description: "Assessed Commons files kept per cell before the checks"
+        required: false
+        default: "30"
+      max_per_cell:
+        description: "Most catalog photos in one cell after balancing"
+        required: false
+        default: "15"
+      merge_limit:
+        description: "Most harvested photos added to the game catalog in this run"
+        required: false
+        default: "150"
   push:
     branches: [main]
     paths:
@@ -22,6 +45,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: commons-harvest
@@ -38,7 +62,21 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Check the scene gate is calibrated for every reason
+        id: ready
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -e ml >/dev/null
+          if harvest-commons --check-thresholds --thresholds data/scene_gate/thresholds.json; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Harvest waits for the scene gate::the Scene gate workflow calibrates the new reason and then starts this harvest"
+          fi
+
       - name: Install (CPU PyTorch)
+        if: steps.ready.outputs.ok == 'true'
         run: |
           python -m pip install --upgrade pip
           # torch and torchvision must come from the same index, or their compiled ops disagree.
@@ -46,6 +84,7 @@ jobs:
           python -m pip install -e api -e eval -e "ml[clip,ingest]"
 
       - name: Download the GeoNames gazetteer (CC BY 4.0)
+        if: steps.ready.outputs.ok == 'true'
         run: |
           mkdir -p data/geonames
           curl -fsSL -o data/geonames/countryInfo.txt https://download.geonames.org/export/dump/countryInfo.txt
@@ -53,6 +92,7 @@ jobs:
           unzip -o "$RUNNER_TEMP/cities15000.zip" -d data/geonames
 
       - name: Cache model weights and thumbnails
+        if: steps.ready.outputs.ok == 'true'
         uses: actions/cache@v4
         with:
           path: |
@@ -62,36 +102,75 @@ jobs:
           restore-keys: harvest-
 
       - name: Harvest
+        if: steps.ready.outputs.ok == 'true'
         shell: bash
         env:
           TARGET: ${{ inputs.target || '1000' }}
+          SEEDS_PER_CELL: ${{ inputs.seeds_per_cell || '12' }}
+          CANDIDATES_PER_CELL: ${{ inputs.candidates_per_cell || '30' }}
+          MAX_PER_CELL: ${{ inputs.max_per_cell || '15' }}
         run: |
           set -euo pipefail
           harvest-commons --gazetteer data/geonames \
             --catalog data/curation/photos.csv \
             --thresholds data/scene_gate/thresholds.json \
             --out-dir data/harvest --cache-dir .cache/harvest \
-            --target "$TARGET"
+            --target "$TARGET" --seeds-per-cell "$SEEDS_PER_CELL" \
+            --candidates-per-cell "$CANDIDATES_PER_CELL" --max-per-cell "$MAX_PER_CELL"
           cat data/harvest/report.md >> "$GITHUB_STEP_SUMMARY"
 
+      # Grid-balancing order, so a capped merge still spreads across the map. The game deals a
+      # merged photo once the Atlas workflow (started below) has guessed it.
+      - name: Grow the game catalog
+        if: steps.ready.outputs.ok == 'true'
+        shell: bash
+        env:
+          MERGE_LIMIT: ${{ inputs.merge_limit || '150' }}
+        run: |
+          set -euo pipefail
+          merge-harvest --catalog data/curation/photos.csv \
+            --harvested data/harvest/harvested.csv --limit "$MERGE_LIMIT" | tee merge.log
+          node web/scripts/build-catalog.mjs
+          echo "::notice title=Catalog::$(cat merge.log)"
+
       - name: Commit results
+        if: steps.ready.outputs.ok == 'true'
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/harvest/harvested.csv data/harvest/manifest.csv \
-            data/harvest/rejected.csv data/harvest/report.json data/harvest/report.md
+            data/harvest/rejected.csv data/harvest/report.json data/harvest/report.md \
+            data/curation/photos.csv web/src/data/photos.json
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
           fi
-          git commit -m "chore(harvest): Commons harvest candidates and report"
+          if git diff --cached --quiet -- data/curation/photos.csv; then
+            git commit -m "chore(harvest): Commons harvest candidates and report"
+          else
+            git commit -m "chore(harvest): grow the catalog from the Commons harvest"
+            echo "catalog_grew=true" >> "$GITHUB_ENV"
+          fi
           for attempt in 1 2 3; do
             git fetch --depth=50 origin main
-            git rebase origin/main && git push origin HEAD:main && exit 0
+            if git rebase origin/main && git push origin HEAD:main; then
+              exit 0
+            fi
             git rebase --abort || true
             sleep $((attempt * 5))
           done
           echo "::error title=Could not push harvest results::rebase or push failed three times"
           exit 1
+
+      # Pushes made with GITHUB_TOKEN don't trigger other workflows, so start the ones that
+      # derive from the catalog explicitly. Atlas redeploys the site when it is done.
+      - name: Update what derives from the catalog
+        if: steps.ready.outputs.ok == 'true' && env.catalog_grew == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run quality.yml --ref main
+          gh workflow run labels.yml --ref main
+          gh workflow run atlas.yml --ref main

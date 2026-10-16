@@ -481,6 +481,7 @@ def test_harvest_end_to_end(world, tmp_path):
         "indoor": 0,
         "text": 0,
         "not_photo": 0,
+        "close_up": 0,
     }
     assert rep["scene_gate"]["model"] == "stub/encoder"
     assert (rep["passed_all_checks"], rep["harvested"]) == (3, 2)
@@ -521,9 +522,47 @@ def test_write_outputs_and_markdown(world, tmp_path):
 
 
 def test_load_thresholds_reads_the_calibrated_file():
-    thresholds, model = hv.load_thresholds(REPO / "data" / "scene_gate" / "thresholds.json")
+    path = REPO / "data" / "scene_gate" / "thresholds.json"
+    missing = hv.missing_reasons(path)
+    if missing:
+        # A reason was just added to the gate and CI has not recalibrated yet: the harvester
+        # must refuse to screen without it rather than let those photos through.
+        with pytest.raises(ValueError, match=missing[0]):
+            hv.load_thresholds(path)
+        return
+    thresholds, model = hv.load_thresholds(path)
     assert set(thresholds) == set(REASONS)
     assert model[0] and model[1]
+
+
+def write_thresholds(path, reasons):
+    path.write_text(
+        json.dumps({"thresholds": dict.fromkeys(reasons, 1.0), "score": "log-odds", "model": "A/b"})
+    )
+
+
+def test_a_reason_without_a_threshold_stops_the_harvest(tmp_path, capsys):
+    path = tmp_path / "t.json"
+    write_thresholds(path, [r for r in REASONS if r != "close_up"])
+    assert hv.missing_reasons(path) == ["close_up"]
+    with pytest.raises(ValueError, match=r"no threshold for \['close_up'\]"):
+        hv.load_thresholds(path)
+    assert hv.main(["--thresholds", str(path), "--check-thresholds"]) == 2
+    assert "no threshold yet for ['close_up']" in capsys.readouterr().out
+    assert hv.missing_reasons(tmp_path / "absent.json") == list(REASONS)
+
+
+def test_check_thresholds_passes_when_every_reason_is_calibrated(tmp_path, capsys):
+    path = tmp_path / "t.json"
+    write_thresholds(path, REASONS)
+    assert hv.main(["--thresholds", str(path), "--check-thresholds"]) == 0
+    assert "every reason has a threshold" in capsys.readouterr().out
+    assert hv.load_thresholds(path)[1] == ("A", "b")
+
+
+def test_harvesting_needs_a_gazetteer(tmp_path):
+    with pytest.raises(SystemExit):
+        hv.main(["--thresholds", str(tmp_path / "t.json")])
 
 
 def test_load_thresholds_rejects_probability_files(tmp_path):

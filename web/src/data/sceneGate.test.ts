@@ -5,6 +5,17 @@ import { REASONS, buildFromRepo, fileTitle, toSceneGate } from "../../scripts/bu
 import sceneGate from "./scene_gate.json";
 
 describe("bundled scene gate summary", () => {
+  it("leaves out a reason the report has no counts for yet (added before CI recalibrates)", () => {
+    const report = {
+      thresholds: { people: 0.5, indoor: 0.5, text: 0.5, not_photo: 0.5 },
+      catalog: { n: 1, passed: 1, rejected_by: { people: 0, indoor: 0, text: 0, not_photo: 0 } },
+      rejects: { people: { n: 1, caught: 0, caught_for_label: 0 } },
+    };
+    const out = toSceneGate(report, "title,label\n", "id,set,label\n");
+    expect(Object.keys(out.rejects)).toEqual(["people"]);
+    expect(out.examples).toEqual([]);
+  });
+
   it("is in sync with data/scene_gate/ (run `npm run scene-gate` if this fails)", () => {
     expect(sceneGate).toEqual(buildFromRepo());
   });
@@ -12,8 +23,8 @@ describe("bundled scene gate summary", () => {
   it("only shows rejects caught for their own reason, never more than the report counted", () => {
     for (const reason of REASONS) {
       const shown = sceneGate.examples.filter((e) => e.reason === reason).length;
-      const r = sceneGate.rejects[reason as keyof typeof sceneGate.rejects];
-      expect(shown).toBeLessThanOrEqual(r.caught_for_label);
+      const rejects: Record<string, { caught_for_label: number } | undefined> = sceneGate.rejects;
+      expect(shown).toBeLessThanOrEqual(rejects[reason]?.caught_for_label ?? 0);
     }
     for (const e of sceneGate.examples) {
       expect(e.imageUrl).toMatch(/^https:\/\//);

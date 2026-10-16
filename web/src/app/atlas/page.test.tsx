@@ -105,9 +105,18 @@ describe("Choosing the photos", () => {
     expect(within(gallery).getAllByRole("listitem")).toHaveLength(sceneGate.examples.length);
   });
 
+  it("has a row for every reason the report counted, and none for an uncalibrated one", () => {
+    render(<AtlasPage />);
+    const table = screen.getByRole("table", { name: /photo screen catches/ });
+    const body = within(table).getAllByRole("rowgroup")[1];
+    expect(within(body).getAllByRole("row")).toHaveLength(Object.keys(sceneGate.rejects).length);
+    const closeUp = within(body).queryByRole("row", { name: /Close-ups of animals and plants/ });
+    expect(closeUp !== null).toBe("close_up" in sceneGate.rejects);
+  });
+
   it("says which reasons still slip past from the real counts, not fixed text", () => {
     const { container } = render(<AtlasPage />);
-    const reasons = ["people", "text", "indoor", "not_photo"] as const;
+    const reasons = ["people", "text", "indoor", "not_photo", "close_up"] as const;
     const { strong, weak } = gateStrength(sceneGate.rejects, reasons);
     const text = container.textContent ?? "";
     expect(text.includes("It catches most")).toBe(strong.length > 0);

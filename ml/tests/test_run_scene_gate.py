@@ -52,12 +52,15 @@ def workspace(tmp_path):
     images = tmp_path / "images"
     images.mkdir()
     # catalog images look "good" (last axis); reject images sit on reason axes
-    for name in ("c1", "c2", "c3", "img-people0", "img-indoor1", "img-text2"):
+    # wm* photos were reviewed by hand; wh9 came from the harvest and looks like a person, so
+    # it would lift the people bar above the fixture's person if it were allowed to calibrate.
+    catalog = ("wm1", "wm2", "wm3", "wh9")
+    for name in (*catalog, "img-people0", "img-indoor1", "img-text2"):
         (images / f"{name}.jpg").write_bytes(b"dummy")
     write_csv(
         tmp_path / "photos.csv",
         ["id", "image_url", "lat", "lon", "place", "country", "author", "license", "source_url"],
-        [[c, f"https://x/{c}.jpg", 0, 0, "p", "JP", "a", "l", "s"] for c in ("c1", "c2", "c3")],
+        [[c, f"https://x/{c}.jpg", 0, 0, "p", "JP", "a", "l", "s"] for c in catalog],
     )
     # rejects are cached under their reject key, so name the files accordingly
     for i, name in enumerate(("img-people0", "img-indoor1", "img-text2")):
@@ -73,6 +76,12 @@ def workspace(tmp_path):
 
 # Reject row i (title "t{i}") sits on reason axis i.
 REJECT_AXIS = {run_scene_gate.reject_key(f"t{i}"): i for i in range(len(REASONS))}
+REJECT_AXIS["wh9"] = 0  # the harvested photo sits on the people axis
+
+
+def test_only_hand_reviewed_photos_calibrate():
+    rows = [{"id": "wm000"}, {"id": "wh1230085"}, {"id": "wm126"}]
+    assert [r["id"] for r in run_scene_gate.hand_reviewed(rows)] == ["wm000", "wm126"]
 
 
 def test_reject_key_is_stable_and_title_specific():
@@ -126,7 +135,7 @@ def test_cli_end_to_end_writes_all_outputs(workspace, capsys):
     assert report["rejects"]["text"]["caught"] == 1
     closest = report["catalog"]["closest"]
     assert set(closest) == set(REASONS)
-    assert sorted(p["id"] for p in closest["people"]) == ["c1", "c2", "c3"]
+    assert sorted(p["id"] for p in closest["people"]) == ["wm1", "wm2", "wm3"]
 
     rows = list(csv.DictReader((out / "scores.csv").open()))
     assert [r["set"] for r in rows] == ["catalog"] * 3 + ["reject"] * 3
@@ -155,7 +164,7 @@ def test_unknown_reject_label_is_an_error(workspace):
 
 
 def test_cache_images_uses_cache_and_reports_missing_urls(workspace):
-    items = [("c1", "https://x/c1.jpg"), ("nourl", "")]
+    items = [("wm1", "https://x/wm1.jpg"), ("nourl", "")]
     paths, failed = run_scene_gate.cache_images(items, workspace / "images", pause_s=0)
-    assert set(paths) == {"c1"}
+    assert set(paths) == {"wm1"}
     assert failed == {"nourl": "no image_url"}

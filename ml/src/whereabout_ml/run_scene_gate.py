@@ -3,10 +3,11 @@
     scene-gate --catalog data/curation/photos.csv --rejects data/scene_gate/rejects.csv \\
                --images .cache/images --out data/scene_gate
 
-The catalog photos were all reviewed by hand and are known-good, so each reason's threshold is
-set just above the highest score any of them gets (`--max-false-reject` relaxes that); scores
+The hand-reviewed catalog photos (ids starting `wm`) are known-good, so each reason's threshold
+is set just above the highest score any of them gets (`--max-false-reject` relaxes that); scores
 and thresholds are log-odds (see `whereabout_ml.scene_gate`). The report names the catalog photos
-closest to each threshold so they can be reviewed. The
+closest to each threshold so they can be reviewed. Photos merged from the Commons harvest (ids
+`wh...`) were screened by this gate, not by a person, so they never set its bars. The
 fixture (columns title,label,image_url,author,license,source_url; label is a reason) then
 shows how many known-bad photos that threshold catches. Writes thresholds.json, report.json,
 report.md and scores.csv into `--out`.
@@ -28,6 +29,15 @@ from whereabout_ml.run_atlas_v0 import fetch, parse_model
 from whereabout_ml.scene_gate import REASONS, SceneGate, calibrate, evaluate, to_markdown
 
 DEFAULT_MODEL = ("ViT-B-32", "laion2b_s34b_b79k")
+
+# Ids of the catalog photos a person reviewed by eye (data/curation/README.md). Harvested photos
+# get `wh` + their Commons page id.
+HAND_REVIEWED_PREFIX = "wm"
+
+
+def hand_reviewed(rows: Sequence[Mapping[str, str]]) -> list[Mapping[str, str]]:
+    """The catalog rows that may calibrate the gate: the ones reviewed by hand."""
+    return [r for r in rows if r["id"].startswith(HAND_REVIEWED_PREFIX)]
 
 
 def reject_key(title: str) -> str:
@@ -152,7 +162,7 @@ def main(argv: Sequence[str] | None = None, encoder_factory=None) -> int:
     if encoder_factory is None:
         from whereabout_ml.clip_encoder import ClipEncoder as encoder_factory
 
-    catalog_rows = read_csv(args.catalog)
+    catalog_rows = hand_reviewed(read_csv(args.catalog))
     reject_rows = read_csv(args.rejects)
     items = [(r["id"], r["image_url"]) for r in catalog_rows] + [
         (reject_key(r["title"]), r["image_url"]) for r in reject_rows

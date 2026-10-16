@@ -10,7 +10,7 @@ import { parseCsv } from "./build-catalog.mjs";
 const dir = new URL("../../data/scene_gate/", import.meta.url);
 const outPath = fileURLToPath(new URL("../src/data/scene_gate.json", import.meta.url));
 
-export const REASONS = ["people", "indoor", "text", "not_photo"];
+export const REASONS = ["people", "indoor", "text", "not_photo", "close_up"];
 const EXAMPLES_PER_REASON = 2;
 
 function rows(text) {
@@ -59,7 +59,10 @@ export function toSceneGate(report, rejectsCsv, scoresCsv) {
       passed: report.catalog.passed,
       rejected_by: report.catalog.rejected_by,
     },
-    rejects: Object.fromEntries(REASONS.map((r) => [r, report.rejects[r]])),
+    // A reason added to the gate has no counts until CI recalibrates; it is left out until then.
+    rejects: Object.fromEntries(
+      REASONS.filter((r) => report.rejects[r]).map((r) => [r, report.rejects[r]]),
+    ),
     examples,
   };
 }

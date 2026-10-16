@@ -27,10 +27,10 @@ const { best, worst } = extremes(scored, 3);
 const saliency = atlas.evaluation?.saliency;
 const pctWhole = (x: number) => `${Math.round(x * 100)}%`;
 
-type GateReason = "people" | "indoor" | "text" | "not_photo";
+type GateReason = "people" | "indoor" | "text" | "not_photo" | "close_up";
 type SceneGate = {
   catalog: { n: number; passed: number };
-  rejects: Record<GateReason, { n: number; caught: number; caught_for_label: number }>;
+  rejects: Partial<Record<GateReason, { n: number; caught: number; caught_for_label: number }>>;
   examples: {
     reason: GateReason;
     title: string;
@@ -44,6 +44,7 @@ const GATE_REASONS: { key: GateReason; label: string; short: string }[] = [
   { key: "text", label: "Text that names the place", short: "text" },
   { key: "indoor", label: "Indoor scenes", short: "indoor scenes" },
   { key: "not_photo", label: "Not a photo (maps, art, screenshots)", short: "non-photos" },
+  { key: "close_up", label: "Close-ups of animals and plants", short: "close-ups" },
 ];
 const gateShort = (keys: GateReason[]) =>
   listPhrase(keys.map((k) => GATE_REASONS.find((g) => g.key === k)?.short ?? k));
@@ -279,8 +280,9 @@ export default function AtlasPage() {
       <p className="mt-4 text-chalk-dim">
         A good round needs an outdoor photo of a place, with no faces and no sign that simply names
         the town. To grow the game past hand-picked photos, CLIP screens each candidate first: it
-        scores how much a picture looks like people, an interior, readable text or not-a-photo at
-        all, and turns it away if any score is too high. The bar is set so the hand-reviewed game
+        scores how much a picture looks like people, an interior, readable text, not-a-photo at
+        all or a close-up of an animal or plant (nothing to locate), and turns it away if any score
+        is too high. The bar is set so the hand-reviewed game
         photos get through ({gate.catalog.passed} of {gate.catalog.n} do), then tested on images
         that should be turned away.
       </p>
@@ -303,6 +305,7 @@ export default function AtlasPage() {
           <tbody className="divide-y divide-graticule/50">
             {GATE_REASONS.map(({ key, label }) => {
               const r = gate.rejects[key];
+              if (!r) return null; // a new reason, not yet calibrated by CI
               return (
                 <tr key={key}>
                   <th scope="row" className="px-4 py-3 font-normal">

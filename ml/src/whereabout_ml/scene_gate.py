@@ -1,7 +1,8 @@
 """Scene gate: screen candidate game photos for things that make a bad round.
 
-A good game photo is an outdoor scene with no people, no readable signs and no maps. CLIP can
-check this zero-shot. For every reject reason ("people", "indoor", "text", "not_photo") we
+A good game photo is an outdoor scene with no people, no readable signs and no maps, and it shows
+a place rather than a single animal or plant. CLIP can check this zero-shot. For every reject
+reason ("people", "indoor", "text", "not_photo", "close_up") we
 write several prompts, encode and average them (prompt ensembling) and compare the photo with
 that reason against an equally ensembled "good photo" prompt set. A reason's score is the
 log-odds that the reason beats "good photo":
@@ -15,11 +16,15 @@ at three decimals, so a keeper just under 1 rounded its reason's threshold up to
 indoor and not-a-photo reasons caught nothing; in log-odds those photos are several units apart
 and three decimals are plenty.
 
+`close_up` is for wildlife, flower and insect close-ups: Commons rates many of them Quality images
+and they are geotagged, but the frame is filled by the subject and there is nothing to locate.
+The hand-reviewed catalog left them out for that reason, so its photos set the bar here too.
+
 A photo is rejected for every reason whose score reaches its threshold. Thresholds are
-calibrated on the hand-reviewed catalog (all known-good, so no catalog photo should be
-rejected) and checked on a small labelled fixture of known rejects. The report also lists the
-catalog photos that come closest to each threshold, so they can be reviewed by eye. No training
-happens.
+calibrated on the hand-reviewed catalog photos only (all known-good, so none should be rejected;
+machine-screened photos merged from the harvest never move the bars) and checked on a small
+labelled fixture of known rejects. The report also lists the catalog photos that come closest to
+each threshold, so they can be reviewed by eye. No training happens.
 """
 
 from __future__ import annotations
@@ -32,7 +37,7 @@ import numpy as np
 
 from whereabout_ml.zeroshot import Encoder, normalise
 
-REASONS = ("people", "indoor", "text", "not_photo")
+REASONS = ("people", "indoor", "text", "not_photo", "close_up")
 
 REJECT_PROMPTS: dict[str, tuple[str, ...]] = {
     "people": (
@@ -63,6 +68,16 @@ REJECT_PROMPTS: dict[str, tuple[str, ...]] = {
         "a screenshot",
         "a diagram",
         "a scanned document",
+    ),
+    "close_up": (
+        "a close-up photo of a bird",
+        "a close-up photo of an insect",
+        "a close-up photo of a butterfly on a flower",
+        "a close-up photo of a flower",
+        "a close-up photo of a lizard",
+        "a close-up photo of a frog",
+        "a wildlife photo of an animal",
+        "a macro photograph of a plant",
     ),
 }
 

@@ -27,6 +27,7 @@ harvest-commons = "whereabout_ml.harvest:main"
 scene-gate = "whereabout_ml.run_scene_gate:main"
 geo-split = "whereabout_ml.split:main"
 photo-quality = "whereabout_ml.photo_quality:main"
+merge-harvest = "whereabout_ml.merge_harvest:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
