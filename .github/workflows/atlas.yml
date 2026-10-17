@@ -112,7 +112,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          parity="$(ls .cache/images/*.jpg | head -1)"
+          # A glob, not `ls | head -1`: with enough photos head exits first, ls gets SIGPIPE and
+          # pipefail fails the step (it did at 388 photos).
+          images=(.cache/images/*.jpg)
+          parity="${images[0]}"
           echo "POCKET_PARITY_IMAGE=$PWD/$parity" >> "$GITHUB_ENV"
           pocket-atlas-index --gazetteer data/geonames --out web/public/pocket-atlas \
             --model ViT-B-32:openai --parity-image "$parity" | tee pocket.log
