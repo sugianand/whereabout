@@ -27,7 +27,9 @@ jobs:
   run:
     runs-on: ubuntu-latest
     # Occlusion maps cost ~50 forward passes per new photo; cached ones are free. The first run
-    # on the 238-photo catalog spent 116 minutes in "Run Atlas v0" alone, so 150 left no room.
+    # on the 238-photo catalog spent 116 minutes in "Run Atlas v0" alone, so new maps now get a
+    # time budget (below) and the rest wait for the next run. Image embeddings are cached too:
+    # encoding the 388-photo catalog with all three models took most of a 22-minute step.
     timeout-minutes: 240
     steps:
       - uses: actions/checkout@v4
@@ -62,6 +64,15 @@ jobs:
           key: saliency-${{ github.run_id }}
           restore-keys: saliency-
 
+      # Same pattern for image embeddings (whereabout_ml.embedding_cache): keyed per model,
+      # photo and image bytes, so each run only encodes the photos it has not seen.
+      - name: Restore image embeddings
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/embeddings
+          key: embeddings-${{ github.run_id }}
+          restore-keys: embeddings-
+
       - name: Download the GeoNames gazetteer (CC BY 4.0)
         run: |
           mkdir -p data/geonames
@@ -82,6 +93,8 @@ jobs:
               --images .cache/images \
               --atlas-out web/src/data/atlas.json \
               --results-dir eval/results \
+              --embedding-cache .cache/embeddings \
+              --saliency-budget-minutes 90 \
               --model ViT-B-32:laion2b_s34b_b79k \
               --model ViT-B-32:openai \
               --model ViT-L-14:openai 2> >(tee atlas-stderr.log >&2) | tee atlas-stdout.log; then
@@ -97,6 +110,11 @@ jobs:
             echo "::warning title=Saliency failed::$(grep -A3 '^saliency failed' atlas-stderr.log | annotate)"
           fi
           grep "^saliency:" atlas-stdout.log | sed 's/^/::notice title=Saliency::/' || true
+          grep "photos in .* from the embedding cache" atlas-stdout.log \
+            | sed 's/^/::notice title=Embeddings::/' || true
+          # Maps the budget left for later: another run picks them up once this one has pushed.
+          left=$(sed -n 's/^saliency: .*; \([0-9]*\) left for a later run$/\1/p' atlas-stdout.log)
+          echo "saliency_left=${left:-0}" >> "$GITHUB_ENV"
 
       - name: Save saliency maps
         if: always()
@@ -104,6 +122,13 @@ jobs:
         with:
           path: .cache/saliency
           key: saliency-${{ github.run_id }}
+
+      - name: Save image embeddings
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/embeddings
+          key: embeddings-${{ github.run_id }}
 
       # Pocket Atlas: the text half of the ViT-B/32 (OpenAI) pipeline, scored above as
       # "ViT-B-32/openai, country then city", precomputed for the browser. One catalog photo's
@@ -176,8 +201,15 @@ jobs:
           echo "::error title=Could not push Atlas results::rebase or push failed three times"
           exit 1
 
-      # Pushes made with GITHUB_TOKEN don't trigger other workflows, so redeploy explicitly.
+      # Pushes made with GITHUB_TOKEN don't trigger other workflows, so redeploy explicitly, and
+      # queue another Atlas run while the saliency budget left photos without a map (each run
+      # maps a budget's worth, so this ends once every photo has one).
       - name: Redeploy the site
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run pages.yml --ref main
+        run: |
+          gh workflow run pages.yml --ref main
+          if [ "${saliency_left:-0}" -gt 0 ]; then
+            echo "::notice title=Saliency::${saliency_left} photos still need a map; queued another Atlas run"
+            gh workflow run atlas.yml --ref main
+          fi

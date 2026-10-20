@@ -97,6 +97,11 @@ atlas-v0 --catalog data/curation/photos.csv --gazetteer data/geonames \
          --results-dir eval/results --model ViT-B-32:laion2b_s34b_b79k
 ```
 
+Image embeddings are cached per model, photo and image bytes in `.cache/embeddings`, so a rerun
+only encodes new photos and its guesses match the first run's exactly. Saliency maps are cached
+in `.cache/saliency`; `--saliency-budget-minutes N` stops starting new maps after N minutes (the
+CI run uses 90 and queues another run for the photos still without one).
+
 Concept labels for the clue heads (driving side, climate, land cover) come from open maps by
 coordinates; see [`data/maps/README.md`](data/maps/README.md) for the downloads and
 `python -m pip install -e "ml[maps]"` for the GeoTIFF reader. The catalog's labels are made by

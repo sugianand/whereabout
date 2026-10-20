@@ -21,7 +21,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -39,6 +39,7 @@ from whereabout_eval.metrics import (
     paired_median_delta_ci,
 )
 from whereabout_ml.baselines import constant_guesses, random_city_guesses
+from whereabout_ml.embedding_cache import cached_image_embeddings, safe_name
 from whereabout_ml.gazetteer import Gazetteer
 from whereabout_ml.saliency import (
     DEFAULT_GRID,
@@ -198,8 +199,7 @@ def country_log_prob(encoder, locator: ZeroShotGeolocator, country: str):
 
 
 def saliency_cache_path(cache: Path, model: str, photo_id: str, grid: int) -> Path:
-    safe = "".join(ch if ch.isalnum() else "_" for ch in model)
-    return cache / safe / f"{photo_id}-g{grid}-v{SALIENCY_VERSION}.json"
+    return cache / safe_name(model) / f"{photo_id}-g{grid}-v{SALIENCY_VERSION}.json"
 
 
 def explain_photos(
@@ -211,13 +211,21 @@ def explain_photos(
     cache: Path,
     grid: int = DEFAULT_GRID,
     seed: int = 0,
+    budget_s: float | None = None,
+    clock: Callable[[], float] = time.monotonic,
 ) -> dict[str, Saliency]:
     """Where Atlas looked, for every photo, cached by (model, photo, grid, guessed country).
 
     Occlusion costs ~50 forward passes per photo, so a cached map is reused until the photo's
     guess changes; only new or re-guessed photos cost anything on later runs.
+
+    With `budget_s`, no new map is started once that many seconds have passed: photos past the
+    budget are left out of the result (their guesses ship without a map) and get one on a later
+    run, so a big catalog merge cannot push the run past the runner's time limit. Cached maps
+    are always returned.
     """
     out: dict[str, Saliency] = {}
+    started = clock()
     for photo, path, guess in zip(photos, paths, guesses, strict=True):
         file = saliency_cache_path(cache, encoder.name, photo.id, grid)
         if file.exists():
@@ -231,6 +239,8 @@ def explain_photos(
                     cached["random_k_drop"],
                 )
                 continue
+        if budget_s is not None and clock() - started >= budget_s:
+            continue
         pixels, crop = encoder.load_pixels(path)
         rng = np.random.default_rng([seed, int.from_bytes(photo.id.encode(), "little") % 2**32])
         s = explain(pixels, crop, country_log_prob(encoder, locator, guess.country), rng, grid)
@@ -433,6 +443,18 @@ def main(argv: Sequence[str] | None = None) -> None:
         help="occlusion grid for 'where Atlas looked' (0 turns it off)",
     )
     ap.add_argument("--saliency-cache", type=Path, default=Path(".cache/saliency"))
+    ap.add_argument(
+        "--saliency-budget-minutes",
+        type=float,
+        default=None,
+        help="stop starting new maps after this long; the rest wait for a later run",
+    )
+    ap.add_argument(
+        "--embedding-cache",
+        type=Path,
+        default=Path(".cache/embeddings"),
+        help="image embeddings kept between runs, so only new photos are encoded",
+    )
     args = ap.parse_args(argv)
     models = args.models or [("ViT-B-32", "laion2b_s34b_b79k")]
 
@@ -458,11 +480,16 @@ def main(argv: Sequence[str] | None = None) -> None:
         started = time.perf_counter()
         encoder = ClipEncoder(name, pretrained)
         locator = ZeroShotGeolocator(encoder, gazetteer, report_top_countries=REVEAL_TOP_COUNTRIES)
-        embeddings = encoder.encode_images(paths)
+        embeddings, cached = cached_image_embeddings(
+            encoder, [p.id for p in photos], paths, args.embedding_cache
+        )
         full = [locator.predict(e) for e in embeddings]
         country_only = [locator.predict_country_only(e) for e in embeddings]
         seconds = time.perf_counter() - started
-        print(f"{encoder.name}: {len(photos)} photos in {seconds:.0f}s")
+        print(
+            f"{encoder.name}: {len(photos)} photos in {seconds:.0f}s "
+            f"({cached.encoded} encoded, {cached.reused} from the embedding cache)"
+        )
         handles[f"{encoder.name}, country then city"] = (encoder, locator, list(embeddings))
         systems.append(
             System(f"{encoder.name}, country only", predictions_from_guesses(photos, country_only))
@@ -491,8 +518,17 @@ def main(argv: Sequence[str] | None = None) -> None:
                 locator,
                 args.saliency_cache,
                 args.saliency_grid,
+                budget_s=(
+                    None
+                    if args.saliency_budget_minutes is None
+                    else args.saliency_budget_minutes * 60
+                ),
             )
-            print(f"saliency: {len(saliency)} photos in {time.perf_counter() - started:.0f}s")
+            left = len(photos) - len(saliency)
+            print(
+                f"saliency: {len(saliency)} photos in {time.perf_counter() - started:.0f}s; "
+                f"{left} left for a later run"
+            )
         except Exception as err:  # noqa: BLE001 - maps are a bonus; never lose the guesses
             saliency = {}
             print(f"saliency failed, shipping guesses without maps: {err!r}", file=sys.stderr)

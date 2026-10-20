@@ -3,6 +3,7 @@
 import argparse
 import json
 import math
+import re
 
 import numpy as np
 import pytest
@@ -127,7 +128,10 @@ class FakeClip:
     def encode_texts(self, texts):
         return np.stack([self._embed(t) for t in texts])
 
+    images_encoded = 0  # across instances: how many images any FakeClip encoded
+
     def encode_images(self, paths):
+        FakeClip.images_encoded += len(paths)
         return np.stack([self._embed(p.read_text()) for p in paths])
 
     # Pixels: one channel per word, lit everywhere the word "appears", so hiding cells dims it.
@@ -145,7 +149,8 @@ class FakeClip:
         return v / np.linalg.norm(v, axis=1, keepdims=True)
 
 
-def test_main_runs_the_whole_pipeline_offline(tmp_path, monkeypatch):
+def run_main(tmp_path, monkeypatch, *extra):
+    """Run the CLI offline on a two-photo catalog; returns (atlas.json path, results dir)."""
     catalog = tmp_path / "photos.csv"
     catalog.write_text(
         "id,image_url,lat,lon,place,country,author,license,source_url\n"
@@ -153,7 +158,7 @@ def test_main_runs_the_whole_pipeline_offline(tmp_path, monkeypatch):
         "cusco,https://x/cusco.jpg,-13.53,-71.97,Cusco,PE,B,CC0,https://x/c\n"
     )
     geo = tmp_path / "geonames"
-    geo.mkdir()
+    geo.mkdir(exist_ok=True)
     (geo / "countryInfo.txt").write_text(
         "#ISO\tISO3\tnum\tfips\tCountry\n"
         "JP\tJPN\t392\tJA\tJapan\tTokyo\n"
@@ -173,7 +178,7 @@ def test_main_runs_the_whole_pipeline_offline(tmp_path, monkeypatch):
 
     # Pre-filled image cache: the fake encoder reads each "image" as text.
     images = tmp_path / "images"
-    images.mkdir()
+    images.mkdir(exist_ok=True)
     (images / "kyoto.jpg").write_text("Japan Kyoto")
     (images / "cusco.jpg").write_text("Peru Cusco")
 
@@ -196,9 +201,16 @@ def test_main_runs_the_whole_pipeline_offline(tmp_path, monkeypatch):
             "Fake-1:test",
             "--saliency-cache",
             str(tmp_path / "saliency"),
+            "--embedding-cache",
+            str(tmp_path / "embeddings"),
+            *extra,
         ]
     )
+    return atlas_out, results
 
+
+def test_main_runs_the_whole_pipeline_offline(tmp_path, monkeypatch):
+    atlas_out, results = run_main(tmp_path, monkeypatch)
     atlas = json.loads(atlas_out.read_text())
     assert atlas["model"] == "Fake-1/test, country then city"
     assert atlas["guesses"]["kyoto"]["guessedPlace"] == "Kyoto, JP"
@@ -225,6 +237,30 @@ def test_main_runs_the_whole_pipeline_offline(tmp_path, monkeypatch):
     assert report["systems"]["Fake-1/test, country only"]["median_km"] > 0
     assert (results / "atlas-v0.md").read_text().startswith("# Atlas v0 results")
     assert not math.isnan(report["systems"]["Random city (baseline)"]["mean_km"])
+
+
+def test_a_second_run_encodes_only_new_photos_and_guesses_the_same(tmp_path, monkeypatch):
+    FakeClip.images_encoded = 0
+    atlas_out, _ = run_main(tmp_path, monkeypatch)
+    assert FakeClip.images_encoded == 2
+    first = json.loads(atlas_out.read_text())
+
+    FakeClip.images_encoded = 0
+    atlas_out, _ = run_main(tmp_path, monkeypatch)
+    assert FakeClip.images_encoded == 0, "cached embeddings must not be encoded again"
+    second = json.loads(atlas_out.read_text())
+    first.pop("generatedAt"), second.pop("generatedAt")
+    assert second == first
+
+
+def test_a_spent_saliency_budget_still_ships_every_guess(tmp_path, monkeypatch, capsys):
+    atlas_out, _ = run_main(tmp_path, monkeypatch, "--saliency-budget-minutes", "0")
+    atlas = json.loads(atlas_out.read_text())
+    assert set(atlas["guesses"]) == {"kyoto", "cusco"}
+    assert all("looked" not in g for g in atlas["guesses"].values())
+    out = capsys.readouterr().out
+    # The workflow reads this line to queue another run for the maps still missing.
+    assert re.search(r"^saliency: 0 photos in \d+s; 2 left for a later run$", out, re.M)
 
 
 def test_download_skips_a_photo_that_keeps_failing(tmp_path, monkeypatch):

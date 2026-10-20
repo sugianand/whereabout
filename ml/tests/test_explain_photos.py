@@ -38,10 +38,42 @@ class PixelEncoder(KeywordEncoder):
         return out / np.linalg.norm(out, axis=1, keepdims=True)
 
 
-def run(tmp_path, encoder, guesses=RIGHT):
+def run(tmp_path, encoder, guesses=RIGHT, **kwargs):
     locator = ZeroShotGeolocator(encoder, GAZ, top_k_countries=2, concept_groups=GROUPS)
     paths = [tmp_path / f"{p.id}.jpg" for p in PHOTOS]
-    return explain_photos(PHOTOS, paths, guesses, encoder, locator, tmp_path / "cache", GRID)
+    return explain_photos(
+        PHOTOS, paths, guesses, encoder, locator, tmp_path / "cache", GRID, **kwargs
+    )
+
+
+class Clock:
+    """A clock that moves `step` seconds every time it is read."""
+
+    def __init__(self, step: float) -> None:
+        self.now, self.step = 0.0, step
+
+    def __call__(self) -> float:
+        self.now += self.step
+        return self.now
+
+
+def test_a_time_budget_stops_new_maps_and_a_later_run_finishes_them(tmp_path):
+    # Start, then one read before each new map: 10s, 20s, ... so a 15s budget allows one map.
+    first = run(tmp_path, PixelEncoder(), budget_s=15, clock=Clock(10))
+    assert list(first) == [PHOTOS[0].id]
+
+    # The next run reuses that map for free and spends its budget on the photo left over.
+    enc = PixelEncoder()
+    second = run(tmp_path, enc, budget_s=15, clock=Clock(10))
+    assert list(second) == [p.id for p in PHOTOS]
+    assert second[PHOTOS[0].id] == first[PHOTOS[0].id]
+
+
+def test_cached_maps_are_returned_even_with_no_budget_left(tmp_path):
+    maps = run(tmp_path, PixelEncoder())
+    enc = PixelEncoder()
+    assert run(tmp_path, enc, budget_s=0) == maps
+    assert enc.pixel_batches == 0
 
 
 def test_maps_find_what_the_model_used_and_are_cached(tmp_path):
