@@ -54,17 +54,19 @@ birds, insects and flowers, so none of it went into the game; the next run scree
 
 ## Into the game
 
-After harvesting, [`merge-harvest`](../../ml/src/whereabout_ml/merge_harvest.py) appends up to
-`merge_limit` (default 150) harvested photos that are not in `data/curation/photos.csv` yet, in
-`harvested.csv` order, which is the grid-balancing order, so a capped merge still spreads across
-the map and the next run continues where it stopped. A malformed row fails the merge before
-anything is written. The workflow rebuilds the bundled `web/src/data/photos.json`, commits, and
+After harvesting, [`merge-harvest`](../../ml/src/whereabout_ml/merge_harvest.py) appends every
+harvested photo that is not in `data/curation/photos.csv` yet, in `harvested.csv` order. The
+optional `merge_limit` input caps a run; that order is the grid-balancing order, so a capped
+merge still spreads across the map and the next run continues where it stopped. A malformed row
+fails the merge before anything is written. The workflow rebuilds the bundled `web/src/data/photos.json`, commits, and
 starts the workflows that derive from the catalog: photo quality, concept labels and Atlas.
 
 The game only deals photos Atlas has guessed (`web/src/lib/game/playable.ts`; the API follows
 the same rule), so a merged photo starts appearing in games once the Atlas workflow has run on
-it. The merge limit keeps that run inside the runner's time limit; the Atlas workflow scores the
-whole catalog each time.
+it. Merges were capped at 150 photos to keep that run inside the runner's time limit. The Atlas
+workflow now caches image embeddings (only new photos are encoded) and gives new saliency maps a
+90-minute budget per run, queueing another run for the photos still without a map, so every new
+photo is guessed in the first run and a whole harvest can join the game at once.
 
 Merged photos keep their `wh` ids and are machine-screened, not reviewed by eye; the scene gate
 keeps calibrating on the hand-reviewed `wm` photos only.

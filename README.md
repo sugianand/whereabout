@@ -129,14 +129,14 @@ New game photos come from a harvester that searches Commons around GeoNames plac
 license and duplicate checks (against the catalog too) and the CLIP scene gate, names each
 place from GeoNames and balances the result across the grid.
 [`.github/workflows/harvest.yml`](.github/workflows/harvest.yml) runs it and commits
-[`data/harvest/`](data/harvest/README.md) with every rejection and its reason, then adds up to
-150 harvested photos per run to the catalog and starts the Atlas run; the game deals a new photo
-once Atlas has guessed it. Locally (`ml[clip,ingest]` and the GeoNames files):
+[`data/harvest/`](data/harvest/README.md) with every rejection and its reason, then adds every
+new harvested photo to the catalog and starts the Atlas run; the game deals a new photo once
+Atlas has guessed it. Locally (`ml[clip,ingest]` and the GeoNames files):
 
 ```bash
 harvest-commons --gazetteer data/geonames --catalog data/curation/photos.csv \
     --thresholds data/scene_gate/thresholds.json --out-dir data/harvest --target 1000
-merge-harvest --catalog data/curation/photos.csv --harvested data/harvest/harvested.csv --limit 150
+merge-harvest --catalog data/curation/photos.csv --harvested data/harvest/harvested.csv
 cd web && npm run catalog
 ```
 

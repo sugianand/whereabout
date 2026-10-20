@@ -1,21 +1,23 @@
 """Grow the game catalog from the Commons harvest.
 
-    merge-harvest --catalog data/curation/photos.csv --harvested data/harvest/harvested.csv \\
-        --limit 150
+    merge-harvest --catalog data/curation/photos.csv --harvested data/harvest/harvested.csv
 
 `harvested.csv` (written by `whereabout_ml.harvest`) is already in `photos.csv` columns, and its
 rows are in the harvester's grid-balancing order: each one came from the cell that held the
-fewest photos at the time. Taking the first `--limit` new rows therefore grows the catalog
-evenly across the map, and a later run picks up where this one stopped.
+fewest photos at the time. By default every new row is merged; an optional `--limit` takes
+only the first new rows, which still grows the catalog evenly across the map, and a later run
+picks up where that one stopped.
 
 A harvested row is skipped when its id or its Commons page is already in the catalog, and the
 run fails without writing anything if a row is malformed (missing column, credit or license,
 coordinates out of range), so a bad harvest never reaches players. Catalog rows are written
 back unchanged and in order; new rows are appended.
 
-The limit exists because every catalog photo needs Atlas's precomputed guess before the game
-deals it (`web/src/lib/game/playable.ts`), and the Atlas workflow re-scores the whole catalog on
-a CPU runner with a time limit.
+Every catalog photo needs Atlas's precomputed guess before the game deals it
+(`web/src/lib/game/playable.ts`). Merges used to stop at 150 photos because the Atlas workflow
+re-encoded the whole catalog and mapped every new photo in one run on a CPU runner with a time
+limit. It now reuses cached embeddings and spreads new saliency maps over runs under a time
+budget (`run_atlas_v0.py`), so a whole harvest can join the game at once.
 """
 
 from __future__ import annotations
@@ -30,7 +32,6 @@ from pathlib import Path
 
 FIELDS = ("id", "image_url", "lat", "lon", "place", "country", "author", "license", "source_url")
 REQUIRED = ("id", "image_url", "place", "country", "author", "license", "source_url")
-DEFAULT_LIMIT = 150
 
 
 @dataclass(frozen=True)
@@ -64,10 +65,10 @@ def check_row(row: Mapping[str, str], where: str) -> None:
 def merge(
     catalog: Sequence[Mapping[str, str]],
     harvested: Sequence[Mapping[str, str]],
-    limit: int = DEFAULT_LIMIT,
+    limit: int | None = None,
 ) -> MergeResult:
-    """Append up to `limit` harvested rows that are not in the catalog yet (see module doc)."""
-    if limit < 0:
+    """Append the harvested rows that are not in the catalog yet, at most `limit` if given."""
+    if limit is not None and limit < 0:
         raise ValueError(f"limit must be >= 0, got {limit}")
     for i, row in enumerate(harvested, start=2):  # line numbers as in the CSV file
         check_row(row, f"harvested.csv line {i}")
@@ -80,7 +81,7 @@ def merge(
         if row["id"] in ids or row["source_url"] in pages:
             already += 1
             continue
-        if len(added) >= limit:
+        if limit is not None and len(added) >= limit:
             left += 1
             continue
         out.append({f: row[f] for f in FIELDS})
@@ -108,7 +109,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--catalog", type=Path, default=Path("data/curation/photos.csv"))
     ap.add_argument("--harvested", type=Path, default=Path("data/harvest/harvested.csv"))
-    ap.add_argument("--limit", type=int, default=DEFAULT_LIMIT, help="most new photos per run")
+    ap.add_argument(
+        "--limit", type=int, default=None, help="most new photos per run (default: all)"
+    )
     args = ap.parse_args(argv)
 
     header, catalog = read_rows(args.catalog)

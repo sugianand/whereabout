@@ -6,8 +6,8 @@ name: Commons harvest
 # calibrated thresholds, named from the GeoNames gazetteer and balanced across the grid.
 # Commits data/harvest/ (candidate rows in photos.csv columns, provenance, every rejection and
 # the counts per reason), then grows the game catalog (data/curation/photos.csv and the bundled
-# web/src/data/photos.json) by up to `merge_limit` harvested photos, in grid-balancing order
-# (whereabout_ml.merge_harvest), and starts the workflows that derive from the catalog. The game
+# web/src/data/photos.json) with every new harvested photo (or the first `merge_limit`, if set),
+# in grid-balancing order (whereabout_ml.merge_harvest), and starts the workflows that derive from the catalog. The game
 # deals a new photo once Atlas has guessed it. Thumbnails and model weights stay on the runner.
 #
 # It runs after the Scene gate workflow recalibrates (that workflow starts it), on a change to the
@@ -34,9 +34,9 @@ on:
         required: false
         default: "15"
       merge_limit:
-        description: "Most harvested photos added to the game catalog in this run"
+        description: "Most harvested photos added to the game catalog in this run (empty: all)"
         required: false
-        default: "150"
+        default: ""
   push:
     branches: [main]
     paths:
@@ -120,17 +120,21 @@ jobs:
             --candidates-per-cell "$CANDIDATES_PER_CELL" --max-per-cell "$MAX_PER_CELL"
           cat data/harvest/report.md >> "$GITHUB_STEP_SUMMARY"
 
-      # Grid-balancing order, so a capped merge still spreads across the map. The game deals a
-      # merged photo once the Atlas workflow (started below) has guessed it.
+      # Every new photo by default (Atlas reuses cached embeddings and spreads new saliency maps
+      # over runs, so it keeps up). A capped merge takes grid-balancing order, so it still
+      # spreads across the map. The game deals a merged photo once Atlas (started below) has
+      # guessed it.
       - name: Grow the game catalog
         if: steps.ready.outputs.ok == 'true'
         shell: bash
         env:
-          MERGE_LIMIT: ${{ inputs.merge_limit || '150' }}
+          MERGE_LIMIT: ${{ inputs.merge_limit || '' }}
         run: |
           set -euo pipefail
+          limit=()
+          if [ -n "$MERGE_LIMIT" ]; then limit=(--limit "$MERGE_LIMIT"); fi
           merge-harvest --catalog data/curation/photos.csv \
-            --harvested data/harvest/harvested.csv --limit "$MERGE_LIMIT" | tee merge.log
+            --harvested data/harvest/harvested.csv "${limit[@]}" | tee merge.log
           node web/scripts/build-catalog.mjs
           echo "::notice title=Catalog::$(cat merge.log)"
 

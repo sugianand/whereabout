@@ -32,6 +32,24 @@ def test_appends_new_rows_in_harvest_order_up_to_the_limit():
     assert (out.already, out.left) == (0, 1)
 
 
+def test_by_default_every_new_harvested_photo_joins_the_catalog():
+    # The old default stopped at 150 photos per run; a big harvest now lands in one go.
+    harvested = [row(f"wh{i}") for i in range(400)]
+    out = mh.merge([row("wm000")], harvested)
+    assert out.added == [r["id"] for r in harvested]
+    assert (out.already, out.left) == (0, 0)
+
+
+def test_cli_merges_everything_without_a_limit(tmp_path, capsys):
+    catalog = tmp_path / "photos.csv"
+    harvested = tmp_path / "harvested.csv"
+    catalog.write_text(mh.to_csv([row("wm000")]))
+    harvested.write_text(mh.to_csv([row(f"wh{i}") for i in range(200)]))
+    assert mh.main(["--catalog", str(catalog), "--harvested", str(harvested)]) == 0
+    assert len(mh.read_rows(catalog)[1]) == 201
+    assert "added 200 photos (catalog now 201)" in capsys.readouterr().out
+
+
 def test_skips_photos_already_in_the_catalog_by_id_or_commons_page():
     catalog = [row("wm000", source="https://commons.test/File:Same.jpg"), row("wh7")]
     harvested = [row("wh9", source="https://commons.test/File:Same.jpg"), row("wh7"), row("wh8")]
