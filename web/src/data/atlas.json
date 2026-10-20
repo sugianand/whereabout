@@ -1,7 +1,7 @@
 {
  "model": "ViT-L-14/openai, country then city",
  "version": "atlas-v0-zeroshot",
- "generatedAt": "2026-10-17T01:54:57+00:00",
+ "generatedAt": "2026-10-20T17:43:01+00:00",
  "guesses": {
   "wm000": {
    "lng": 102.44784,
@@ -1157,12 +1157,12 @@
   "wm022": {
    "lng": -62.21058,
    "lat": 16.79183,
-   "confidence": 0.5197,
+   "confidence": 0.5198,
    "guessedPlace": "Brades, MS",
    "topCountries": [
     {
      "country": "MA",
-     "p": 0.5197
+     "p": 0.5198
     },
     {
      "country": "DZ",
@@ -3041,12 +3041,12 @@
   "wm051": {
    "lng": -62.72499,
    "lat": 17.2955,
-   "confidence": 0.793,
+   "confidence": 0.7931,
    "guessedPlace": "Basseterre, KN",
    "topCountries": [
     {
      "country": "KN",
-     "p": 0.793
+     "p": 0.7931
     },
     {
      "country": "BQ",
@@ -9559,7 +9559,7 @@
     },
     {
      "country": "BM",
-     "p": 0.0206
+     "p": 0.0205
     },
     {
      "country": "AG",
@@ -11295,12 +11295,12 @@
   "wh3677747": {
    "lng": 166.44884,
    "lat": -22.27407,
-   "confidence": 0.3235,
+   "confidence": 0.3236,
    "guessedPlace": "Noumea, NC",
    "topCountries": [
     {
      "country": "NZ",
-     "p": 0.3235
+     "p": 0.3236
     },
     {
      "country": "NC",
@@ -11519,12 +11519,12 @@
   "wh4066115": {
    "lng": 79.8358,
    "lat": 7.2083,
-   "confidence": 0.388,
+   "confidence": 0.3881,
    "guessedPlace": "Negombo, LK",
    "topCountries": [
     {
      "country": "LK",
-     "p": 0.388
+     "p": 0.3881
     },
     {
      "country": "IN",
@@ -13583,12 +13583,12 @@
   "wh7179854": {
    "lng": 12.38878,
    "lat": 43.1122,
-   "confidence": 0.387,
+   "confidence": 0.3871,
    "guessedPlace": "Perugia, IT",
    "topCountries": [
     {
      "country": "FR",
-     "p": 0.387
+     "p": 0.3871
     },
     {
      "country": "IT",
@@ -15132,7 +15132,7 @@
     },
     {
      "label": "Mediterranean",
-     "p": 0.6033
+     "p": 0.6034
     }
    ],
    "belief": {
@@ -15317,12 +15317,12 @@
   "wh11654128": {
    "lng": 37.5157,
    "lat": 36.37051,
-   "confidence": 0.5197,
+   "confidence": 0.5198,
    "guessedPlace": "Al Bab, SY",
    "topCountries": [
     {
      "country": "SY",
-     "p": 0.5197
+     "p": 0.5198
     },
     {
      "country": "LY",
@@ -16846,12 +16846,12 @@
   "wh14236999": {
    "lng": -99.90891,
    "lat": 16.84942,
-   "confidence": 0.2474,
+   "confidence": 0.2475,
    "guessedPlace": "Acapulco de Juarez, MX",
    "topCountries": [
     {
      "country": "SV",
-     "p": 0.2474
+     "p": 0.2475
     },
     {
      "country": "MX",
@@ -16993,7 +16993,7 @@
     },
     {
      "label": "Temperate",
-     "p": 0.7304
+     "p": 0.7303
     }
    ],
    "belief": {
@@ -17886,12 +17886,12 @@
   "wh15116731": {
    "lng": -5.71816,
    "lat": -15.92488,
-   "confidence": 0.2406,
+   "confidence": 0.2407,
    "guessedPlace": "Jamestown, SH",
    "topCountries": [
     {
      "country": "AU",
-     "p": 0.2406
+     "p": 0.2407
     },
     {
      "country": "SH",
@@ -19350,7 +19350,7 @@
     }
    ],
    "belief": {
-    "GH": 0.129,
+    "GH": 0.128,
     "CI": 0.077,
     "GW": 0.075,
     "TG": 0.056,
@@ -19457,12 +19457,12 @@
   "wh19194913": {
    "lng": -56.1773,
    "lat": 46.77914,
-   "confidence": 0.3172,
+   "confidence": 0.3171,
    "guessedPlace": "Saint-Pierre, PM",
    "topCountries": [
     {
      "country": "PM",
-     "p": 0.3172
+     "p": 0.3171
     },
     {
      "country": "NF",
@@ -20033,7 +20033,7 @@
     },
     {
      "country": "US",
-     "p": 0.0302
+     "p": 0.0301
     },
     {
      "country": "PM",
@@ -24646,7 +24646,7 @@
    ],
    "belief": {
     "GI": 0.242,
-    "ES": 0.208,
+    "ES": 0.209,
     "CY": 0.168,
     "GR": 0.067,
     "MS": 0.038,
@@ -27882,12 +27882,12 @@
   "wh36839793": {
    "lng": 92.06667,
    "lat": 49.98111,
-   "confidence": 0.8716,
+   "confidence": 0.8717,
    "guessedPlace": "Ulaangom, MN",
    "topCountries": [
     {
      "country": "MN",
-     "p": 0.8716
+     "p": 0.8717
     },
     {
      "country": "BT",
@@ -28687,12 +28687,12 @@
   "wh21322891": {
    "lng": -119.77237,
    "lat": 36.74773,
-   "confidence": 0.4737,
+   "confidence": 0.4736,
    "guessedPlace": "Fresno, US",
    "topCountries": [
     {
      "country": "US",
-     "p": 0.4737
+     "p": 0.4736
     },
     {
      "country": "SH",
@@ -34488,7 +34488,7 @@
     },
     {
      "country": "FI",
-     "p": 0.2161
+     "p": 0.2162
     },
     {
      "country": "BY",
@@ -41324,7 +41324,7 @@
    "clues": [
     {
      "label": "Temperate",
-     "p": 0.6987
+     "p": 0.6986
     },
     {
      "label": "Countryside",
@@ -41887,12 +41887,12 @@
   "wh73371891": {
    "lng": 135.46653,
    "lat": 34.58216,
-   "confidence": 0.612,
+   "confidence": 0.6121,
    "guessedPlace": "Sakai, JP",
    "topCountries": [
     {
      "country": "JP",
-     "p": 0.612
+     "p": 0.6121
     },
     {
      "country": "TW",
@@ -42895,7 +42895,7 @@
     },
     {
      "country": "TO",
-     "p": 0.0676
+     "p": 0.0675
     },
     {
      "country": "RE",
@@ -43728,7 +43728,7 @@
     },
     {
      "label": "Tropical",
-     "p": 0.5864
+     "p": 0.5863
     }
    ],
    "belief": {
@@ -43822,7 +43822,7 @@
     },
     {
      "country": "MM",
-     "p": 0.1064
+     "p": 0.1065
     },
     {
      "country": "LA",
@@ -44653,7 +44653,7 @@
     }
    ],
    "belief": {
-    "NZ": 0.444,
+    "NZ": 0.445,
     "SH": 0.126,
     "TO": 0.068,
     "NC": 0.054,
@@ -45943,7 +45943,7 @@
      "2500": 0.1134
     },
     "median_km": 7743.6,
-    "mean_km": 7956.8,
+    "mean_km": 7957.1,
     "mean_score": 350.2,
     "country_accuracy": 0.0155,
     "median_km_ci95": [

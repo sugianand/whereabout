@@ -1,6 +1,6 @@
 {
   "system": "atlas-v0-zeroshot",
-  "generatedAt": "2026-10-17T01:54:57+00:00",
+  "generatedAt": "2026-10-20T17:43:01+00:00",
   "dataset": "whereabout-curated (data/curation/photos.csv)",
   "n": 388,
   "skipped": {},
@@ -16,7 +16,7 @@
         "2500": 0.1134
       },
       "median_km": 7743.6,
-      "mean_km": 7956.8,
+      "mean_km": 7957.1,
       "mean_score": 350.2,
       "country_accuracy": 0.0155,
       "median_km_ci95": [
