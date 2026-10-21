@@ -3,14 +3,12 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 
-import atlasData from "@/data/atlas.json";
-import catalog from "@/data/photos.json";
 import { ApiBackend, LocalBackend } from "@/lib/game/backends";
 import { dayKey, pickDaily } from "@/lib/game/daily";
+import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import { loadRecent, pickFresh, rememberPlayed, saveRecent } from "@/lib/game/fresh";
-import { playablePhotos } from "@/lib/game/playable";
 import { ROUNDS_PER_GAME, gameReducer, initialState, totals } from "@/lib/game/state";
-import type { AtlasData, CatalogPhoto, GameBackend } from "@/lib/game/types";
+import type { CatalogPhoto, GameBackend } from "@/lib/game/types";
 import { formatPoints, type LngLat } from "@/lib/geo";
 import type { RevealView } from "@/lib/reveal";
 
@@ -18,10 +16,6 @@ import Globe from "./Globe";
 import PhotoViewer from "./PhotoViewer";
 import RevealCard from "./RevealCard";
 import Summary from "./Summary";
-
-const atlas = atlasData as AtlasData;
-// Only photos Atlas has guessed open a round (photos fresh from the harvest wait for its run).
-const photos = playablePhotos(catalog as CatalogPhoto[], atlas);
 
 /** A fresh game is five photos the player hasn't seen lately; the Daily Five is shared by all. */
 export type GameMode = { kind: "daily"; day: string } | { kind: "fresh"; game: number };
@@ -37,6 +31,11 @@ export function modeTitle(mode: GameMode): string {
 }
 
 type GameProps = {
+  /**
+   * The photos this site can deal (only those Atlas has guessed, src/lib/game/playable.ts).
+   * Their records are fetched five at a time as games are dealt.
+   */
+  deck: Deck;
   /** Base URL of the FastAPI backend. Without one, rounds are played from the bundled catalog. */
   apiUrl?: string;
   /** Which game a visit opens on. Defaults to `?daily` in the URL, otherwise a fresh game. */
@@ -45,6 +44,8 @@ type GameProps = {
   today?: Date;
   /** For tests: supply the backend directly. */
   backendFor?: (photos: CatalogPhoto[]) => GameBackend;
+  /** For tests: load records without the network. Defaults to fetching the static files. */
+  loadRecords?: (ids: string[]) => Promise<GameRecord[]>;
 };
 
 /** True when the page URL asks for the Daily Five (`?daily`). */
@@ -63,7 +64,7 @@ function syncUrl(kind: GameMode["kind"]) {
   }
 }
 
-export default function Game({ apiUrl, start, today, backendFor }: GameProps) {
+export default function Game({ apiUrl, deck, start, today, backendFor, loadRecords }: GameProps) {
   // The mode is decided in the browser after hydration: the URL, today's date and the photos
   // this browser played recently are all unknown when the static page is built.
   const [mode, setMode] = useState<GameMode | null>(null);
@@ -82,26 +83,55 @@ export default function Game({ apiUrl, start, today, backendFor }: GameProps) {
     return () => cancelAnimationFrame(id);
   }, [mode, start, today]);
 
+  const pool = useMemo(() => deck.ids.map((id) => ({ id })), [deck.ids]);
+
   // Each fresh game is drawn once per mode change and avoids the photos played lately.
-  const gamePhotos = useMemo(() => {
+  const dealt = useMemo(() => {
     if (!mode) return [];
-    return mode.kind === "daily"
-      ? pickDaily(photos, mode.day, ROUNDS_PER_GAME)
-      : pickFresh(photos, loadRecent(), ROUNDS_PER_GAME);
-  }, [mode]);
+    const picked =
+      mode.kind === "daily"
+        ? pickDaily(pool, mode.day, ROUNDS_PER_GAME)
+        : pickFresh(pool, loadRecent(), ROUNDS_PER_GAME);
+    return picked.map((p) => p.id);
+  }, [mode, pool]);
 
   // Remember what was dealt, so the next visit or fresh game opens on other photos.
   useEffect(() => {
-    if (gamePhotos.length === 0) return;
-    const limit = Math.max(0, photos.length - ROUNDS_PER_GAME);
-    saveRecent(
-      rememberPlayed(
-        loadRecent(),
-        gamePhotos.map((p) => p.id),
-        limit,
-      ),
-    );
-  }, [gamePhotos]);
+    if (dealt.length === 0) return;
+    const limit = Math.max(0, pool.length - ROUNDS_PER_GAME);
+    saveRecent(rememberPlayed(loadRecent(), dealt, limit));
+  }, [dealt, pool]);
+
+  // Records fetched so far, by photo id: the photo, its size and Atlas's guess.
+  const [records, setRecords] = useState<ReadonlyMap<string, GameRecord>>(() => new Map());
+  const load = useCallback(
+    (ids: string[]) => (loadRecords ? loadRecords(ids) : fetchRecords(deck, ids)),
+    [deck, loadRecords],
+  );
+  const remember = useCallback((loaded: GameRecord[]) => {
+    setRecords((known) => {
+      const next = new Map(known);
+      for (const r of loaded) next.set(r.photo.id, r);
+      return next;
+    });
+  }, []);
+
+  // A local game needs its five records before the first round; fetch them as soon as dealt.
+  useEffect(() => {
+    if (apiUrl || dealt.length === 0) return;
+    let cancelled = false;
+    load(dealt)
+      .then((loaded) => !cancelled && remember(loaded))
+      .catch((err: Error) => !cancelled && dispatch({ type: "failed", message: err.message }));
+    return () => {
+      cancelled = true;
+    };
+  }, [apiUrl, dealt, load, remember]);
+
+  const gamePhotos = useMemo<CatalogPhoto[] | null>(() => {
+    if (dealt.length === 0 || dealt.some((id) => !records.has(id))) return null;
+    return dealt.map((id) => records.get(id)!.photo);
+  }, [dealt, records]);
 
   useEffect(() => {
     if (mode) syncUrl(mode.kind);
@@ -109,8 +139,9 @@ export default function Game({ apiUrl, start, today, backendFor }: GameProps) {
 
   const backend = useMemo<GameBackend | null>(() => {
     if (!mode) return null;
-    if (backendFor) return backendFor(gamePhotos);
-    return apiUrl ? new ApiBackend(apiUrl) : new LocalBackend(gamePhotos);
+    if (apiUrl && !backendFor) return new ApiBackend(apiUrl);
+    if (!gamePhotos) return null;
+    return backendFor ? backendFor(gamePhotos) : new LocalBackend(gamePhotos);
   }, [mode, gamePhotos, apiUrl, backendFor]);
 
   // Start each round as soon as the game enters the loading phase.
@@ -129,9 +160,19 @@ export default function Game({ apiUrl, start, today, backendFor }: GameProps) {
   // Warm the cache with the next photo while the player reads the reveal.
   useEffect(() => {
     if (state.phase !== "revealed" || backend?.kind !== "local") return;
-    const next = gamePhotos[state.index + 1];
+    const next = gamePhotos?.[state.index + 1];
     if (next) new Image().src = next.imageUrl;
   }, [state, backend, gamePhotos]);
+
+  // The API deals its own photos: fetch each round's record for its size and, from an older
+  // server that leaves Atlas to the client, Atlas's guess. Best effort; the round plays without.
+  const roundId = state.phase === "guessing" ? state.round.photo.id : null;
+  useEffect(() => {
+    if (!apiUrl || !roundId || records.has(roundId) || !deck.ids.includes(roundId)) return;
+    load([roundId])
+      .then(remember)
+      .catch(() => {});
+  }, [apiUrl, roundId, records, deck.ids, load, remember]);
 
   const onPinChange = useCallback((pin: LngLat) => dispatch({ type: "pinned", pin }), []);
 
@@ -142,7 +183,9 @@ export default function Game({ apiUrl, start, today, backendFor }: GameProps) {
       const reveal = await backend.guess(state.round.roundId, state.pin);
       // The server's word on Atlas wins; otherwise use the guesses bundled with the site.
       const atlasGuess =
-        reveal.atlas !== undefined ? reveal.atlas : (atlas.guesses[state.round.photo.id] ?? null);
+        reveal.atlas !== undefined
+          ? reveal.atlas
+          : (records.get(state.round.photo.id)?.atlas ?? null);
       dispatch({ type: "revealed", reveal, atlas: atlasGuess });
     } catch (err) {
       dispatch({ type: "failed", message: (err as Error).message });
@@ -195,7 +238,7 @@ export default function Game({ apiUrl, start, today, backendFor }: GameProps) {
   const score = totals(state.results).player;
   const error = state.phase === "guessing" || state.phase === "loading" ? state.error : null;
   const roundNumber = state.index + 1;
-  const roundSize = round ? photos.find((p) => p.id === round.photo.id) : undefined;
+  const roundSize = round ? records.get(round.photo.id)?.photo : undefined;
 
   return (
     <main

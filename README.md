@@ -23,7 +23,7 @@ one button away, or at `?daily`. The share text gives no spoilers.
 | **Cold-path inference** | The model runs once, in GitHub Actions, over the catalog. The game ships its answers, so no visit ever waits on a model and hosting costs nothing. | [`.github/workflows/atlas.yml`](.github/workflows/atlas.yml) |
 | **The reveal** | Great-circle arcs that cross the antimeridian correctly, a camera that fits its zoom to the visible frame (each zoom level halves the planet's span) and pads around the result card, reduced-motion support. | [`web/src/lib/reveal.ts`](web/src/lib/reveal.ts) |
 | **One definition of distance** | The browser and the server score with separate code (TypeScript and Python), so a shared fixture pins them together: both test suites check the same 10 cases. | [`data/fixtures/geo_cases.json`](data/fixtures/geo_cases.json) |
-| **Game engine** | A pure reducer drives the game, with two interchangeable backends: the FastAPI server (answers stay server-side until you guess, and it scores Atlas's guess too) or the bundled catalog (a free static site). | [`web/src/lib/game/`](web/src/lib/game/) |
+| **Game engine** | A pure reducer drives the game, with two interchangeable backends: the FastAPI server (answers stay server-side until you guess, and it scores Atlas's guess too) or the static catalog (a free static site that fetches only the five photos each game deals, so the page stays small as the catalog grows). | [`web/src/lib/game/`](web/src/lib/game/) |
 | **Accessibility** | The whole game can be played with the keyboard, and an end-to-end test does exactly that. Type is Atkinson Hyperlegible; results are announced to screen readers. | [`web/e2e/`](web/e2e/) |
 | **Open data** | 88 photos from 54 countries, all openly licensed from Wikimedia Commons, reviewed by eye, credited after every round. | [`data/curation/`](data/curation/) |
 
@@ -79,7 +79,7 @@ More in [`docs/architecture.md`](docs/architecture.md), design decisions in
 ```bash
 make web-install && make web-dev   # the game on http://localhost:3000
 make install && make test          # Python: api, eval, ml
-make web-test                      # web: lint, unit tests, build, type-check
+make web-test                      # web: lint, unit tests, build, bundle check, type-check
 make web-e2e                       # real games in Chromium (npx playwright install chromium)
 make api                           # the FastAPI backend on :8000 (docs at /docs)
 ```

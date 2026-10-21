@@ -206,3 +206,17 @@ test("on a phone the answer stays in view above the result card", async ({ page 
   }
   await expect(page.getByText("out of 25,000 points")).toBeVisible();
 });
+
+test("a game fetches only the five photos it deals, not the whole catalog", async ({ page }) => {
+  const records: string[] = [];
+  page.on("request", (r) => {
+    if (r.url().includes("/game-data/")) records.push(r.url());
+  });
+  await page.goto("./?daily");
+  await expect(page.getByText("Round 1 of 5", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
+  expect(records).toHaveLength(5);
+  for (const url of records) {
+    expect(url).toMatch(/\/whereabout\/game-data\/[0-9a-f]{8}\/[\w-]+\.json$/);
+  }
+});

@@ -13,6 +13,7 @@
     "test": "vitest run",
     "catalog": "node scripts/build-catalog.mjs",
     "scene-gate": "node scripts/build-scene-gate.mjs",
+    "check-bundle": "node scripts/check-bundle.mjs",
     "e2e": "playwright test"
   },
   "dependencies": {

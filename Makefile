@@ -25,7 +25,7 @@ web-dev:
 	cd web && npm run dev
 
 web-test:
-	cd web && npm run lint && npm test && npm run build && npm run typecheck
+	cd web && npm run lint && npm test && npm run build && npm run check-bundle && npm run typecheck
 
 # Plays real games in Chromium against the static export (needs `npx playwright install chromium`).
 web-e2e:

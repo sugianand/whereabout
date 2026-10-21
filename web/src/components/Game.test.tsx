@@ -5,10 +5,12 @@ import atlasData from "@/data/atlas.json";
 import catalog from "@/data/photos.json";
 import { LocalBackend } from "@/lib/game/backends";
 import { pickDaily } from "@/lib/game/daily";
+import { LOAD_ERROR } from "@/lib/game/deck";
 import { RECENT_KEY } from "@/lib/game/fresh";
 import { playablePhotos } from "@/lib/game/playable";
 import { ROUNDS_PER_GAME } from "@/lib/game/state";
 import type { AtlasData, CatalogPhoto, GameBackend } from "@/lib/game/types";
+import { bundledGame } from "@/test/deck";
 import { FakeMap, resetFakes } from "@/test/maplibre-mock";
 
 import Game, { modeTitle } from "./Game";
@@ -58,7 +60,7 @@ describe("Game", { timeout: 20000 }, () => {
   });
 
   it("offers Pocket Atlas from the first screen, and hides it during the reveal", async () => {
-    render(<Game start="daily" today={TODAY} />);
+    render(<Game {...bundledGame} start="daily" today={TODAY} />);
     const map = await mapReady();
     const card = await screen.findByRole("link", { name: /Try Atlas on your photo/ });
     expect(card).toHaveAttribute("href", "/you");
@@ -67,7 +69,7 @@ describe("Game", { timeout: 20000 }, () => {
   });
 
   it("needs a pin before the player can guess", async () => {
-    render(<Game start="daily" today={TODAY} />);
+    render(<Game {...bundledGame} start="daily" today={TODAY} />);
     await mapReady();
     await screen.findByRole("button", { name: "Zoom in on the photo" });
     expect(screen.getByRole("button", { name: "Place your pin on the globe" })).toBeDisabled();
@@ -75,7 +77,7 @@ describe("Game", { timeout: 20000 }, () => {
   });
 
   it("shows today's first photo, and reveals the place, distance and credit after a guess", async () => {
-    render(<Game start="daily" today={TODAY} />);
+    render(<Game {...bundledGame} start="daily" today={TODAY} />);
     const map = await mapReady();
     const first = daily[0];
 
@@ -102,7 +104,7 @@ describe("Game", { timeout: 20000 }, () => {
   });
 
   it("plays five rounds and ends on a summary with every place", async () => {
-    render(<Game start="daily" today={TODAY} />);
+    render(<Game {...bundledGame} start="daily" today={TODAY} />);
     const map = await mapReady();
 
     for (let i = 0; i < ROUNDS_PER_GAME; i++) {
@@ -127,7 +129,7 @@ describe("Game", { timeout: 20000 }, () => {
         guess: () => Promise.reject(new Error("The game server answered 503. Try again.")),
       };
     };
-    render(<Game start="daily" today={TODAY} backendFor={failing} />);
+    render(<Game {...bundledGame} start="daily" today={TODAY} backendFor={failing} />);
     const map = await mapReady();
     await screen.findByRole("button", { name: "Zoom in on the photo" });
     act(() => map.click(10, 10));
@@ -136,8 +138,28 @@ describe("Game", { timeout: 20000 }, () => {
     expect(screen.getByRole("button", { name: "Guess here" })).toBeEnabled();
   });
 
+  it("fetches only the five records it deals, and explains when they don't arrive", async () => {
+    const asked: string[][] = [];
+    render(
+      <Game
+        deck={bundledGame.deck}
+        loadRecords={async (ids) => {
+          asked.push(ids);
+          throw new Error(LOAD_ERROR);
+        }}
+        start="daily"
+        today={TODAY}
+      />,
+    );
+    await mapReady();
+    expect(await screen.findByRole("alert", {}, WAIT)).toHaveTextContent(LOAD_ERROR);
+    expect(asked).toEqual([daily.map((p) => p.id)]);
+    expect(screen.queryByRole("img")).toBeNull();
+    expect(screen.getByRole("button", { name: "Place your pin on the globe" })).toBeDisabled();
+  });
+
   it("opens on a fresh game by default and remembers the photos it dealt", async () => {
-    render(<Game />);
+    render(<Game {...bundledGame} />);
     await mapReady();
     expect(await screen.findByText("Fresh game", {}, WAIT)).toBeInTheDocument();
     const src = (await screen.findByRole("img")).getAttribute("src");
@@ -150,14 +172,14 @@ describe("Game", { timeout: 20000 }, () => {
   });
 
   it("never deals a photo the browser played in the last game", async () => {
-    const first = render(<Game />);
+    const first = render(<Game {...bundledGame} />);
     await mapReady();
     await screen.findByText("Fresh game", {}, WAIT);
     await waitFor(() => expect(localStorage.getItem(RECENT_KEY)).not.toBeNull(), WAIT);
     const before = JSON.parse(localStorage.getItem(RECENT_KEY)!) as string[];
     first.unmount();
 
-    render(<Game />);
+    render(<Game {...bundledGame} />);
     await mapReady();
     await screen.findByText("Fresh game", {}, WAIT);
     // The deal is saved in an effect after the title renders; with a bigger catalog that can
@@ -171,7 +193,7 @@ describe("Game", { timeout: 20000 }, () => {
 
   it("opens the Daily Five from ?daily, and the header button switches modes", async () => {
     window.history.replaceState(null, "", "/?daily");
-    render(<Game today={TODAY} />);
+    render(<Game {...bundledGame} today={TODAY} />);
     await mapReady();
     expect(await screen.findByText("Daily Five, October 9", {}, WAIT)).toBeInTheDocument();
     expect(await screen.findByRole("img")).toHaveAttribute("src", daily[0].imageUrl);
@@ -187,7 +209,7 @@ describe("Game", { timeout: 20000 }, () => {
   });
 
   it("offers a fresh game after the Daily Five, and the Daily Five after a fresh game", async () => {
-    render(<Game start="daily" today={TODAY} />);
+    render(<Game {...bundledGame} start="daily" today={TODAY} />);
     const map = await mapReady();
     for (let i = 0; i < ROUNDS_PER_GAME; i++) {
       const card = await playRound(map, { lng: 0, lat: 0 });
