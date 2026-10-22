@@ -1,7 +1,7 @@
 {
  "model": "ViT-L-14/openai, country then city",
  "version": "atlas-v0-zeroshot",
- "generatedAt": "2026-10-20T17:43:01+00:00",
+ "generatedAt": "2026-10-22T14:18:30+00:00",
  "guesses": {
   "wm000": {
    "lng": 102.44784,
@@ -46090,6 +46090,26 @@
      707.1,
      1177.8
     ]
+   },
+   {
+    "name": "ViT-L-14/openai, country then city, then nearest reference photos",
+    "playsInGame": false,
+    "n": 388,
+    "accuracy_at_km": {
+     "1": 0.0155,
+     "25": 0.0361,
+     "200": 0.1572,
+     "750": 0.3814,
+     "2500": 0.6572
+    },
+    "median_km": 1336.0,
+    "mean_km": 3151.0,
+    "mean_score": 2211.0,
+    "country_accuracy": 0.3814,
+    "median_km_ci95": [
+     1011.0,
+     1565.3
+    ]
    }
   ],
   "saliency": {
@@ -46099,6 +46119,24 @@
    "mean_top_k_drop": 0.6276,
    "mean_random_k_drop": 0.315,
    "share_top_worse": 0.9175
+  },
+  "retrieval": {
+   "versus": "ViT-L-14/openai, country then city",
+   "model": "ViT-B-32/laion2b_s34b_b79k",
+   "references": 2260,
+   "countries": 140,
+   "moved": 226,
+   "n": 388,
+   "dropped": {
+    "same photographer near a game photo": 7
+   },
+   "k": 10,
+   "median_km_delta": 429.8,
+   "ci95": [
+    194.7,
+    597.0
+   ],
+   "ships": false
   }
  }
 }

@@ -1,6 +1,6 @@
 # Atlas v0 results
 
-Generated 2026-10-20T17:43:01+00:00 by `.github/workflows/atlas.yml` on 388 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
+Generated 2026-10-22T14:18:30+00:00 by `.github/workflows/atlas.yml` on 388 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
 
 **Playing in the game:** ViT-L-14/openai, country then city (lowest median error).
 
@@ -14,6 +14,7 @@ Generated 2026-10-20T17:43:01+00:00 by `.github/workflows/atlas.yml` on 388 phot
 | ViT-B-32/openai, country then city | 388 | 3.6% | 10.3% | 23.2% | 43.3% | 3,998 (2,721–4,884) | 15.7% | 1,427 |
 | ViT-L-14/openai, country only | 388 | 8.2% | 15.5% | 43.6% | 67.0% | 972 (778–1,120) | 42.0% | 2,360 |
 | ViT-L-14/openai, country then city | 388 | 11.9% | 24.2% | 46.1% | 67.5% | 906 (707–1,178) | 38.1% | 2,487 |
+| ViT-L-14/openai, country then city, then nearest reference photos | 388 | 3.6% | 15.7% | 38.1% | 65.7% | 1,336 (1,011–1,565) | 38.1% | 2,211 |
 
 Accuracy columns are the share of photos guessed within that distance. Median error has a 95% bootstrap confidence interval. Mean score uses the game's scoring (5,000 for a perfect guess).
 
@@ -30,6 +31,7 @@ Paired bootstrap on the same photos: the winner's median error minus each other 
 | ViT-B-32/openai, country only | -2,091 | -3,182 to -1,470 |
 | ViT-B-32/openai, country then city | -3,092 | -3,945 to -1,886 |
 | ViT-L-14/openai, country only | -66 | -223 to 118 |
+| ViT-L-14/openai, country then city, then nearest reference photos | -430 | -597 to -195 |
 
 ## Where Atlas looked: is the map faithful?
 
@@ -41,6 +43,16 @@ Occlusion saliency on a 7×7 grid over the square CLIP sees, for 388 photos. Del
 | 5 random (mean of 3 draws) | 31.5% |
 
 Hiding the top cells hurt more than hiding random ones on 92% of photos.
+
+## Retrieval refinement: does it beat the system it refines?
+
+ViT-L-14/openai, country then city refined by searching 2,260 geotagged reference photos in 140 countries (never game photos; image similarity from ViT-B-32/laion2b_s34b_b79k): within Atlas's chosen country, the pin moves to the weighted medoid of the 10 most similar reference photos. It moved the pin on 226 of 388 photos; the others had too few reference photos in their country. References dropped by the leakage guard: 7 same photographer near a game photo.
+
+| Refined minus unrefined | Median km difference | 95% CI | Plays in the game |
+| --- | ---: | ---: | --- |
+| ViT-L-14/openai, country then city | 430 | 195 to 597 | no |
+
+It plays only if the whole interval is below zero.
 
 ## Read these numbers carefully
 
