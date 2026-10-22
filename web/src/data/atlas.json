@@ -1,7 +1,7 @@
 {
  "model": "ViT-L-14/openai, country then city",
  "version": "atlas-v0-zeroshot",
- "generatedAt": "2026-10-22T14:18:30+00:00",
+ "generatedAt": "2026-10-22T15:21:58+00:00",
  "guesses": {
   "wm000": {
    "lng": 102.44784,
@@ -842,7 +842,7 @@
     },
     {
      "label": "Temperate",
-     "p": 0.6824
+     "p": 0.6825
     }
    ],
    "belief": {
@@ -3041,12 +3041,12 @@
   "wm051": {
    "lng": -62.72499,
    "lat": 17.2955,
-   "confidence": 0.7931,
+   "confidence": 0.793,
    "guessedPlace": "Basseterre, KN",
    "topCountries": [
     {
      "country": "KN",
-     "p": 0.7931
+     "p": 0.793
     },
     {
      "country": "BQ",
@@ -16846,12 +16846,12 @@
   "wh14236999": {
    "lng": -99.90891,
    "lat": 16.84942,
-   "confidence": 0.2475,
+   "confidence": 0.2474,
    "guessedPlace": "Acapulco de Juarez, MX",
    "topCountries": [
     {
      "country": "SV",
-     "p": 0.2475
+     "p": 0.2474
     },
     {
      "country": "MX",
@@ -16993,7 +16993,7 @@
     },
     {
      "label": "Temperate",
-     "p": 0.7303
+     "p": 0.7304
     }
    ],
    "belief": {
@@ -19457,12 +19457,12 @@
   "wh19194913": {
    "lng": -56.1773,
    "lat": 46.77914,
-   "confidence": 0.3171,
+   "confidence": 0.3172,
    "guessedPlace": "Saint-Pierre, PM",
    "topCountries": [
     {
      "country": "PM",
-     "p": 0.3171
+     "p": 0.3172
     },
     {
      "country": "NF",
@@ -20033,7 +20033,7 @@
     },
     {
      "country": "US",
-     "p": 0.0301
+     "p": 0.0302
     },
     {
      "country": "PM",
@@ -24646,7 +24646,7 @@
    ],
    "belief": {
     "GI": 0.242,
-    "ES": 0.209,
+    "ES": 0.208,
     "CY": 0.168,
     "GR": 0.067,
     "MS": 0.038,
@@ -25963,7 +25963,7 @@
     },
     {
      "label": "Mediterranean",
-     "p": 0.6259
+     "p": 0.6258
     }
    ],
    "belief": {
@@ -28687,12 +28687,12 @@
   "wh21322891": {
    "lng": -119.77237,
    "lat": 36.74773,
-   "confidence": 0.4736,
+   "confidence": 0.4737,
    "guessedPlace": "Fresno, US",
    "topCountries": [
     {
      "country": "US",
-     "p": 0.4736
+     "p": 0.4737
     },
     {
      "country": "SH",
@@ -41324,7 +41324,7 @@
    "clues": [
     {
      "label": "Temperate",
-     "p": 0.6986
+     "p": 0.6987
     },
     {
      "label": "Countryside",
@@ -46096,18 +46096,18 @@
     "playsInGame": false,
     "n": 388,
     "accuracy_at_km": {
-     "1": 0.0155,
-     "25": 0.0361,
-     "200": 0.1572,
-     "750": 0.3814,
-     "2500": 0.6572
+     "1": 0.0077,
+     "25": 0.0515,
+     "200": 0.1624,
+     "750": 0.3737,
+     "2500": 0.6598
     },
-    "median_km": 1336.0,
-    "mean_km": 3151.0,
-    "mean_score": 2211.0,
+    "median_km": 1295.9,
+    "mean_km": 3160.6,
+    "mean_score": 2203.4,
     "country_accuracy": 0.3814,
     "median_km_ci95": [
-     1011.0,
+     1015.0,
      1565.3
     ]
    }
@@ -46123,18 +46123,18 @@
   "retrieval": {
    "versus": "ViT-L-14/openai, country then city",
    "model": "ViT-B-32/laion2b_s34b_b79k",
-   "references": 2260,
-   "countries": 140,
-   "moved": 226,
+   "references": 4252,
+   "countries": 156,
+   "moved": 275,
    "n": 388,
    "dropped": {
-    "same photographer near a game photo": 7
+    "same photographer near a game photo": 23
    },
    "k": 10,
-   "median_km_delta": 429.8,
+   "median_km_delta": 389.7,
    "ci95": [
-    194.7,
-    597.0
+    192.0,
+    612.1
    ],
    "ships": false
   }

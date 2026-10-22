@@ -1,6 +1,6 @@
 {
   "system": "atlas-v0-zeroshot",
-  "generatedAt": "2026-10-22T14:18:30+00:00",
+  "generatedAt": "2026-10-22T15:21:58+00:00",
   "dataset": "whereabout-curated (data/curation/photos.csv)",
   "n": 388,
   "skipped": {},
@@ -153,18 +153,18 @@
     "ViT-L-14/openai, country then city, then nearest reference photos": {
       "n": 388,
       "accuracy_at_km": {
-        "1": 0.0155,
-        "25": 0.0361,
-        "200": 0.1572,
-        "750": 0.3814,
-        "2500": 0.6572
+        "1": 0.0077,
+        "25": 0.0515,
+        "200": 0.1624,
+        "750": 0.3737,
+        "2500": 0.6598
       },
-      "median_km": 1336.0,
-      "mean_km": 3151.0,
-      "mean_score": 2211.0,
+      "median_km": 1295.9,
+      "mean_km": 3160.6,
+      "mean_score": 2203.4,
       "country_accuracy": 0.3814,
       "median_km_ci95": [
-        1011.0,
+        1015.0,
         1565.3
       ]
     }
@@ -228,10 +228,10 @@
     },
     {
       "versus": "ViT-L-14/openai, country then city, then nearest reference photos",
-      "median_km_delta": -429.8,
+      "median_km_delta": -389.7,
       "ci95": [
-        -597.0,
-        -194.7
+        -612.1,
+        -192.0
       ]
     }
   ],
@@ -246,20 +246,20 @@
   "retrieval": {
     "versus": "ViT-L-14/openai, country then city",
     "model": "ViT-B-32/laion2b_s34b_b79k",
-    "references": 2260,
-    "countries": 140,
-    "moved": 226,
+    "references": 4252,
+    "countries": 156,
+    "moved": 275,
     "n": 388,
     "dropped": {
-      "same photographer near a game photo": 7
+      "same photographer near a game photo": 23
     },
     "k": 10,
-    "median_km_delta": 429.8,
+    "median_km_delta": 389.7,
     "ci95": [
-      194.7,
-      597.0
+      192.0,
+      612.1
     ],
     "ships": false
   },
-  "table": "| System | n | 25 km | 200 km | 750 km | 2,500 km | Median km (95% CI) | Country | Mean score |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n| Random city (baseline) | 388 | 0.3% | 0.8% | 2.3% | 11.3% | 7,744 (7,207–8,262) | 1.5% | 350 |\n| Best constant guess (baseline) | 388 | 2.3% | 2.8% | 7.2% | 22.2% | 6,529 (6,105–7,205) | 9.5% | 654 |\n| ViT-B-32/laion2b_s34b_b79k, country only | 388 | 4.6% | 10.3% | 28.4% | 50.3% | 2,422 (1,911–3,163) | 26.5% | 1,677 |\n| ViT-B-32/laion2b_s34b_b79k, country then city | 388 | 5.7% | 11.6% | 29.9% | 53.6% | 2,139 (1,561–2,604) | 25.5% | 1,814 |\n| ViT-B-32/openai, country only | 388 | 3.1% | 6.7% | 25.0% | 45.9% | 2,997 (2,290–4,106) | 19.8% | 1,502 |\n| ViT-B-32/openai, country then city | 388 | 3.6% | 10.3% | 23.2% | 43.3% | 3,998 (2,721–4,884) | 15.7% | 1,427 |\n| ViT-L-14/openai, country only | 388 | 8.2% | 15.5% | 43.6% | 67.0% | 972 (778–1,120) | 42.0% | 2,360 |\n| ViT-L-14/openai, country then city | 388 | 11.9% | 24.2% | 46.1% | 67.5% | 906 (707–1,178) | 38.1% | 2,487 |\n| ViT-L-14/openai, country then city, then nearest reference photos | 388 | 3.6% | 15.7% | 38.1% | 65.7% | 1,336 (1,011–1,565) | 38.1% | 2,211 |"
+  "table": "| System | n | 25 km | 200 km | 750 km | 2,500 km | Median km (95% CI) | Country | Mean score |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n| Random city (baseline) | 388 | 0.3% | 0.8% | 2.3% | 11.3% | 7,744 (7,207–8,262) | 1.5% | 350 |\n| Best constant guess (baseline) | 388 | 2.3% | 2.8% | 7.2% | 22.2% | 6,529 (6,105–7,205) | 9.5% | 654 |\n| ViT-B-32/laion2b_s34b_b79k, country only | 388 | 4.6% | 10.3% | 28.4% | 50.3% | 2,422 (1,911–3,163) | 26.5% | 1,677 |\n| ViT-B-32/laion2b_s34b_b79k, country then city | 388 | 5.7% | 11.6% | 29.9% | 53.6% | 2,139 (1,561–2,604) | 25.5% | 1,814 |\n| ViT-B-32/openai, country only | 388 | 3.1% | 6.7% | 25.0% | 45.9% | 2,997 (2,290–4,106) | 19.8% | 1,502 |\n| ViT-B-32/openai, country then city | 388 | 3.6% | 10.3% | 23.2% | 43.3% | 3,998 (2,721–4,884) | 15.7% | 1,427 |\n| ViT-L-14/openai, country only | 388 | 8.2% | 15.5% | 43.6% | 67.0% | 972 (778–1,120) | 42.0% | 2,360 |\n| ViT-L-14/openai, country then city | 388 | 11.9% | 24.2% | 46.1% | 67.5% | 906 (707–1,178) | 38.1% | 2,487 |\n| ViT-L-14/openai, country then city, then nearest reference photos | 388 | 5.2% | 16.2% | 37.4% | 66.0% | 1,296 (1,015–1,565) | 38.1% | 2,203 |"
 }
