@@ -4,6 +4,10 @@ name: Atlas v0
 # against baselines, and commits Atlas's guesses (web/src/data/atlas.json) and the results
 # (eval/results/). This is the offline "cold path" from docs/architecture.md: the model runs
 # here, once, and the game ships its answers.
+#
+# It also tries a retrieval refinement (whereabout_ml.retrieval) over geotagged reference photos
+# from Commons that are never game photos (whereabout_ml.reference_set, data/reference/). The
+# refined Atlas is scored next to the others and plays only if it clearly beats the unrefined one.
 
 on:
   workflow_dispatch:
@@ -73,12 +77,40 @@ jobs:
           key: embeddings-${{ github.run_id }}
           restore-keys: embeddings-
 
+      # Reference thumbnails, same per-run pattern: a time budget fetches some each run and the
+      # cache carries them to the next, so the set fills in without one long run.
+      - name: Restore reference thumbnails
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/references
+          key: references-${{ github.run_id }}
+          restore-keys: references-
+
       - name: Download the GeoNames gazetteer (CC BY 4.0)
         run: |
           mkdir -p data/geonames
           curl -fsSL -o data/geonames/countryInfo.txt https://download.geonames.org/export/dump/countryInfo.txt
           curl -fsSL -o /tmp/cities15000.zip https://download.geonames.org/export/dump/cities15000.zip
           unzip -o /tmp/cities15000.zip -d data/geonames
+
+      # The list is searched on Commons once and committed (data/reference/references.csv); later
+      # runs reuse it and only fetch missing thumbnails. If Commons is unreachable, Atlas v0 still
+      # runs, with whatever reference thumbnails earlier runs cached.
+      - name: Collect reference photos for retrieval
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          reference-set \
+            --gazetteer data/geonames \
+            --exclude data/curation/photos.csv \
+            --exclude data/harvest/harvested.csv \
+            --out data/reference/references.csv \
+            --images .cache/references \
+            --budget-minutes 30 | tee references.log
+          grep "^reference" references.log | sed 's/^/::notice title=Reference photos::/' || true
+          left=$(sed -n 's/^reference thumbnails: .*, \([0-9]*\) left for a later run$/\1/p' references.log)
+          echo "references_left=${left:-0}" >> "$GITHUB_ENV"
 
       - name: Run Atlas v0
         shell: bash
@@ -87,6 +119,13 @@ jobs:
           # Annotations are readable through the API even where raw logs aren't, so failures
           # and results are reported as annotations too.
           annotate() { python3 -c 'import sys; t=sys.stdin.read()[-3500:]; print(t.replace("%","%25").replace("\r","%0D").replace("\n","%0A"))'; }
+          retrieval=()
+          if [ -f data/reference/references.csv ]; then
+            # Image similarity from the cheapest model: reference thumbnails are encoded once.
+            retrieval=(--references data/reference/references.csv
+                       --reference-images .cache/references
+                       --retrieval-model ViT-B-32:laion2b_s34b_b79k)
+          fi
           if ! atlas-v0 \
               --catalog data/curation/photos.csv \
               --gazetteer data/geonames \
@@ -97,7 +136,8 @@ jobs:
               --saliency-budget-minutes 90 \
               --model ViT-B-32:laion2b_s34b_b79k \
               --model ViT-B-32:openai \
-              --model ViT-L-14:openai 2> >(tee atlas-stderr.log >&2) | tee atlas-stdout.log; then
+              --model ViT-L-14:openai \
+              "${retrieval[@]}" 2> >(tee atlas-stderr.log >&2) | tee atlas-stdout.log; then
             echo "::error title=Atlas v0 failed::$(annotate < atlas-stderr.log)"
             exit 1
           fi
@@ -112,6 +152,7 @@ jobs:
           grep "^saliency:" atlas-stdout.log | sed 's/^/::notice title=Saliency::/' || true
           grep "photos in .* from the embedding cache" atlas-stdout.log \
             | sed 's/^/::notice title=Embeddings::/' || true
+          grep -E "^(references|retrieval):" atlas-stdout.log | sed 's/^/::notice title=Retrieval::/' || true
           # Maps the budget left for later: another run picks them up once this one has pushed.
           left=$(sed -n 's/^saliency: .*; \([0-9]*\) left for a later run$/\1/p' atlas-stdout.log)
           echo "saliency_left=${left:-0}" >> "$GITHUB_ENV"
@@ -129,6 +170,13 @@ jobs:
         with:
           path: .cache/embeddings
           key: embeddings-${{ github.run_id }}
+
+      - name: Save reference thumbnails
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/references
+          key: references-${{ github.run_id }}
 
       # Pocket Atlas: the text half of the ViT-B/32 (OpenAI) pipeline, scored above as
       # "ViT-B-32/openai, country then city", precomputed for the browser. One catalog photo's
@@ -182,6 +230,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add web/src/data/atlas.json eval/results/
+          if [ -f data/reference/references.csv ]; then
+            git add data/reference/references.csv
+          fi
           if [ "${{ steps.parity.outcome }}" = "success" ]; then
             git add web/public/pocket-atlas/
           else
@@ -202,14 +253,15 @@ jobs:
           exit 1
 
       # Pushes made with GITHUB_TOKEN don't trigger other workflows, so redeploy explicitly, and
-      # queue another Atlas run while the saliency budget left photos without a map (each run
-      # maps a budget's worth, so this ends once every photo has one).
+      # queue another Atlas run while the saliency budget left photos without a map, or the
+      # reference budget left thumbnails to fetch (each run does a budget's worth, so this ends
+      # once every photo has a map and every reference a thumbnail).
       - name: Redeploy the site
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh workflow run pages.yml --ref main
-          if [ "${saliency_left:-0}" -gt 0 ]; then
-            echo "::notice title=Saliency::${saliency_left} photos still need a map; queued another Atlas run"
+          if [ "${saliency_left:-0}" -gt 0 ] || [ "${references_left:-0}" -gt 0 ]; then
+            echo "::notice title=Another run::${saliency_left:-0} photos still need a map, ${references_left:-0} reference thumbnails still to fetch; queued another Atlas run"
             gh workflow run atlas.yml --ref main
           fi

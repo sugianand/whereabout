@@ -76,6 +76,29 @@ export interface AtlasGuess extends LngLat {
   clues: AtlasClue[];
 }
 
+/**
+ * The retrieval refinement's run (`summary` in ml/src/whereabout_ml/retrieval.py): Atlas's pin
+ * moved to the look-alike reference photos, and whether that beat Atlas without it.
+ */
+export interface AtlasRetrievalSummary {
+  /** The system it refines. */
+  versus: string;
+  /** The CLIP model whose image embeddings were compared. */
+  model: string;
+  references: number;
+  countries: number;
+  /** Photos whose pin moved (the rest had too few reference photos in their country). */
+  moved: number;
+  n: number;
+  dropped: Record<string, number>;
+  k: number;
+  /** Refined minus unrefined median error, km, with a paired-bootstrap 95% interval. */
+  median_km_delta: number;
+  ci95: number[];
+  /** True only when the whole interval is below zero; then it is the Atlas in the game. */
+  ships: boolean;
+}
+
 /** One row of the evaluation that produced Atlas's guesses (ml/src/whereabout_ml/run_atlas_v0.py). */
 export interface AtlasSystemResult {
   name: string;
@@ -110,7 +133,12 @@ export interface AtlasData {
   generatedAt: string | null;
   guesses: Record<string, AtlasGuess>;
   /** Present once atlas.yml has run with evaluation export. */
-  evaluation?: { n: number; systems: AtlasSystemResult[]; saliency?: AtlasSaliencySummary };
+  evaluation?: {
+    n: number;
+    systems: AtlasSystemResult[];
+    saliency?: AtlasSaliencySummary;
+    retrieval?: AtlasRetrievalSummary;
+  };
 }
 
 /** Where rounds come from: the FastAPI backend, or the bundled catalog (static demo). */

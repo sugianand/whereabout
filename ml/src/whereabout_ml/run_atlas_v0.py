@@ -11,6 +11,10 @@ game bundles its answers (web/src/data/atlas.json), so no visit ever waits on a 
 For every model it evaluates the full pipeline (country, then city) and an ablation that
 stops at the country. Two baselines are scored on the same photos. The system with the lowest
 median error is the one players meet in the game.
+
+With `--references`, the winner is also refined by retrieval over geotagged reference photos
+(`whereabout_ml.retrieval`). The refined system is scored next to the others, and plays in the
+game only if a paired bootstrap shows it beats the system it refines.
 """
 
 from __future__ import annotations
@@ -41,6 +45,15 @@ from whereabout_eval.metrics import (
 from whereabout_ml.baselines import constant_guesses, random_city_guesses
 from whereabout_ml.embedding_cache import cached_image_embeddings, safe_name
 from whereabout_ml.gazetteer import Gazetteer
+from whereabout_ml.retrieval import (
+    GamePhotoTrace,
+    Reference,
+    ReferenceIndex,
+    leakage_filter,
+    load_references,
+    ships,
+)
+from whereabout_ml.retrieval import summary as retrieval_summary
 from whereabout_ml.saliency import (
     DEFAULT_GRID,
     SALIENCY_VERSION,
@@ -261,6 +274,115 @@ def explain_photos(
     return out
 
 
+def refine_with_references(
+    photos: Sequence[Photo],
+    base: System,
+    query_embeddings: Sequence[np.ndarray],
+    index: ReferenceIndex,
+    *,
+    model: str,
+    dropped: dict[str, int] | None = None,
+) -> tuple[System, dict]:
+    """`base`'s guesses refined by retrieval, as a system of its own, and the run's record.
+
+    The refined system can play in the game (has guesses) only if `retrieval.ships` says it
+    beats `base` on these photos; otherwise it is scored and reported, and the game keeps
+    `base`.
+    """
+    if base.guesses is None:
+        raise ValueError(f"{base.name} has no guesses to refine")
+    refined = [index.refine(q, g) for q, g in zip(query_embeddings, base.guesses, strict=True)]
+    guesses = [g for g, _ in refined]
+    system = System(
+        f"{base.name}, then nearest reference photos",
+        predictions_from_guesses(photos, guesses),
+        guesses,
+    )
+    verdict = ships(system.distances, base.distances)
+    if not verdict.ships:
+        system.guesses = None
+    record = retrieval_summary(
+        verdict,
+        versus=base.name,
+        references=len(index),
+        countries=len({r.country for r in index.references}),
+        moved=sum(moved for _, moved in refined),
+        n=len(photos),
+        dropped=dropped or {},
+        model=model,
+        k=index.k,
+    )
+    return system, record
+
+
+def _phash_or_none(path: Path) -> int | None:
+    from whereabout_ml.ingest import phash_file
+
+    try:
+        return phash_file(path)
+    except Exception as err:  # noqa: BLE001 - an unreadable image just skips the hash check
+        print(f"could not hash {path.name}: {err}", file=sys.stderr)
+        return None
+
+
+def load_reference_index(
+    references_csv: Path,
+    images: Path,
+    photos: Sequence[Photo],
+    photo_paths: Sequence[Path],
+    encoder,
+    embedding_cache: Path,
+    max_references: int | None = None,
+) -> tuple[ReferenceIndex, dict[str, int]]:
+    """The reference photos that have a readable thumbnail and pass the leakage guard,
+    embedded. A thumbnail the image library cannot open is left out rather than failing the
+    batch encode."""
+    from whereabout_ml.reference_set import thumbnail_path
+
+    refs: list[Reference] = []
+    paths: list[Path] = []
+    for r in load_references(references_csv):
+        if max_references is not None and len(refs) >= max_references:
+            break
+        path = thumbnail_path(images, r.id)
+        if path.exists():
+            refs.append(r)
+            paths.append(path)
+    traces = [
+        GamePhotoTrace(
+            p.location.lat,
+            p.location.lon,
+            p.attribution or "",
+            p.source_url or "",
+            _phash_or_none(path),
+        )
+        for p, path in zip(photos, photo_paths, strict=True)
+    ]
+    hashes = [_phash_or_none(p) for p in paths]
+    unreadable = sum(h is None for h in hashes)
+    readable = [i for i, h in enumerate(hashes) if h is not None]
+    refs, paths, hashes = (
+        [refs[i] for i in readable],
+        [paths[i] for i in readable],
+        [hashes[i] for i in readable],
+    )
+    kept, dropped = leakage_filter(refs, hashes, traces)
+    if unreadable:
+        dropped["unreadable thumbnail"] = unreadable
+    refs = [refs[i] for i in kept]
+    paths = [paths[i] for i in kept]
+    if not refs:
+        return ReferenceIndex([], np.zeros((0, 1))), dict(dropped)
+    embeddings, cached = cached_image_embeddings(
+        encoder, [r.id for r in refs], paths, embedding_cache
+    )
+    print(
+        f"references: {len(refs)} searchable ({cached.encoded} encoded, {cached.reused} from "
+        f"the embedding cache); dropped by the leakage guard: {dict(dropped) or 'none'}"
+    )
+    return ReferenceIndex(refs, embeddings), dict(dropped)
+
+
 def pick_best(systems: Sequence[System]) -> System:
     """The playable system with the lowest median error; mean score breaks ties."""
     playable = [s for s in systems if s.guesses is not None and s.report is not None]
@@ -276,11 +398,13 @@ def build_outputs(
     skipped: dict[str, str] | None = None,
     saliency: dict[str, Saliency] | None = None,
     beliefs: dict[str, dict[str, float]] | None = None,
+    retrieval: dict | None = None,
 ):
     """Atlas's guesses for the game, plus a JSON report and a Markdown results page.
 
     `saliency` (photo id → where the playing system looked) and `beliefs` (photo id → country
-    distribution, see `belief_from_probabilities`) are attached to its guesses.
+    distribution, see `belief_from_probabilities`) are attached to its guesses. `retrieval` is
+    the record from `refine_with_references`, if the run tried the refinement.
     """
     saliency = saliency or {}
     beliefs = beliefs or {}
@@ -326,6 +450,8 @@ def build_outputs(
     faithfulness = summarise(list(saliency.values())) if saliency else None
     if faithfulness:
         atlas["evaluation"]["saliency"] = faithfulness
+    if retrieval:
+        atlas["evaluation"]["retrieval"] = retrieval
 
     table = markdown_table({s.name: s.report for s in systems if s.report})
     report = {
@@ -338,6 +464,7 @@ def build_outputs(
         "systems": {s.name: s.report.as_dict() for s in systems if s.report},
         "best_vs_others": comparisons,
         "saliency": faithfulness,
+        "retrieval": retrieval,
         "table": table,
     }
     return atlas, report, results_markdown(report, now)
@@ -388,6 +515,28 @@ def results_markdown(report: dict, now: str) -> str:
             "",
             f"Hiding the top cells hurt more than hiding random ones on "
             f"{sal['share_top_worse']:.0%} of photos.",
+        ]
+    ret = report.get("retrieval")
+    if ret:
+        lo, hi = ret["ci95"]
+        dropped = ", ".join(f"{n} {why}" for why, n in ret["dropped"].items()) or "none"
+        lines += [
+            "",
+            "## Retrieval refinement: does it beat the system it refines?",
+            "",
+            f"{ret['versus']} refined by searching {ret['references']:,} geotagged reference "
+            f"photos in {ret['countries']} countries (never game photos; image similarity from "
+            f"{ret['model']}): within Atlas's chosen country, the pin moves to the weighted "
+            f"medoid of the {ret['k']} most similar reference photos. It moved the pin on "
+            f"{ret['moved']} of {ret['n']} photos; the others had too few reference photos in "
+            "their country. References dropped by the leakage guard: " + dropped + ".",
+            "",
+            "| Refined minus unrefined | Median km difference | 95% CI | Plays in the game |",
+            "| --- | ---: | ---: | --- |",
+            f"| {ret['versus']} | {ret['median_km_delta']:,.0f} | {lo:,.0f} to {hi:,.0f} | "
+            f"{'yes' if ret['ships'] else 'no'} |",
+            "",
+            "It plays only if the whole interval is below zero.",
         ]
     lines += [
         "",
@@ -450,6 +599,21 @@ def main(argv: Sequence[str] | None = None) -> None:
         help="stop starting new maps after this long; the rest wait for a later run",
     )
     ap.add_argument(
+        "--references",
+        type=Path,
+        default=None,
+        help="reference photos CSV (whereabout_ml.reference_set) for retrieval refinement",
+    )
+    ap.add_argument("--reference-images", type=Path, default=Path(".cache/references"))
+    ap.add_argument(
+        "--retrieval-model",
+        type=parse_model,
+        default=None,
+        help="MODEL:PRETRAINED whose image embeddings the retrieval compares (one of --model; "
+        "default: the first)",
+    )
+    ap.add_argument("--max-references", type=int, default=None)
+    ap.add_argument(
         "--embedding-cache",
         type=Path,
         default=Path(".cache/embeddings"),
@@ -476,6 +640,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         ),
     ]
     handles: dict[str, tuple[ClipEncoder, ZeroShotGeolocator, list[np.ndarray]]] = {}
+    by_model: dict[tuple[str, str], tuple[ClipEncoder, list[np.ndarray]]] = {}
     for name, pretrained in models:
         started = time.perf_counter()
         encoder = ClipEncoder(name, pretrained)
@@ -491,6 +656,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             f"({cached.encoded} encoded, {cached.reused} from the embedding cache)"
         )
         handles[f"{encoder.name}, country then city"] = (encoder, locator, list(embeddings))
+        by_model[(name, pretrained)] = (encoder, list(embeddings))
         systems.append(
             System(f"{encoder.name}, country only", predictions_from_guesses(photos, country_only))
         )
@@ -503,6 +669,43 @@ def main(argv: Sequence[str] | None = None) -> None:
     for s in systems:
         s.report = evaluate(s.predictions)
     best = pick_best(systems)
+
+    retrieval: dict | None = None
+    if args.references is not None:
+        spec = args.retrieval_model or models[0]
+        if spec not in by_model:
+            raise SystemExit(f"--retrieval-model {spec} is not one of the --model runs")
+        r_encoder, r_embeddings = by_model[spec]
+        try:
+            index, dropped = load_reference_index(
+                args.references,
+                args.reference_images,
+                photos,
+                paths,
+                r_encoder,
+                args.embedding_cache,
+                args.max_references,
+            )
+        except Exception as err:  # noqa: BLE001 - the refinement is optional; v0 still ships
+            index, dropped = None, {}
+            print(f"retrieval failed, shipping Atlas without it: {err!r}", file=sys.stderr)
+        if index is not None and len(index):
+            refined, retrieval = refine_with_references(
+                photos, best, r_embeddings, index, model=r_encoder.name, dropped=dropped
+            )
+            refined.report = evaluate(refined.predictions)
+            systems.append(refined)
+            print(
+                f"retrieval: moved the pin on {retrieval['moved']} of {retrieval['n']} photos; "
+                f"median km change "
+                f"{retrieval['median_km_delta']} (95% CI {retrieval['ci95']}); "
+                f"{'plays in the game' if retrieval['ships'] else 'does not ship'}"
+            )
+            if retrieval["ships"]:
+                handles[refined.name] = handles[best.name]
+                best = refined
+        elif index is not None:
+            print("retrieval: no reference photos with thumbnails yet; skipped", file=sys.stderr)
     encoder, locator, best_embeddings = handles[best.name]
     beliefs = beliefs_for(photos, best_embeddings, locator)
 
@@ -534,7 +737,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             print(f"saliency failed, shipping guesses without maps: {err!r}", file=sys.stderr)
 
     atlas, report, markdown = build_outputs(
-        photos, systems, skipped=skipped, saliency=saliency, beliefs=beliefs
+        photos, systems, skipped=skipped, saliency=saliency, beliefs=beliefs, retrieval=retrieval
     )
     args.atlas_out.write_text(json.dumps(atlas, indent=1, ensure_ascii=False) + "\n")
     args.results_dir.mkdir(parents=True, exist_ok=True)

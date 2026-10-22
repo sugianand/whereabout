@@ -326,3 +326,111 @@ def test_skipped_photos_are_reported():
     )
     assert report["skipped"] == {"wm9": "HTTP 403"}
     assert "1 photos couldn't be downloaded: wm9." in markdown
+
+
+def write_references(tmp_path):
+    """Three reference "photos" near Kyoto (one of them a copy of the game photo's file) and
+    three near Cusco; the fake encoder reads each thumbnail as text."""
+    refs = tmp_path / "references.csv"
+    rows = [
+        ("wr1", 35.02, 135.76, "JP", "Kyoto", "https://x/k"),  # the game photo's own file
+        ("wr2", 35.03, 135.78, "JP", "Kyoto", "https://c/2"),
+        ("wr3", 34.99, 135.75, "JP", "Kyoto", "https://c/3"),
+        ("wr4", 35.00, 135.77, "JP", "Kyoto", "https://c/4"),
+        ("wr5", -13.52, -71.96, "PE", "Cusco", "https://c/5"),
+        ("wr6", -13.54, -71.98, "PE", "Cusco", "https://c/6"),
+        ("wr7", -13.50, -71.95, "PE", "Cusco", "https://c/7"),
+    ]
+    refs.write_text(
+        "id,title,lat,lon,country,place,author,license,source_url,thumb_url\n"
+        + "".join(
+            f"{i},File:{i}.jpg,{a},{o},{c},{p},Z,CC0,{u},https://t/{i}.jpg\n"
+            for i, a, o, c, p, u in rows
+        )
+    )
+    thumbs = tmp_path / "ref-images"
+    thumbs.mkdir()
+    for i, *_rest, c, _p, _u in rows:
+        (thumbs / f"{i}.jpg").write_text("Japan Kyoto" if c == "JP" else "Peru Cusco")
+    return refs, thumbs
+
+
+def fake_phash(monkeypatch, unreadable=()):
+    """The fake "images" are text, so hash by file name: no two are near-duplicates."""
+    import hashlib
+
+    def phash(path):
+        if path.name in unreadable:
+            return None
+        return int.from_bytes(hashlib.sha256(path.name.encode()).digest()[:8], "big")
+
+    monkeypatch.setattr(run_atlas_v0, "_phash_or_none", phash)
+
+
+def test_main_scores_the_retrieval_refinement_and_keeps_v0_unless_it_wins(
+    tmp_path, monkeypatch, capsys
+):
+    fake_phash(monkeypatch, unreadable={"wr7.jpg"})
+    refs, thumbs = write_references(tmp_path)
+    atlas_out, results = run_main(
+        tmp_path, monkeypatch, "--references", str(refs), "--reference-images", str(thumbs)
+    )
+    atlas = json.loads(atlas_out.read_text())
+    record = atlas["evaluation"]["retrieval"]
+    # v0 already guesses both photos exactly, so retrieval cannot clearly beat it.
+    assert atlas["model"] == "Fake-1/test, country then city"
+    assert record["ships"] is False
+    assert record["references"] == 5 and record["countries"] == 2
+    assert record["dropped"] == {"same file as a game photo": 1, "unreadable thumbnail": 1}
+    # Cusco keeps two readable references, fewer than the three a move needs.
+    assert record["moved"] == 1 and record["model"] == "Fake-1/test"
+    names = {s["name"]: s["playsInGame"] for s in atlas["evaluation"]["systems"]}
+    assert names["Fake-1/test, country then city, then nearest reference photos"] is False
+    report = json.loads((results / "atlas-v0.json").read_text())
+    assert report["retrieval"] == record
+    assert "Retrieval refinement" in (results / "atlas-v0.md").read_text()
+    assert "retrieval: moved the pin on 1 of 2 photos" in capsys.readouterr().out
+
+
+def test_main_without_reference_thumbnails_skips_retrieval(tmp_path, monkeypatch):
+    refs, thumbs = write_references(tmp_path)
+    atlas_out, _ = run_main(
+        tmp_path,
+        monkeypatch,
+        "--references",
+        str(refs),
+        "--reference-images",
+        str(tmp_path / "none"),
+    )
+    assert "retrieval" not in json.loads(atlas_out.read_text())["evaluation"]
+
+
+def test_a_failing_retrieval_still_ships_atlas_v0(tmp_path, monkeypatch, capsys):
+    refs, thumbs = write_references(tmp_path)
+
+    def broken(*args, **kwargs):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(run_atlas_v0, "load_reference_index", broken)
+    atlas_out, _ = run_main(
+        tmp_path, monkeypatch, "--references", str(refs), "--reference-images", str(thumbs)
+    )
+    atlas = json.loads(atlas_out.read_text())
+    assert set(atlas["guesses"]) == {"kyoto", "cusco"}
+    assert "retrieval" not in atlas["evaluation"]
+    assert "retrieval failed, shipping Atlas without it" in capsys.readouterr().err
+
+
+def test_retrieval_model_must_be_one_of_the_runs(tmp_path, monkeypatch):
+    refs, thumbs = write_references(tmp_path)
+    with pytest.raises(SystemExit, match="not one of the --model runs"):
+        run_main(
+            tmp_path,
+            monkeypatch,
+            "--references",
+            str(refs),
+            "--reference-images",
+            str(thumbs),
+            "--retrieval-model",
+            "Other:x",
+        )

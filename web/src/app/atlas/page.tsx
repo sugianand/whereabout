@@ -6,7 +6,7 @@ import GuessGallery from "@/components/GuessGallery";
 import atlasData from "@/data/atlas.json";
 import catalog from "@/data/photos.json";
 import sceneGateData from "@/data/scene_gate.json";
-import { POCKET_SYSTEM, systemLabel } from "@/lib/atlas";
+import { POCKET_SYSTEM, retrievalNote, systemLabel } from "@/lib/atlas";
 import { byContinent, extremes, scoreGuesses } from "@/lib/atlasReport";
 import type { AtlasData, AtlasSystemResult, CatalogPhoto } from "@/lib/game/types";
 import { gateStrength, listPhrase } from "@/lib/sceneGate";
@@ -25,6 +25,7 @@ const scored = scoreGuesses(catalog as CatalogPhoto[], atlas);
 const continents = byContinent(scored);
 const { best, worst } = extremes(scored, 3);
 const saliency = atlas.evaluation?.saliency;
+const retrieval = atlas.evaluation?.retrieval;
 const pctWhole = (x: number) => `${Math.round(x * 100)}%`;
 
 type GateReason = "people" | "indoor" | "text" | "not_photo" | "close_up";
@@ -231,6 +232,11 @@ export default function AtlasPage() {
             Median error has a 95% confidence interval under it. Average points use the game&apos;s
             scoring, where a perfect guess is worth 5,000.
           </p>
+          {retrieval && (
+            <p className="mt-4 text-chalk-dim" data-testid="retrieval-note">
+              {retrievalNote(retrieval)}
+            </p>
+          )}
         </>
       ) : (
         <p className="mt-4 text-chalk-dim">

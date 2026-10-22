@@ -102,6 +102,19 @@ only encodes new photos and its guesses match the first run's exactly. Saliency 
 in `.cache/saliency`; `--saliency-budget-minutes N` stops starting new maps after N minutes (the
 CI run uses 90 and queues another run for the photos still without one).
 
+Atlas can also refine its pin by retrieval: within the country it chose, it moves the pin to
+where the most similar geotagged reference photos were taken (never game photos; see
+[`data/reference/`](data/reference/README.md) and
+[decision 0005](docs/decisions/0005-retrieval-refinement.md)). The refined Atlas is scored next
+to the others and plays only if a paired bootstrap shows it beats the unrefined one:
+
+```bash
+reference-set --gazetteer data/geonames --exclude data/curation/photos.csv \
+    --exclude data/harvest/harvested.csv --out data/reference/references.csv \
+    --images .cache/references --budget-minutes 30
+atlas-v0 ... --references data/reference/references.csv --reference-images .cache/references
+```
+
 Concept labels for the clue heads (driving side, climate, land cover) come from open maps by
 coordinates; see [`data/maps/README.md`](data/maps/README.md) for the downloads and
 `python -m pip install -e "ml[maps]"` for the GeoTIFF reader. The catalog's labels are made by

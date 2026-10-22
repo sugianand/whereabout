@@ -8,7 +8,7 @@ import { gateStrength } from "@/lib/sceneGate";
 import { niceMax } from "@/components/ContinentChart";
 import type { AtlasData, CatalogPhoto } from "@/lib/game/types";
 
-import { POCKET_SYSTEM, systemLabel } from "@/lib/atlas";
+import { POCKET_SYSTEM, retrievalNote, systemLabel } from "@/lib/atlas";
 import { byContinent, scoreGuesses } from "@/lib/atlasReport";
 
 import AtlasPage from "./page";
@@ -37,6 +37,21 @@ describe("How Atlas guesses", () => {
     const playing = systems.filter((s) => s.playsInGame);
     expect(playing).toHaveLength(1);
     expect(within(table).getByText("The Atlas you play against")).toBeInTheDocument();
+  });
+
+  it("says whether the retrieval refinement plays, once a run has tried it", () => {
+    render(<AtlasPage />);
+    const retrieval = atlas.evaluation?.retrieval;
+    const note = screen.queryByTestId("retrieval-note");
+    if (!retrieval) {
+      expect(note).toBeNull();
+      return;
+    }
+    expect(note).toHaveTextContent(retrievalNote(retrieval));
+    const refined = atlas.evaluation!.systems.find((s) =>
+      s.name.endsWith("then nearest reference photos"),
+    );
+    expect(refined?.playsInGame).toBe(retrieval.ships);
   });
 
   it("breaks Atlas down by continent, with a table for screen readers", () => {
