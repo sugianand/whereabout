@@ -1,7 +1,7 @@
 {
  "model": "ViT-L-14/openai, country then city",
  "version": "atlas-v0-zeroshot",
- "generatedAt": "2026-10-22T15:21:58+00:00",
+ "generatedAt": "2026-10-22T15:58:29+00:00",
  "guesses": {
   "wm000": {
    "lng": 102.44784,
@@ -842,7 +842,7 @@
     },
     {
      "label": "Temperate",
-     "p": 0.6825
+     "p": 0.6824
     }
    ],
    "belief": {
@@ -11295,12 +11295,12 @@
   "wh3677747": {
    "lng": 166.44884,
    "lat": -22.27407,
-   "confidence": 0.3236,
+   "confidence": 0.3235,
    "guessedPlace": "Noumea, NC",
    "topCountries": [
     {
      "country": "NZ",
-     "p": 0.3236
+     "p": 0.3235
     },
     {
      "country": "NC",
@@ -13583,12 +13583,12 @@
   "wh7179854": {
    "lng": 12.38878,
    "lat": 43.1122,
-   "confidence": 0.3871,
+   "confidence": 0.387,
    "guessedPlace": "Perugia, IT",
    "topCountries": [
     {
      "country": "FR",
-     "p": 0.3871
+     "p": 0.387
     },
     {
      "country": "IT",
@@ -16993,7 +16993,7 @@
     },
     {
      "label": "Temperate",
-     "p": 0.7304
+     "p": 0.7303
     }
    ],
    "belief": {
@@ -23477,7 +23477,7 @@
     },
     {
      "label": "European old town",
-     "p": 0.679
+     "p": 0.6791
     }
    ],
    "belief": {
@@ -24019,7 +24019,7 @@
     },
     {
      "country": "UA",
-     "p": 0.1018
+     "p": 0.1019
     },
     {
      "country": "RU",
@@ -25963,7 +25963,7 @@
     },
     {
      "label": "Mediterranean",
-     "p": 0.6258
+     "p": 0.6259
     }
    ],
    "belief": {
@@ -28687,12 +28687,12 @@
   "wh21322891": {
    "lng": -119.77237,
    "lat": 36.74773,
-   "confidence": 0.4737,
+   "confidence": 0.4736,
    "guessedPlace": "Fresno, US",
    "topCountries": [
     {
      "country": "US",
-     "p": 0.4737
+     "p": 0.4736
     },
     {
      "country": "SH",
@@ -46100,15 +46100,15 @@
      "25": 0.0515,
      "200": 0.1624,
      "750": 0.3737,
-     "2500": 0.6598
+     "2500": 0.6624
     },
-    "median_km": 1295.9,
-    "mean_km": 3160.6,
-    "mean_score": 2203.4,
+    "median_km": 1280.0,
+    "mean_km": 3153.5,
+    "mean_score": 2209.7,
     "country_accuracy": 0.3814,
     "median_km_ci95": [
-     1015.0,
-     1565.3
+     1011.6,
+     1546.3
     ]
    }
   ],
@@ -46123,7 +46123,7 @@
   "retrieval": {
    "versus": "ViT-L-14/openai, country then city",
    "model": "ViT-B-32/laion2b_s34b_b79k",
-   "references": 4252,
+   "references": 4322,
    "countries": 156,
    "moved": 275,
    "n": 388,
@@ -46131,10 +46131,10 @@
     "same photographer near a game photo": 23
    },
    "k": 10,
-   "median_km_delta": 389.7,
+   "median_km_delta": 373.8,
    "ci95": [
-    192.0,
-    612.1
+    186.8,
+    599.8
    ],
    "ships": false
   }

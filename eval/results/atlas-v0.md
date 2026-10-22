@@ -1,6 +1,6 @@
 # Atlas v0 results
 
-Generated 2026-10-22T15:21:58+00:00 by `.github/workflows/atlas.yml` on 388 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
+Generated 2026-10-22T15:58:29+00:00 by `.github/workflows/atlas.yml` on 388 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
 
 **Playing in the game:** ViT-L-14/openai, country then city (lowest median error).
 
@@ -14,7 +14,7 @@ Generated 2026-10-22T15:21:58+00:00 by `.github/workflows/atlas.yml` on 388 phot
 | ViT-B-32/openai, country then city | 388 | 3.6% | 10.3% | 23.2% | 43.3% | 3,998 (2,721–4,884) | 15.7% | 1,427 |
 | ViT-L-14/openai, country only | 388 | 8.2% | 15.5% | 43.6% | 67.0% | 972 (778–1,120) | 42.0% | 2,360 |
 | ViT-L-14/openai, country then city | 388 | 11.9% | 24.2% | 46.1% | 67.5% | 906 (707–1,178) | 38.1% | 2,487 |
-| ViT-L-14/openai, country then city, then nearest reference photos | 388 | 5.2% | 16.2% | 37.4% | 66.0% | 1,296 (1,015–1,565) | 38.1% | 2,203 |
+| ViT-L-14/openai, country then city, then nearest reference photos | 388 | 5.2% | 16.2% | 37.4% | 66.2% | 1,280 (1,012–1,546) | 38.1% | 2,210 |
 
 Accuracy columns are the share of photos guessed within that distance. Median error has a 95% bootstrap confidence interval. Mean score uses the game's scoring (5,000 for a perfect guess).
 
@@ -31,7 +31,7 @@ Paired bootstrap on the same photos: the winner's median error minus each other 
 | ViT-B-32/openai, country only | -2,091 | -3,182 to -1,470 |
 | ViT-B-32/openai, country then city | -3,092 | -3,945 to -1,886 |
 | ViT-L-14/openai, country only | -66 | -223 to 118 |
-| ViT-L-14/openai, country then city, then nearest reference photos | -390 | -612 to -192 |
+| ViT-L-14/openai, country then city, then nearest reference photos | -374 | -600 to -187 |
 
 ## Where Atlas looked: is the map faithful?
 
@@ -46,11 +46,11 @@ Hiding the top cells hurt more than hiding random ones on 92% of photos.
 
 ## Retrieval refinement: does it beat the system it refines?
 
-ViT-L-14/openai, country then city refined by searching 4,252 geotagged reference photos in 156 countries (never game photos; image similarity from ViT-B-32/laion2b_s34b_b79k): within Atlas's chosen country, the pin moves to the weighted medoid of the 10 most similar reference photos. It moved the pin on 275 of 388 photos; the others had too few reference photos in their country. References dropped by the leakage guard: 23 same photographer near a game photo.
+ViT-L-14/openai, country then city refined by searching 4,322 geotagged reference photos in 156 countries (never game photos; image similarity from ViT-B-32/laion2b_s34b_b79k): within Atlas's chosen country, the pin moves to the weighted medoid of the 10 most similar reference photos. It moved the pin on 275 of 388 photos; the others had too few reference photos in their country. References dropped by the leakage guard: 23 same photographer near a game photo.
 
 | Refined minus unrefined | Median km difference | 95% CI | Plays in the game |
 | --- | ---: | ---: | --- |
-| ViT-L-14/openai, country then city | 390 | 192 to 612 | no |
+| ViT-L-14/openai, country then city | 374 | 187 to 600 | no |
 
 It plays only if the whole interval is below zero.
 
