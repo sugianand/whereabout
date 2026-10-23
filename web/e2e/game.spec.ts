@@ -220,3 +220,71 @@ test("a game fetches only the five photos it deals, not the whole catalog", asyn
     expect(url).toMatch(/\/whereabout\/game-data\/[0-9a-f]{8}\/[\w-]+\.json$/);
   }
 });
+
+test("the photo is the first thing on screen, held by a still blur while it loads", async ({
+  page,
+}) => {
+  // Hold the photo back (but not its tiny 60px thumbnail) to see what fills its place.
+  let release = () => {};
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await page.route(/wikimedia\.org/, async (route) => {
+    if (!/\/60px-/.test(route.request().url())) await held;
+    await route.fulfill({ body: PHOTO, contentType: "image/png" });
+  });
+  try {
+    await page.goto("./?daily");
+    const holder = page.locator('.wb-photo [data-photo-placeholder="showing"]').first();
+    await expect(holder).toBeVisible();
+    // No spinner and no splash screen: the first screen is already round one.
+    await expect(page.getByText("Round 1 of 5", { exact: true })).toBeVisible();
+    await expect(page.getByRole("progressbar")).toHaveCount(0);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    expect(await page.locator(".wb-shimmer").count()).toBe(0);
+    // The placeholder spans the photo's whole frame, which starts at the top of the screen.
+    const frame = (await page.locator(".wb-photo").boundingBox())!;
+    const box = (await holder.boundingBox())!;
+    const viewport = page.viewportSize()!;
+    expect(frame.y).toBe(0);
+    expect(frame.width).toBe(viewport.width);
+    expect(box.width).toBeCloseTo(frame.width, 0);
+    expect(box.height).toBeCloseTo(frame.height, 0);
+  } finally {
+    release();
+  }
+
+  await expect(page.locator('.wb-photo [data-photo-placeholder="covered"]')).toHaveCount(1);
+  // Once loaded, the photo is what sits at the centre of its frame, even under the first-visit
+  // card (the card lets taps through).
+  const hit = await page.evaluate(() => {
+    const f = document.querySelector(".wb-photo")!.getBoundingClientRect();
+    const el = document.elementFromPoint(f.left + f.width / 2, f.top + f.height / 2);
+    return el?.closest("button")?.getAttribute("aria-label") ?? null;
+  });
+  expect(hit).toBe("Zoom in on the photo");
+});
+
+test("first-time visitors get a card over the photo that their first tap dismisses for good", async ({
+  page,
+}) => {
+  await page.goto("./?daily");
+  const title = page.getByText("Guess where this was taken.", { exact: true });
+  await expect(title).toBeVisible();
+  await expect(page.getByText("Atlas, our AI, is guessing too. Beat it.")).toBeVisible();
+  // The card sits over the photo, not over the globe.
+  const card = (await title.boundingBox())!;
+  const photo = (await page.locator(".wb-photo").boundingBox())!;
+  expect(card.y).toBeGreaterThanOrEqual(photo.y);
+  expect(card.y + card.height).toBeLessThanOrEqual(photo.y + photo.height);
+
+  // The first tap both dismisses the card and does what it would have done anyway.
+  await page.getByRole("button", { name: "Zoom in on the photo" }).click();
+  await expect(title).toBeHidden();
+  await expect(page.getByRole("button", { name: "Zoom out of the photo" })).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
+  await expect(title).toHaveCount(0);
+  await page.goto("./");
+  await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
+  await expect(title).toHaveCount(0);
+});
