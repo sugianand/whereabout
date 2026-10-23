@@ -7,6 +7,7 @@ import { LocalBackend } from "@/lib/game/backends";
 import { pickDaily } from "@/lib/game/daily";
 import { LOAD_ERROR } from "@/lib/game/deck";
 import { RECENT_KEY } from "@/lib/game/fresh";
+import { INTRO_KEY, INTRO_TEXT } from "@/lib/intro";
 import { playablePhotos } from "@/lib/game/playable";
 import { ROUNDS_PER_GAME } from "@/lib/game/state";
 import type { AtlasData, CatalogPhoto, GameBackend } from "@/lib/game/types";
@@ -234,5 +235,75 @@ describe("Game", { timeout: 20000 }, () => {
     }
     fireEvent.click(await screen.findByRole("button", { name: "Play the Daily Five" }, WAIT));
     expect(await screen.findByText("Daily Five, October 9", {}, WAIT)).toBeInTheDocument();
+  });
+
+  it("holds the photo's place with a still blur of its own thumbnail, never a spinner", async () => {
+    render(<Game {...bundledGame} start="daily" today={TODAY} />);
+    await mapReady();
+    const img = await screen.findByRole("img", {}, WAIT);
+    const frame = img.closest(".wb-photo")!;
+    const holder = frame.querySelector("[data-photo-placeholder]")!;
+    expect(holder).toHaveAttribute("data-photo-placeholder", "showing");
+    expect(holder).toHaveAttribute("aria-hidden", "true");
+    expect(holder.querySelector("img")).toHaveAttribute(
+      "src",
+      daily[0].imageUrl.replace(/\/\d+px-([^/]*)$/, "/60px-$1"),
+    );
+    expect(screen.queryByRole("progressbar")).toBeNull();
+    expect(document.querySelector(".wb-shimmer")).toBeNull();
+    fireEvent.load(img);
+    expect(holder).toHaveAttribute("data-photo-placeholder", "covered");
+  });
+
+  it("greets a first-time visitor over the photo until their first tap, then never again", async () => {
+    const first = render(<Game {...bundledGame} start="daily" today={TODAY} />);
+    await mapReady();
+    expect(await screen.findByText(INTRO_TEXT.title, {}, WAIT)).toBeInTheDocument();
+    expect(screen.getByText(INTRO_TEXT.body)).toBeInTheDocument();
+
+    // The tap that dismisses the card still reaches the photo: it zooms in.
+    const photo = await screen.findByRole("button", { name: "Zoom in on the photo" }, WAIT);
+    fireEvent.pointerDown(photo, { pointerId: 1 });
+    expect(screen.queryByText(INTRO_TEXT.title)).toBeNull();
+    expect(localStorage.getItem(INTRO_KEY)).toBe("1");
+    fireEvent.pointerUp(photo, { pointerId: 1 });
+    fireEvent.click(photo);
+    expect(screen.getByRole("button", { name: "Zoom out of the photo" })).toBeInTheDocument();
+    first.unmount();
+
+    render(<Game {...bundledGame} start="daily" today={TODAY} />);
+    await mapReady();
+    await screen.findByRole("button", { name: "Zoom in on the photo" }, WAIT);
+    expect(screen.queryByText(INTRO_TEXT.title)).toBeNull();
+  });
+
+  it("dismisses the card from the globe too", async () => {
+    render(<Game {...bundledGame} start="daily" today={TODAY} />);
+    await mapReady();
+    await screen.findByText(INTRO_TEXT.title, {}, WAIT);
+    fireEvent.pointerDown(screen.getByRole("application", { name: /Globe/ }));
+    expect(screen.queryByText(INTRO_TEXT.title)).toBeNull();
+    expect(localStorage.getItem(INTRO_KEY)).toBe("1");
+  });
+
+  it("plays normally when browser storage throws", async () => {
+    const get = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("SecurityError");
+    });
+    const set = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("QuotaExceededError");
+    });
+    try {
+      render(<Game {...bundledGame} start="daily" today={TODAY} />);
+      const map = await mapReady();
+      expect(await screen.findByText(INTRO_TEXT.title, {}, WAIT)).toBeInTheDocument();
+      fireEvent.pointerDown(await screen.findByRole("button", { name: "Zoom in on the photo" }));
+      expect(screen.queryByText(INTRO_TEXT.title)).toBeNull();
+      const card = await playRound(map, daily[0]);
+      expect(within(card).getByRole("heading", { name: daily[0].place })).toBeInTheDocument();
+    } finally {
+      get.mockRestore();
+      set.mockRestore();
+    }
   });
 });

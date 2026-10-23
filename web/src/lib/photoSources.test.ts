@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { originalUrl, sources, thumbUrl, WIDTHS } from "./photoSources";
+import {
+  originalUrl,
+  PLACEHOLDER_WIDTH,
+  placeholderUrl,
+  sources,
+  thumbUrl,
+  WIDTHS,
+} from "./photoSources";
 
 const name = "A%2C_b.jpg";
 const thumb = (host: string) =>
@@ -12,6 +19,14 @@ const at = (host: string, w: number) =>
 describe("photoSources", () => {
   it("lists the standard widths", () => {
     expect(WIDTHS).toEqual([1280, 1920, 3840]);
+  });
+
+  it("blurs a tiny thumbnail of the same photo while it loads", () => {
+    expect(PLACEHOLDER_WIDTH).toBe(60);
+    for (const host of ["thumb.wikimedia.org", "upload.wikimedia.org"]) {
+      expect(placeholderUrl(thumb(host))).toBe(at(host, 60));
+    }
+    expect(placeholderUrl("https://example.com/x.jpg")).toBeNull();
   });
 
   it("rewrites the width segment for both hosts", () => {

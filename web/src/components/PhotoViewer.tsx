@@ -21,7 +21,7 @@ import {
   type Point,
   type View,
 } from "@/lib/photoView";
-import { sources } from "@/lib/photoSources";
+import { placeholderUrl, sources } from "@/lib/photoSources";
 
 type PhotoViewerProps = {
   src: string;
@@ -51,6 +51,7 @@ export default function PhotoViewer(props: PhotoViewerProps) {
 
 function PhotoViewerInner({ src, width }: PhotoViewerProps) {
   const photoSources = sources({ imageUrl: src, width });
+  const blurSrc = placeholderUrl(src);
   const [fullLoaded, setFullLoaded] = useState(false);
   const [status, setStatus] = useState<"loading" | "loaded" | "failed">("loading");
   const [view, setViewState] = useState<View>(RESET);
@@ -240,7 +241,19 @@ function PhotoViewerInner({ src, width }: PhotoViewerProps) {
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-ocean-deep">
-      {status === "loading" && <div className="wb-shimmer absolute inset-0" aria-hidden="true" />}
+      {/* Holds the photo's place until it arrives: its own tiny thumbnail, blurred. No spinner. */}
+      {status !== "failed" && (
+        <div
+          className="wb-photo-placeholder absolute inset-0"
+          data-photo-placeholder={status === "loaded" ? "covered" : "showing"}
+          aria-hidden="true"
+        >
+          {blurSrc && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={blurSrc} alt="" draggable={false} className="h-full w-full object-cover" />
+          )}
+        </div>
+      )}
       {status === "failed" ? (
         <p role="alert" className="absolute inset-0 grid place-items-center p-6 text-chalk-dim">
           This photo didn&apos;t load. Place your best guess anyway, or try reloading the page.

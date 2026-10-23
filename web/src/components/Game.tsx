@@ -10,6 +10,7 @@ import { loadRecent, pickFresh, rememberPlayed, saveRecent } from "@/lib/game/fr
 import { ROUNDS_PER_GAME, gameReducer, initialState, totals } from "@/lib/game/state";
 import type { CatalogPhoto, GameBackend } from "@/lib/game/types";
 import { formatPoints, type LngLat } from "@/lib/geo";
+import { hasSeenIntro, INTRO_TEXT, markIntroSeen } from "@/lib/intro";
 import type { RevealView } from "@/lib/reveal";
 
 import Globe from "./Globe";
@@ -69,11 +70,14 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   // this browser played recently are all unknown when the static page is built.
   const [mode, setMode] = useState<GameMode | null>(null);
   const [state, dispatch] = useReducer(gameReducer, initialState);
+  // The first-visit card. Browser storage is only readable after hydration, so it starts closed.
+  const [introOpen, setIntroOpen] = useState(false);
 
   useEffect(() => {
     if (mode) return;
     const id = requestAnimationFrame(() => {
       const kind = start ?? (urlWantsDaily() ? "daily" : "fresh");
+      setIntroOpen(!hasSeenIntro());
       setMode(
         kind === "daily"
           ? { kind: "daily", day: dayKey(today ?? new Date()) }
@@ -174,6 +178,14 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
       .catch(() => {});
   }, [apiUrl, roundId, records, deck.ids, load, remember]);
 
+  // The player's first tap (or key press) on the photo or the globe dismisses the card for good.
+  // It listens in the capture phase and never stops the event, so that tap still zooms or pins.
+  // Only attached while the card is open.
+  const dismissIntro = useCallback(() => {
+    markIntroSeen();
+    setIntroOpen(false);
+  }, []);
+
   const onPinChange = useCallback((pin: LngLat) => dispatch({ type: "pinned", pin }), []);
 
   async function submit() {
@@ -247,7 +259,11 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
     >
       <h1 className="sr-only">{`Whereabout: ${title}, round ${roundNumber} of ${ROUNDS_PER_GAME}`}</h1>
 
-      <div className="wb-photo">
+      <div
+        className="wb-photo"
+        onPointerDownCapture={introOpen ? dismissIntro : undefined}
+        onKeyDownCapture={introOpen ? dismissIntro : undefined}
+      >
         {round ? (
           <PhotoViewer
             src={round.photo.imageUrl}
@@ -256,7 +272,18 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
             height={roundSize?.height}
           />
         ) : (
-          <div className="wb-shimmer h-full w-full" aria-hidden="true" />
+          <div
+            className="wb-photo-placeholder h-full w-full"
+            data-photo-placeholder="showing"
+            aria-hidden="true"
+          />
+        )}
+        {introOpen && state.phase !== "revealed" && (
+          // Taps pass straight through the card to the photo underneath.
+          <div className="wb-intro pointer-events-none absolute inset-x-4 top-1/2 z-10 mx-auto max-w-xs -translate-y-1/2 rounded-2xl border border-chalk/20 bg-ocean-deep/80 px-4 py-3 text-center shadow-lg backdrop-blur md:top-[55%]">
+            <p className="font-sign text-xl font-bold leading-tight">{INTRO_TEXT.title}</p>
+            <p className="mt-1 text-sm text-chalk-dim">{INTRO_TEXT.body}</p>
+          </div>
         )}
       </div>
 
@@ -331,7 +358,12 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
         </div>
       </header>
 
-      <div className="wb-globe-panel z-10" data-pinned={pin ? "true" : "false"}>
+      <div
+        className="wb-globe-panel z-10"
+        data-pinned={pin ? "true" : "false"}
+        onPointerDownCapture={introOpen ? dismissIntro : undefined}
+        onKeyDownCapture={introOpen ? dismissIntro : undefined}
+      >
         <div className="wb-globe-frame">
           <Globe
             pin={pin}

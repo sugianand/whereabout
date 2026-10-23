@@ -251,24 +251,18 @@ body {
 
 /* ── Loading and the result card ── */
 
-.wb-shimmer {
-  background: linear-gradient(
-    100deg,
-    var(--color-ocean-deep) 30%,
-    rgb(42 91 110 / 0.45) 50%,
-    var(--color-ocean-deep) 70%
-  );
-  background-size: 300% 100%;
-  animation: wb-shimmer 1.6s linear infinite;
+/* Holds the photo's place while it loads: a still, soft blur (the photo's own 60px thumbnail when
+   there is one), never a spinner or a moving shimmer, so the first screen is already the game. */
+.wb-photo-placeholder {
+  overflow: hidden;
+  background:
+    radial-gradient(120% 80% at 50% 30%, rgb(42 91 110 / 0.55), transparent 70%),
+    var(--color-ocean-deep);
 }
 
-@keyframes wb-shimmer {
-  from {
-    background-position: 100% 0;
-  }
-  to {
-    background-position: 0 0;
-  }
+.wb-photo-placeholder img {
+  filter: blur(24px) saturate(1.1);
+  transform: scale(1.15);
 }
 
 /* The card rises as the arcs land, the one orchestrated moment in the game. */

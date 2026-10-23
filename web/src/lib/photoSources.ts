@@ -15,6 +15,20 @@ export function originalUrl(imageUrl: string): string | null {
   return m ? `https://upload.wikimedia.org/wikipedia/commons/${m[1]}` : null;
 }
 
+/**
+ * Width of the tiny thumbnail shown blurred while the real photo loads: one of Wikimedia's
+ * standard small sizes, a couple of kilobytes, so it usually arrives long before the photo.
+ */
+export const PLACEHOLDER_WIDTH = 60;
+
+/**
+ * The blurred stand-in for a photo: its 60px Wikimedia thumbnail, or null for photos that are
+ * not Wikimedia thumbnails (they have no cheap small version, so the frame stays a plain blur).
+ */
+export function placeholderUrl(imageUrl: string): string | null {
+  return THUMB_SEGMENT.test(imageUrl) ? thumbUrl(imageUrl, PLACEHOLDER_WIDTH) : null;
+}
+
 export interface PhotoSources {
   src: string;
   srcSet: string;
