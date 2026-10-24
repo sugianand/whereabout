@@ -6,7 +6,7 @@ import type { RoundResult } from "@/lib/game/state";
 import PhotoViewer, { ZOOM } from "./PhotoViewer";
 import AtlasEyes from "./AtlasEyes";
 import RevealCard, { hintNote, verdict } from "./RevealCard";
-import Summary, { shareText } from "./Summary";
+import Summary from "./Summary";
 
 function result(playerKm: number, playerScore: number, atlasScore?: number): RoundResult {
   return {
@@ -61,36 +61,6 @@ describe("verdict", () => {
   });
 });
 
-describe("shareText", () => {
-  it("shares the score and one square per round, never the places", () => {
-    const text = shareText(
-      "Daily Five, October 9",
-      [
-        result(10, 4967),
-        result(400, 3846),
-        result(2000, 1318),
-        result(9000, 12),
-        result(700, 3136),
-      ],
-      "https://example.org/whereabout/",
-    );
-    expect(text).toBe(
-      [
-        "Whereabout: Daily Five, October 9",
-        "13,279 / 25,000",
-        "🟩🟨🟧🟥🟨",
-        "https://example.org/whereabout/",
-      ].join("\n"),
-    );
-    expect(text).not.toContain("Somewhere");
-  });
-
-  it("adds the head-to-head when Atlas played", () => {
-    const text = shareText("Fresh game", [result(1, 5000, 10), result(1, 10, 5000)], "u");
-    expect(text).toContain("Beat Atlas in 1 of 2 rounds");
-  });
-});
-
 describe("Summary", () => {
   it("points to how Atlas works once Atlas has played", () => {
     render(<Summary results={[result(1, 5000, 10)]} title="Fresh game" onPlayAgain={() => {}} />);
@@ -98,6 +68,32 @@ describe("Summary", () => {
       "href",
       "/atlas",
     );
+  });
+
+  it("previews the spoiler-free card and copies it where there is no share sheet", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    render(
+      <Summary
+        results={[result(10, 4967, 100), result(9000, 12, 3000)]}
+        title="Fresh game"
+        onPlayAgain={() => {}}
+      />,
+    );
+    const card = screen.getByRole("figure", { name: "Your share card" });
+    expect(
+      within(card).getByRole("img", { name: "Round 1: within 25 km, beat Atlas" }),
+    ).toBeVisible();
+    expect(
+      within(card).getByRole("img", { name: "Round 2: over 2,500 km, Atlas got closer" }),
+    ).toBeVisible();
+    expect(card).not.toHaveTextContent("Somewhere");
+
+    fireEvent.click(screen.getByRole("button", { name: "Share result" }));
+    expect(await screen.findByText("Result copied. Paste it anywhere.")).toBeInTheDocument();
+    const sent = writeText.mock.calls[0][0] as string;
+    expect(sent).toContain("✅❌");
+    expect(sent).not.toContain("Somewhere");
   });
 
   it("has no Atlas link when Atlas sat the game out", () => {

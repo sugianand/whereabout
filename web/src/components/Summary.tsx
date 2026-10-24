@@ -5,6 +5,15 @@ import { useState } from "react";
 
 import { ROUNDS_PER_GAME, totals, type RoundResult } from "@/lib/game/state";
 import { MAX_POINTS, formatDistance, formatPoints } from "@/lib/geo";
+import {
+  VERSUS_LABEL,
+  VERSUS_MARK,
+  sendShare,
+  shareCard,
+  shareText,
+  type ShareCard,
+  type ShareOutcome,
+} from "@/lib/share";
 import { useCountUp } from "@/lib/useCountUp";
 
 type SummaryProps = {
@@ -17,41 +26,59 @@ type SummaryProps = {
   onPlayDaily?: () => void;
 };
 
-/** One square per round, so a result can be pasted into a chat without spoilers. */
-function square(r: RoundResult): string {
-  const km = r.reveal.distanceKm;
-  if (km <= 25) return "🟩";
-  if (km <= 750) return "🟨";
-  if (km <= 2500) return "🟧";
-  return "🟥";
-}
-
-/** The text copied by "Share result": totals and squares, never the answers. */
-export function shareText(title: string, results: readonly RoundResult[], url: string): string {
-  const t = totals(results);
-  const lines = [
-    `Whereabout: ${title}`,
-    `${formatPoints(t.player)} / ${formatPoints(MAX_POINTS * ROUNDS_PER_GAME)}`,
-    results.map(square).join(""),
-  ];
-  if (t.atlasRounds > 0) lines.push(`Beat Atlas in ${t.playerWins} of ${t.atlasRounds} rounds`);
-  lines.push(url);
-  return lines.join("\n");
+/** What the player is about to send, round by round, so nothing in it is a surprise. */
+function ShareCardPreview({ card }: { card: ShareCard }) {
+  return (
+    <figure
+      aria-label="Your share card"
+      className="mt-10 rounded-2xl border border-graticule/60 bg-ocean-deep/40 p-5"
+    >
+      <figcaption className="text-sm text-chalk-dim">
+        Your share card. No photos or places, so it spoils nothing.
+      </figcaption>
+      <p className="mt-3 font-sign text-xl font-bold">Whereabout: {card.title}</p>
+      <p className="tabular text-chalk-dim">
+        {formatPoints(card.score)} / {formatPoints(card.maxScore)}
+      </p>
+      <div className="mt-3 flex gap-2">
+        {card.rounds.map((r, i) => (
+          <span
+            key={i}
+            role="img"
+            title={`Round ${i + 1}: ${r.band.label}, ${VERSUS_LABEL[r.versus]}`}
+            aria-label={`Round ${i + 1}: ${r.band.label}, ${VERSUS_LABEL[r.versus]}`}
+            className="flex flex-col items-center gap-1 text-2xl leading-none"
+          >
+            <span aria-hidden="true">{r.band.square}</span>
+            {card.atlasRounds > 0 && (
+              <span aria-hidden="true" className="text-lg">
+                {VERSUS_MARK[r.versus]}
+              </span>
+            )}
+          </span>
+        ))}
+      </div>
+      <p className="mt-3 text-xs text-chalk-dim">
+        🟩 within 25 km · 🟨 750 km · 🟧 2,500 km · 🟥 further
+        {card.atlasRounds > 0 && " · ✅ beat Atlas · ❌ Atlas closer · 🤝 tie · ▫️ Atlas sat out"}
+      </p>
+    </figure>
+  );
 }
 
 export default function Summary({ results, title, onPlayAgain, onPlayDaily }: SummaryProps) {
   const t = totals(results);
   const shown = useCountUp(t.player, 1400);
-  const [shared, setShared] = useState<"idle" | "copied" | "failed">("idle");
+  const [shared, setShared] = useState<ShareOutcome | "idle">("idle");
+  // The address only matters once shared; on the server there is no window yet.
+  const card = shareCard(
+    title,
+    results,
+    typeof window === "undefined" ? "https://localhost/" : window.location.href,
+  );
 
   async function share() {
-    const text = shareText(title, results, window.location.href.split("#")[0]);
-    try {
-      await navigator.clipboard.writeText(text);
-      setShared("copied");
-    } catch {
-      setShared("failed");
-    }
+    setShared(await sendShare(shareText(card), navigator));
   }
 
   return (
@@ -113,7 +140,9 @@ export default function Summary({ results, title, onPlayAgain, onPlayDaily }: Su
         ))}
       </ol>
 
-      <div className="mt-10 flex flex-wrap items-center gap-4">
+      <ShareCardPreview card={card} />
+
+      <div className="mt-6 flex flex-wrap items-center gap-4">
         <button
           type="button"
           onClick={share}
@@ -138,6 +167,7 @@ export default function Summary({ results, title, onPlayAgain, onPlayDaily }: Su
           </button>
         )}
         <p role="status" className="text-sm text-chalk-dim">
+          {shared === "shared" && "Result shared."}
           {shared === "copied" && "Result copied. Paste it anywhere."}
           {shared === "failed" && "Couldn't copy. Your browser blocked the clipboard."}
         </p>

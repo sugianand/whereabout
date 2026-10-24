@@ -48,6 +48,30 @@ test("a whole Daily Five can be played with the keyboard", async ({ page }) => {
 
   await expect(page.getByText("out of 25,000 points")).toBeVisible();
   await expect(page.getByRole("listitem")).toHaveCount(5);
+
+  // The share card: five rounds, and none of the places just revealed in the results list.
+  const places = await page.getByRole("listitem").locator("span.truncate").allInnerTexts();
+  const card = page.getByRole("figure", { name: "Your share card" });
+  await expect(card.getByRole("img", { name: /^Round \d: / })).toHaveCount(5);
+  // No share sheet here, so the result goes to the clipboard.
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  await page.getByRole("button", { name: "Share result" }).click();
+  await expect(page.getByText("Result copied. Paste it anywhere.")).toBeVisible();
+  const sent = await page.evaluate(() => (window as unknown as { sent: string }).sent);
+  expect(sent).toMatch(/^Whereabout: Daily Five, /);
+  expect(sent).toMatch(/\/whereabout\/\?daily$/);
+  for (const place of places) {
+    expect(sent).not.toContain(place);
+    await expect(card).not.toContainText(place);
+  }
   expect(errors).toEqual([]);
 });
 
