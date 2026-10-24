@@ -5,17 +5,23 @@ import type { RoundResult } from "@/lib/game/state";
 
 import PhotoViewer, { ZOOM } from "./PhotoViewer";
 import AtlasEyes from "./AtlasEyes";
-import RevealCard, { verdict } from "./RevealCard";
+import RevealCard, { hintNote, verdict } from "./RevealCard";
 import Summary, { shareText } from "./Summary";
 
 function result(playerKm: number, playerScore: number, atlasScore?: number): RoundResult {
   return {
-    round: { roundId: `r${playerKm}`, photo: { id: "p", imageUrl: "https://example.org/p.jpg" } },
+    round: {
+      roundId: `r${playerKm}`,
+      photo: { id: "p", imageUrl: "https://example.org/p.jpg" },
+      hintsAvailable: 3,
+    },
     pin: { lng: 0, lat: 0 },
+    clues: [],
     reveal: {
       roundId: `r${playerKm}`,
       distanceKm: playerKm,
       score: playerScore,
+      hintsUsed: 0,
       answer: { lng: 1, lat: 1, place: "Somewhere", country: "XX", credit: null },
     },
     atlas:
@@ -32,6 +38,19 @@ function result(playerKm: number, playerScore: number, atlasScore?: number): Rou
           },
   };
 }
+
+describe("hintNote", () => {
+  it("says what the hints cost, and nothing without hints", () => {
+    const r = result(5, 1900, 100);
+    expect(hintNote(r)).toBeNull();
+    expect(hintNote({ ...r, reveal: { ...r.reveal, hintsUsed: 1 } })).toBe(
+      "You took 1 hint, so this round was worth up to 4,000 points.",
+    );
+    expect(hintNote({ ...r, reveal: { ...r.reveal, hintsUsed: 3 } })).toBe(
+      "You took 3 hints, so this round was worth up to 2,000 points.",
+    );
+  });
+});
 
 describe("verdict", () => {
   it("says who got closer", () => {

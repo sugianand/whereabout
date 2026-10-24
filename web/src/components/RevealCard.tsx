@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { countryName, shortlist } from "@/lib/countries";
 import type { RoundResult } from "@/lib/game/state";
-import { formatDistance, formatPoints } from "@/lib/geo";
+import { formatDistance, formatPoints, maxPoints } from "@/lib/geo";
 import { REVEAL_DRAW_MS } from "@/lib/reveal";
 import { useCountUp } from "@/lib/useCountUp";
 
@@ -52,11 +52,19 @@ export function verdict(result: RoundResult): string | null {
   return "Atlas got closer this time.";
 }
 
+/** "You took 2 hints, so this round was worth up to 3,000 points.", or null without hints. */
+export function hintNote(result: RoundResult): string | null {
+  const used = result.reveal.hintsUsed;
+  if (!used) return null;
+  return `You took ${used} hint${used === 1 ? "" : "s"}, so this round was worth up to ${formatPoints(maxPoints(used))} points.`;
+}
+
 export default function RevealCard({ result, isLast, onNext }: RevealCardProps) {
   const { reveal, atlas } = result;
   const credit = reveal.answer.credit;
   const nextRef = useRef<HTMLButtonElement>(null);
   const said = verdict(result);
+  const hinted = hintNote(result);
   const shortlisted = atlas ? shortlist(atlas.topCountries ?? []) : [];
   const truthCountry = reveal.answer.country;
   const truthListed = shortlisted.some((c) => c.country === truthCountry);
@@ -95,6 +103,7 @@ export default function RevealCard({ result, isLast, onNext }: RevealCardProps) 
           ? ` Atlas was ${formatDistance(atlas.distanceKm)} away and scored ${formatPoints(atlas.score)}.`
           : ""}
         {said ? ` ${said}` : ""}
+        {hinted ? ` ${hinted}` : ""}
       </p>
 
       <div className="mt-3 space-y-1 md:mt-5 md:space-y-2" aria-hidden="true">
@@ -103,6 +112,12 @@ export default function RevealCard({ result, isLast, onNext }: RevealCardProps) 
           <ScoreLine who="Atlas" tone="sonar" distanceKm={atlas.distanceKm} score={atlas.score} />
         )}
       </div>
+
+      {hinted && (
+        <p className="mt-1 text-xs text-chalk-dim" aria-hidden="true">
+          {hinted}
+        </p>
+      )}
 
       {said && <p className="mt-3 text-chalk">{said}</p>}
 

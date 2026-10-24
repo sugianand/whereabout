@@ -2,12 +2,14 @@
  * The game as a pure state machine, so every transition is unit-tested without a browser.
  *
  *   loading ──started──▶ guessing ──pinned──▶ guessing (pin moves)
+ *                          │ ──hintRequested──▶ guessing (hinting) ──hinted──▶ guessing (one more clue)
  *                          │ submitted
  *                          ▼
  *                       guessing (submitting) ──revealed──▶ revealed ──next──▶ loading
  *                                                                  └─ after the last round ─▶ finished
  */
 import { haversineKm, scoreDistance, type LngLat } from "@/lib/geo";
+import type { Clue } from "@/lib/hints";
 
 import type { AtlasGuess, Reveal, RoundStart } from "./types";
 
@@ -17,6 +19,8 @@ export interface RoundResult {
   round: RoundStart;
   pin: LngLat;
   reveal: Reveal;
+  /** The hints taken this round, in order (the score already counts them). */
+  clues: Clue[];
   /** Atlas's guess for this photo, scored against the same answer, or null if it has none. */
   atlas: (AtlasGuess & { distanceKm: number; score: number }) | null;
 }
@@ -34,6 +38,10 @@ export type GameState =
       results: RoundResult[];
       round: RoundStart;
       pin: LngLat | null;
+      /** Hints taken so far, newest last. */
+      clues: Clue[];
+      /** A hint is on its way. */
+      hinting: boolean;
       submitting: boolean;
       error: string | null;
     }
@@ -48,6 +56,8 @@ export type GameState =
 export type GameAction =
   | { type: "started"; round: RoundStart }
   | { type: "pinned"; pin: LngLat }
+  | { type: "hintRequested" }
+  | { type: "hinted"; clues: Clue[] }
   | { type: "submitted" }
   | { type: "revealed"; reveal: Reveal; atlas: AtlasGuess | null }
   | { type: "failed"; message: string }
@@ -74,6 +84,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         results: state.results,
         round: action.round,
         pin: null,
+        clues: [],
+        hinting: false,
         submitting: false,
         error: null,
       };
@@ -82,8 +94,19 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.phase !== "guessing" || state.submitting) return state;
       return { ...state, pin: action.pin, error: null };
 
+    case "hintRequested":
+      if (state.phase !== "guessing" || state.submitting || state.hinting) return state;
+      if (state.clues.length >= state.round.hintsAvailable) return state;
+      return { ...state, hinting: true, error: null };
+
+    case "hinted":
+      if (state.phase !== "guessing" || !state.hinting) return state;
+      return { ...state, hinting: false, clues: action.clues };
+
     case "submitted":
-      if (state.phase !== "guessing" || !state.pin || state.submitting) return state;
+      if (state.phase !== "guessing" || !state.pin || state.submitting || state.hinting) {
+        return state;
+      }
       return { ...state, submitting: true };
 
     case "revealed": {
@@ -102,6 +125,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         round: state.round,
         pin: state.pin,
         reveal,
+        clues: state.clues,
         atlas: scoredAtlas,
       };
       return {
@@ -113,7 +137,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "failed":
-      if (state.phase === "guessing") return { ...state, submitting: false, error: action.message };
+      if (state.phase === "guessing") {
+        return { ...state, submitting: false, hinting: false, error: action.message };
+      }
       if (state.phase === "loading") return { ...state, error: action.message };
       return state;
 

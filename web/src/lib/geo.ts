@@ -52,6 +52,17 @@ export function formatLngLat(point: LngLat, decimals = 2): string {
 export const EARTH_RADIUS_KM = 6371.0088;
 export const MAX_POINTS = 5000;
 export const SCORE_SCALE_KM = 1500;
+/** A round's maximum after 0, 1, 2 or 3 hints (data/fixtures/hint_cases.json). */
+export const MAX_POINTS_BY_HINTS = [5000, 4000, 3000, 2000] as const;
+export const MAX_HINTS = MAX_POINTS_BY_HINTS.length - 1;
+
+/** The most a round can score after `hints` hints. */
+export function maxPoints(hints = 0): number {
+  if (!Number.isInteger(hints) || hints < 0 || hints > MAX_HINTS) {
+    throw new RangeError(`hints must be a whole number from 0 to ${MAX_HINTS}`);
+  }
+  return MAX_POINTS_BY_HINTS[hints];
+}
 
 const toRad = (deg: number) => (deg * Math.PI) / 180;
 const toDeg = (rad: number) => (rad * 180) / Math.PI;
@@ -67,12 +78,15 @@ export function haversineKm(a: LngLat, b: LngLat): number {
   return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(Math.min(1, Math.max(0, h))));
 }
 
-/** Points for a guess `distanceKm` from the truth: 5000 at 0 km, decaying exponentially. */
-export function scoreDistance(distanceKm: number): number {
+/**
+ * Points for a guess `distanceKm` from the truth: 5000 at 0 km, decaying exponentially. Each
+ * hint taken scales the whole curve down (`maxPoints`).
+ */
+export function scoreDistance(distanceKm: number, hints = 0): number {
   if (!Number.isFinite(distanceKm) || distanceKm < 0) {
     throw new RangeError("distance must be a non-negative finite number");
   }
-  return roundHalfEven(MAX_POINTS * Math.exp(-distanceKm / SCORE_SCALE_KM));
+  return roundHalfEven(maxPoints(hints) * Math.exp(-distanceKm / SCORE_SCALE_KM));
 }
 
 /** Python's round(): halves go to the even neighbour. Keeps scores identical to the API. */

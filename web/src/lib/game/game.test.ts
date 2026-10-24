@@ -108,8 +108,11 @@ describe("ApiBackend", () => {
     expect(round).toEqual({
       roundId: "r1",
       photo: { id: "p", imageUrl: "https://x/p.jpg" },
+      // A server older than hints says nothing about them: the round offers none.
+      hintsAvailable: 0,
     });
     const reveal = await backend.guess("r1", { lng: 2, lat: 1 });
+    expect(reveal.hintsUsed).toBe(0);
     expect(reveal.answer.place).toBe("Somewhere");
     expect(reveal.answer.credit?.sourceUrl).toBe("https://x/f");
     expect(fetchImpl.mock.calls[0][0]).toBe("http://api.test/api/v1/rounds");
@@ -175,11 +178,13 @@ describe("gameReducer", () => {
   const round = {
     roundId: "r",
     photo: { id: "kyoto", imageUrl: "https://example.org/k.jpg" },
+    hintsAvailable: 2,
   };
   const reveal: Reveal = {
     roundId: "r",
     distanceKm: 100,
     score: 4677,
+    hintsUsed: 0,
     answer: { lng: 135, lat: 35, place: "Kyoto", country: "JP", credit: null },
   };
   const atlas: AtlasGuess = {

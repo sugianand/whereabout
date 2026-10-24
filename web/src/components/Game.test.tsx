@@ -7,6 +7,8 @@ import { LocalBackend } from "@/lib/game/backends";
 import { pickDaily } from "@/lib/game/daily";
 import { LOAD_ERROR } from "@/lib/game/deck";
 import { RECENT_KEY } from "@/lib/game/fresh";
+import { maxPoints } from "@/lib/geo";
+import { cluesFor } from "@/lib/hints";
 import { INTRO_KEY, INTRO_TEXT } from "@/lib/intro";
 import { playablePhotos } from "@/lib/game/playable";
 import { ROUNDS_PER_GAME } from "@/lib/game/state";
@@ -104,6 +106,37 @@ describe("Game", { timeout: 20000 }, () => {
     await waitFor(() => expect(next).toHaveFocus());
   });
 
+  it("gives hints one at a time, each lowering what the round is worth", async () => {
+    render(<Game {...bundledGame} start="daily" today={TODAY} />);
+    const map = await mapReady();
+    const first = daily[0];
+    const clues = cluesFor(first);
+    expect(clues.length).toBeGreaterThan(0);
+    await screen.findByRole("button", { name: "Zoom in on the photo" }, WAIT);
+    expect(screen.queryByRole("list", { name: "Hints" })).toBeNull();
+
+    for (let i = 0; i < clues.length; i++) {
+      const hint = screen.getByRole("button", {
+        name: `Take a hint: the round will be worth up to ${maxPoints(i + 1).toLocaleString("en-US")} points`,
+      });
+      fireEvent.click(hint);
+      const list = await screen.findByRole("list", { name: "Hints" }, WAIT);
+      await waitFor(() => expect(within(list).getAllByRole("listitem")).toHaveLength(i + 1));
+      expect(within(list).getByText(clues[i].text)).toBeInTheDocument();
+    }
+    // Every hint taken: the button goes.
+    expect(screen.queryByRole("button", { name: /^Take a hint/ })).toBeNull();
+
+    const card = await playRound(map, first);
+    const top = maxPoints(clues.length).toLocaleString("en-US");
+    expect(
+      within(card).getByText(new RegExp(`^You were 0 m away and scored ${top} points\\.`)),
+    ).toBeInTheDocument();
+    expect(
+      within(card).getAllByText(new RegExp(`worth up to ${top} points`)).length,
+    ).toBeGreaterThan(0);
+  });
+
   it("plays five rounds and ends on a summary with every place", async () => {
     render(<Game {...bundledGame} start="daily" today={TODAY} />);
     const map = await mapReady();
@@ -127,6 +160,7 @@ describe("Game", { timeout: 20000 }, () => {
       return {
         kind: "api",
         startRound: () => local.startRound(),
+        hint: (id) => local.hint(id),
         guess: () => Promise.reject(new Error("The game server answered 503. Try again.")),
       };
     };

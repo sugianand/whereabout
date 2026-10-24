@@ -44,7 +44,7 @@ describe("scoreDistance", () => {
   });
 
   it("never increases with distance", () => {
-    const scores = [0, 1, 10, 100, 1000, 5000, 20000].map(scoreDistance);
+    const scores = [0, 1, 10, 100, 1000, 5000, 20000].map((d) => scoreDistance(d));
     expect(scores).toEqual([...scores].sort((x, y) => y - x));
   });
 

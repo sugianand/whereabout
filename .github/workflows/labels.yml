@@ -71,13 +71,19 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
           echo "::notice title=Concept labels::$(annotate < data/labels/concept_labels.meta.json)"
 
+      # The site's catalog (web/src/data/photos.json) carries each photo's driving side and
+      # climate group for the in-game hints; keep it in step (a web test fails if it drifts).
+      - name: Update the site's catalog
+        run: node web/scripts/build-catalog.mjs
+
       - name: Commit labels
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/labels/concept_labels.csv data/labels/concept_labels.meta.json
+          git add data/labels/concept_labels.csv data/labels/concept_labels.meta.json \
+            web/src/data/photos.json
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0

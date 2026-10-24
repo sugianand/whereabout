@@ -1,4 +1,5 @@
 import { haversineKm, scoreDistance, type LngLat } from "@/lib/geo";
+import { cluesFor, type Clue } from "@/lib/hints";
 
 import type { AtlasGuess, CatalogPhoto, GameBackend, Reveal, RoundStart } from "./types";
 
@@ -12,7 +13,7 @@ import type { AtlasGuess, CatalogPhoto, GameBackend, Reveal, RoundStart } from "
 export class LocalBackend implements GameBackend {
   readonly kind = "local" as const;
   private next = 0;
-  private readonly open = new Map<string, CatalogPhoto>();
+  private readonly open = new Map<string, { photo: CatalogPhoto; clues: Clue[]; used: number }>();
 
   constructor(private readonly photos: readonly CatalogPhoto[]) {
     if (photos.length === 0) throw new Error("LocalBackend needs at least one photo");
@@ -22,19 +23,34 @@ export class LocalBackend implements GameBackend {
     const photo = this.photos[this.next % this.photos.length];
     this.next += 1;
     const roundId = `${photo.id}:${this.next}`;
-    this.open.set(roundId, photo);
-    return { roundId, photo: { id: photo.id, imageUrl: photo.imageUrl } };
+    const clues = cluesFor(photo);
+    this.open.set(roundId, { photo, clues, used: 0 });
+    return {
+      roundId,
+      photo: { id: photo.id, imageUrl: photo.imageUrl },
+      hintsAvailable: clues.length,
+    };
+  }
+
+  async hint(roundId: string): Promise<Clue[]> {
+    const round = this.open.get(roundId);
+    if (!round) throw new Error("This round has already been guessed or does not exist.");
+    if (round.used >= round.clues.length) throw new Error("No hints left for this photo.");
+    round.used += 1;
+    return round.clues.slice(0, round.used);
   }
 
   async guess(roundId: string, at: LngLat): Promise<Reveal> {
-    const photo = this.open.get(roundId);
-    if (!photo) throw new Error("This round has already been guessed or does not exist.");
+    const round = this.open.get(roundId);
+    if (!round) throw new Error("This round has already been guessed or does not exist.");
     this.open.delete(roundId);
+    const { photo, used } = round;
     const distanceKm = haversineKm(at, photo);
     return {
       roundId,
       distanceKm,
-      score: scoreDistance(distanceKm),
+      score: scoreDistance(distanceKm, used),
+      hintsUsed: used,
       answer: {
         lng: photo.lng,
         lat: photo.lat,
@@ -49,12 +65,22 @@ export class LocalBackend implements GameBackend {
 interface ApiRound {
   round_id: string;
   photo: { id: string; image_url: string };
+  /** Absent from servers older than hints. */
+  hints_available?: number;
+}
+
+interface ApiHints {
+  round_id: string;
+  hints: Clue[];
+  hints_left: number;
+  max_score: number;
 }
 
 interface ApiGuess {
   round_id: string;
   distance_km: number;
   score: number;
+  hints_used?: number;
   answer: {
     lat: number;
     lon: number;
@@ -96,6 +122,8 @@ function atlasFromApi(a: ApiGuess["atlas"]): AtlasGuess | null | undefined {
 /** Talks to the FastAPI backend, which keeps answers server-side until the guess. */
 export class ApiBackend implements GameBackend {
   readonly kind = "api" as const;
+  /** Hints taken per round, sent with the guess so the server can check its own count. */
+  private readonly hintsTaken = new Map<string, number>();
 
   constructor(
     private readonly baseUrl: string,
@@ -122,19 +150,29 @@ export class ApiBackend implements GameBackend {
     return {
       roundId: r.round_id,
       photo: { id: r.photo.id, imageUrl: r.photo.image_url },
+      hintsAvailable: r.hints_available ?? 0,
     };
+  }
+
+  async hint(roundId: string): Promise<Clue[]> {
+    const h = await this.post<ApiHints>(`/api/v1/rounds/${encodeURIComponent(roundId)}/hints`);
+    this.hintsTaken.set(roundId, h.hints.length);
+    return h.hints.map(({ kind, text }) => ({ kind, text }));
   }
 
   async guess(roundId: string, at: LngLat): Promise<Reveal> {
     const g = await this.post<ApiGuess>(`/api/v1/rounds/${encodeURIComponent(roundId)}/guess`, {
       lat: at.lat,
       lon: at.lng,
+      hints_used: this.hintsTaken.get(roundId) ?? 0,
     });
+    this.hintsTaken.delete(roundId);
     const c = g.answer.credit;
     return {
       roundId: g.round_id,
       distanceKm: g.distance_km,
       score: g.score,
+      hintsUsed: g.hints_used ?? 0,
       answer: {
         lng: g.answer.lon,
         lat: g.answer.lat,

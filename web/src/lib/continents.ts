@@ -36,3 +36,6 @@ const LOOKUP: ReadonlyMap<string, Continent> = new Map(
 export function continentOf(country: string | null | undefined): Continent | null {
   return country ? (LOOKUP.get(country.toUpperCase()) ?? null) : null;
 }
+
+/** Every country code with its continent (the API keeps the same table; see hints.test.ts). */
+export const CONTINENT_OF: ReadonlyMap<string, Continent> = LOOKUP;

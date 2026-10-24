@@ -1,10 +1,12 @@
-// Converts data/curation/photos.csv into src/data/photos.json for the browser.
+// Converts data/curation/photos.csv into src/data/photos.json for the browser, with each photo's
+// size (data/curation/quality.csv) and hint labels (data/labels/concept_labels.csv).
 // Run: npm run catalog   (CI fails if the committed JSON is out of date; see catalog.test.ts)
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const csvPath = fileURLToPath(new URL("../../data/curation/photos.csv", import.meta.url));
 const qualityPath = fileURLToPath(new URL("../../data/curation/quality.csv", import.meta.url));
+const labelsPath = fileURLToPath(new URL("../../data/labels/concept_labels.csv", import.meta.url));
 const outPath = fileURLToPath(new URL("../src/data/photos.json", import.meta.url));
 
 /** Minimal RFC 4180 parser: quoted fields, escaped quotes, commas and newlines in quotes. */
@@ -57,9 +59,42 @@ export function joinQuality(catalog, qualityText) {
   });
 }
 
-/** Builds the catalog from photos.csv text, joined with quality.csv text when given. */
-export function buildCatalog(photosText, qualityText) {
-  return joinQuality(toCatalog(photosText), qualityText);
+const DRIVING_SIDES = new Set(["left", "right"]);
+const CLIMATE_GROUPS = new Set(["Tropical", "Arid", "Temperate", "Continental", "Polar"]);
+
+/**
+ * Adds the concept labels the in-game hints use (driving side, climate group) from
+ * data/labels/concept_labels.csv text. Empty or unknown cells are left out: that photo just
+ * offers fewer hints (src/lib/hints.ts).
+ */
+export function joinLabels(catalog, labelsText) {
+  if (labelsText == null) return catalog;
+  const [header = [], ...body] = parseCsv(labelsText);
+  const byId = new Map();
+  for (const cells of body) {
+    const r = Object.fromEntries(header.map((h, i) => [h, cells[i]]));
+    if (r.id) byId.set(r.id, r);
+  }
+  return catalog.map((p) => {
+    const r = byId.get(p.id);
+    if (!r) return p;
+    return {
+      ...p,
+      ...(DRIVING_SIDES.has(r.driving_side) ? { drivingSide: r.driving_side } : {}),
+      ...(CLIMATE_GROUPS.has(r.climate_group) ? { climateGroup: r.climate_group } : {}),
+    };
+  });
+}
+
+/**
+ * Builds the catalog from photos.csv text, joined with quality.csv and concept_labels.csv text
+ * when given.
+ * @param {string} photosText
+ * @param {string | null} [qualityText]
+ * @param {string | null} [labelsText]
+ */
+export function buildCatalog(photosText, qualityText, labelsText = null) {
+  return joinLabels(joinQuality(toCatalog(photosText), qualityText), labelsText);
 }
 
 export function toCatalog(text) {
@@ -82,6 +117,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const catalog = buildCatalog(
     readFileSync(csvPath, "utf8"),
     existsSync(qualityPath) ? readFileSync(qualityPath, "utf8") : null,
+    existsSync(labelsPath) ? readFileSync(labelsPath, "utf8") : null,
   );
   writeFileSync(outPath, JSON.stringify(catalog, null, 1) + "\n");
   console.log(`wrote ${catalog.length} photos to src/data/photos.json`);

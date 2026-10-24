@@ -288,3 +288,46 @@ test("first-time visitors get a card over the photo that their first tap dismiss
   await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
   await expect(title).toHaveCount(0);
 });
+
+test("hints come one at a time, stay on screen with the globe, and cap the round's score", async ({
+  page,
+}) => {
+  await page.goto("./?daily");
+  await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
+  const hints = page.getByRole("list", { name: "Hints" });
+  await expect(hints).toHaveCount(0);
+
+  // Every photo offers at least its continent; take hints until the button goes.
+  let taken = 0;
+  const hint = page.getByRole("button", { name: /^Take a hint/ });
+  while ((await hint.count()) > 0) {
+    await hint.click();
+    taken += 1;
+    await expect(hints.getByRole("listitem")).toHaveCount(taken);
+  }
+  expect(taken).toBeGreaterThanOrEqual(1);
+  expect(taken).toBeLessThanOrEqual(3);
+  await expect(hints.getByRole("listitem").first()).toHaveText(/^It's in /);
+
+  // The hints and the guess button fit on screen without pushing the globe away.
+  const viewport = page.viewportSize()!;
+  const list = (await hints.boundingBox())!;
+  expect(list.x + list.width).toBeLessThanOrEqual(viewport.width + 1);
+  await expect(page.locator(".globe")).toBeInViewport();
+  await expect(page.getByRole("button", { name: "Place your pin on the globe" })).toBeInViewport();
+
+  const max = ["5,000", "4,000", "3,000", "2,000"][taken];
+  await expect(page.getByText(`This round is now worth up to ${max} points.`)).toBeVisible();
+
+  const globe = page.getByRole("application", { name: /Globe/ });
+  await globe.focus();
+  await page.keyboard.press("Enter");
+  await page.getByRole("button", { name: "Guess here" }).click();
+  const card = page.getByRole("region").filter({ hasText: "It was taken in" });
+  await expect(card).toBeVisible();
+  await expect(card.getByText(new RegExp(`worth up to ${max} points\\.$`)).first()).toBeAttached();
+  // A score can never beat the cap the hints set.
+  const announced = await card.getByText(/^You were .+ away and scored /).textContent();
+  const scored = Number(/scored ([\d,]+) points/.exec(announced ?? "")![1].replace(/,/g, ""));
+  expect(scored).toBeLessThanOrEqual(Number(max.replace(",", "")));
+});

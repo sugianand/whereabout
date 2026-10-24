@@ -1,4 +1,5 @@
 import type { LngLat } from "@/lib/geo";
+import type { Clue } from "@/lib/hints";
 
 export interface Credit {
   author: string;
@@ -16,19 +17,26 @@ export interface CatalogPhoto extends LngLat {
   /** Original file size in pixels, when known (from data/curation/quality.csv). */
   width?: number;
   height?: number;
+  /** Concept labels for the hints (data/labels/concept_labels.csv), when the maps gave one. */
+  drivingSide?: "left" | "right";
+  climateGroup?: string;
 }
 
 /** What the player may see before guessing: the photo, never its location. */
 export interface RoundStart {
   roundId: string;
   photo: { id: string; imageUrl: string };
+  /** How many hints this photo offers (0 to 3). What they say is only known once taken. */
+  hintsAvailable: number;
 }
 
 /** Everything revealed after a guess. */
 export interface Reveal {
   roundId: string;
   distanceKm: number;
+  /** Already lowered for the hints taken: the backend scores them. */
   score: number;
+  hintsUsed: number;
   answer: LngLat & {
     place: string;
     country: string | null;
@@ -145,5 +153,7 @@ export interface AtlasData {
 export interface GameBackend {
   readonly kind: "api" | "local";
   startRound(): Promise<RoundStart>;
+  /** Take the round's next hint; resolves to every hint taken so far, newest last. */
+  hint(roundId: string): Promise<Clue[]>;
   guess(roundId: string, at: LngLat): Promise<Reveal>;
 }

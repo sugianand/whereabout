@@ -9,7 +9,7 @@ import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import { loadRecent, pickFresh, rememberPlayed, saveRecent } from "@/lib/game/fresh";
 import { ROUNDS_PER_GAME, gameReducer, initialState, totals } from "@/lib/game/state";
 import type { CatalogPhoto, GameBackend } from "@/lib/game/types";
-import { formatPoints, type LngLat } from "@/lib/geo";
+import { formatPoints, maxPoints, type LngLat } from "@/lib/geo";
 import { hasSeenIntro, INTRO_TEXT, markIntroSeen } from "@/lib/intro";
 import type { RevealView } from "@/lib/reveal";
 
@@ -204,6 +204,17 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
     }
   }
 
+  async function takeHint() {
+    if (state.phase !== "guessing" || state.hinting || state.submitting || !backend) return;
+    if (state.clues.length >= state.round.hintsAvailable) return;
+    dispatch({ type: "hintRequested" });
+    try {
+      dispatch({ type: "hinted", clues: await backend.hint(state.round.roundId) });
+    } catch (err) {
+      dispatch({ type: "failed", message: (err as Error).message });
+    }
+  }
+
   function playFresh() {
     setMode((m) => ({ kind: "fresh", game: m?.kind === "fresh" ? m.game + 1 : 1 }));
     dispatch({ type: "restart" });
@@ -251,6 +262,8 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   const error = state.phase === "guessing" || state.phase === "loading" ? state.error : null;
   const roundNumber = state.index + 1;
   const roundSize = round ? records.get(round.photo.id)?.photo : undefined;
+  const clues = state.phase === "guessing" ? state.clues : [];
+  const hintsLeft = state.phase === "guessing" ? state.round.hintsAvailable - clues.length : 0;
 
   return (
     <main
@@ -375,18 +388,53 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
         </div>
         {state.phase !== "revealed" && (
           <div className="wb-guess-bar">
-            <button
-              type="button"
-              onClick={submit}
-              disabled={state.phase !== "guessing" || !state.pin || state.submitting}
-              className="w-full rounded-full bg-flare px-6 py-3 font-semibold text-ocean-deep transition enabled:hover:brightness-110 disabled:cursor-not-allowed disabled:bg-chalk/15 disabled:text-chalk-dim"
-            >
-              {state.phase === "guessing" && state.submitting
-                ? "Checking…"
-                : state.phase === "guessing" && state.pin
-                  ? "Guess here"
-                  : "Place your pin on the globe"}
-            </button>
+            {clues.length > 0 && (
+              <div className="mb-2" aria-live="polite">
+                <ol aria-label="Hints" className="flex flex-wrap gap-1.5">
+                  {clues.map((clue) => (
+                    <li
+                      key={clue.kind}
+                      className="rounded-full border border-gold/50 bg-ocean-deep/70 px-3 py-1 text-xs text-gold backdrop-blur"
+                    >
+                      {clue.text}
+                    </li>
+                  ))}
+                </ol>
+                <p className="mt-1 inline-block rounded-full bg-ocean-deep/70 px-2 py-0.5 text-[11px] text-chalk-dim backdrop-blur">
+                  This round is now worth up to {formatPoints(maxPoints(clues.length))} points.
+                </p>
+              </div>
+            )}
+            <div className="flex gap-2">
+              {hintsLeft > 0 && state.phase === "guessing" && (
+                <button
+                  type="button"
+                  onClick={takeHint}
+                  disabled={state.hinting || state.submitting}
+                  aria-label={`Take a hint: the round will be worth up to ${formatPoints(maxPoints(clues.length + 1))} points`}
+                  className="shrink-0 rounded-full border border-gold/60 bg-ocean-deep/60 px-4 py-3 text-sm font-semibold text-gold backdrop-blur transition enabled:hover:border-gold disabled:cursor-wait disabled:opacity-60"
+                >
+                  Hint{" "}
+                  <span className="tabular font-normal text-chalk-dim">
+                    −{formatPoints(maxPoints(clues.length) - maxPoints(clues.length + 1))}
+                  </span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={submit}
+                disabled={
+                  state.phase !== "guessing" || !state.pin || state.submitting || state.hinting
+                }
+                className="min-w-0 flex-1 rounded-full bg-flare px-4 py-3 font-semibold text-ocean-deep transition enabled:hover:brightness-110 disabled:cursor-not-allowed disabled:bg-chalk/15 disabled:text-chalk-dim"
+              >
+                {state.phase === "guessing" && state.submitting
+                  ? "Checking…"
+                  : state.phase === "guessing" && state.pin
+                    ? "Guess here"
+                    : "Place your pin on the globe"}
+              </button>
+            </div>
             {error && (
               <p role="alert" className="mt-2 text-center text-sm text-flare">
                 {error}

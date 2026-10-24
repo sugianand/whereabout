@@ -12,7 +12,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Karst_peaks_with_sea_of_clouds_at_sunrise,_South_view_from_the_top_of_Mount_Nam_Xay,_Vang_Vieng,_Laos.jpg"
   },
   "width": 6129,
-  "height": 4086
+  "height": 4086,
+  "drivingSide": "right",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wm003",
@@ -27,7 +29,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Saal_an_der_Saale,_Findelbergweg,_Saale_bridge.jpg"
   },
   "width": 5340,
-  "height": 3560
+  "height": 3560,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wm004",
@@ -42,7 +46,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:P%C3%B6rtschach_Werzer-Esplanade_mit_Anleger_20112018_5439.jpg"
   },
   "width": 7360,
-  "height": 4912
+  "height": 4912,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wm007",
@@ -57,7 +63,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Parque_nacional_y_reserva_Denali,_Alaska,_Estados_Unidos,_2017-08-30,_DD_13-19_PAN.jpg"
   },
   "width": 21761,
-  "height": 3724
+  "height": 3724,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wm011",
@@ -72,7 +80,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tatoosh_Range_WA_MRNP1.jpg"
   },
   "width": 3888,
-  "height": 2528
+  "height": 2528,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wm012",
@@ -87,7 +97,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Los_Gigantes,_Tenerife,_Espa%C3%B1a,_2012-12-16,_DD_10.jpg"
   },
   "width": 3887,
-  "height": 2154
+  "height": 2154,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wm015",
@@ -102,7 +114,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Our_Lady_of_Mount_Carmel_and_St_Pauls_Pro-Cathedral.jpg"
   },
   "width": 4252,
-  "height": 2835
+  "height": 2835,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wm016",
@@ -117,7 +131,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bhaga_River_Darcha_Gemur_Lahaul_Jun24_A7CR_00231.jpg"
   },
   "width": 8020,
-  "height": 5012
+  "height": 5012,
+  "drivingSide": "left",
+  "climateGroup": "Polar"
  },
  {
   "id": "wm018",
@@ -132,7 +148,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:JA1271_crossing_the_Otaki_River.jpg"
   },
   "width": 2918,
-  "height": 1937
+  "height": 1937,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wm020",
@@ -147,7 +165,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Golden_Gate_Bridge_as_seen_from_Battery_East.jpg"
   },
   "width": 5388,
-  "height": 3368
+  "height": 3368,
+  "drivingSide": "right"
  },
  {
   "id": "wm022",
@@ -162,7 +181,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Anraz_Ouirgane_Atlas_Mountains_Oct25_A7CR_08751-5_HDR1.jpg"
   },
   "width": 8756,
-  "height": 5837
+  "height": 5837,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wm023",
@@ -177,7 +198,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ayuntamiento_de_Oporto,_Portugal,_2012-05-09,_DD_03.JPG"
   },
   "width": 4868,
-  "height": 3452
+  "height": 3452,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wm024",
@@ -192,7 +215,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ponta_de_S%C3%A3o_Louren%C3%A7o_north_north_east.jpg"
   },
   "width": 10000,
-  "height": 4571
+  "height": 4571,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wm027",
@@ -207,7 +232,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Praia_de_Peralta._O_Grove._Galiza.jpg"
   },
   "width": 5548,
-  "height": 1878
+  "height": 1878,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wm030",
@@ -222,7 +249,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pers%C3%A9polis,_Ir%C3%A1n,_2016-09-24,_DD_56.jpg"
   },
   "width": 8609,
-  "height": 3806
+  "height": 3806,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wm031",
@@ -237,7 +266,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bahrain_Fort_March_2015.JPG"
   },
   "width": 4957,
-  "height": 2775
+  "height": 2775,
+  "drivingSide": "right"
  },
  {
   "id": "wm032",
@@ -252,7 +282,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Moscow_05-2012_Tsaritsyno_10.jpg"
   },
   "width": 3643,
-  "height": 2485
+  "height": 2485,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wm036",
@@ -267,7 +299,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Okshornan_from_Tungeneset,_2015_September_-_3.jpg"
   },
   "width": 3300,
-  "height": 2180
+  "height": 2180,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wm037",
@@ -282,7 +316,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Small_stream_and_snowy_peaks_in_Padjelanta_National_Park_(DSCF1258).jpg"
   },
   "width": 4650,
-  "height": 2773
+  "height": 2773,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wm038",
@@ -297,7 +333,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nilgiris_Sholur_Reflection_Bokkapuram_Sep22_R16_06402.jpg"
   },
   "width": 5271,
-  "height": 3514
+  "height": 3514,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wm039",
@@ -312,7 +350,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Vagator_pano_26012016.jpg"
   },
   "width": 9000,
-  "height": 2416
+  "height": 2416,
+  "drivingSide": "left"
  },
  {
   "id": "wm040",
@@ -327,7 +366,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bolshoy_Tkhach,_Adygea,_%D0%91%D0%BE%D0%BB%D1%8C%D1%88%D0%BE%D0%B9_%D0%A2%D1%85%D0%B0%D1%87,_%D0%BA%D1%83%D1%8D%D1%81%D1%82%D0%B0,_%D0%90%D0%B4%D1%8B%D0%B3%D0%B5%D1%8F.jpg"
   },
   "width": 4912,
-  "height": 3264
+  "height": 3264,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wm046",
@@ -342,7 +383,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:View_West_of_Hartz_Mountain.jpg"
   },
   "width": 10046,
-  "height": 2156
+  "height": 2156,
+  "drivingSide": "left",
+  "climateGroup": "Polar"
  },
  {
   "id": "wm048",
@@ -357,7 +400,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Moon_boat_at_Teknaf_sea_beach_05.jpg"
   },
   "width": 4000,
-  "height": 3000
+  "height": 3000,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wm049",
@@ -372,7 +417,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:120408_Pheriche_Pano_4k.jpg"
   },
   "width": 3840,
-  "height": 2400
+  "height": 2400,
+  "drivingSide": "left",
+  "climateGroup": "Polar"
  },
  {
   "id": "wm050",
@@ -387,7 +434,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:La_Restinga_Beach_3.jpg"
   },
   "width": 5971,
-  "height": 1999
+  "height": 1999,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wm051",
@@ -402,7 +451,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Saint_Kitts_-_Brimstone_Hill_Fortress_03.JPG"
   },
   "width": 5094,
-  "height": 3257
+  "height": 3257,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wm055",
@@ -417,7 +468,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Laguna_Honda,_Bolivia,_2016-02-03,_DD_34.JPG"
   },
   "width": 8688,
-  "height": 5792
+  "height": 5792,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wm057",
@@ -432,7 +485,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Mooste_m%C3%B5isa_auruveski_2013.jpg"
   },
   "width": 5000,
-  "height": 3333
+  "height": 3333,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wm058",
@@ -447,7 +502,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pal%C3%A1cio_Quitandinha,_Petropolis.jpg"
   },
   "width": 11105,
-  "height": 7053
+  "height": 7053,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wm062",
@@ -462,7 +519,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Traditional_hanok_house_with_wooden_doors_along_a_steeply_sloping_street_in_Bukchon_Hanok_Village_Seoul.jpg"
   },
   "width": 5015,
-  "height": 3761
+  "height": 3761,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wm063",
@@ -477,7 +536,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pik_Pobedy_and_Vazha-Pshavela_Peak_at_sunset_from_South_Engilchek_Base_Camp,_Central_Tian_Shan,_Kyrgyzstan.jpg"
   },
   "width": 5782,
-  "height": 3855
+  "height": 3855,
+  "drivingSide": "right",
+  "climateGroup": "Polar"
  },
  {
   "id": "wm066",
@@ -492,7 +553,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Togetsu-ky%C5%8D_bridge_at_golden_hour,_Kyoto,_Japan.jpg"
   },
   "width": 6544,
-  "height": 4363
+  "height": 4363,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wm067",
@@ -507,7 +570,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:West_end_of_Karang_Bolong,_Nusakembangan,_Cilacap_2015-03-21.jpg"
   },
   "width": 7853,
-  "height": 6280
+  "height": 6280,
+  "drivingSide": "left"
  },
  {
   "id": "wm068",
@@ -522,7 +586,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Batok,_view_from_Bromo_volcano,_Java,_Indonesia,_20220820_0539_9409.jpg"
   },
   "width": 5648,
-  "height": 3770
+  "height": 3770,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wm069",
@@ -537,7 +603,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:%D0%9D%D0%B0%D0%B9%D0%BA%D1%80%D0%B0%D1%89%D1%96_%D0%BC%D0%B8%D1%82%D1%96_%D0%B6%D0%B8%D1%82%D1%82%D1%8F.jpg"
   },
   "width": 6000,
-  "height": 4000
+  "height": 4000,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wm070",
@@ -552,7 +620,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Paton_Bridge,_the_Dnieper_River_and_the_Berezniaky_neighbourhood_at_sunset._Kiev,_Ukraine.jpg"
   },
   "width": 5583,
-  "height": 3255
+  "height": 3255,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wm071",
@@ -567,7 +637,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ilamane_01.jpg"
   },
   "width": 3024,
-  "height": 2016
+  "height": 2016,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wm072",
@@ -582,7 +654,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Crook_Point_Bascule_Bridge_(62351)a.jpg"
   },
   "width": 4597,
-  "height": 3448
+  "height": 3448,
+  "drivingSide": "right"
  },
  {
   "id": "wm074",
@@ -597,7 +670,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Prowincja_Krabi,_Ko_Phi_Phi_Don,_Pla%C5%BCa_Loh_Moo_Dee,_%C5%81odzie_d%C5%82ugoogonowe_(01).jpg"
   },
   "width": 4463,
-  "height": 2510
+  "height": 2510,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wm077",
@@ -612,7 +687,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sankt_Olofs_kyrkoruin_september_2013_01.jpg"
   },
   "width": 5679,
-  "height": 3194
+  "height": 3194,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wm078",
@@ -627,7 +704,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sellin,_Strandk%C3%B6rbe_am_Hauptstrand_--_2009_--_1177.jpg"
   },
   "width": 4000,
-  "height": 3000
+  "height": 3000,
+  "drivingSide": "right"
  },
  {
   "id": "wm079",
@@ -642,7 +720,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Beadnell_MMB_08_Beach.jpg"
   },
   "width": 4530,
-  "height": 2718
+  "height": 2718,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wm084",
@@ -657,7 +737,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Northeast_shore_of_Grand_Manan3.jpg"
   },
   "width": 5500,
-  "height": 2882
+  "height": 2882,
+  "drivingSide": "right"
  },
  {
   "id": "wm086",
@@ -672,7 +753,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tulum_-_01.jpg"
   },
   "width": 3000,
-  "height": 2250
+  "height": 2250,
+  "drivingSide": "right",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wm087",
@@ -687,7 +770,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Playa_Noordhoek,_Sud%C3%A1frica,_2018-07-23,_DD_126.jpg"
   },
   "width": 8687,
-  "height": 4348
+  "height": 4348,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wm088",
@@ -702,7 +787,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bosluiskop_(ZA),_Robberg_Nature_Reserve,_Strand_--_2024_--_2177-80.jpg"
   },
   "width": 8474,
-  "height": 3740
+  "height": 3740,
+  "drivingSide": "left"
  },
  {
   "id": "wm089",
@@ -717,7 +803,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sillustani,_Per%C3%BA,_2015-08-01,_DD_108-112.JPG"
   },
   "width": 16148,
-  "height": 4011
+  "height": 4011,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wm091",
@@ -732,7 +820,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Viborg_Katedralskole_Symmetrical.jpg"
   },
   "width": 15431,
-  "height": 4147
+  "height": 4147,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wm092",
@@ -747,7 +837,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:La_Jolla_coast_(70324).jpg"
   },
   "width": 4549,
-  "height": 2726
+  "height": 2726,
+  "drivingSide": "right"
  },
  {
   "id": "wm093",
@@ -762,7 +853,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Joshua_Tree_National_Park_2013.jpg"
   },
   "width": 4928,
-  "height": 3026
+  "height": 3026,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wm094",
@@ -777,7 +870,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Vista_do_Mirante_do_Forte_dos_Rem%C3%A9dios_da_praia_de_Fernando_de_Noronha.jpg"
   },
   "width": 4247,
-  "height": 2478
+  "height": 2478,
+  "drivingSide": "right"
  },
  {
   "id": "wm097",
@@ -792,7 +886,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Princetown_(AU),_Port_Campbell_National_Park,_Twelve_Apostles_--_2019_--_0969.jpg"
   },
   "width": 6704,
-  "height": 4469
+  "height": 4469,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wm101",
@@ -807,7 +903,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tilya-Kori_Madrasa_01.jpg"
   },
   "width": 4227,
-  "height": 2734
+  "height": 2734,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wm102",
@@ -822,7 +920,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:View_of_Kaikoura_Ranges,_New_Zealand.jpg"
   },
   "width": 7071,
-  "height": 2886
+  "height": 2886,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wm104",
@@ -837,7 +937,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Arenal_volcano_(70785p).jpg"
   },
   "width": 7409,
-  "height": 3105
+  "height": 3105,
+  "drivingSide": "right",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wm106",
@@ -852,7 +954,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Panorama_of_lake_Baikal.jpg"
   },
   "width": 15145,
-  "height": 6445
+  "height": 6445,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wm107",
@@ -867,7 +971,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:%C3%81rea_de_Prote%C3%A7%C3%A3o_Ambiental_da_Baleia_Franca_Claudio_Seelig_(13).jpg"
   },
   "width": 6000,
-  "height": 4000
+  "height": 4000,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wm108",
@@ -882,7 +988,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ergaki,_Peak_Molodezhnyy,_Sayan_Mountains,_Russia.jpg"
   },
   "width": 6000,
-  "height": 4000
+  "height": 4000,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wm110",
@@ -897,7 +1005,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Kazan_M12_Bridge_2024-07-12_1253.jpg"
   },
   "width": 4951,
-  "height": 3301
+  "height": 3301,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wm111",
@@ -912,7 +1022,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:%D0%97%D0%B8%D0%BC%D0%BD%D0%B8%D0%B9_%D0%A2%D0%B0%D0%B3%D0%B0%D0%BD%D0%B0%D0%B9.jpg"
   },
   "width": 6000,
-  "height": 4000
+  "height": 4000,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wm112",
@@ -927,7 +1039,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Icelandic_Landscape_near_Neskaupsta%C3%B0ur_July_2014.JPG"
   },
   "width": 5898,
-  "height": 3443
+  "height": 3443,
+  "drivingSide": "right",
+  "climateGroup": "Polar"
  },
  {
   "id": "wm116",
@@ -942,7 +1056,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Skyline_of_the_Central_Business_District_of_Singapore_with_Esplanade_Bridge_in_the_evening.jpg"
   },
   "width": 6661,
-  "height": 3747
+  "height": 3747,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wm117",
@@ -957,7 +1073,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dead_Vlei,_Sossusvlei,_Namibia,_2018-08-06,_DD_086.jpg"
   },
   "width": 8078,
-  "height": 5399
+  "height": 5399,
+  "drivingSide": "left",
+  "climateGroup": "Arid"
  },
  {
   "id": "wm119",
@@ -972,7 +1090,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:China_Tianjin_5227532_(04).jpg"
   },
   "width": 4608,
-  "height": 3456
+  "height": 3456,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wm122",
@@ -987,7 +1107,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cataratas_Victoria,_Zambia-Zimbabue,_2018-07-27,_DD_16-20_PAN.jpg"
   },
   "width": 11686,
-  "height": 2172
+  "height": 2172,
+  "drivingSide": "left",
+  "climateGroup": "Arid"
  },
  {
   "id": "wm124",
@@ -1002,7 +1124,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Praslin_vom_Nid_d%27Aigle.jpg"
   },
   "width": 5000,
-  "height": 1692
+  "height": 1692,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wm126",
@@ -1017,7 +1141,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:El_Gouna_Bus_R01.jpg"
   },
   "width": 4288,
-  "height": 2848
+  "height": 2848,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wm127",
@@ -1032,7 +1158,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Wadi_Rum_BW_16.JPG"
   },
   "width": 3872,
-  "height": 2592
+  "height": 2592,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wm128",
@@ -1047,7 +1175,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Wreck_of_Cabo_de_Santa_Maria,_2010_December_-_4.jpg"
   },
   "width": 3072,
-  "height": 2048
+  "height": 2048,
+  "drivingSide": "right"
  },
  {
   "id": "wm131",
@@ -1062,7 +1191,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:%D0%A7%D0%B8%D0%BD%D0%BA%D0%B8_%D0%BF%D0%BB%D0%B0%D1%82%D0%BE_%D0%A3%D1%81%D1%82%D1%8E%D1%80%D1%82._%D0%A3%D1%80%D0%BE%D1%87%D0%B8%D1%89%D0%B5_%D0%91%D0%BE%D0%B7%D0%B6%D1%8B%D1%80%D0%B0.jpg"
   },
   "width": 10782,
-  "height": 5391
+  "height": 5391,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wm132",
@@ -1077,7 +1208,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:20110419_Ani_North_Walls_Turkey_Panorama.jpg"
   },
   "width": 13000,
-  "height": 1486
+  "height": 1486,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wm133",
@@ -1092,7 +1225,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lori_Berd,_Armenia,_2016-09-30,_DD_69.jpg"
   },
   "width": 7893,
-  "height": 5461
+  "height": 5461,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wm134",
@@ -1107,7 +1242,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Havelock_Island,_Mangrove_tree_on_the_beach,_Andaman_Islands.jpg"
   },
   "width": 4032,
-  "height": 2688
+  "height": 2688,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wm136",
@@ -1122,7 +1259,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Yellowstone_National_Park_(WY,_USA),_Old_Faithful_Geyser_--_2022_--_2599.jpg"
   },
   "width": 6720,
-  "height": 4480
+  "height": 4480,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wm139",
@@ -1137,7 +1276,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Perth_(AU),_Elizabeth_Quay_Bridge_--_2019_--_0375-9.jpg"
   },
   "width": 6041,
-  "height": 4353
+  "height": 4353,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wm140",
@@ -1152,7 +1293,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Thatched-roof_villa_in_the_Maldive_Islands.jpg"
   },
   "width": 4264,
-  "height": 2791
+  "height": 2791,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wm141",
@@ -1167,7 +1310,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Maid_of_the_Mist_VII_approaching_the_Horseshoe_Falls,_West_view_20170418_1.jpg"
   },
   "width": 6262,
-  "height": 4473
+  "height": 4473,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wm143",
@@ -1182,7 +1327,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:%D0%9A%D0%BE%D1%81%D0%BC%D0%BE%D0%B4%D1%80%D0%BE%D0%BC_%D0%91%D0%B0%D0%B9%D0%BA%D0%BE%D0%BD%D1%83%D1%80,_%D1%81%D1%82%D0%BE%D0%BF%D0%BE%D1%80_%D1%82%D1%80%D0%B0%D0%BD%D1%81%D0%BF%D0%BE%D1%80%D1%82%D1%91%D1%80%D0%B0_%D0%BD%D0%B0_%D0%BF%D0%BB%D0%BE%D1%89%D0%B0%D0%B4%D0%BA%D0%B5_253.jpg"
   },
   "width": 4667,
-  "height": 2625
+  "height": 2625,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wm144",
@@ -1197,7 +1344,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Burabay_winter.jpg"
   },
   "width": 6004,
-  "height": 3002
+  "height": 3002,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wm145",
@@ -1212,7 +1361,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:USA-2016-Puerto_Rico-San_Juan-Castillo_San_Felipe_del_Morro_10.jpg"
   },
   "width": 6438,
-  "height": 4292
+  "height": 4292,
+  "drivingSide": "right"
  },
  {
   "id": "wm146",
@@ -1227,7 +1377,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Teatro_Principal,_Puebla,_M%C3%A9xico,_2013-10-11,_DD_02.JPG"
   },
   "width": 5131,
-  "height": 3515
+  "height": 3515,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wm147",
@@ -1242,7 +1394,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Autopista_Taylor,_Chicken,_Alaska,_Estados_Unidos,_2017-08-28,_DD_102.jpg"
   },
   "width": 7993,
-  "height": 5329
+  "height": 5329,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wm150",
@@ -1257,7 +1411,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Boats_on_Pacasmayo_Beach.jpg"
   },
   "width": 5043,
-  "height": 3362
+  "height": 3362,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wm151",
@@ -1272,7 +1428,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Upernavik_evening_panorama_2007-08-08_cropped_sharpened.jpg"
   },
   "width": 7220,
-  "height": 1500
+  "height": 1500,
+  "drivingSide": "right",
+  "climateGroup": "Polar"
  },
  {
   "id": "wm154",
@@ -1287,7 +1445,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bioparque_Puqu%C3%A9n,_Los_Molles,_2019_(22).jpg"
   },
   "width": 4272,
-  "height": 2848
+  "height": 2848,
+  "drivingSide": "right"
  },
  {
   "id": "wm157",
@@ -1302,7 +1461,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:%D0%9C%D0%B0%D1%8F%D0%BA_%D0%90%D0%BD%D0%B8%D0%B2%D0%B0.jpg"
   },
   "width": 6612,
-  "height": 4408
+  "height": 4408,
+  "drivingSide": "right"
  },
  {
   "id": "wm158",
@@ -1317,7 +1477,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tolbachik_volcano_1975_cone_pano_Kamchatka_on_2015-07-28.png"
   },
   "width": 23040,
-  "height": 3840
+  "height": 3840,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh1299437",
@@ -1332,7 +1494,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Horyu-ji01s3200.jpg"
   },
   "width": 4592,
-  "height": 3056
+  "height": 3056,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh1299447",
@@ -1347,7 +1511,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Horyu-ji02s3200.jpg"
   },
   "width": 4470,
-  "height": 2980
+  "height": 2980,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh1299460",
@@ -1362,7 +1528,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Horyu-ji10s3200.jpg"
   },
   "width": 4500,
-  "height": 3000
+  "height": 3000,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh1299479",
@@ -1377,7 +1545,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Horyu-ji18s3200.jpg"
   },
   "width": 4592,
-  "height": 3056
+  "height": 3056,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh1555889",
@@ -1392,7 +1562,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:CSU_IMFields2_edited2.jpg"
   },
   "width": 2014,
-  "height": 1079
+  "height": 1079,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh2368717",
@@ -1407,7 +1579,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Westfield_winery_baskerville_gnangarra.JPG"
   },
   "width": 3008,
-  "height": 2000
+  "height": 2000,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh2680583",
@@ -1422,7 +1596,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:194michinoku_folk_village3872.jpg"
   },
   "width": 3832,
-  "height": 2541
+  "height": 2541,
+  "drivingSide": "left",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh3677747",
@@ -1437,7 +1613,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:AucklandPano_MC.jpg"
   },
   "width": 15000,
-  "height": 2271
+  "height": 2271,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh3693965",
@@ -1452,7 +1630,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Warszawa-Dolny_Mokot%C3%B3w.jpg"
   },
   "width": 5493,
-  "height": 1871
+  "height": 1871,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh4066115",
@@ -1467,7 +1647,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Puvar_20080220-1.jpg"
   },
   "width": 4368,
-  "height": 2912
+  "height": 2912,
+  "drivingSide": "left"
  },
  {
   "id": "wh4261388",
@@ -1482,7 +1663,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Railroad_bridge_wide_2,_Cedar_Rapids,_June_22_2008.jpg"
   },
   "width": 3264,
-  "height": 2448
+  "height": 2448,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh4271613",
@@ -1497,7 +1680,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Gamlehaugen1.jpg"
   },
   "width": 2650,
-  "height": 1762
+  "height": 1762,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh4272232",
@@ -1512,7 +1697,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:GamlehaugenGardens.jpg"
   },
   "width": 3500,
-  "height": 1138
+  "height": 1138,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh4277921",
@@ -1527,7 +1714,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Municipal_Offices_%26_Public_Library,_Timaru.jpg"
   },
   "width": 3822,
-  "height": 2854
+  "height": 2854,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh5411905",
@@ -1542,7 +1731,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Wakayama_Castle_Nishinomaru_Garden04bs3200.jpg"
   },
   "width": 3200,
-  "height": 2130
+  "height": 2130,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh5592836",
@@ -1557,7 +1748,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Wakayama_Yosuien06bs4272.jpg"
   },
   "width": 4272,
-  "height": 2848
+  "height": 2848,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh5653582",
@@ -1572,7 +1765,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Saikazaki_Wakaura01bs4272.jpg"
   },
   "width": 4272,
-  "height": 2848
+  "height": 2848,
+  "drivingSide": "left"
  },
  {
   "id": "wh6588040",
@@ -1587,7 +1781,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lima_Lima_Flight_team_flying_Beechcraft_Mentors.jpg"
   },
   "width": 4288,
-  "height": 2848
+  "height": 2848,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh6629434",
@@ -1602,7 +1798,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sbeitla_04.jpg"
   },
   "width": 2288,
-  "height": 1712
+  "height": 1712,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh6714189",
@@ -1617,7 +1815,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Naha_Shikinaen21n4272.jpg"
   },
   "width": 4592,
-  "height": 3056
+  "height": 3056,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh6755162",
@@ -1632,7 +1832,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:PennsylvaniaRailroadBridgePanorama.jpg"
   },
   "width": 24260,
-  "height": 1494
+  "height": 1494,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh6851999",
@@ -1647,7 +1849,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:PortlandCanalEntrance.jpg"
   },
   "width": 5460,
-  "height": 1461
+  "height": 1461,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh6988057",
@@ -1662,7 +1866,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Naha_Shuri_Castle02s5s3200.jpg"
   },
   "width": 4500,
-  "height": 3000
+  "height": 3000,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh6988105",
@@ -1677,7 +1883,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Naha_Shuri_Castle16s5s3200.jpg"
   },
   "width": 4592,
-  "height": 3056
+  "height": 3056,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh7029225",
@@ -1692,7 +1900,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:San_Jacinto_monument.jpg"
   },
   "width": 4368,
-  "height": 2912
+  "height": 2912,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh7053341",
@@ -1707,7 +1917,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Arkansas_State_Capitol.jpg"
   },
   "width": 9235,
-  "height": 3708
+  "height": 3708,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh7179854",
@@ -1722,7 +1934,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Albi_panorama_morning_Wikimedia_Commons.jpg"
   },
   "width": 15160,
-  "height": 3695
+  "height": 3695,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh7963128",
@@ -1737,7 +1951,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Adelaide_2009_201.JPG"
   },
   "width": 2764,
-  "height": 1752
+  "height": 1752,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh8888551",
@@ -1752,7 +1968,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Black_hill_conservation_park_track.JPG"
   },
   "width": 3000,
-  "height": 1993
+  "height": 1993,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh9645741",
@@ -1767,7 +1985,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Stadt_M%C3%BCnchen_moored_in_Bridgetown.JPG"
   },
   "width": 4000,
-  "height": 3000
+  "height": 3000,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh9649676",
@@ -1782,7 +2002,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Esna_30.jpg"
   },
   "width": 4416,
-  "height": 3308
+  "height": 3308,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh9649696",
@@ -1797,7 +2019,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Esna_31.jpg"
   },
   "width": 4389,
-  "height": 3289
+  "height": 3289,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh9837506",
@@ -1812,7 +2036,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Kinjocho_ishidatami-michi_Shuri_Naha01n4272.jpg"
   },
   "width": 4500,
-  "height": 3000
+  "height": 3000,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh10128352",
@@ -1827,7 +2053,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Citadelle_d%27Alep.jpg"
   },
   "width": 3623,
-  "height": 2000
+  "height": 2000,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh11576552",
@@ -1842,7 +2070,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Khusruwiyah_Mosque,_Aleppo.jpg"
   },
   "width": 3351,
-  "height": 2399
+  "height": 2399,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh11581901",
@@ -1857,7 +2087,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Aleppo_Citadel_06_-_Inner_gate.jpg"
   },
   "width": 3338,
-  "height": 2548
+  "height": 2548,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh11581913",
@@ -1872,7 +2104,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Aleppo_Citadel_07_-_Inner_gate.jpg"
   },
   "width": 2927,
-  "height": 1998
+  "height": 1998,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh11593822",
@@ -1887,7 +2121,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Aleppo_Citadel_13_-_Great_Mosque.jpg"
   },
   "width": 2916,
-  "height": 2138
+  "height": 2138,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh11596930",
@@ -1902,7 +2138,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Aleppo_03.jpg"
   },
   "width": 3456,
-  "height": 2400
+  "height": 2400,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh11601539",
@@ -1917,7 +2155,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Aleppo_Citadel_19_-_Tower.jpg"
   },
   "width": 3117,
-  "height": 2308
+  "height": 2308,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh11626898",
@@ -1932,7 +2172,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Aleppo_Citadel_26_-_Bridge.jpg"
   },
   "width": 3456,
-  "height": 2592
+  "height": 2592,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh11654128",
@@ -1947,7 +2189,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hammam_Yalbougha_al-Nasri,_Aleppo.jpg"
   },
   "width": 3138,
-  "height": 2085
+  "height": 2085,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh11670418",
@@ -1962,7 +2206,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nakatsu-bansho-en_Marugame_Kagawa_pref01n4350.jpg"
   },
   "width": 4350,
-  "height": 2900
+  "height": 2900,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh12184482",
@@ -1977,7 +2223,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Whaler_Ship_Petrel_Grytviken.jpg"
   },
   "width": 4253,
-  "height": 2848
+  "height": 2848,
+  "climateGroup": "Polar"
  },
  {
   "id": "wh12189009",
@@ -1992,7 +2239,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Signal_Hill_Tattoo.jpg"
   },
   "width": 2901,
-  "height": 2000
+  "height": 2000,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh12189396",
@@ -2007,7 +2256,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:St_John%27s_Lower_Battery_2.jpg"
   },
   "width": 2809,
-  "height": 1854
+  "height": 1854,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh12223904",
@@ -2022,7 +2273,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Horyu-ji46n3990.jpg"
   },
   "width": 3990,
-  "height": 2660
+  "height": 2660,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh12905454",
@@ -2037,7 +2290,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ecuador_Manta_beach_restaurants.jpg"
   },
   "width": 4115,
-  "height": 2348
+  "height": 2348,
+  "drivingSide": "right"
  },
  {
   "id": "wh12915875",
@@ -2052,7 +2306,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ecuador_Manta_Murci%C3%A9lago_beach_01.jpg"
   },
   "width": 4236,
-  "height": 2515
+  "height": 2515,
+  "drivingSide": "right"
  },
  {
   "id": "wh13214093",
@@ -2067,7 +2322,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Luxor_R01.jpg"
   },
   "width": 3992,
-  "height": 2792
+  "height": 2792,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh13214772",
@@ -2082,7 +2339,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Luxor_R02.jpg"
   },
   "width": 3988,
-  "height": 2589
+  "height": 2589,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh13266388",
@@ -2097,7 +2356,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Egyptian_Countryside_R03.jpg"
   },
   "width": 3976,
-  "height": 2540
+  "height": 2540,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh13266410",
@@ -2112,7 +2373,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Egyptian_Countryside_R02.jpg"
   },
   "width": 3952,
-  "height": 2599
+  "height": 2599,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh13799373",
@@ -2127,7 +2390,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Manta_Ec_playa_Murci%C3%A9lago.jpg"
   },
   "width": 4237,
-  "height": 2776
+  "height": 2776,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh14236999",
@@ -2142,7 +2407,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Manta_Ecuador_playa_Murci%C3%A9lago_02.jpg"
   },
   "width": 4256,
-  "height": 2832
+  "height": 2832,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh14518843",
@@ -2157,7 +2424,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Mount_Eden_crater_with_Auckland_CBD_and_Rangitoto_skyline.jpg"
   },
   "width": 2300,
-  "height": 1548
+  "height": 1548,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh14540663",
@@ -2172,7 +2441,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Manta_Ecuador_playa_Murci%C3%A9lago_03.jpg"
   },
   "width": 4256,
-  "height": 2832
+  "height": 2832,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh14671941",
@@ -2187,7 +2458,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:El-Tod_03.JPG"
   },
   "width": 4004,
-  "height": 3002
+  "height": 3002,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh14672000",
@@ -2202,7 +2475,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:El-Tod_06.JPG"
   },
   "width": 4365,
-  "height": 3269
+  "height": 3269,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh14672834",
@@ -2217,7 +2492,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:El-Tod_23.JPG"
   },
   "width": 3977,
-  "height": 2980
+  "height": 2980,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh14681470",
@@ -2232,7 +2509,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:El-Tod_30.JPG"
   },
   "width": 4344,
-  "height": 3253
+  "height": 3253,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh15116418",
@@ -2247,7 +2526,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Fremont_Central_Park_April_2011_001.jpg"
   },
   "width": 4368,
-  "height": 2912
+  "height": 2912,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh15116588",
@@ -2262,7 +2543,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Fremont_Central_Park_April_2011_002.jpg"
   },
   "width": 4368,
-  "height": 2912
+  "height": 2912,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh15116731",
@@ -2277,7 +2560,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Fremont_Central_Park_April_2011_003.jpg"
   },
   "width": 4268,
-  "height": 2812
+  "height": 2812,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh15294397",
@@ -2292,7 +2577,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Metro_SPB_Line1_Politechnicheskaya_pavilion.jpg"
   },
   "width": 2400,
-  "height": 1600
+  "height": 1600,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh15370608",
@@ -2307,7 +2594,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Naha_Shuri_Castle11s3s4592.jpg"
   },
   "width": 4592,
-  "height": 3056
+  "height": 3056,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh15815766",
@@ -2322,7 +2611,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Naha_Shuri_Castle32bs5s4592.jpg"
   },
   "width": 4592,
-  "height": 3056
+  "height": 3056,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh15916014",
@@ -2337,7 +2628,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Naha_Shuri_Castle50s3s4500.jpg"
   },
   "width": 4500,
-  "height": 3000
+  "height": 3000,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh16380592",
@@ -2352,7 +2645,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Apple_Headquarters_in_Cupertino.jpg"
   },
   "width": 2885,
-  "height": 2008
+  "height": 2008,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh17397605",
@@ -2367,7 +2662,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Batticaloa_Lagoon.jpg"
   },
   "width": 2526,
-  "height": 1600
+  "height": 1600,
+  "drivingSide": "left"
  },
  {
   "id": "wh17425300",
@@ -2382,7 +2678,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:St_Athanasius_Church_-_Sovolyano.jpg"
   },
   "width": 2867,
-  "height": 1900
+  "height": 1900,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh17430494",
@@ -2397,7 +2695,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:St_Michael_the_Archangel_church_-_Shishkovtsi.jpg"
   },
   "width": 2656,
-  "height": 1900
+  "height": 1900,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh17620825",
@@ -2412,7 +2712,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Church_of_St_George_-_Kyustendil.jpg"
   },
   "width": 3244,
-  "height": 2300
+  "height": 2300,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh17624100",
@@ -2427,7 +2729,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Kyustendil_Town_Hall.jpg"
   },
   "width": 2544,
-  "height": 1875
+  "height": 1875,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh17712534",
@@ -2442,7 +2746,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dawn_in_Puerto_Encantado.jpg"
   },
   "width": 5997,
-  "height": 2229
+  "height": 2229,
+  "drivingSide": "right",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh19076470",
@@ -2457,7 +2763,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Parumala_Church.jpg"
   },
   "width": 3098,
-  "height": 2065
+  "height": 2065,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh19194913",
@@ -2472,7 +2780,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Riviere-du-Loup_-_Presbytere_(1).jpg"
   },
   "width": 4601,
-  "height": 3155
+  "height": 3155,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh19214691",
@@ -2487,7 +2797,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Riviere-du-Loup_-_Maison_Louis-Philippe-Lizotte_(3).jpg"
   },
   "width": 4377,
-  "height": 2899
+  "height": 2899,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh19262252",
@@ -2502,7 +2814,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Luxor_Nile_R02.jpg"
   },
   "width": 3876,
-  "height": 2431
+  "height": 2431,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh19262571",
@@ -2517,7 +2831,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Luxor_Kings_Island_R01.jpg"
   },
   "width": 3772,
-  "height": 2524
+  "height": 2524,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh19270876",
@@ -2532,7 +2848,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Shagang_Haili_at_Port_Hedland,_2012.JPG"
   },
   "width": 3008,
-  "height": 2000
+  "height": 2000,
+  "drivingSide": "left"
  },
  {
   "id": "wh19332721",
@@ -2547,7 +2864,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Riviere-du-Loup_-_Hotel_de_Ville_(1).jpg"
   },
   "width": 4221,
-  "height": 2901
+  "height": 2901,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh19491745",
@@ -2562,7 +2881,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cape_Verde_Sal_vista_S_Espargos.jpg"
   },
   "width": 4179,
-  "height": 1425
+  "height": 1425,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh19506754",
@@ -2577,7 +2898,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hop_Kiln_(Walters_Ranch),_May_2012.jpg"
   },
   "width": 4124,
-  "height": 2757
+  "height": 2757,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh19516429",
@@ -2592,7 +2915,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cape_Verde_Sal_Pedra_de_Lume_salt_cable_car.jpg"
   },
   "width": 3741,
-  "height": 1533
+  "height": 1533,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh19517209",
@@ -2607,7 +2932,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cape_Verde_Sal_Pedra_de_Lume_salt_cable_car_arrival.jpg"
   },
   "width": 4113,
-  "height": 2005
+  "height": 2005,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh19520115",
@@ -2622,7 +2949,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cape_Verde_Sal_Espargos_a.jpg"
   },
   "width": 4168,
-  "height": 1659
+  "height": 1659,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh19658711",
@@ -2637,7 +2966,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Rauma_panorama.jpg"
   },
   "width": 14000,
-  "height": 2600
+  "height": 2600,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh19933379",
@@ -2652,7 +2983,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dawn_Patrol.jpg"
   },
   "width": 4150,
-  "height": 2856
+  "height": 2856,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh20020319",
@@ -2667,7 +3000,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cape_Verde_Santiago_Fort_Real_de_S_Filipe.jpg"
   },
   "width": 4256,
-  "height": 2484
+  "height": 2484,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh20721594",
@@ -2682,7 +3017,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Rostov_Rostov_Kremlin_Church_of_the_Resurrection_of_Christ_IMG_0851_1725.jpg"
   },
   "width": 2626,
-  "height": 1725
+  "height": 1725,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh20986071",
@@ -2697,7 +3034,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:%C3%8Ele_du_P%C3%A8re-Conan.jpg"
   },
   "width": 5184,
-  "height": 3456
+  "height": 3456,
+  "drivingSide": "right"
  },
  {
   "id": "wh21110630",
@@ -2712,7 +3050,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bras%C3%ADlia_Palacio_da_Alvorada_from_Parano%C3%A1_Lake.jpg"
   },
   "width": 4130,
-  "height": 2691
+  "height": 2691,
+  "drivingSide": "right",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh21234664",
@@ -2727,7 +3067,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Maardu_m%C3%B5isa_peahoone1.jpg"
   },
   "width": 5834,
-  "height": 2566
+  "height": 2566,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh22068720",
@@ -2742,7 +3084,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:1_zhangjiajie_huangshizhai_wulingyuan_panorama_2012.jpg"
   },
   "width": 13206,
-  "height": 6676
+  "height": 6676,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh22627049",
@@ -2757,7 +3101,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Aquaventura_Park_(Parque_Acu%C3%A1tico).jpg"
   },
   "width": 4030,
-  "height": 2873
+  "height": 2873,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh22627051",
@@ -2772,7 +3118,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ca%C3%B1ada.jpg"
   },
   "width": 4830,
-  "height": 3210
+  "height": 3210,
+  "drivingSide": "right"
  },
  {
   "id": "wh22651968",
@@ -2787,7 +3134,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Albi_Panorama_Sunset.jpg"
   },
   "width": 9079,
-  "height": 3181
+  "height": 3181,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh22844833",
@@ -2802,7 +3151,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Vista_Panor%C3%A1mica_de_La_Ciudad_de_Caracas_desde_El_Paseo_el_Avila.jpg"
   },
   "width": 5799,
-  "height": 1500
+  "height": 1500,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh23445289",
@@ -2817,7 +3168,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Adornos_navide%C3%B1os_III.jpg"
   },
   "width": 4681,
-  "height": 2456
+  "height": 2456,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh24440171",
@@ -2832,7 +3185,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:University_Centre_in_Svalbard_(UNIS)_2003.jpg"
   },
   "width": 4072,
-  "height": 2599
+  "height": 2599,
+  "drivingSide": "right",
+  "climateGroup": "Polar"
  },
  {
   "id": "wh25397092",
@@ -2847,7 +3202,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Luxor_Maritim_Jolie_Ville_Hotel_R04.jpg"
   },
   "width": 3857,
-  "height": 2541
+  "height": 2541,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh25760278",
@@ -2862,7 +3219,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Colombo_April_2013-2.jpg"
   },
   "width": 4592,
-  "height": 2984
+  "height": 2984,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh26458813",
@@ -2877,7 +3236,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Acer_platanoides_drummondii_BG_Tallinn.jpg"
   },
   "width": 5100,
-  "height": 3400
+  "height": 3400,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh27617450",
@@ -2892,7 +3253,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Kuznetsk_fortress_001.jpg"
   },
   "width": 8195,
-  "height": 2444
+  "height": 2444,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh27698807",
@@ -2907,7 +3270,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Attica_06-13_Piraeus_02_Akti_Kallimasioti.jpg"
   },
   "width": 4991,
-  "height": 3233
+  "height": 3233,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh27698978",
@@ -2922,7 +3287,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Attica_06-13_Paleo_Faliro_03_tram_at_Flisvos.jpg"
   },
   "width": 4892,
-  "height": 3166
+  "height": 3166,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh27699048",
@@ -2937,7 +3304,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Attica_06-13_Paleo_Faliro_05_tram_at_Leoforos_Posidonos.jpg"
   },
   "width": 4690,
-  "height": 3169
+  "height": 3169,
+  "drivingSide": "right"
  },
  {
   "id": "wh27699170",
@@ -2952,7 +3320,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Attica_06-13_Paleo_Faliro_08_war_cemetery.jpg"
   },
   "width": 5022,
-  "height": 2982
+  "height": 2982,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh27699221",
@@ -2967,7 +3337,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Attica_06-13_Paleo_Faliro_09_war_cemetery.jpg"
   },
   "width": 5067,
-  "height": 2946
+  "height": 2946,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh27751807",
@@ -2982,7 +3354,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Oranienbaum_Railway_Station_01.jpg"
   },
   "width": 3700,
-  "height": 2452
+  "height": 2452,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh27751808",
@@ -2997,7 +3371,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Oranienbaum_Railway_Station_02.jpg"
   },
   "width": 3700,
-  "height": 2450
+  "height": 2450,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh27751814",
@@ -3012,7 +3388,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Menshikovsky_Palace_in_Oranienbaum_01.jpg"
   },
   "width": 3700,
-  "height": 2451
+  "height": 2451,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh27751824",
@@ -3027,7 +3405,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lower_Garden_of_Oranienbaum_04.jpg"
   },
   "width": 3700,
-  "height": 2451
+  "height": 2451,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh27751827",
@@ -3042,7 +3422,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lower_Garden_of_Oranienbaum_01.jpg"
   },
   "width": 3700,
-  "height": 2451
+  "height": 2451,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh27751835",
@@ -3057,7 +3439,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Chevalier_Building_in_Oranienbaum.jpg"
   },
   "width": 3700,
-  "height": 2451
+  "height": 2451,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh27751842",
@@ -3072,7 +3456,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lower_Garden_of_Oranienbaum_06.jpg"
   },
   "width": 3700,
-  "height": 2451
+  "height": 2451,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh27752608",
@@ -3087,7 +3473,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Peter_III_Palace_in_Oranienbaum.jpg"
   },
   "width": 4200,
-  "height": 2781
+  "height": 2781,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh27775868",
@@ -3102,7 +3490,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Attica_06-13_Ano_Liosia_train_station.jpg"
   },
   "width": 4847,
-  "height": 2951
+  "height": 2951,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh27775895",
@@ -3117,7 +3507,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Attica_06-13_SKA_train_stop_01.jpg"
   },
   "width": 5085,
-  "height": 3257
+  "height": 3257,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh27775916",
@@ -3132,7 +3524,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Attica_06-13_SKA_train_stop_02_view_to_Parnitha.jpg"
   },
   "width": 5021,
-  "height": 3098
+  "height": 3098,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh28195637",
@@ -3147,7 +3541,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:%D0%A6%D0%B5%D1%80%D0%BA%D0%BE%D0%B2%D1%8C_%D0%98%D0%BE%D0%B0%D0%BD%D0%BD%D0%B0_%D0%9F%D1%80%D0%B5%D0%B4%D1%82%D0%B5%D1%87%D0%B8_(%D0%9A%D0%B5%D1%80%D1%87%D1%8C)_01.jpg"
   },
   "width": 5930,
-  "height": 4069
+  "height": 4069,
+  "drivingSide": "right"
  },
  {
   "id": "wh28424780",
@@ -3162,7 +3557,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Japan_pavilion_of_Grand_Menshikov_Palace,_Oranienbaum_(1).jpg"
   },
   "width": 4566,
-  "height": 2982
+  "height": 2982,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh28538335",
@@ -3177,7 +3574,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:SQM_GE_289A_Boxcab_Quillagua_-_Barriles.jpg"
   },
   "width": 5542,
-  "height": 3421
+  "height": 3421,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh29166167",
@@ -3192,7 +3591,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:131012_Midorigaoka_Park_Obihiro_Hokkaido_Japan01s3.jpg"
   },
   "width": 4912,
-  "height": 3264
+  "height": 3264,
+  "drivingSide": "left",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh29166195",
@@ -3207,7 +3608,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:131012_Midorigaoka_Park_Obihiro_Hokkaido_Japan02s3.jpg"
   },
   "width": 4912,
-  "height": 3264
+  "height": 3264,
+  "drivingSide": "left",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh29247887",
@@ -3222,7 +3625,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Amfiteatr_rzymski_w_Durr%C3%ABs_4.jpg"
   },
   "width": 2915,
-  "height": 2210
+  "height": 2210,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh29497529",
@@ -3237,7 +3642,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Diamond_mine._Mirny_in_Yakutia._04.jpg"
   },
   "width": 7136,
-  "height": 2393
+  "height": 2393,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh30350135",
@@ -3252,7 +3659,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Surfers_Paradise_Dec_2013.JPG"
   },
   "width": 5572,
-  "height": 3744
+  "height": 3744,
+  "drivingSide": "left"
  },
  {
   "id": "wh30503941",
@@ -3267,7 +3675,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Slums_in_Caracas.jpg"
   },
   "width": 4232,
-  "height": 2811
+  "height": 2811,
+  "drivingSide": "right",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh30986414",
@@ -3282,7 +3692,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:BKVT_611_Pozsony_ut.jpg"
   },
   "width": 3899,
-  "height": 2633
+  "height": 2633,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh31601262",
@@ -3297,7 +3709,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Kourou_River_estuary_from_Pointe_des_roches_2013.jpg"
   },
   "width": 4367,
-  "height": 2597
+  "height": 2597,
+  "drivingSide": "right",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh31774366",
@@ -3312,7 +3726,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Kourou_pointe_des_Roches_plage_h%C3%B4tel_des_Roches.jpg"
   },
   "width": 5090,
-  "height": 3286
+  "height": 3286,
+  "drivingSide": "right",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh31782095",
@@ -3327,7 +3743,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Kourou_centre_2013.jpg"
   },
   "width": 7132,
-  "height": 2748
+  "height": 2748,
+  "drivingSide": "right",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh31959291",
@@ -3342,7 +3760,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Church_of_the_Holy_Trinity._Mirny.jpg"
   },
   "width": 4832,
-  "height": 3792
+  "height": 3792,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh32252228",
@@ -3357,7 +3777,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Humboldt_State_University_Entrance.jpg"
   },
   "width": 3767,
-  "height": 2521
+  "height": 2521,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh33424138",
@@ -3372,7 +3794,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Mirny_in_Yakutia.jpg"
   },
   "width": 7668,
-  "height": 3745
+  "height": 3745,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh33506407",
@@ -3387,7 +3811,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lagoon_Pier_June_2014.jpg"
   },
   "width": 4608,
-  "height": 3456
+  "height": 3456,
+  "drivingSide": "left"
  },
  {
   "id": "wh34958877",
@@ -3402,7 +3827,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:JP-Kagawa-Great-Seto-Bridge-Minami_Bisan-Seto-Bridge.jpg"
   },
   "width": 3332,
-  "height": 2222
+  "height": 2222,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh36257241",
@@ -3417,7 +3844,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:SQM_GE_289A_Boxcab_Carmelita_-_Reverso.jpg"
   },
   "width": 5513,
-  "height": 3676
+  "height": 3676,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh36738978",
@@ -3432,7 +3861,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Wyoming_Supreme_Court_Building,_Cheyenne,_Southwest_view_20110823_1.jpg"
   },
   "width": 4916,
-  "height": 2458
+  "height": 2458,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh36809430",
@@ -3447,7 +3878,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Widok_na_U%C5%82an_Bator_z_Gana%27s_Guest_House_(01).jpg"
   },
   "width": 3292,
-  "height": 2199
+  "height": 2199,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh36809443",
@@ -3462,7 +3895,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Widok_na_U%C5%82an_Bator_z_Gana%27s_Guest_House_(02).jpg"
   },
   "width": 3304,
-  "height": 2203
+  "height": 2203,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh36809456",
@@ -3477,7 +3912,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Widok_na_U%C5%82an_Bator_z_Gana%27s_Guest_House_(03).jpg"
   },
   "width": 3059,
-  "height": 2115
+  "height": 2115,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh36809472",
@@ -3492,7 +3929,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Widok_na_U%C5%82an_Bator_z_Gana%27s_Guest_House_(04).jpg"
   },
   "width": 3324,
-  "height": 2280
+  "height": 2280,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh36822431",
@@ -3507,7 +3946,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Zesp%C3%B3%C5%82_klasztoru_Gandan_(03).jpg"
   },
   "width": 3286,
-  "height": 2191
+  "height": 2191,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh36822613",
@@ -3522,7 +3963,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Zesp%C3%B3%C5%82_klasztoru_Gandan_(07).jpg"
   },
   "width": 2867,
-  "height": 2156
+  "height": 2156,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh36839793",
@@ -3537,7 +3980,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Zesp%C3%B3%C5%82_klasztoru_Gandan_(34).jpg"
   },
   "width": 3092,
-  "height": 2241
+  "height": 2241,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh37819546",
@@ -3552,7 +3997,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Kourou_pointe_des_Roches_A.jpg"
   },
   "width": 7291,
-  "height": 3349
+  "height": 3349,
+  "drivingSide": "right"
  },
  {
   "id": "wh37819775",
@@ -3567,7 +4013,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Kourou_pointe_des_Roches_B.jpg"
   },
   "width": 6841,
-  "height": 2522
+  "height": 2522,
+  "drivingSide": "right"
  },
  {
   "id": "wh10353521",
@@ -3582,7 +4029,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Mosqu%C3%A9e_des_Omeyyades_d%27Alep.jpg"
   },
   "width": 3659,
-  "height": 2166
+  "height": 2166,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh10503345",
@@ -3597,7 +4046,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pano_Alep_1.jpg"
   },
   "width": 28179,
-  "height": 3500
+  "height": 3500,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh10533516",
@@ -3612,7 +4063,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pano_Alep_2.jpg"
   },
   "width": 25551,
-  "height": 3000
+  "height": 3000,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh15078201",
@@ -3627,7 +4080,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Quarry_Lakes_April_2011_panorama.jpg"
   },
   "width": 11800,
-  "height": 2600
+  "height": 2600,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh21322891",
@@ -3642,7 +4097,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:I-880_Hayward_May_2011_001.jpg"
   },
   "width": 4260,
-  "height": 2840
+  "height": 2840,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh21322892",
@@ -3657,7 +4114,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:I-880_Hayward_May_2011_002.jpg"
   },
   "width": 3960,
-  "height": 2640
+  "height": 2640,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh36856420",
@@ -3672,7 +4131,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Zesp%C3%B3%C5%82_klasztoru_Gandan_(51).jpg"
   },
   "width": 3040,
-  "height": 2028
+  "height": 2028,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh38290022",
@@ -3687,7 +4148,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bryggeriet_Nyk%C3%B6ping_February_2015_01.jpg"
   },
   "width": 5729,
-  "height": 3824
+  "height": 3824,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh38295652",
@@ -3702,7 +4165,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nyk%C3%B6pingshus_February_2015.jpg"
   },
   "width": 5259,
-  "height": 2958
+  "height": 2958,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh38330305",
@@ -3717,7 +4182,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bryggeriet_Nyk%C3%B6ping_February_2015_02.jpg"
   },
   "width": 5922,
-  "height": 3984
+  "height": 3984,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh38331535",
@@ -3732,7 +4199,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nyk%C3%B6ping_February_2015.jpg"
   },
   "width": 4655,
-  "height": 3108
+  "height": 3108,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh38360674",
@@ -3747,7 +4216,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sankt_Nicolai_kyrka_February_2015_01.jpg"
   },
   "width": 4506,
-  "height": 3604
+  "height": 3604,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh39083470",
@@ -3762,7 +4233,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nyk%C3%B6pingshus_Feburary_2015_09.jpg"
   },
   "width": 4917,
-  "height": 3283
+  "height": 3283,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh39859843",
@@ -3777,7 +4250,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hadrian%27s_Gate,_Antalya_01.jpg"
   },
   "width": 4742,
-  "height": 3231
+  "height": 3231,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh41167786",
@@ -3792,7 +4267,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bod%C3%B8_Cathedral,_South_view_20150608_1.jpg"
   },
   "width": 6390,
-  "height": 3896
+  "height": 3896,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh41168584",
@@ -3807,7 +4284,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bod%C3%B8_Cathedral,_Southeast_view_20150608_1.jpg"
   },
   "width": 6446,
-  "height": 4485
+  "height": 4485,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh41534807",
@@ -3822,7 +4301,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:From_Temple_of_Olympian_Zeus_to_Lycabetus_Athens_Greece.jpg"
   },
   "width": 3519,
-  "height": 2575
+  "height": 2575,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh42117450",
@@ -3837,7 +4318,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Basilica_of_St._John_in_Ephesus_03.jpg"
   },
   "width": 4868,
-  "height": 3249
+  "height": 3249,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh42117463",
@@ -3852,7 +4335,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Basilica_of_St._John_in_Ephesus_04.jpg"
   },
   "width": 5184,
-  "height": 3456
+  "height": 3456,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh42117496",
@@ -3867,7 +4352,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Basilica_of_St._John_in_Ephesus_05.jpg"
   },
   "width": 5064,
-  "height": 3336
+  "height": 3336,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh42117533",
@@ -3882,7 +4369,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Basilica_of_St._John_in_Ephesus_06.jpg"
   },
   "width": 5104,
-  "height": 3403
+  "height": 3403,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh42117591",
@@ -3897,7 +4386,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Basilica_of_St._John_in_Ephesus_08.jpg"
   },
   "width": 5184,
-  "height": 3456
+  "height": 3456,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh42117612",
@@ -3912,7 +4403,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Basilica_of_St._John_in_Ephesus_09.jpg"
   },
   "width": 5184,
-  "height": 3456
+  "height": 3456,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh42187298",
@@ -3927,7 +4420,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Noibai_New_Terminal.jpg"
   },
   "width": 2592,
-  "height": 1728
+  "height": 1728,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh42275232",
@@ -3942,7 +4437,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Noibai_T2_gates.jpg"
   },
   "width": 2592,
-  "height": 1728
+  "height": 1728,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh42637626",
@@ -3957,7 +4454,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Church_and_rainbow_in_Akureyri.jpg"
   },
   "width": 5360,
-  "height": 3015
+  "height": 3015,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh44107330",
@@ -3972,7 +4471,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Government_House_Port_Louis.JPG"
   },
   "width": 2567,
-  "height": 1615
+  "height": 1615,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh44107331",
@@ -3987,7 +4488,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Umbrellas_at_Caudan_Waterfront_Mall.JPG"
   },
   "width": 4798,
-  "height": 3009
+  "height": 3009,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh44107332",
@@ -4002,7 +4505,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Blue_Penny_Museum.JPG"
   },
   "width": 3969,
-  "height": 2575
+  "height": 2575,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh44107335",
@@ -4017,7 +4522,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:The_Champ_de_Mars_Racecourse.JPG"
   },
   "width": 5601,
-  "height": 3389
+  "height": 3389,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh45801253",
@@ -4032,7 +4539,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dambulla_Temple_d%27or_(2).jpg"
   },
   "width": 4837,
-  "height": 3213
+  "height": 3213,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh45801258",
@@ -4047,7 +4556,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dambulla_Temple_d%27or_(3).jpg"
   },
   "width": 4912,
-  "height": 3264
+  "height": 3264,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh46082923",
@@ -4062,7 +4573,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Isurumuniya_Rock_Temple_(1).jpg"
   },
   "width": 4912,
-  "height": 3264
+  "height": 3264,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh46082930",
@@ -4077,7 +4590,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Isurumuniya_Rock_Temple_(2).jpg"
   },
   "width": 4912,
-  "height": 3264
+  "height": 3264,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh46890555",
@@ -4092,7 +4607,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tumbas_Reales_de_Sip%C3%A1n_Museum_01.jpg"
   },
   "width": 5104,
-  "height": 3403
+  "height": 3403,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh46892456",
@@ -4107,7 +4624,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cathedral_of_Lambayeque.jpg"
   },
   "width": 3909,
-  "height": 2606
+  "height": 2606,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh46911664",
@@ -4122,7 +4641,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Town_hall_of_Catacaos.jpg"
   },
   "width": 4112,
-  "height": 2741
+  "height": 2741,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh46942014",
@@ -4137,7 +4658,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hotel_Ramada_Costa_del_Sol,_Tumbes.jpg"
   },
   "width": 4139,
-  "height": 2758
+  "height": 2758,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh46942636",
@@ -4152,7 +4675,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Street_in_Tumbes_02.jpg"
   },
   "width": 4022,
-  "height": 2681
+  "height": 2681,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh46942666",
@@ -4167,7 +4692,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Street_in_Tumbes_03.jpg"
   },
   "width": 5184,
-  "height": 3456
+  "height": 3456,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh47247036",
@@ -4182,7 +4709,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Amursk_Amursk_combined_heat_and_power_plant_P7270022_2450.jpg"
   },
   "width": 3316,
-  "height": 2450
+  "height": 2450,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh47392651",
@@ -4197,7 +4726,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Amursk_Amursk_combined_heat_and_power_plant_P7280067_2200.jpg"
   },
   "width": 3330,
-  "height": 2200
+  "height": 2200,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh47412780",
@@ -4212,7 +4743,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Amursk_Amursk_combined_heat_and_power_plant_P7290079_2200.jpg"
   },
   "width": 3300,
-  "height": 2200
+  "height": 2200,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh47528669",
@@ -4227,7 +4760,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Amursk_Amur_River_P7290102_2200.jpg"
   },
   "width": 3299,
-  "height": 2200
+  "height": 2200,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh47891034",
@@ -4242,7 +4777,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tulum_-_Temple_of_the_Descending_God.JPG"
   },
   "width": 4174,
-  "height": 2633
+  "height": 2633,
+  "drivingSide": "right",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh48370104",
@@ -4257,7 +4794,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Buildings_at_Nyholmen,_Bod%C3%B8_20150608_1.jpg"
   },
   "width": 6798,
-  "height": 3824
+  "height": 3824,
+  "drivingSide": "right"
  },
  {
   "id": "wh48411974",
@@ -4272,7 +4810,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Goi%C3%A1ns_de_Arriba.JPG"
   },
   "width": 3648,
-  "height": 2736
+  "height": 2736,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh48411977",
@@ -4287,7 +4827,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Igrexa_Goi%C3%A1ns.JPG"
   },
   "width": 3648,
-  "height": 2736
+  "height": 2736,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh48510826",
@@ -4302,7 +4844,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Amursk_Amur_River_P8010333_2200.jpg"
   },
   "width": 3300,
-  "height": 2200
+  "height": 2200,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh48559027",
@@ -4317,7 +4861,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Amursk_Amur_River_P8010336_2200.jpg"
   },
   "width": 3300,
-  "height": 2200
+  "height": 2200,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh48604521",
@@ -4332,7 +4878,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Amursk_Amur_River_P8010340_2475.jpg"
   },
   "width": 3300,
-  "height": 2475
+  "height": 2475,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh49235469",
@@ -4347,7 +4895,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Vladivostok_Communication_boat_Uragan_P8050478_2200.jpg"
   },
   "width": 3837,
-  "height": 2200
+  "height": 2200,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh49284553",
@@ -4362,7 +4912,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Vladivostok_Cruiser_Varyag_P8050482_2200.jpg"
   },
   "width": 4013,
-  "height": 2200
+  "height": 2200,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh49985691",
@@ -4377,7 +4929,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:A_view_of_the_Baku_bay,_Azerbaijan.jpg"
   },
   "width": 4265,
-  "height": 2843
+  "height": 2843,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh50297531",
@@ -4392,7 +4946,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Talnakh.jpg"
   },
   "width": 2999,
-  "height": 1999
+  "height": 1999,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh50324769",
@@ -4407,7 +4963,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:South_Carolina_State_House,_Columbia,_Southeast_view_with_Strom_Thurmond_Statue_20160702_1.jpg"
   },
   "width": 5020,
-  "height": 3949
+  "height": 3949,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh50324845",
@@ -4422,7 +4980,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Marion_Gressette_Building,_Columbia_SC,_Southeast_view_20160702_1.jpg"
   },
   "width": 5494,
-  "height": 4395
+  "height": 4395,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh50756342",
@@ -4437,7 +4997,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pitt_River_Bridge_2016.jpg"
   },
   "width": 7257,
-  "height": 3923
+  "height": 3923,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh51542905",
@@ -4452,7 +5014,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nyk%C3%B6pingshus_Feburary_2015_10.jpg"
   },
   "width": 5465,
-  "height": 3648
+  "height": 3648,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh52336679",
@@ -4467,7 +5031,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Budynki_nad_rzek%C4%85_Malakka_(01).jpg"
   },
   "width": 5472,
-  "height": 3648
+  "height": 3648,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh52336794",
@@ -4482,7 +5048,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Budynki_nad_rzek%C4%85_Malakka_(10).jpg"
   },
   "width": 5472,
-  "height": 3648
+  "height": 3648,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh52336809",
@@ -4497,7 +5065,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Budynki_nad_rzek%C4%85_Malakka_(13).jpg"
   },
   "width": 5056,
-  "height": 3371
+  "height": 3371,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh52336910",
@@ -4512,7 +5082,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Budynki_nad_rzek%C4%85_Malakka_(19).jpg"
   },
   "width": 5230,
-  "height": 3487
+  "height": 3487,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh52336946",
@@ -4527,7 +5099,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Budynki_nad_rzek%C4%85_Malakka_(20).jpg"
   },
   "width": 5415,
-  "height": 3619
+  "height": 3619,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh52336983",
@@ -4542,7 +5116,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Budynki_nad_rzek%C4%85_Malakka_(21).jpg"
   },
   "width": 4949,
-  "height": 3297
+  "height": 3297,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh52337019",
@@ -4557,7 +5133,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Budynki_nad_rzek%C4%85_Malakka_(22).jpg"
   },
   "width": 5415,
-  "height": 3610
+  "height": 3610,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh52337064",
@@ -4572,7 +5150,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Budynki_nad_rzek%C4%85_Malakka_(23).jpg"
   },
   "width": 5464,
-  "height": 3643
+  "height": 3643,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh52337104",
@@ -4587,7 +5167,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Budynki_nad_rzek%C4%85_Malakka_(24).jpg"
   },
   "width": 5472,
-  "height": 3648
+  "height": 3648,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh52337143",
@@ -4602,7 +5184,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Budynki_nad_rzek%C4%85_Malakka_(25).jpg"
   },
   "width": 5470,
-  "height": 3077
+  "height": 3077,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh52375624",
@@ -4617,7 +5201,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Bastion_Middleburg_(01).jpg"
   },
   "width": 4959,
-  "height": 3306
+  "height": 3306,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh52375750",
@@ -4632,7 +5218,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Bastion_Middleburg_(03).jpg"
   },
   "width": 5472,
-  "height": 3078
+  "height": 3078,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh52375765",
@@ -4647,7 +5235,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Bastion_Middleburg_(04).jpg"
   },
   "width": 5263,
-  "height": 3509
+  "height": 3509,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh52551484",
@@ -4662,7 +5252,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016_Malakka,_Budynki_nad_rzek%C4%85_Malakka_(28).jpg"
   },
   "width": 5472,
-  "height": 3648
+  "height": 3648,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh52843611",
@@ -4677,7 +5269,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ateshgah_of_Baku.jpg"
   },
   "width": 3000,
-  "height": 1968
+  "height": 1968,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh53773638",
@@ -4692,7 +5286,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Romeria_de_los_Labradores_-_Santa_Luc%C3%ADa_de_Tirajana.jpg"
   },
   "width": 3454,
-  "height": 2608
+  "height": 2608,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh53923596",
@@ -4707,7 +5303,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Roque_Nublo_-_Barranco_de_Tejeda.JPG"
   },
   "width": 13939,
-  "height": 3666
+  "height": 3666,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh56323313",
@@ -4722,7 +5320,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:La_paz_malecon_1702p1.jpg"
   },
   "width": 5976,
-  "height": 2800
+  "height": 2800,
+  "drivingSide": "right"
  },
  {
   "id": "wh56747484",
@@ -4737,7 +5336,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:La_Paz_malecon_1702_p2.jpg"
   },
   "width": 4362,
-  "height": 3124
+  "height": 3124,
+  "drivingSide": "right"
  },
  {
   "id": "wh58446129",
@@ -4752,7 +5352,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Svir_River_P7210779_2200.jpg"
   },
   "width": 3300,
-  "height": 2200
+  "height": 2200,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh59292418",
@@ -4767,7 +5369,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Rade_de_Papeete.jpg"
   },
   "width": 6016,
-  "height": 4000
+  "height": 4000,
+  "drivingSide": "right"
  },
  {
   "id": "wh59345846",
@@ -4782,7 +5385,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:HMS_Justice_W140_(St._Christopher).jpg"
   },
   "width": 5000,
-  "height": 3413
+  "height": 3413,
+  "drivingSide": "right"
  },
  {
   "id": "wh62182211",
@@ -4797,7 +5401,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Building_at_44_Rue_Emile_Grand_in_Albi.jpg"
   },
   "width": 5279,
-  "height": 4000
+  "height": 4000,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh62213504",
@@ -4812,7 +5418,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Building_at_1_place_du_Vigan_in_Albi.jpg"
   },
   "width": 5491,
-  "height": 3151
+  "height": 3151,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh62270176",
@@ -4827,7 +5435,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hardinge_Bridge_02.jpg"
   },
   "width": 5472,
-  "height": 3648
+  "height": 3648,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh62311059",
@@ -4842,7 +5452,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Falu_koppargruva_July_2017_01.jpg"
   },
   "width": 5858,
-  "height": 3295
+  "height": 3295,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh62671094",
@@ -4857,7 +5469,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Imatran_Valtionhotelli_2017_02.jpg"
   },
   "width": 7520,
-  "height": 5640
+  "height": 5640,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh62748460",
@@ -4872,7 +5486,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Helsinki-Malmin_lentoasema_ja_lentokonesuoja.jpg"
   },
   "width": 4912,
-  "height": 3256
+  "height": 3256,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh62865420",
@@ -4887,7 +5503,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Battleship_Texas001.jpg"
   },
   "width": 5472,
-  "height": 3648
+  "height": 3648,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh62934815",
@@ -4902,7 +5520,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Falun_August_2017_01.jpg"
   },
   "width": 5617,
-  "height": 3878
+  "height": 3878,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh62977853",
@@ -4917,7 +5537,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:%D0%A3%D1%81%D0%B0%D0%B4%D1%8C%D0%B1%D0%B0_%D0%A0%D1%83%D1%81%D0%B8%D0%BD%D0%BE%D0%B2%D0%BE%D0%B9_%D0%B2_%D0%9C%D0%B0%D0%BB%D1%8B%D1%85_%D0%9A%D0%BE%D1%80%D0%B5%D0%BB%D0%B0%D1%85.jpg"
   },
   "width": 3060,
-  "height": 2040
+  "height": 2040,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh63340069",
@@ -4932,7 +5554,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Falu_centralstation_July_2017_01.jpg"
   },
   "width": 5537,
-  "height": 3115
+  "height": 3115,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh63340080",
@@ -4947,7 +5571,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Falu_centralstation_July_2017_02.jpg"
   },
   "width": 5631,
-  "height": 3759
+  "height": 3759,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh63823421",
@@ -4962,7 +5588,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Barley_Seeds.jpg"
   },
   "width": 6000,
-  "height": 4000
+  "height": 4000,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh64012952",
@@ -4977,7 +5605,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hayden_Falls_1.jpg"
   },
   "width": 4288,
-  "height": 2848
+  "height": 2848,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh64036228",
@@ -4992,7 +5622,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hayden_Falls_Walkway_2.jpg"
   },
   "width": 4288,
-  "height": 2848
+  "height": 2848,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh64036229",
@@ -5007,7 +5639,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hayden_Falls_Walkway_1.jpg"
   },
   "width": 4288,
-  "height": 2848
+  "height": 2848,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh64036231",
@@ -5022,7 +5656,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hayden_Falls_Walkway_3.jpg"
   },
   "width": 4262,
-  "height": 2832
+  "height": 2832,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh64687720",
@@ -5037,7 +5673,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Frutillar-Theatro-del-Lago-1030906-PSD.jpg"
   },
   "width": 4608,
-  "height": 2711
+  "height": 2711,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh65837069",
@@ -5052,7 +5690,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Christ_Church_Cathedral,_Darwin,_Australia.jpg"
   },
   "width": 5083,
-  "height": 3389
+  "height": 3389,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh65837239",
@@ -5067,7 +5707,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Darwin_Convention_Center.jpg"
   },
   "width": 3839,
-  "height": 2559
+  "height": 2559,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh66017115",
@@ -5082,7 +5724,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cairns_(Queensland).jpg"
   },
   "width": 4776,
-  "height": 3184
+  "height": 3184,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh66172081",
@@ -5097,7 +5741,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Foce_del_Isonzo_horses.jpg"
   },
   "width": 5568,
-  "height": 3712
+  "height": 3712,
+  "drivingSide": "right"
  },
  {
   "id": "wh68155257",
@@ -5112,7 +5757,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:18-04-08_NORDKAPP_IMO_9107772_11-06-03.jpg"
   },
   "width": 3590,
-  "height": 2403
+  "height": 2403,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh68355654",
@@ -5127,7 +5774,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Shrine_Complex_of_Sheikh_%27Abd_al-Samad,_Natanz_01.jpg"
   },
   "width": 4080,
-  "height": 2720
+  "height": 2720,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh69553418",
@@ -5142,7 +5791,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Aerial_view_of_Apple_Park_dllu.jpg"
   },
   "width": 7729,
-  "height": 5160
+  "height": 5160,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh70835677",
@@ -5157,7 +5808,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hilliard_City_Hall_1.jpg"
   },
   "width": 6002,
-  "height": 3080
+  "height": 3080,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh70860934",
@@ -5172,7 +5825,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Homestead_-_Covered_Bridge_1.jpg"
   },
   "width": 6016,
-  "height": 4016
+  "height": 4016,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh70861049",
@@ -5187,7 +5842,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Homestead_-_Gazebo_and_Covered_Bridge_1.jpg"
   },
   "width": 6016,
-  "height": 3711
+  "height": 3711,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh70890029",
@@ -5202,7 +5859,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Homestead_-_Nature_Center_1.jpg"
   },
   "width": 4800,
-  "height": 2736
+  "height": 2736,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh70964185",
@@ -5217,7 +5876,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dublin_Justice_Center_1.jpg"
   },
   "width": 6016,
-  "height": 4016
+  "height": 4016,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh71784080",
@@ -5232,7 +5893,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dublin_Methodist_Hospital_East_Wing_1.jpg"
   },
   "width": 5645,
-  "height": 3400
+  "height": 3400,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh71784227",
@@ -5247,7 +5910,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dublin_Methodist_Hospital_-_Front_1.jpg"
   },
   "width": 6016,
-  "height": 2090
+  "height": 2090,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh72701628",
@@ -5262,7 +5927,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:National_Anzac_Centre,_2018_(01).jpg"
   },
   "width": 4793,
-  "height": 3175
+  "height": 3175,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh73018828",
@@ -5277,7 +5944,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hardinge_Bridge_12.jpg"
   },
   "width": 6804,
-  "height": 4537
+  "height": 4537,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh73172303",
@@ -5292,7 +5961,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Samara_P8160405_2200.jpg"
   },
   "width": 3301,
-  "height": 2200
+  "height": 2200,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh73214779",
@@ -5307,7 +5978,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Trois_temples_de_Sbeitla.jpg"
   },
   "width": 6000,
-  "height": 4000
+  "height": 4000,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh73371891",
@@ -5322,7 +5995,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Japanese_garden_pond_at_Daisen_Park_in_Sakai,_October_2018_-_381.jpg"
   },
   "width": 5472,
-  "height": 3648
+  "height": 3648,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh73728879",
@@ -5337,7 +6012,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Japanese_garden_at_Daisen_Park_in_Sakai,_October_2018_-_662.jpg"
   },
   "width": 5160,
-  "height": 2621
+  "height": 2621,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh73798028",
@@ -5352,7 +6029,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Japanese_garden_at_Daisen_Park_in_Sakai,_October_2018_-_662_II.jpg"
   },
   "width": 5160,
-  "height": 3155
+  "height": 3155,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh73825184",
@@ -5367,7 +6046,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dendermonde_town_hall_and_belfry_during_golden_hour_(DSCF0501).jpg"
   },
   "width": 3926,
-  "height": 3087
+  "height": 3087,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh73930830",
@@ -5382,7 +6063,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Gerechtsgebouw,_Dendermonde_(DSCF0521).jpg"
   },
   "width": 4306,
-  "height": 3197
+  "height": 3197,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh75611917",
@@ -5397,7 +6080,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Wat_Traphang_Thong_(I).jpg"
   },
   "width": 4969,
-  "height": 3313
+  "height": 3313,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh75612340",
@@ -5412,7 +6097,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Wat_Traphang_Thong_(II).jpg"
   },
   "width": 8237,
-  "height": 4338
+  "height": 4338,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh76094133",
@@ -5427,7 +6114,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Auckland_Botanic_Gardens_41.jpg"
   },
   "width": 4035,
-  "height": 2690
+  "height": 2690,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh76094140",
@@ -5442,7 +6131,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Auckland_Botanic_Gardens_46.jpg"
   },
   "width": 4988,
-  "height": 3325
+  "height": 3325,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh76094141",
@@ -5457,7 +6148,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Auckland_Botanic_Gardens_47.jpg"
   },
   "width": 4905,
-  "height": 2851
+  "height": 2851,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh76126959",
@@ -5472,7 +6165,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Branta_canadensis_Fremont_April_2011_002.jpg"
   },
   "width": 2800,
-  "height": 2000
+  "height": 2000,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh76748488",
@@ -5487,7 +6182,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ventspils_21.jpg"
   },
   "width": 5772,
-  "height": 3838
+  "height": 3838,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh77387737",
@@ -5502,7 +6199,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Walters_Ranch_Hop_Kiln_in_2019,_4%C3%975.jpg"
   },
   "width": 5175,
-  "height": 4140
+  "height": 4140,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh77719953",
@@ -5517,7 +6216,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Broadway_Avenue_in_Palmerston_North_02.jpg"
   },
   "width": 3556,
-  "height": 2545
+  "height": 2545,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh78744082",
@@ -5532,7 +6233,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Dog_Rock,_2019_(01).jpg"
   },
   "width": 3776,
-  "height": 2520
+  "height": 2520,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh79179308",
@@ -5547,7 +6250,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:View_from_Mirador_El_Time_-_La_Palma.jpg"
   },
   "width": 14345,
-  "height": 3341
+  "height": 3341,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh79497670",
@@ -5562,7 +6267,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Phra_Nakhon_Khiri_(I).jpg"
   },
   "width": 5602,
-  "height": 3735
+  "height": 3735,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh79498008",
@@ -5577,7 +6284,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Phra_Nakhon_Khiri_(II).jpg"
   },
   "width": 5513,
-  "height": 3675
+  "height": 3675,
+  "drivingSide": "left",
+  "climateGroup": "Tropical"
  },
  {
   "id": "wh79599299",
@@ -5592,7 +6301,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pergola_-_Plaza_de_Espa%C3%B1a_-_Tazacorte_03.jpg"
   },
   "width": 5470,
-  "height": 3924
+  "height": 3924,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh79677427",
@@ -5607,7 +6318,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bij_Ivoz-Ramet,_zicht_op_de_Maas_IMG_9614_2019-06-01_12.46.jpg"
   },
   "width": 5164,
-  "height": 3219
+  "height": 3219,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh79815847",
@@ -5622,7 +6335,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Swakopmund_Jetty_HDR.jpg"
   },
   "width": 4577,
-  "height": 3434
+  "height": 3434,
+  "drivingSide": "left"
  },
  {
   "id": "wh79906195",
@@ -5637,7 +6351,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2015-09-06_Summit_Airlines_BA_Avro_RJ85_C-FLRJ.jpg"
   },
   "width": 5883,
-  "height": 3922
+  "height": 3922,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh80015174",
@@ -5652,7 +6368,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lawachara_Forest.jpg"
   },
   "width": 4563,
-  "height": 3197
+  "height": 3197,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh80309489",
@@ -5667,7 +6385,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2019-03-16_01_Aquaculture_in_Chile.jpg"
   },
   "width": 6000,
-  "height": 2016
+  "height": 2016,
+  "drivingSide": "right"
  },
  {
   "id": "wh80309490",
@@ -5682,7 +6401,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:2019-03-16_03_Aquaculture_in_Chile.jpg"
   },
   "width": 6000,
-  "height": 1599
+  "height": 1599,
+  "drivingSide": "right"
  },
  {
   "id": "wh80760428",
@@ -5697,7 +6417,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Swakopmund_Dune.jpg"
   },
   "width": 4600,
-  "height": 3456
+  "height": 3456,
+  "drivingSide": "left",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh80834283",
@@ -5712,7 +6434,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bread_and_Roses_Co-op_Homes.jpg"
   },
   "width": 5800,
-  "height": 3001
+  "height": 3001,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh80929572",
@@ -5727,7 +6451,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bodega_Dante_Robino,_Mendoza.jpg"
   },
   "width": 5104,
-  "height": 3403
+  "height": 3403,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh81179003",
@@ -5742,7 +6468,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Arkhangelsk_P7151205_2200.jpg"
   },
   "width": 3300,
-  "height": 2200
+  "height": 2200,
+  "drivingSide": "right",
+  "climateGroup": "Continental"
  },
  {
   "id": "wh81495859",
@@ -5757,7 +6485,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Calle_Matamoros_Tonal%C3%A1.jpg"
   },
   "width": 5568,
-  "height": 3712
+  "height": 3712,
+  "drivingSide": "right",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh82566382",
@@ -5772,7 +6502,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Vakil_Mosque,_13_July_2017.jpg"
   },
   "width": 5500,
-  "height": 3667
+  "height": 3667,
+  "drivingSide": "right",
+  "climateGroup": "Arid"
  },
  {
   "id": "wh82679251",
@@ -5787,7 +6519,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hardinge_Bridge,_paksi.jpg"
   },
   "width": 4800,
-  "height": 3200
+  "height": 3200,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh82680527",
@@ -5802,7 +6536,9 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hardinge_Bridge_Paksi.jpg"
   },
   "width": 4674,
-  "height": 3116
+  "height": 3116,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  },
  {
   "id": "wh82708128",
@@ -5817,6 +6553,8 @@
    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hardinge_2.jpg"
   },
   "width": 3754,
-  "height": 2473
+  "height": 2473,
+  "drivingSide": "left",
+  "climateGroup": "Temperate"
  }
 ]
