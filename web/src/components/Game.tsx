@@ -11,6 +11,7 @@ import { ROUNDS_PER_GAME, gameReducer, initialState, totals } from "@/lib/game/s
 import type { CatalogPhoto, GameBackend } from "@/lib/game/types";
 import { formatPoints, maxPoints, type LngLat } from "@/lib/geo";
 import { hasSeenIntro, INTRO_TEXT, markIntroSeen } from "@/lib/intro";
+import { recordGame, resetRecord, type PlayerRecord } from "@/lib/playerRecord";
 import type { RevealView } from "@/lib/reveal";
 
 import Globe from "./Globe";
@@ -72,6 +73,8 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   const [state, dispatch] = useReducer(gameReducer, initialState);
   // The first-visit card. Browser storage is only readable after hydration, so it starts closed.
   const [introOpen, setIntroOpen] = useState(false);
+  // The player's record against Atlas, updated once as each game ends (see `next` below).
+  const [record, setRecord] = useState<PlayerRecord | null>(null);
 
   useEffect(() => {
     if (mode) return;
@@ -215,6 +218,22 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
     }
   }
 
+  /** Next photo, or the summary after the last round: that is when the game joins the record. */
+  function next() {
+    if (state.phase === "revealed" && state.index + 1 >= ROUNDS_PER_GAME && mode) {
+      const t = totals(state.results);
+      setRecord(
+        recordGame({
+          score: t.player,
+          roundsVsAtlas: t.atlasRounds,
+          roundsWon: t.playerWins,
+          daily: mode.kind === "daily" ? mode.day : null,
+        }),
+      );
+    }
+    dispatch({ type: "next" });
+  }
+
   function playFresh() {
     setMode((m) => ({ kind: "fresh", game: m?.kind === "fresh" ? m.game + 1 : 1 }));
     dispatch({ type: "restart" });
@@ -246,6 +265,9 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
         title={title}
         onPlayAgain={playFresh}
         onPlayDaily={mode?.kind === "daily" ? undefined : playDaily}
+        record={record}
+        today={today ?? new Date()}
+        onResetRecord={() => setRecord(resetRecord())}
       />
     );
   }
@@ -449,7 +471,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
           <RevealCard
             result={state.current}
             isLast={state.index + 1 >= ROUNDS_PER_GAME}
-            onNext={() => dispatch({ type: "next" })}
+            onNext={next}
           />
         </div>
       )}

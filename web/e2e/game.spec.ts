@@ -49,6 +49,12 @@ test("a whole Daily Five can be played with the keyboard", async ({ page }) => {
   await expect(page.getByText("out of 25,000 points")).toBeVisible();
   await expect(page.getByRole("listitem")).toHaveCount(5);
 
+  // The game joins the player's record, kept in this browser.
+  const record = page.getByRole("region", { name: "Your record against Atlas" });
+  await expect(record.getByText("Daily Five streak").locator("+ dd")).toHaveText("1 day");
+  const stored = await page.evaluate(() => localStorage.getItem("whereabout:record"));
+  expect(JSON.parse(stored ?? "{}")).toMatchObject({ games: 1, streak: 1 });
+
   // The share card: five rounds, and none of the places just revealed in the results list.
   const places = await page.getByRole("listitem").locator("span.truncate").allInnerTexts();
   const card = page.getByRole("figure", { name: "Your share card" });

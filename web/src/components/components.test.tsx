@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { RoundResult } from "@/lib/game/state";
+import { EMPTY_RECORD, type PlayerRecord } from "@/lib/playerRecord";
 
 import PhotoViewer, { ZOOM } from "./PhotoViewer";
 import AtlasEyes from "./AtlasEyes";
@@ -94,6 +95,58 @@ describe("Summary", () => {
     const sent = writeText.mock.calls[0][0] as string;
     expect(sent).toContain("✅❌");
     expect(sent).not.toContain("Somewhere");
+  });
+
+  it("shows the record against Atlas, with a streak that lapses after a missed day", () => {
+    const record: PlayerRecord = {
+      games: 12,
+      roundsVsAtlas: 58,
+      roundsWon: 21,
+      best: 19_204,
+      lastDaily: "2026-10-23",
+      streak: 4,
+      bestStreak: 6,
+    };
+    const props = { results: [result(1, 5000, 10)], title: "Fresh game", onPlayAgain: () => {} };
+    const { rerender } = render(
+      <Summary {...props} record={record} today={new Date("2026-10-24T08:00:00Z")} />,
+    );
+    const panel = screen.getByRole("region", { name: "Your record against Atlas" });
+    const value = (label: string) => within(panel).getByText(label).nextElementSibling;
+    expect(value("Games played")).toHaveTextContent("12");
+    expect(value("Rounds won against Atlas")).toHaveTextContent("21");
+    expect(within(panel).getByText("of 58 rounds")).toBeInTheDocument();
+    expect(value("Best game")).toHaveTextContent("19,204");
+    expect(value("Daily Five streak")).toHaveTextContent("4 days");
+    expect(within(panel).getByText("best 6 days")).toBeInTheDocument();
+
+    rerender(<Summary {...props} record={record} today={new Date("2026-10-25T08:00:00Z")} />);
+    expect(value("Daily Five streak")).toHaveTextContent("0 days");
+  });
+
+  it("resets the record only after the player confirms", () => {
+    const onReset = vi.fn();
+    render(
+      <Summary
+        results={[result(1, 5000, 10)]}
+        title="Fresh game"
+        onPlayAgain={() => {}}
+        record={{ ...EMPTY_RECORD, games: 3, best: 9000 }}
+        onResetRecord={onReset}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Reset record" }));
+    expect(onReset).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Keep it" }));
+    expect(onReset).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Reset record" }));
+    fireEvent.click(screen.getByRole("button", { name: "Yes, reset it" }));
+    expect(onReset).toHaveBeenCalledOnce();
+  });
+
+  it("has no record panel before there is a record", () => {
+    render(<Summary results={[result(1, 5000)]} title="Fresh game" onPlayAgain={() => {}} />);
+    expect(screen.queryByRole("region", { name: "Your record against Atlas" })).toBeNull();
   });
 
   it("has no Atlas link when Atlas sat the game out", () => {

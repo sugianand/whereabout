@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { ROUNDS_PER_GAME, totals, type RoundResult } from "@/lib/game/state";
 import { MAX_POINTS, formatDistance, formatPoints } from "@/lib/geo";
+import { currentStreak, type PlayerRecord } from "@/lib/playerRecord";
 import {
   VERSUS_LABEL,
   VERSUS_MARK,
@@ -24,7 +25,95 @@ type SummaryProps = {
   onPlayAgain: () => void;
   /** Switch to today's Daily Five; omitted when the finished game was the Daily Five. */
   onPlayDaily?: () => void;
+  /** The player's record including this game, or null if it couldn't be built. */
+  record?: PlayerRecord | null;
+  /** Decides whether the Daily Five streak is still alive. */
+  today?: Date;
+  /** Forget the record in this browser. */
+  onResetRecord?: () => void;
 };
+
+const plural = (n: number, one: string, many = `${one}s`) =>
+  `${n.toLocaleString("en-US")} ${n === 1 ? one : many}`;
+
+/** Games, rounds won against Atlas, best game and Daily Five streak, kept in this browser. */
+function RecordPanel({
+  record,
+  today,
+  onReset,
+}: {
+  record: PlayerRecord;
+  today: Date;
+  onReset?: () => void;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const streak = currentStreak(record, today);
+  const stats: { label: string; value: string; note?: string }[] = [
+    { label: "Games played", value: record.games.toLocaleString("en-US") },
+    {
+      label: "Rounds won against Atlas",
+      value: record.roundsWon.toLocaleString("en-US"),
+      note: record.roundsVsAtlas > 0 ? `of ${plural(record.roundsVsAtlas, "round")}` : undefined,
+    },
+    { label: "Best game", value: record.best === null ? "–" : formatPoints(record.best) },
+    {
+      label: "Daily Five streak",
+      value: plural(streak, "day"),
+      note: record.bestStreak > 0 ? `best ${plural(record.bestStreak, "day")}` : undefined,
+    },
+  ];
+
+  return (
+    <section aria-labelledby="record-heading" className="mt-10">
+      <h2 id="record-heading" className="font-sign text-2xl font-bold">
+        Your record against Atlas
+      </h2>
+      <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
+        {stats.map((s) => (
+          <div key={s.label}>
+            <dt className="text-sm text-chalk-dim">{s.label}</dt>
+            <dd className="font-sign tabular text-3xl font-bold">{s.value}</dd>
+            {s.note && <dd className="tabular text-sm text-chalk-dim">{s.note}</dd>}
+          </div>
+        ))}
+      </dl>
+      <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-chalk-dim">
+        <p>Kept only in this browser. Streaks follow the Daily Five, which changes at midnight UTC.</p>
+        {onReset &&
+          (confirming ? (
+            <span className="flex items-center gap-3">
+              <span>Forget your record?</span>
+              <button
+                type="button"
+                onClick={() => {
+                  onReset();
+                  setConfirming(false);
+                }}
+                className="font-semibold text-flare underline underline-offset-2"
+              >
+                Yes, reset it
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirming(false)}
+                className="underline underline-offset-2 hover:text-chalk"
+              >
+                Keep it
+              </button>
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirming(true)}
+              className="underline underline-offset-2 hover:text-chalk"
+            >
+              Reset record
+            </button>
+          ))}
+      </div>
+    </section>
+  );
+}
 
 /** What the player is about to send, round by round, so nothing in it is a surprise. */
 function ShareCardPreview({ card }: { card: ShareCard }) {
@@ -66,7 +155,15 @@ function ShareCardPreview({ card }: { card: ShareCard }) {
   );
 }
 
-export default function Summary({ results, title, onPlayAgain, onPlayDaily }: SummaryProps) {
+export default function Summary({
+  results,
+  title,
+  onPlayAgain,
+  onPlayDaily,
+  record,
+  today = new Date(),
+  onResetRecord,
+}: SummaryProps) {
   const t = totals(results);
   const shown = useCountUp(t.player, 1400);
   const [shared, setShared] = useState<ShareOutcome | "idle">("idle");
@@ -139,6 +236,8 @@ export default function Summary({ results, title, onPlayAgain, onPlayDaily }: Su
           </li>
         ))}
       </ol>
+
+      {record && <RecordPanel record={record} today={today} onReset={onResetRecord} />}
 
       <ShareCardPreview card={card} />
 

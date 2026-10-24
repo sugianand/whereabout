@@ -11,6 +11,7 @@ import { maxPoints } from "@/lib/geo";
 import { cluesFor } from "@/lib/hints";
 import { INTRO_KEY, INTRO_TEXT } from "@/lib/intro";
 import { playablePhotos } from "@/lib/game/playable";
+import { RECORD_KEY } from "@/lib/playerRecord";
 import { ROUNDS_PER_GAME } from "@/lib/game/state";
 import type { AtlasData, CatalogPhoto, GameBackend } from "@/lib/game/types";
 import { bundledGame } from "@/test/deck";
@@ -152,6 +153,20 @@ describe("Game", { timeout: 20000 }, () => {
     expect(await screen.findByText("Daily Five, October 9", {}, WAIT)).toBeInTheDocument();
     for (const photo of daily) expect(screen.getByText(photo.place)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Share result" })).toBeInTheDocument();
+
+    // The finished game joins the record in this browser, once, and starts a Daily Five streak.
+    const panel = screen.getByRole("region", { name: "Your record against Atlas" });
+    expect(within(panel).getByText("Games played").nextElementSibling).toHaveTextContent("1");
+    expect(within(panel).getByText("Daily Five streak").nextElementSibling).toHaveTextContent(
+      "1 day",
+    );
+    const stored = JSON.parse(localStorage.getItem(RECORD_KEY)!);
+    expect(stored).toMatchObject({ games: 1, lastDaily: "2026-10-09", streak: 1 });
+
+    fireEvent.click(within(panel).getByRole("button", { name: "Reset record" }));
+    fireEvent.click(within(panel).getByRole("button", { name: "Yes, reset it" }));
+    expect(localStorage.getItem(RECORD_KEY)).toBeNull();
+    expect(within(panel).getByText("Games played").nextElementSibling).toHaveTextContent("0");
   });
 
   it("keeps the pin and explains the problem when a guess fails", async () => {
