@@ -1,0 +1,466 @@
+{
+ "_comment": "Generated from api/src/whereabout_api/geo.py and hints.py. The API and web test suites both check against this file, so the same hints give the same clues and the same score everywhere.",
+ "max_points_by_hints": [
+  5000,
+  4000,
+  3000,
+  2000
+ ],
+ "scores": [
+  {
+   "distance_km": 0.0,
+   "hints": 0,
+   "score": 5000
+  },
+  {
+   "distance_km": 0.0,
+   "hints": 1,
+   "score": 4000
+  },
+  {
+   "distance_km": 0.0,
+   "hints": 2,
+   "score": 3000
+  },
+  {
+   "distance_km": 0.0,
+   "hints": 3,
+   "score": 2000
+  },
+  {
+   "distance_km": 12.5,
+   "hints": 0,
+   "score": 4959
+  },
+  {
+   "distance_km": 12.5,
+   "hints": 1,
+   "score": 3967
+  },
+  {
+   "distance_km": 12.5,
+   "hints": 2,
+   "score": 2975
+  },
+  {
+   "distance_km": 12.5,
+   "hints": 3,
+   "score": 1983
+  },
+  {
+   "distance_km": 343.556535,
+   "hints": 0,
+   "score": 3976
+  },
+  {
+   "distance_km": 343.556535,
+   "hints": 1,
+   "score": 3181
+  },
+  {
+   "distance_km": 343.556535,
+   "hints": 2,
+   "score": 2386
+  },
+  {
+   "distance_km": 343.556535,
+   "hints": 3,
+   "score": 1591
+  },
+  {
+   "distance_km": 1500.0,
+   "hints": 0,
+   "score": 1839
+  },
+  {
+   "distance_km": 1500.0,
+   "hints": 1,
+   "score": 1472
+  },
+  {
+   "distance_km": 1500.0,
+   "hints": 2,
+   "score": 1104
+  },
+  {
+   "distance_km": 1500.0,
+   "hints": 3,
+   "score": 736
+  },
+  {
+   "distance_km": 5000.0,
+   "hints": 0,
+   "score": 178
+  },
+  {
+   "distance_km": 5000.0,
+   "hints": 1,
+   "score": 143
+  },
+  {
+   "distance_km": 5000.0,
+   "hints": 2,
+   "score": 107
+  },
+  {
+   "distance_km": 5000.0,
+   "hints": 3,
+   "score": 71
+  },
+  {
+   "distance_km": 19000.0,
+   "hints": 0,
+   "score": 0
+  },
+  {
+   "distance_km": 19000.0,
+   "hints": 1,
+   "score": 0
+  },
+  {
+   "distance_km": 19000.0,
+   "hints": 2,
+   "score": 0
+  },
+  {
+   "distance_km": 19000.0,
+   "hints": 3,
+   "score": 0
+  }
+ ],
+ "photos": [
+  {
+   "name": "every label",
+   "country": "JP",
+   "driving_side": "left",
+   "climate_group": "Temperate",
+   "clues": [
+    {
+     "kind": "continent",
+     "text": "It's in Asia"
+    },
+    {
+     "kind": "driving_side",
+     "text": "Traffic drives on the left"
+    },
+    {
+     "kind": "climate",
+     "text": "The climate is temperate"
+    }
+   ]
+  },
+  {
+   "name": "no climate label (open sea)",
+   "country": "NO",
+   "driving_side": "right",
+   "climate_group": null,
+   "clues": [
+    {
+     "kind": "continent",
+     "text": "It's in Europe"
+    },
+    {
+     "kind": "driving_side",
+     "text": "Traffic drives on the right"
+    }
+   ]
+  },
+  {
+   "name": "no labels at all",
+   "country": "BR",
+   "driving_side": null,
+   "climate_group": null,
+   "clues": [
+    {
+     "kind": "continent",
+     "text": "It's in South America"
+    }
+   ]
+  },
+  {
+   "name": "lower-case country",
+   "country": "au",
+   "driving_side": "left",
+   "climate_group": "Arid",
+   "clues": [
+    {
+     "kind": "continent",
+     "text": "It's in Oceania"
+    },
+    {
+     "kind": "driving_side",
+     "text": "Traffic drives on the left"
+    },
+    {
+     "kind": "climate",
+     "text": "The climate is arid"
+    }
+   ]
+  },
+  {
+   "name": "unknown country",
+   "country": "ZZ",
+   "driving_side": "right",
+   "climate_group": "Polar",
+   "clues": [
+    {
+     "kind": "driving_side",
+     "text": "Traffic drives on the right"
+    },
+    {
+     "kind": "climate",
+     "text": "The climate is polar"
+    }
+   ]
+  }
+ ],
+ "continents": {
+  "AD": "Europe",
+  "AE": "Asia",
+  "AF": "Asia",
+  "AG": "North America",
+  "AI": "North America",
+  "AL": "Europe",
+  "AM": "Asia",
+  "AO": "Africa",
+  "AQ": "Antarctica",
+  "AR": "South America",
+  "AS": "Oceania",
+  "AT": "Europe",
+  "AU": "Oceania",
+  "AW": "North America",
+  "AX": "Europe",
+  "AZ": "Asia",
+  "BA": "Europe",
+  "BB": "North America",
+  "BD": "Asia",
+  "BE": "Europe",
+  "BF": "Africa",
+  "BG": "Europe",
+  "BH": "Asia",
+  "BI": "Africa",
+  "BJ": "Africa",
+  "BL": "North America",
+  "BM": "North America",
+  "BN": "Asia",
+  "BO": "South America",
+  "BQ": "North America",
+  "BR": "South America",
+  "BS": "North America",
+  "BT": "Asia",
+  "BV": "Antarctica",
+  "BW": "Africa",
+  "BY": "Europe",
+  "BZ": "North America",
+  "CA": "North America",
+  "CD": "Africa",
+  "CF": "Africa",
+  "CG": "Africa",
+  "CH": "Europe",
+  "CI": "Africa",
+  "CK": "Oceania",
+  "CL": "South America",
+  "CM": "Africa",
+  "CN": "Asia",
+  "CO": "South America",
+  "CR": "North America",
+  "CU": "North America",
+  "CV": "Africa",
+  "CW": "North America",
+  "CY": "Asia",
+  "CZ": "Europe",
+  "DE": "Europe",
+  "DJ": "Africa",
+  "DK": "Europe",
+  "DM": "North America",
+  "DO": "North America",
+  "DZ": "Africa",
+  "EC": "South America",
+  "EE": "Europe",
+  "EG": "Africa",
+  "EH": "Africa",
+  "ER": "Africa",
+  "ES": "Europe",
+  "ET": "Africa",
+  "FI": "Europe",
+  "FJ": "Oceania",
+  "FK": "South America",
+  "FM": "Oceania",
+  "FO": "Europe",
+  "FR": "Europe",
+  "GA": "Africa",
+  "GB": "Europe",
+  "GD": "North America",
+  "GE": "Asia",
+  "GF": "South America",
+  "GG": "Europe",
+  "GH": "Africa",
+  "GI": "Europe",
+  "GL": "North America",
+  "GM": "Africa",
+  "GN": "Africa",
+  "GP": "North America",
+  "GQ": "Africa",
+  "GR": "Europe",
+  "GS": "Antarctica",
+  "GT": "North America",
+  "GU": "Oceania",
+  "GW": "Africa",
+  "GY": "South America",
+  "HK": "Asia",
+  "HM": "Antarctica",
+  "HN": "North America",
+  "HR": "Europe",
+  "HT": "North America",
+  "HU": "Europe",
+  "ID": "Asia",
+  "IE": "Europe",
+  "IL": "Asia",
+  "IM": "Europe",
+  "IN": "Asia",
+  "IQ": "Asia",
+  "IR": "Asia",
+  "IS": "Europe",
+  "IT": "Europe",
+  "JE": "Europe",
+  "JM": "North America",
+  "JO": "Asia",
+  "JP": "Asia",
+  "KE": "Africa",
+  "KG": "Asia",
+  "KH": "Asia",
+  "KI": "Oceania",
+  "KM": "Africa",
+  "KN": "North America",
+  "KP": "Asia",
+  "KR": "Asia",
+  "KW": "Asia",
+  "KY": "North America",
+  "KZ": "Asia",
+  "LA": "Asia",
+  "LB": "Asia",
+  "LC": "North America",
+  "LI": "Europe",
+  "LK": "Asia",
+  "LR": "Africa",
+  "LS": "Africa",
+  "LT": "Europe",
+  "LU": "Europe",
+  "LV": "Europe",
+  "LY": "Africa",
+  "MA": "Africa",
+  "MC": "Europe",
+  "MD": "Europe",
+  "ME": "Europe",
+  "MF": "North America",
+  "MG": "Africa",
+  "MH": "Oceania",
+  "MK": "Europe",
+  "ML": "Africa",
+  "MM": "Asia",
+  "MN": "Asia",
+  "MO": "Asia",
+  "MP": "Oceania",
+  "MQ": "North America",
+  "MR": "Africa",
+  "MS": "North America",
+  "MT": "Europe",
+  "MU": "Africa",
+  "MV": "Asia",
+  "MW": "Africa",
+  "MX": "North America",
+  "MY": "Asia",
+  "MZ": "Africa",
+  "NA": "Africa",
+  "NC": "Oceania",
+  "NE": "Africa",
+  "NF": "Oceania",
+  "NG": "Africa",
+  "NI": "North America",
+  "NL": "Europe",
+  "NO": "Europe",
+  "NP": "Asia",
+  "NR": "Oceania",
+  "NU": "Oceania",
+  "NZ": "Oceania",
+  "OM": "Asia",
+  "PA": "North America",
+  "PE": "South America",
+  "PF": "Oceania",
+  "PG": "Oceania",
+  "PH": "Asia",
+  "PK": "Asia",
+  "PL": "Europe",
+  "PM": "North America",
+  "PN": "Oceania",
+  "PR": "North America",
+  "PS": "Asia",
+  "PT": "Europe",
+  "PW": "Oceania",
+  "PY": "South America",
+  "QA": "Asia",
+  "RE": "Africa",
+  "RO": "Europe",
+  "RS": "Europe",
+  "RU": "Europe",
+  "RW": "Africa",
+  "SA": "Asia",
+  "SB": "Oceania",
+  "SC": "Africa",
+  "SD": "Africa",
+  "SE": "Europe",
+  "SG": "Asia",
+  "SH": "Africa",
+  "SI": "Europe",
+  "SJ": "Europe",
+  "SK": "Europe",
+  "SL": "Africa",
+  "SM": "Europe",
+  "SN": "Africa",
+  "SO": "Africa",
+  "SR": "South America",
+  "SS": "Africa",
+  "ST": "Africa",
+  "SV": "North America",
+  "SX": "North America",
+  "SY": "Asia",
+  "SZ": "Africa",
+  "TC": "North America",
+  "TD": "Africa",
+  "TF": "Antarctica",
+  "TG": "Africa",
+  "TH": "Asia",
+  "TJ": "Asia",
+  "TK": "Oceania",
+  "TL": "Asia",
+  "TM": "Asia",
+  "TN": "Africa",
+  "TO": "Oceania",
+  "TR": "Asia",
+  "TT": "North America",
+  "TV": "Oceania",
+  "TW": "Asia",
+  "TZ": "Africa",
+  "UA": "Europe",
+  "UG": "Africa",
+  "UM": "Oceania",
+  "US": "North America",
+  "UY": "South America",
+  "UZ": "Asia",
+  "VA": "Europe",
+  "VC": "North America",
+  "VE": "South America",
+  "VG": "North America",
+  "VI": "North America",
+  "VN": "Asia",
+  "VU": "Oceania",
+  "WF": "Oceania",
+  "WS": "Oceania",
+  "XK": "Europe",
+  "YE": "Asia",
+  "YT": "Africa",
+  "ZA": "Africa",
+  "ZM": "Africa",
+  "ZW": "Africa"
+ }
+}

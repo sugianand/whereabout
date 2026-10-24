@@ -18,6 +18,10 @@ EARTH_RADIUS_KM = 6371.0088
 ACCURACY_THRESHOLDS_KM: tuple[float, ...] = (1.0, 25.0, 200.0, 750.0, 2500.0)
 
 MAX_POINTS = 5000
+# A round's maximum after 0, 1, 2 or 3 hints: each hint costs 1,000 of the 5,000.
+# Must match MAX_POINTS_BY_HINTS in web/src/lib/geo.ts (data/fixtures/hint_cases.json).
+MAX_POINTS_BY_HINTS: tuple[int, ...] = (5000, 4000, 3000, 2000)
+MAX_HINTS = len(MAX_POINTS_BY_HINTS) - 1
 # Distance at which the score has decayed to 1/e (~37%) of the maximum.
 # Chosen so a guess in the right country still earns meaningful points.
 SCORE_SCALE_KM = 1500.0
@@ -59,14 +63,22 @@ def haversine_km(a: LatLon, b: LatLon) -> float:
     return 2 * EARTH_RADIUS_KM * math.asin(math.sqrt(h))
 
 
-def score_distance(distance_km: float) -> int:
-    """Points for a guess `distance_km` away from the truth.
+def max_points(hints: int = 0) -> int:
+    """The most a round can score after `hints` hints."""
+    if not 0 <= hints <= MAX_HINTS:
+        raise ValueError(f"hints must be between 0 and {MAX_HINTS}")
+    return MAX_POINTS_BY_HINTS[hints]
+
+
+def score_distance(distance_km: float, hints: int = 0) -> int:
+    """Points for a guess `distance_km` away from the truth, after `hints` hints.
 
     Exponential decay: 5000 points at 0 km, ~1840 at 1500 km, ~0 on the far side of the planet.
+    Hints scale the whole curve down, so a hinted guess is worth less at every distance.
     """
     if not math.isfinite(distance_km) or distance_km < 0:
         raise ValueError("distance must be a non-negative finite number")
-    return round(MAX_POINTS * math.exp(-distance_km / SCORE_SCALE_KM))
+    return round(max_points(hints) * math.exp(-distance_km / SCORE_SCALE_KM))
 
 
 def within_thresholds(distance_km: float) -> dict[float, bool]:
