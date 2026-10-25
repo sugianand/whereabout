@@ -85,10 +85,22 @@ test("the globe renders with WebGL and accepts a click", async ({ page }) => {
   await page.goto("./");
   const globe = page.locator(".globe[data-ready]");
   await expect(globe).toBeVisible({ timeout: 20_000 });
-  const box = await globe.boundingBox();
-  expect(box).not.toBeNull();
-  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
-  await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
+  // On desktop the globe grows while the pointer is over it, and MapLibre redraws its canvas to
+  // the new size a few frames later. Click where the globe is once it has settled, as a player
+  // aiming at what they see would, not where it was before the pointer arrived.
+  const before = (await globe.boundingBox())!;
+  await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2);
+  const canvas = globe.locator("canvas.maplibregl-canvas");
+  await expect(async () => {
+    const first = await globe.boundingBox();
+    await page.waitForTimeout(400);
+    const [g, c] = [await globe.boundingBox(), await canvas.boundingBox()];
+    expect(g).toEqual(first);
+    expect(c?.width).toBeCloseTo(g!.width, 0);
+    expect(c?.height).toBeCloseTo(g!.height, 0);
+  }).toPass({ timeout: 10_000 });
+  const box = (await globe.boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
   await expect(page.getByText(/^Your pin: /)).toBeVisible();
   await expect(page.getByRole("button", { name: "Guess here" })).toBeEnabled();
 });
