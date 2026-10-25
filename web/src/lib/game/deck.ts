@@ -10,6 +10,8 @@
  * run never mixes in records from another, even while a CDN still caches the old files.
  */
 
+import { tappableCountries } from "@/lib/countryHit";
+
 import { hashSeed } from "./daily";
 import { playablePhotos } from "./playable";
 import { buildTiers, type Tiers } from "./tiers";
@@ -29,6 +31,11 @@ export interface Deck {
   ids: string[];
   /** Easy, Medium and Hard thirds by Atlas's real error, or null with too few guesses. */
   tiers: Tiers | null;
+  /**
+   * The photos Country Streak can deal: those taken in a country the globe draws, so the answer
+   * is always something the player can tap (microstates and small islands are left out).
+   */
+  streakIds: string[];
 }
 
 /** One record per playable photo, in catalog order. */
@@ -49,7 +56,14 @@ export function buildDeck(records: readonly GameRecord[]): Deck {
     version: deckVersion(records),
     ids: records.map((r) => r.photo.id),
     tiers: buildTiers(records),
+    streakIds: streakIds(records),
   };
+}
+
+/** Ids of the photos whose country can be tapped on the globe, in catalog order. */
+export function streakIds(records: readonly GameRecord[]): string[] {
+  const tappable = tappableCountries();
+  return records.filter((r) => tappable.has(r.photo.country)).map((r) => r.photo.id);
 }
 
 /** Where a photo's record is served, e.g. "/whereabout/game-data/1a2b3c4d/wm000.json". */

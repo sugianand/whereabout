@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 import atlasData from "@/data/atlas.json";
 import catalog from "@/data/photos.json";
 
+import { tappableCountries } from "@/lib/countryHit";
+
 import { pickDaily } from "./daily";
 import { LOAD_ERROR, buildDeck, deckVersion, fetchRecords, gameRecords, recordUrl } from "./deck";
 import { playablePhotos } from "./playable";
@@ -42,6 +44,18 @@ describe("game records", () => {
     expect(deckVersion(records)).toMatch(/^[0-9a-f]{8}$/);
     expect(deckVersion(records)).toBe(deckVersion(gameRecords(photos, atlas)));
     expect(deckVersion(moved)).not.toBe(deckVersion(records));
+  });
+});
+
+describe("Country Streak deck", () => {
+  it("deals only photos whose country the globe draws, in catalog order", () => {
+    const tappable = tappableCountries();
+    const byId = new Map(records.map((r) => [r.photo.id, r.photo]));
+    expect(deck.streakIds.length).toBeGreaterThan(0);
+    expect(deck.streakIds).toEqual(deck.ids.filter((id) => deck.streakIds.includes(id)));
+    for (const id of deck.streakIds) expect(tappable.has(byId.get(id)!.country)).toBe(true);
+    const left = records.filter((r) => !deck.streakIds.includes(r.photo.id));
+    for (const r of left) expect(tappable.has(r.photo.country)).toBe(false);
   });
 });
 

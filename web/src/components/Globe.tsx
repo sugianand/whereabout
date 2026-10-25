@@ -12,7 +12,14 @@ import {
   type ReactNode,
 } from "react";
 
-import { BELIEF_LAYER, MAP_COLORS, buildGlobeStyle } from "@/lib/basemap";
+import {
+  BELIEF_LAYER,
+  MAP_COLORS,
+  PICK_LAYER,
+  buildGlobeStyle,
+  countryMarkPaint,
+  type CountryMarks,
+} from "@/lib/basemap";
 import { beliefFillOpacity, type Belief } from "@/lib/belief";
 import { formatLngLat, normalize, nudge, type Direction, type LngLat } from "@/lib/geo";
 import { maplibreWorkerUrl } from "@/lib/maplibre-worker";
@@ -36,6 +43,8 @@ export type GlobeProps = {
   disabled?: boolean;
   /** After a guess: the true location and every guess, drawn as arcs that land on the truth. */
   reveal?: RevealView | null;
+  /** Countries to fill in (Country Streak): the player's pick, and the answer once shown. */
+  countries?: CountryMarks | null;
   className?: string;
 };
 
@@ -158,6 +167,7 @@ export default function Globe({
   onPinChange,
   disabled = false,
   reveal = null,
+  countries = null,
   className,
 }: GlobeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -342,6 +352,17 @@ export default function Globe({
       if (mapRef.current) setBeliefHeat(mapRef.current, null);
     };
   }, [belief, ready]);
+
+  // Country Streak's marks. Compared by value, so a new object with the same codes is no repaint.
+  const picked = countries?.picked ?? null;
+  const answer = countries?.answer ?? null;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const paint = countryMarkPaint({ picked, answer });
+    map.setPaintProperty(PICK_LAYER, "fill-color", paint.color);
+    map.setPaintProperty(PICK_LAYER, "fill-opacity", paint.opacity);
+  }, [picked, answer, ready]);
 
   function recenter() {
     const map = mapRef.current;

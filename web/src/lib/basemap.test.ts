@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { BASEMAP_ATTRIBUTION, BELIEF_LAYER, MAP_COLORS, buildGlobeStyle } from "./basemap";
+import {
+  BASEMAP_ATTRIBUTION,
+  BELIEF_LAYER,
+  MAP_COLORS,
+  PICK_LAYER,
+  PICK_OPACITY,
+  buildGlobeStyle,
+  countryMarkPaint,
+} from "./basemap";
 
 describe("buildGlobeStyle", () => {
   const style = buildGlobeStyle();
@@ -28,8 +36,15 @@ describe("buildGlobeStyle", () => {
       "graticule",
       "land",
       "belief",
+      "pick",
       "borders",
     ]);
+  });
+
+  it("has a Country Streak pick layer over the countries, invisible until a pick", () => {
+    const pick = style.layers.find((layer) => layer.id === PICK_LAYER);
+    expect(pick).toMatchObject({ type: "fill", source: "countries" });
+    expect(pick?.paint).toMatchObject({ "fill-opacity": 0 });
   });
 
   it("has a belief layer in the Atlas colour, invisible until the reveal sets it", () => {
@@ -58,5 +73,37 @@ describe("buildGlobeStyle", () => {
     expect(land.data.features.length).toBeGreaterThan(0);
     expect(land.attribution).toBe(BASEMAP_ATTRIBUTION);
     expect(BASEMAP_ATTRIBUTION).toContain("Natural Earth");
+  });
+});
+
+describe("countryMarkPaint", () => {
+  const n = ["get", "n"];
+
+  it("paints nothing without marks", () => {
+    expect(countryMarkPaint(null).opacity).toBe(0);
+    expect(countryMarkPaint({ picked: null, answer: null }).opacity).toBe(0);
+    // A code with no shape on the globe has nothing to paint either.
+    expect(countryMarkPaint({ picked: "ZZ" }).opacity).toBe(0);
+  });
+
+  it("paints the pick in the player's colour", () => {
+    expect(countryMarkPaint({ picked: "FR" })).toEqual({
+      color: ["match", n, "250", MAP_COLORS.flare, MAP_COLORS.flare],
+      opacity: ["match", n, ["250"], PICK_OPACITY, 0],
+    });
+  });
+
+  it("paints the answer gold next to a wrong pick", () => {
+    expect(countryMarkPaint({ picked: "FR", answer: "ES" })).toEqual({
+      color: ["match", n, "724", MAP_COLORS.gold, "250", MAP_COLORS.flare, MAP_COLORS.flare],
+      opacity: ["match", n, ["724", "250"], PICK_OPACITY, 0],
+    });
+  });
+
+  it("paints a right pick gold only", () => {
+    expect(countryMarkPaint({ picked: "FR", answer: "FR" })).toEqual({
+      color: ["match", n, "250", MAP_COLORS.gold, MAP_COLORS.flare],
+      opacity: ["match", n, ["250"], PICK_OPACITY, 0],
+    });
   });
 });

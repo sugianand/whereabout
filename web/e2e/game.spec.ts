@@ -201,6 +201,8 @@ test("a Hard game deals only photos Atlas missed by most, chosen next to the Dai
   const picker = page.getByRole("combobox", { name: "Difficulty: how hard it was for Atlas" });
   await expect(picker).toBeVisible();
   await expect(page.getByRole("button", { name: "Play the Daily Five" })).toBeVisible();
+  // Let the opening fresh game finish fetching its five before counting the Hard game's.
+  await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
 
   dealt.length = 0;
   await picker.selectOption("hard");

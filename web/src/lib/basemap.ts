@@ -1,9 +1,10 @@
-import type { StyleSpecification } from "maplibre-gl";
+import type { ExpressionSpecification, StyleSpecification } from "maplibre-gl";
 import { feature, mesh } from "topojson-client";
 import type { GeometryCollection, Topology } from "topojson-specification";
 import countries110m from "world-atlas/countries-110m.json";
 
 import { COUNTRY_ID_PROPERTY } from "./belief";
+import { numericId } from "./countryIds";
 import { graticule } from "./geo";
 
 /**
@@ -26,6 +27,35 @@ export const BELIEF_LAYER = "belief";
 
 export const BASEMAP_ATTRIBUTION =
   'Coastlines and borders: <a href="https://www.naturalearthdata.com/">Natural Earth</a> (public domain)';
+
+/** The fill layer that marks countries in Country Streak: the player's pick and the answer. */
+export const PICK_LAYER = "pick";
+export const PICK_OPACITY = 0.5;
+
+/** Countries to mark on the globe, as ISO alpha-2 codes. */
+export type CountryMarks = { picked?: string | null; answer?: string | null };
+
+/**
+ * Paint for the pick layer: the player's pick in flare, the answer in gold (gold wins when they
+ * are the same country), nothing else. No marks is plain 0 opacity.
+ */
+export function countryMarkPaint(marks: CountryMarks | null | undefined): {
+  color: ExpressionSpecification | string;
+  opacity: ExpressionSpecification | 0;
+} {
+  const answer = marks?.answer ? numericId(marks.answer) : undefined;
+  const picked = marks?.picked ? numericId(marks.picked) : undefined;
+  const ids = [...new Set([answer, picked].filter((id): id is string => !!id))];
+  if (ids.length === 0) return { color: MAP_COLORS.flare, opacity: 0 };
+  const colors: string[] = [];
+  if (answer) colors.push(answer, MAP_COLORS.gold);
+  if (picked && picked !== answer) colors.push(picked, MAP_COLORS.flare);
+  const id = ["get", COUNTRY_ID_PROPERTY];
+  return {
+    color: ["match", id, ...colors, MAP_COLORS.flare] as unknown as ExpressionSpecification,
+    opacity: ["match", id, ids, PICK_OPACITY, 0] as unknown as ExpressionSpecification,
+  };
+}
 
 type CountryTopology = Topology<{ countries: GeometryCollection; land: GeometryCollection }>;
 
@@ -77,6 +107,12 @@ export function buildGlobeStyle(): StyleSpecification {
         type: "fill",
         source: "countries",
         paint: { "fill-color": MAP_COLORS.sonar, "fill-opacity": 0 },
+      },
+      {
+        id: PICK_LAYER,
+        type: "fill",
+        source: "countries",
+        paint: { "fill-color": MAP_COLORS.flare, "fill-opacity": 0 },
       },
       {
         id: "borders",
