@@ -1,4 +1,4 @@
-import type { AtlasRetrievalSummary } from "@/lib/game/types";
+import type { AtlasCalibrationSummary, AtlasRetrievalSummary } from "@/lib/game/types";
 
 /** The evaluation row for the pipeline Pocket Atlas runs in the browser ("Your photo"). */
 export const POCKET_SYSTEM = "ViT-B-32/openai, country then city";
@@ -43,4 +43,29 @@ export function retrievalNote(r: AtlasRetrievalSummary): string {
     ? `${searched} The whole interval is below zero, so this is the Atlas you play against.`
     : `${searched} It only plays once the whole interval is below zero, so the game keeps ` +
         `the Atlas without it for now.`;
+}
+
+const pct1 = (x: number) => `${(x * 100).toFixed(1)}%`;
+
+/**
+ * What calibration did, for "How sure it is": the temperature, the held-out calibration error
+ * before and after, and which probabilities the reveal shows.
+ */
+export function calibrationNote(c: AtlasCalibrationSummary): string {
+  const t = c.temperature.toFixed(2);
+  const lean =
+    c.temperature > 1.05
+      ? "a little overconfident"
+      : c.temperature < 0.95
+        ? "a little underconfident"
+        : "close to honest already";
+  const measured =
+    `The atlas run also tried temperature scaling: one number that softens or sharpens every ` +
+    `probability without changing which country comes first. Fitted on ${c.n.toLocaleString("en-US")} ` +
+    `photos it came out at ${t}, so the raw model was ${lean}. On photos each fit never saw, ` +
+    `the average gap between how sure Atlas said it was and how often it was right went from ` +
+    `${pct1(c.raw.ece)} to ${pct1(c.calibrated.ece)}.`;
+  return c.ships
+    ? `${measured} That fit held up on unseen photos, so the percentages in the game are the scaled ones.`
+    : `${measured} It did not hold up on unseen photos, so the game keeps the raw percentages.`;
 }

@@ -434,3 +434,53 @@ def test_retrieval_model_must_be_one_of_the_runs(tmp_path, monkeypatch):
             "--retrieval-model",
             "Other:x",
         )
+
+
+def test_main_calibrates_the_confidence_players_see_but_never_moves_a_pin(tmp_path, monkeypatch):
+    atlas_out, results = run_main(tmp_path, monkeypatch)
+    atlas = json.loads(atlas_out.read_text())
+    cal = atlas["evaluation"]["calibration"]
+    assert cal["method"] == "temperature scaling" and cal["n"] == 2
+    assert {"nll", "ece", "bins"} <= set(cal["raw"]) and {"nll", "ece", "bins"} <= set(
+        cal["calibrated"]
+    )
+    for g in atlas["guesses"].values():
+        shortlist = [c["p"] for c in g["topCountries"]]
+        # The reveal's "% sure" is the shortlist's first probability, still in order.
+        assert g["confidence"] == pytest.approx(shortlist[0], abs=1e-4)
+        assert shortlist == sorted(shortlist, reverse=True)
+        assert next(iter(g["belief"])) == g["topCountries"][0]["country"]
+    # The fake is right and already certain, so scaling has nothing to win and the raw ships.
+    assert cal["ships"] is False
+    assert cal["raw"]["nll"] >= 0.0
+    assert atlas["guesses"]["kyoto"]["guessedPlace"] == "Kyoto, JP"
+    report = json.loads((results / "atlas-v0.json").read_text())
+    assert report["calibration"] == cal
+    md = (results / "atlas-v0.md").read_text()
+    assert "## How sure is Atlas: calibration" in md
+    assert "the raw probabilities: temperature scaling did not lower held-out NLL" in md
+
+
+def test_calibrate_guesses_keeps_the_raw_probabilities_when_calibration_loses():
+    from whereabout_ml.gazetteer import City, Country, Gazetteer
+    from whereabout_ml.zeroshot import ZeroShotGeolocator
+
+    gaz = Gazetteer.build(
+        [Country("JP", "Japan"), Country("PE", "Peru")],
+        [City("Kyoto", "JP", 35.01, 135.77, 1), City("Cusco", "PE", -13.53, -71.97, 1)],
+    )
+    locator = ZeroShotGeolocator(FakeClip("Fake", "x"), gaz, top_k_countries=2)
+    clip = FakeClip("Fake", "x")
+    # Both photos look Japanese, but one is in Peru: a fit on either fold would teach the other
+    # the wrong lesson, so the raw softmax ships and the guesses come back unchanged.
+    embeddings = list(clip.encode_texts(["Japan Kyoto", "Japan Kyoto"]))
+    guesses = [locator.predict(e) for e in embeddings]
+    calibrated, beliefs, summary = run_atlas_v0.calibrate_guesses(
+        PHOTOS, guesses, embeddings, locator
+    )
+    assert summary["ships"] is False
+    for got, raw in zip(calibrated, guesses, strict=True):
+        assert (got.lat, got.lon, got.city) == (raw.lat, raw.lon, raw.city)
+        assert got.confidence == pytest.approx(raw.confidence)
+        assert [c for c, _ in got.top_countries] == [c for c, _ in raw.top_countries]
+    assert beliefs["kyoto"]["JP"] == round(guesses[0].confidence, 3)

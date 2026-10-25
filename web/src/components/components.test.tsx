@@ -388,3 +388,38 @@ describe("RevealCard on phones", () => {
     expect(screen.queryByRole("button", { name: /How Atlas guessed/ })).toBeNull();
   });
 });
+
+describe("RevealCard reality check", () => {
+  const sure = (confidence: number): RoundResult => {
+    const r = result(5, 100, 4900);
+    return {
+      ...r,
+      atlas: {
+        ...r.atlas!,
+        confidence,
+        guessedPlace: "Hanoi, VN",
+        topCountries: [{ country: "VN", p: confidence }],
+      },
+    };
+  };
+  const bands = [
+    { lo: 0, hi: 0.2, n: 3, right: 0 },
+    { lo: 0.2, hi: 0.4, n: 40, right: 11 },
+    { lo: 0.4, hi: 0.6, n: 30, right: 14 },
+    { lo: 0.6, hi: 0.8, n: 20, right: 15 },
+    { lo: 0.8, hi: 1, n: 9, right: 8 },
+  ];
+
+  it("says how often Atlas is right when it is this sure", () => {
+    render(<RevealCard result={sure(0.62)} isLast={false} onNext={() => {}} sureness={bands} />);
+    expect(screen.getByTestId("atlas-thinking")).toHaveTextContent(
+      "62% sure of the country. When Atlas is 60–80% sure, it names the right country in 15 of 20 photos.",
+    );
+  });
+
+  it("stays quiet when the band has too few photos to mean anything", () => {
+    render(<RevealCard result={sure(0.9)} isLast={false} onNext={() => {}} sureness={bands} />);
+    expect(screen.getByTestId("atlas-thinking")).toHaveTextContent("90% sure of the country.");
+    expect(screen.queryByTestId("atlas-sureness")).toBeNull();
+  });
+});

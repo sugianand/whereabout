@@ -26,7 +26,7 @@ import time
 import urllib.error
 import urllib.request
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -43,6 +43,7 @@ from whereabout_eval.metrics import (
     paired_median_delta_ci,
 )
 from whereabout_ml.baselines import constant_guesses, random_city_guesses
+from whereabout_ml.calibration import calibrate, softmax_t
 from whereabout_ml.embedding_cache import cached_image_embeddings, safe_name
 from whereabout_ml.gazetteer import Gazetteer
 from whereabout_ml.retrieval import (
@@ -61,7 +62,7 @@ from whereabout_ml.saliency import (
     explain,
     summarise,
 )
-from whereabout_ml.zeroshot import Guess, ZeroShotGeolocator
+from whereabout_ml.zeroshot import LOGIT_SCALE, Guess, ZeroShotGeolocator, normalise
 
 VERSION = "atlas-v0-zeroshot"
 # Countries each guess reports for the reveal's shortlist (the city step still searches 3).
@@ -165,15 +166,40 @@ def belief_from_probabilities(
     return {c: round(p, BELIEF_DECIMALS) for c, p in kept}
 
 
-def beliefs_for(
-    photos: Sequence[Photo], embeddings: Sequence[np.ndarray], locator: ZeroShotGeolocator
-) -> dict[str, dict[str, float]]:
-    """Photo id → country distribution, from the same embeddings the guesses came from."""
+def country_logits(locator: ZeroShotGeolocator, embeddings: Sequence[np.ndarray]) -> np.ndarray:
+    """Photos × countries: the scaled similarities `country_probabilities` takes a softmax of."""
+    images = normalise(np.asarray(embeddings, dtype=np.float64))
+    return LOGIT_SCALE * images @ locator.country_embeddings.T
+
+
+def calibrate_guesses(
+    photos: Sequence[Photo],
+    guesses: Sequence[Guess],
+    embeddings: Sequence[np.ndarray],
+    locator: ZeroShotGeolocator,
+) -> tuple[list[Guess], dict[str, dict[str, float]], dict]:
+    """Temperature-scale the playing system's country probabilities (`whereabout_ml.calibration`).
+
+    Returns the guesses with calibrated `confidence` and shortlist probabilities (pins, cities
+    and the shortlist's order are untouched: dividing logits by T never reorders countries), the
+    belief heatmaps from the same probabilities, and the calibration record. When calibration
+    does not lower held-out NLL the raw probabilities ship, so this returns them unchanged.
+    """
     codes = [c.code for c in locator.gazetteer.countries]
-    return {
-        p.id: belief_from_probabilities(codes, locator.country_probabilities(e))
-        for p, e in zip(photos, embeddings, strict=True)
+    index = {c: i for i, c in enumerate(codes)}
+    logits = country_logits(locator, embeddings)
+    labels = [index.get(p.country or "", -1) for p in photos]
+    temperatures, summary = calibrate(logits, labels, [p.location for p in photos])
+    probs = softmax_t(logits, temperatures)
+    out = []
+    for g, p in zip(guesses, probs, strict=True):
+        shortlist = tuple((c, float(p[index[c]])) for c, _ in g.top_countries)
+        out.append(replace(g, confidence=shortlist[0][1], top_countries=shortlist))
+    beliefs = {
+        photo.id: belief_from_probabilities(codes, row)
+        for photo, row in zip(photos, probs, strict=True)
     }
+    return out, beliefs, summary
 
 
 def guess_to_json(
@@ -399,12 +425,14 @@ def build_outputs(
     saliency: dict[str, Saliency] | None = None,
     beliefs: dict[str, dict[str, float]] | None = None,
     retrieval: dict | None = None,
+    calibration: dict | None = None,
 ):
     """Atlas's guesses for the game, plus a JSON report and a Markdown results page.
 
     `saliency` (photo id → where the playing system looked) and `beliefs` (photo id → country
     distribution, see `belief_from_probabilities`) are attached to its guesses. `retrieval` is
-    the record from `refine_with_references`, if the run tried the refinement.
+    the record from `refine_with_references`, if the run tried the refinement, and
+    `calibration` the one from `calibrate_guesses`.
     """
     saliency = saliency or {}
     beliefs = beliefs or {}
@@ -452,6 +480,8 @@ def build_outputs(
         atlas["evaluation"]["saliency"] = faithfulness
     if retrieval:
         atlas["evaluation"]["retrieval"] = retrieval
+    if calibration:
+        atlas["evaluation"]["calibration"] = calibration
 
     table = markdown_table({s.name: s.report for s in systems if s.report})
     report = {
@@ -465,6 +495,7 @@ def build_outputs(
         "best_vs_others": comparisons,
         "saliency": faithfulness,
         "retrieval": retrieval,
+        "calibration": calibration,
         "table": table,
     }
     return atlas, report, results_markdown(report, now)
@@ -537,6 +568,40 @@ def results_markdown(report: dict, now: str) -> str:
             f"{'yes' if ret['ships'] else 'no'} |",
             "",
             "It plays only if the whole interval is below zero.",
+        ]
+    cal = report.get("calibration")
+    if cal:
+        raw, held = cal["raw"], cal["calibrated"]
+        lines += [
+            "",
+            "## How sure is Atlas: calibration",
+            "",
+            f"Temperature scaling of the playing system's country probabilities, on the "
+            f"{cal['n']} photos whose country the gazetteer knows. Each photo's temperature is "
+            f"fitted on the other {cal['folds'] - 1} of {cal['folds']} folds, dealt by "
+            f"{cal['blockDeg']:g}° geographic blocks, so every calibrated number below is "
+            f"measured on photos its fit never saw. Fitted on all of them, T = "
+            f"{cal['temperature']:.3f} (above 1 means the raw model was overconfident).",
+            "",
+            "| Probabilities | Negative log likelihood | Expected calibration error |",
+            "| --- | ---: | ---: |",
+            f"| Raw CLIP softmax | {raw['nll']:.3f} | {raw['ece']:.1%} |",
+            f"| Temperature-scaled (held out) | {held['nll']:.3f} | {held['ece']:.1%} |",
+            "",
+            "The game shows "
+            + (
+                "the temperature-scaled probabilities, because they lowered held-out NLL."
+                if cal["ships"]
+                else "the raw probabilities: temperature scaling did not lower held-out NLL."
+            ),
+            "",
+            "| Atlas said | Photos | Right country |",
+            "| --- | ---: | ---: |",
+            *(
+                f"| {b['lo']:.0%} to {b['hi']:.0%} (mean {b['confidence']:.0%}) | {b['n']} | "
+                f"{b['accuracy']:.0%} |"
+                for b in (held if cal["ships"] else raw)["bins"]
+            ),
         ]
     lines += [
         "",
@@ -707,7 +772,14 @@ def main(argv: Sequence[str] | None = None) -> None:
         elif index is not None:
             print("retrieval: no reference photos with thumbnails yet; skipped", file=sys.stderr)
     encoder, locator, best_embeddings = handles[best.name]
-    beliefs = beliefs_for(photos, best_embeddings, locator)
+    best.guesses, beliefs, calibration = calibrate_guesses(
+        photos, best.guesses, best_embeddings, locator
+    )
+    print(
+        f"calibration: T = {calibration['temperature']}; held-out NLL "
+        f"{calibration['raw']['nll']} raw, {calibration['calibrated']['nll']} calibrated; "
+        f"{'ships' if calibration['ships'] else 'raw probabilities ship'}"
+    )
 
     saliency: dict[str, Saliency] = {}
     if args.saliency_grid > 0:
@@ -737,7 +809,13 @@ def main(argv: Sequence[str] | None = None) -> None:
             print(f"saliency failed, shipping guesses without maps: {err!r}", file=sys.stderr)
 
     atlas, report, markdown = build_outputs(
-        photos, systems, skipped=skipped, saliency=saliency, beliefs=beliefs, retrieval=retrieval
+        photos,
+        systems,
+        skipped=skipped,
+        saliency=saliency,
+        beliefs=beliefs,
+        retrieval=retrieval,
+        calibration=calibration,
     )
     args.atlas_out.write_text(json.dumps(atlas, indent=1, ensure_ascii=False) + "\n")
     args.results_dir.mkdir(parents=True, exist_ok=True)

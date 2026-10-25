@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { retrievalNote, systemLabel } from "@/lib/atlas";
-import type { AtlasRetrievalSummary } from "@/lib/game/types";
+import { calibrationNote, retrievalNote, systemLabel } from "@/lib/atlas";
+import type { AtlasCalibrationSummary, AtlasRetrievalSummary } from "@/lib/game/types";
 
 const run = (over: Partial<AtlasRetrievalSummary>): AtlasRetrievalSummary => ({
   versus: "ViT-L-14/openai, country then city",
@@ -45,5 +45,32 @@ describe("systemLabel", () => {
     expect(systemLabel("ViT-L-14/openai, country then city, then nearest reference photos")).toBe(
       "CLIP ViT-L/14 (OpenAI), country then city, then nearest reference photos",
     );
+  });
+});
+
+describe("calibrationNote", () => {
+  const cal = (over: Partial<AtlasCalibrationSummary>): AtlasCalibrationSummary => ({
+    method: "temperature scaling",
+    n: 380,
+    folds: 5,
+    blockDeg: 10,
+    temperature: 1.3,
+    raw: { nll: 2.1, ece: 0.081, bins: [] },
+    calibrated: { nll: 2.0, ece: 0.032, bins: [] },
+    ships: true,
+    ...over,
+  });
+
+  it("gives the temperature, the held-out error before and after, and what the game shows", () => {
+    const note = calibrationNote(cal({}));
+    expect(note).toContain("came out at 1.30, so the raw model was a little overconfident");
+    expect(note).toContain("went from 8.1% to 3.2%");
+    expect(note).toMatch(/percentages in the game are the scaled ones\.$/);
+  });
+
+  it("says the game keeps the raw numbers when the fit did not hold up", () => {
+    const note = calibrationNote(cal({ temperature: 0.99, ships: false }));
+    expect(note).toContain("close to honest already");
+    expect(note).toMatch(/game keeps the raw percentages\.$/);
   });
 });

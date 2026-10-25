@@ -6,8 +6,10 @@ import GuessGallery from "@/components/GuessGallery";
 import atlasData from "@/data/atlas.json";
 import catalog from "@/data/photos.json";
 import sceneGateData from "@/data/scene_gate.json";
-import { POCKET_SYSTEM, retrievalNote, systemLabel } from "@/lib/atlas";
+import { POCKET_SYSTEM, calibrationNote, retrievalNote, systemLabel } from "@/lib/atlas";
 import { byContinent, extremes, scoreGuesses } from "@/lib/atlasReport";
+import { gameRecords } from "@/lib/game/deck";
+import { MIN_BAND_PHOTOS, bandLabel, surenessBands } from "@/lib/game/sureness";
 import type { AtlasData, AtlasSystemResult, CatalogPhoto } from "@/lib/game/types";
 import { gateStrength, listPhrase } from "@/lib/sceneGate";
 
@@ -26,6 +28,9 @@ const continents = byContinent(scored);
 const { best, worst } = extremes(scored, 3);
 const saliency = atlas.evaluation?.saliency;
 const retrieval = atlas.evaluation?.retrieval;
+const calibration = atlas.evaluation?.calibration;
+const sureness = surenessBands(gameRecords(catalog as CatalogPhoto[], atlas)).filter((b) => b.n > 0);
+const surenessTotal = sureness.reduce((sum, b) => sum + b.n, 0);
 const pctWhole = (x: number) => `${Math.round(x * 100)}%`;
 
 type GateReason = "people" | "indoor" | "text" | "not_photo" | "close_up";
@@ -250,6 +255,57 @@ export default function AtlasPage() {
           </a>
           .
         </p>
+      )}
+
+      {surenessTotal > 0 && (
+        <section aria-labelledby="sureness-heading">
+          <h2 id="sureness-heading" className="mt-16 font-sign text-4xl font-bold">
+            How sure it is
+          </h2>
+          <p className="mt-4 text-chalk-dim">
+            Every reveal says how sure Atlas was of the country. Here is what those numbers have
+            been worth on the {surenessTotal} photos in the game: of all the photos where Atlas
+            was that sure, how many were really taken in the country it put first. The reveal
+            quotes the line for a photo&apos;s band once it holds at least {MIN_BAND_PHOTOS}{" "}
+            photos.
+          </p>
+          <table className="mt-6 w-full text-left tabular" data-testid="sureness-table">
+            <caption className="sr-only">
+              How often Atlas named the right country at each level of confidence
+            </caption>
+            <thead className="text-sm text-chalk-dim">
+              <tr>
+                <th scope="col" className="py-2 font-normal">
+                  Atlas said
+                </th>
+                <th scope="col" className="py-2 text-right font-normal">
+                  Photos
+                </th>
+                <th scope="col" className="py-2 text-right font-normal">
+                  Right country
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {sureness.map((b) => (
+                <tr key={b.lo} className="border-t border-graticule/60">
+                  <th scope="row" className="py-2 font-normal">
+                    {bandLabel(b)} sure
+                  </th>
+                  <td className="py-2 text-right">{b.n}</td>
+                  <td className="py-2 text-right">
+                    {b.right} <span className="text-chalk-dim">({pctWhole(b.right / b.n)})</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {calibration && (
+            <p className="mt-4 text-chalk-dim" data-testid="calibration-note">
+              {calibrationNote(calibration)}
+            </p>
+          )}
+        </section>
       )}
 
       {scored.length > 0 && (

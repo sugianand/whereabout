@@ -14,6 +14,7 @@ import { tappableCountries } from "@/lib/countryHit";
 
 import { hashSeed } from "./daily";
 import { playablePhotos } from "./playable";
+import { surenessBands, type SurenessBand } from "./sureness";
 import { buildTiers, type Tiers } from "./tiers";
 import type { AtlasData, AtlasGuess, CatalogPhoto } from "./types";
 
@@ -36,6 +37,8 @@ export interface Deck {
    * is always something the player can tap (microstates and small islands are left out).
    */
   streakIds: string[];
+  /** How often Atlas named the right country at each level of confidence (`sureness.ts`). */
+  sureness: SurenessBand[];
 }
 
 /** One record per playable photo, in catalog order. */
@@ -57,6 +60,7 @@ export function buildDeck(records: readonly GameRecord[]): Deck {
     ids: records.map((r) => r.photo.id),
     tiers: buildTiers(records),
     streakIds: streakIds(records),
+    sureness: surenessBands(records),
   };
 }
 

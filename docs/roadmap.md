@@ -87,12 +87,22 @@ accounts; anything stored about a player stays in their browser.
 - [x] Data: geographic-block train/validation split with a leakage test (`ml/src/whereabout_ml/split.py`, output in `data/splits/`)
 - [ ] **[needs you]** Pull 1–5M openly licensed training images (OSV-5M / MP-16) to storage
 
-## Milestone 4 and beyond
+## Milestone 4 — Atlas learns (on a CPU runner)
 
-See `docs/architecture.md` and the design doc: trained geocell classifier with distance-aware
-loss, clue heads, retrieval refinement, calibration, privacy gate, Daily Five, rooms,
-distillation, deployment, research write-up. New daily-sized steps get added here as each
-milestone starts.
+The Atlas stages from `docs/architecture.md` that fit a GitHub runner: small heads fitted on
+frozen CLIP embeddings, never fine-tuning the encoder (that needs a rented GPU). Each one is
+scored by `eval/` against what plays now and ships only if it wins.
+
+- [x] ML + Web: calibration: temperature scaling of Atlas's country probabilities, cross-fitted over 10° geographic folds so each photo is calibrated on the others, shipping only if held-out NLL drops; the reveal checks its "% sure" against the photos the game ships ("When Atlas is 60–80% sure, it names the right country in N of M photos", only for bands of 10 or more), and "How Atlas works" gets a "How sure it is" table with the run's held-out calibration error before and after (`ml/src/whereabout_ml/calibration.py`, `calibrate_guesses` in `run_atlas_v0.py`, `web/src/lib/game/sureness.ts`); the first fitted temperature appears after the CI Atlas run
+- [ ] Web + ML: Pocket Atlas uses the game's temperature: `atlas.yml` writes it into the pocket index, the browser divides its country logits by it, the browser-vs-PyTorch parity test covers it, and "Try Atlas on your photo" shows the same reality-check line as the reveal
+- [ ] ML: clue heads: logistic-regression probes on frozen CLIP embeddings of the reference photos for driving side and climate group (labels from coordinates, `labels.py` and `maps.py`), scored on the geographic split against today's zero-shot clues; the reveal's clues come from whichever is more accurate
+- [ ] ML: a trained geocell head: a linear classifier over adaptive geocells (`geocells.py`) on frozen CLIP embeddings of the reference photos, with haversine label smoothing, fitted on the CPU runner and compared with the playing Atlas by the paired bootstrap; it plays only if the whole interval is below zero
+- [ ] Web + ML: privacy gate for Pocket Atlas: the scene gate's people and indoor checks run in the browser before Atlas guesses, so a photo with people in it is declined with a reason, with a parity test against `scene_gate.py`
+
+## Beyond
+
+Rooms, distillation, deployment and a research write-up (`docs/architecture.md`). New
+daily-sized steps get added here as each milestone starts.
 
 ## Waiting on you
 

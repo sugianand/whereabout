@@ -8,7 +8,9 @@ import { gateStrength } from "@/lib/sceneGate";
 import { niceMax } from "@/components/ContinentChart";
 import type { AtlasData, CatalogPhoto } from "@/lib/game/types";
 
-import { POCKET_SYSTEM, retrievalNote, systemLabel } from "@/lib/atlas";
+import { POCKET_SYSTEM, calibrationNote, retrievalNote, systemLabel } from "@/lib/atlas";
+import { gameRecords } from "@/lib/game/deck";
+import { surenessBands } from "@/lib/game/sureness";
 import { byContinent, scoreGuesses } from "@/lib/atlasReport";
 
 import AtlasPage from "./page";
@@ -52,6 +54,21 @@ describe("How Atlas guesses", () => {
       s.name.endsWith("then nearest reference photos"),
     );
     expect(refined?.playsInGame).toBe(retrieval.ships);
+  });
+
+  it("shows how often Atlas was right at each level of confidence, from the shipped photos", () => {
+    render(<AtlasPage />);
+    const bands = surenessBands(gameRecords(catalog as CatalogPhoto[], atlas)).filter((b) => b.n);
+    const table = screen.getByTestId("sureness-table");
+    expect(within(table).getAllByRole("row")).toHaveLength(bands.length + 1);
+    const first = bands[0];
+    expect(within(table).getAllByRole("row")[1]).toHaveTextContent(
+      `${Math.round(first.lo * 100)}–${Math.round(first.hi * 100)}% sure${first.n}${first.right}`,
+    );
+    const calibration = atlas.evaluation?.calibration;
+    const note = screen.queryByTestId("calibration-note");
+    if (calibration) expect(note).toHaveTextContent(calibrationNote(calibration));
+    else expect(note).toBeNull();
   });
 
   it("breaks Atlas down by continent, with a table for screen readers", () => {

@@ -569,6 +569,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
             result={state.current}
             isLast={state.index + 1 >= ROUNDS_PER_GAME}
             onNext={next}
+            sureness={deck.sureness}
           />
         </div>
       )}

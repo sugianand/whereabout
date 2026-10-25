@@ -135,6 +135,35 @@ export interface AtlasSaliencySummary {
   share_top_worse: number;
 }
 
+/** One confidence bin of a calibration report (`reliability` in ml/src/whereabout_ml/calibration.py). */
+export interface AtlasReliabilityBin {
+  lo: number;
+  hi: number;
+  n: number;
+  /** Mean probability Atlas gave its top country in this bin. */
+  confidence: number;
+  /** Share of the bin where that country was right. */
+  accuracy: number;
+}
+
+/**
+ * Temperature scaling of Atlas's country probabilities (`calibrate` in
+ * ml/src/whereabout_ml/calibration.py), cross-fitted over geographic folds.
+ */
+export interface AtlasCalibrationSummary {
+  method: string;
+  n: number;
+  folds: number;
+  blockDeg: number;
+  /** Fitted on every labelled photo; above 1 means the raw model was overconfident. */
+  temperature: number;
+  raw: { nll: number; ece: number; bins: AtlasReliabilityBin[] };
+  /** Measured on photos each fold's fit never saw. */
+  calibrated: { nll: number; ece: number; bins: AtlasReliabilityBin[] };
+  /** True when the scaled probabilities lowered held-out NLL; then the game shows them. */
+  ships: boolean;
+}
+
 export interface AtlasData {
   model: string | null;
   version: string | null;
@@ -146,6 +175,7 @@ export interface AtlasData {
     systems: AtlasSystemResult[];
     saliency?: AtlasSaliencySummary;
     retrieval?: AtlasRetrievalSummary;
+    calibration?: AtlasCalibrationSummary;
   };
 }
 

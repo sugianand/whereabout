@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { countryName, shortlist } from "@/lib/countries";
 import type { RoundResult } from "@/lib/game/state";
+import { surenessLine, type SurenessBand } from "@/lib/game/sureness";
 import { formatDistance, formatPoints, maxPoints } from "@/lib/geo";
 import { REVEAL_DRAW_MS } from "@/lib/reveal";
 import { useCountUp } from "@/lib/useCountUp";
@@ -14,6 +15,8 @@ type RevealCardProps = {
   result: RoundResult;
   isLast: boolean;
   onNext: () => void;
+  /** How often Atlas is right at each confidence, from the shipped photos (`sureness.ts`). */
+  sureness?: readonly SurenessBand[];
 };
 
 function ScoreLine({
@@ -59,7 +62,7 @@ export function hintNote(result: RoundResult): string | null {
   return `You took ${used} hint${used === 1 ? "" : "s"}, so this round was worth up to ${formatPoints(maxPoints(used))} points.`;
 }
 
-export default function RevealCard({ result, isLast, onNext }: RevealCardProps) {
+export default function RevealCard({ result, isLast, onNext, sureness }: RevealCardProps) {
   const { reveal, atlas } = result;
   const credit = reveal.answer.credit;
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -68,6 +71,7 @@ export default function RevealCard({ result, isLast, onNext }: RevealCardProps) 
   const shortlisted = atlas ? shortlist(atlas.topCountries ?? []) : [];
   const truthCountry = reveal.answer.country;
   const truthListed = shortlisted.some((c) => c.country === truthCountry);
+  const realityCheck = atlas && sureness ? surenessLine(sureness, atlas.confidence) : null;
   const hasThinking =
     !!atlas &&
     (!!atlas.guessedPlace || shortlisted.length > 1 || atlas.clues.length > 0 || !!atlas.looked);
@@ -153,6 +157,7 @@ export default function RevealCard({ result, isLast, onNext }: RevealCardProps) 
           <p className="mt-3 text-sm text-chalk-dim">
             Atlas guessed <span className="text-sonar">{atlas.guessedPlace}</span>,{" "}
             {Math.round(atlas.confidence * 100)}% sure of the country.
+            {realityCheck && <span data-testid="atlas-sureness"> {realityCheck}</span>}
           </p>
         )}
 
