@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import fixture from "../../../../data/fixtures/pocket_cases.json";
 
-import { cosine, decodeIndex, locate, softmax, type PocketMeta } from "./locate";
+import { cosine, decodeIndex, locate, softmax, temperatureOf, type PocketMeta } from "./locate";
 
 const meta = fixture.meta as PocketMeta;
 const int8 = Int8Array.from(fixture.vectors.flat());
@@ -23,6 +23,27 @@ describe("Pocket Atlas locate (pinned to Python by data/fixtures/pocket_cases.js
     got.topCountries.forEach((t, i) => expect(t.p).toBeCloseTo(want.topCountries[i].p, 3));
     expect(got.confidence).toBeCloseTo(want.confidence, 3);
     expect(got.clues.map((x) => x.label)).toEqual(want.clues.map((x) => x.label));
+  });
+
+  it("softens '% sure' by the index's temperature without moving the pin", () => {
+    expect(meta.temperature).toBe(1.8);
+    const unsure = fixture.cases.at(-1)!.image;
+    const raw = locate(decodeIndex({ ...meta, temperature: undefined }, int8), unsure);
+    const tempered = locate(index, unsure);
+    expect([tempered.city, tempered.lat, tempered.lng]).toEqual([raw.city, raw.lat, raw.lng]);
+    expect(tempered.topCountries.map((t) => t.country)).toEqual(["JP", "PE"]);
+    expect(tempered.confidence).toBeLessThan(raw.confidence);
+    expect(tempered.confidence).toBeGreaterThan(0.5);
+    // softmax(logits / T): the log-odds between the two countries shrink by exactly T.
+    const logOdds = (g: typeof raw) => Math.log(g.topCountries[0].p / g.topCountries[1].p);
+    expect(logOdds(tempered)).toBeCloseTo(logOdds(raw) / 1.8, 2);
+  });
+
+  it("treats a missing or broken temperature as the raw model", () => {
+    expect(temperatureOf({ ...meta, temperature: undefined })).toBe(1);
+    expect(temperatureOf({ ...meta, temperature: 0 })).toBe(1);
+    expect(temperatureOf({ ...meta, temperature: Number.NaN })).toBe(1);
+    expect(temperatureOf({ ...meta, temperature: 2.5 })).toBe(2.5);
   });
 
   it("decodes rows to unit vectors", () => {

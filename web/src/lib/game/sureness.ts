@@ -49,9 +49,17 @@ export function surenessBands(records: readonly GameRecord[]): SurenessBand[] {
   return bands;
 }
 
+/** Bands laid out on SURENESS_EDGES (counted here, or by `sureness_bands` in calibration.py). */
+function onEdges(bands: readonly SurenessBand[]): boolean {
+  return (
+    bands.length === SURENESS_EDGES.length - 1 &&
+    bands.every((b, i) => b.lo === SURENESS_EDGES[i] && b.hi === SURENESS_EDGES[i + 1])
+  );
+}
+
 /** The band a confidence falls in, if it has enough photos to say anything. */
 export function bandFor(bands: readonly SurenessBand[], confidence: number): SurenessBand | null {
-  if (!Number.isFinite(confidence) || bands.length !== SURENESS_EDGES.length - 1) return null;
+  if (!Number.isFinite(confidence) || !onEdges(bands)) return null;
   const band = bands[bandIndex(Math.min(1, Math.max(0, confidence)))];
   return band && band.n >= MIN_BAND_PHOTOS ? band : null;
 }

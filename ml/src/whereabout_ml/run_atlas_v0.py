@@ -43,7 +43,7 @@ from whereabout_eval.metrics import (
     paired_median_delta_ci,
 )
 from whereabout_ml.baselines import constant_guesses, random_city_guesses
-from whereabout_ml.calibration import calibrate, softmax_t
+from whereabout_ml.calibration import calibrate, softmax_t, sureness_bands
 from whereabout_ml.embedding_cache import cached_image_embeddings, safe_name
 from whereabout_ml.gazetteer import Gazetteer
 from whereabout_ml.retrieval import (
@@ -200,6 +200,45 @@ def calibrate_guesses(
         for photo, row in zip(photos, probs, strict=True)
     }
     return out, beliefs, summary
+
+
+def pocket_calibration(
+    photos: Sequence[Photo],
+    embeddings: Sequence[np.ndarray],
+    locator: ZeroShotGeolocator,
+    model: str,
+) -> dict:
+    """Pocket Atlas's own temperature and reality-check bands (for `pocket-atlas-index`).
+
+    Pocket Atlas runs one CLIP model in the browser, which need not be the one playing the game,
+    so it gets its own temperature, fitted the same way as the game's (`calibrate`). The browser
+    sees new photos, so it ships the temperature fitted on every catalog photo; the bands count
+    the cross-fitted (held-out) probabilities, so "N of M photos" was never fitted on those
+    photos. When calibration does not lower held-out NLL, T is 1 and the bands count raw ones.
+    """
+    codes = [c.code for c in locator.gazetteer.countries]
+    index = {c: i for i, c in enumerate(codes)}
+    logits = country_logits(locator, embeddings)
+    labels = np.array([index.get(p.country or "", -1) for p in photos], dtype=np.int64)
+    temperatures, summary = calibrate(logits, labels, [p.location for p in photos])
+    probs = softmax_t(logits, temperatures)
+    known = labels >= 0
+    top = probs.argmax(axis=1)
+    return {
+        "model": model,
+        "temperature": summary["temperature"] if summary["ships"] else 1.0,
+        "fittedTemperature": summary["temperature"],
+        "ships": summary["ships"],
+        "n": summary["n"],
+        "folds": summary["folds"],
+        "blockDeg": summary["blockDeg"],
+        "raw": {"nll": summary["raw"]["nll"], "ece": summary["raw"]["ece"]},
+        "calibrated": {"nll": summary["calibrated"]["nll"], "ece": summary["calibrated"]["ece"]},
+        "sureness": sureness_bands(
+            [float(probs[i, top[i]]) for i in np.flatnonzero(known)],
+            [bool(top[i] == labels[i]) for i in np.flatnonzero(known)],
+        ),
+    }
 
 
 def guess_to_json(
@@ -684,8 +723,17 @@ def main(argv: Sequence[str] | None = None) -> None:
         default=Path(".cache/embeddings"),
         help="image embeddings kept between runs, so only new photos are encoded",
     )
+    ap.add_argument(
+        "--pocket-model",
+        type=parse_model,
+        default=None,
+        help="MODEL:PRETRAINED Pocket Atlas runs in the browser (one of --model): writes its "
+        "temperature and reality-check bands to RESULTS_DIR/pocket-calibration.json",
+    )
     args = ap.parse_args(argv)
     models = args.models or [("ViT-B-32", "laion2b_s34b_b79k")]
+    if args.pocket_model and args.pocket_model not in models:
+        raise SystemExit(f"--pocket-model {':'.join(args.pocket_model)} is not one of --model")
 
     from whereabout_ml.clip_encoder import ClipEncoder
 
@@ -706,6 +754,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     ]
     handles: dict[str, tuple[ClipEncoder, ZeroShotGeolocator, list[np.ndarray]]] = {}
     by_model: dict[tuple[str, str], tuple[ClipEncoder, list[np.ndarray]]] = {}
+    locators: dict[tuple[str, str], ZeroShotGeolocator] = {}
     for name, pretrained in models:
         started = time.perf_counter()
         encoder = ClipEncoder(name, pretrained)
@@ -722,6 +771,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         )
         handles[f"{encoder.name}, country then city"] = (encoder, locator, list(embeddings))
         by_model[(name, pretrained)] = (encoder, list(embeddings))
+        locators[(name, pretrained)] = locator
         systems.append(
             System(f"{encoder.name}, country only", predictions_from_guesses(photos, country_only))
         )
@@ -823,6 +873,19 @@ def main(argv: Sequence[str] | None = None) -> None:
         json.dumps(report, indent=2, ensure_ascii=False) + "\n"
     )
     (args.results_dir / "atlas-v0.md").write_text(markdown)
+    if args.pocket_model:
+        p_encoder, p_embeddings = by_model[args.pocket_model]
+        pocket = pocket_calibration(
+            photos, p_embeddings, locators[args.pocket_model], p_encoder.name
+        )
+        (args.results_dir / "pocket-calibration.json").write_text(
+            json.dumps(pocket, indent=2) + "\n"
+        )
+        print(
+            f"pocket calibration ({pocket['model']}): T = {pocket['fittedTemperature']}; held-out "
+            f"NLL {pocket['raw']['nll']} raw, {pocket['calibrated']['nll']} calibrated; "
+            f"{'ships' if pocket['ships'] else 'raw probabilities ship'}"
+        )
     print(markdown)
 
 

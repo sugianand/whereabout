@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState, type DragEvent } from "react"
 import { formatDistance, formatPoints, haversineKm, scoreDistance, type LngLat } from "@/lib/geo";
 import { loadEncoder, type DownloadProgress, type ImageEncoder } from "@/lib/pocket/encoder";
 import { IndexUnavailable, loadIndex } from "@/lib/pocket/index";
+import { surenessLine, type SurenessBand } from "@/lib/game/sureness";
 import { locate, type PocketGuess, type PocketIndex } from "@/lib/pocket/locate";
 import type { RevealView } from "@/lib/reveal";
 
@@ -50,6 +51,7 @@ export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps
   const [dragging, setDragging] = useState(false);
   const ready = useRef<Promise<{ index: PocketIndex; encoder: ImageEncoder }> | null>(null);
   const [names, setNames] = useState<ReadonlyMap<string, string>>(new Map());
+  const [sureness, setSureness] = useState<readonly SurenessBand[] | null>(null);
 
   // Free the preview's object URL when the photo changes or the page goes away.
   useEffect(() => () => void (photo && URL.revokeObjectURL(photo)), [photo]);
@@ -59,6 +61,7 @@ export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps
       ready.current = (async () => {
         const index = await deps.loadIndex();
         setNames(new Map(index.meta.countries.map((c) => [c.code, c.name])));
+        setSureness(index.meta.sureness ?? null);
         const encoder = await deps.loadEncoder(index.meta.hfModel, (progress) =>
           setPhase((p) => (p.kind === "loading" ? { kind: "loading", progress } : p)),
         );
@@ -120,6 +123,8 @@ export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps
       : null;
   const countryName = (code: string) => names.get(code) ?? code;
   const busy = phase.kind === "loading" || phase.kind === "thinking";
+  // The reveal's reality check, from this model's own held-out bands (null when too few photos).
+  const realityCheck = guess && sureness ? surenessLine(sureness, guess.confidence) : null;
 
   return (
     <div className="mt-10 grid gap-8 lg:grid-cols-2">
@@ -235,6 +240,10 @@ export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps
               {guess.city}
             </h2>
             <p className="text-xl">{countryName(guess.country)}</p>
+            <p className="mt-2 text-sm text-chalk-dim">
+              {pct(guess.confidence)} sure of the country.
+              {realityCheck && <span data-testid="pocket-sureness"> {realityCheck}</span>}
+            </p>
 
             <ol aria-label="Atlas's most likely countries" className="mt-5 space-y-2">
               {guess.topCountries.map((c) => (

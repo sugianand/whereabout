@@ -12,11 +12,25 @@ from whereabout_ml.zeroshot import ZeroShotGeolocator
 
 FIXTURE = Path(__file__).resolve().parents[2] / "data" / "fixtures" / "pocket_cases.json"
 IMAGES = [("Peru", "Cusco"), ("Japan", "Kyoto"), ("Japan", "Osaka", "snow"), ("Peru", "desert")]
+# Leans Japan, but not by much: the case where a temperature visibly changes "% sure".
+UNSURE = [1.0, 0.001, 0.001, 0.985, 0.001, 0.001, 0.001, 0.001]
+# A pocket-calibration.json for the toy model (`atlas-v0 --pocket-model`), T > 1: overconfident.
+CALIBRATION = {
+    "model": "keyword/toy",
+    "temperature": 1.8,
+    "sureness": [
+        {"lo": 0.0, "hi": 0.2, "n": 0, "right": 0},
+        {"lo": 0.2, "hi": 0.4, "n": 0, "right": 0},
+        {"lo": 0.4, "hi": 0.6, "n": 12, "right": 5},
+        {"lo": 0.6, "hi": 0.8, "n": 14, "right": 9},
+        {"lo": 0.8, "hi": 1.0, "n": 30, "right": 27},
+    ],
+}
 
 
-def toy():
+def toy(calibration=None):
     locator = ZeroShotGeolocator(KeywordEncoder(), GAZ, top_k_countries=2, concept_groups=GROUPS)
-    meta, q = build_index(locator, "keyword/toy")
+    meta, q = build_index(locator, "keyword/toy", calibration)
     return locator, meta, q
 
 
@@ -61,8 +75,40 @@ def test_written_index_round_trips(tmp_path):
     assert json.loads((tmp_path / "index.json").read_text())["countries"] == meta["countries"]
 
 
+def test_temperature_softens_the_confidence_but_never_moves_the_pin():
+    _, raw_meta, q = toy()
+    _, meta, _ = toy(CALIBRATION)
+    assert meta["temperature"] == 1.8 and meta["sureness"] == CALIBRATION["sureness"]
+    vectors = dequantize(q, np.array(meta["scales"]))
+    img = np.array(UNSURE)
+    raw, tempered = locate(raw_meta, vectors, img), locate(meta, vectors, img)
+    assert (tempered["city"], tempered["lat"], tempered["lng"]) == (
+        raw["city"],
+        raw["lat"],
+        raw["lng"],
+    )
+    assert [c["country"] for c in tempered["topCountries"]] == ["JP", "PE"]
+    assert 0.5 < tempered["confidence"] < raw["confidence"] < 1.0
+    # p = softmax(logits / T): the log-odds between the two countries shrink by exactly T.
+    log_odds = lambda g: np.log(g["topCountries"][0]["p"] / g["topCountries"][1]["p"])  # noqa: E731
+    assert log_odds(tempered) == pytest.approx(log_odds(raw) / 1.8, rel=1e-3)
+    assert tempered["clues"] == raw["clues"]
+
+
+def test_an_index_without_calibration_is_the_raw_model():
+    _, meta, _ = toy()
+    assert "temperature" not in meta and "sureness" not in meta
+
+
+def test_calibration_must_be_for_the_same_model_and_a_positive_temperature():
+    with pytest.raises(ValueError, match="calibration is for"):
+        toy({**CALIBRATION, "model": "ViT-L-14/openai"})
+    with pytest.raises(ValueError, match="positive"):
+        toy({**CALIBRATION, "temperature": 0})
+
+
 def fixture_from_toy() -> dict:
-    _, meta, q = toy()
+    _, meta, q = toy(CALIBRATION)
     vectors = dequantize(q, np.array(meta["scales"]))
     return {
         "note": "Shared by ml/tests/test_pocket_index.py and web/src/lib/pocket/locate.test.ts. "
@@ -75,7 +121,8 @@ def fixture_from_toy() -> dict:
                 "expected": locate(meta, vectors, image(*w)),
             }
             for w in IMAGES
-        ],
+        ]
+        + [{"image": UNSURE, "expected": locate(meta, vectors, np.array(UNSURE))}],
     }
 
 

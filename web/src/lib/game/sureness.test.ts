@@ -84,4 +84,17 @@ describe("surenessLine", () => {
     expect(surenessLine(surenessBands(many), Number.NaN)).toBeNull();
     expect(surenessLine([], 0.7)).toBeNull();
   });
+
+  it("reads bands counted elsewhere only if they sit on the same edges", () => {
+    // Pocket Atlas's bands come from Python (`sureness_bands` in calibration.py).
+    const bands = surenessBands(many);
+    expect(
+      surenessLine(
+        bands.map((b) => ({ ...b })),
+        0.7,
+      ),
+    ).not.toBeNull();
+    const shifted = bands.map((b, i) => (i === 3 ? { ...b, lo: 0.5 } : b));
+    expect(surenessLine(shifted, 0.7)).toBeNull();
+  });
 });

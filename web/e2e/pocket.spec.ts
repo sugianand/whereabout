@@ -2,6 +2,8 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import { expect, test } from "@playwright/test";
 
+import { decodeIndex, locate, temperatureOf, type PocketMeta } from "../src/lib/pocket/locate";
+
 /**
  * Does the browser's Atlas see what PyTorch's Atlas sees?
  *
@@ -29,21 +31,30 @@ test("Pocket Atlas in the browser agrees with PyTorch", async ({ page }, info) =
   test.skip(info.project.name !== "desktop", "one browser is enough for parity");
   test.setTimeout(10 * 60_000);
 
-  const meta = JSON.parse(readFileSync("public/pocket-atlas/index.json", "utf8"));
+  const meta = JSON.parse(readFileSync("public/pocket-atlas/index.json", "utf8")) as PocketMeta;
   expect(meta.parity, "index.json has no parity embedding").toBeTruthy();
+  const parity = meta.parity!;
+
+  // The site's own locate(), temperature included, on PyTorch's embedding gives PyTorch's guess.
+  const index = decodeIndex(meta, new Int8Array(readFileSync("public/pocket-atlas/vectors.bin")));
+  const port = locate(index, parity.embedding);
+  expect([port.city, port.country]).toEqual([parity.guess.city, parity.guess.country]);
+  expect(port.confidence).toBeCloseTo(parity.guess.confidence, 3);
+  port.topCountries.forEach((c, i) => expect(c.p).toBeCloseTo(parity.guess.topCountries[i].p, 3));
 
   await page.goto("you");
   await page.setInputFiles('input[type="file"]', image!);
   await page.waitForFunction(() => window.__pocketAtlas, undefined, { timeout: 9 * 60_000 });
   const got = await page.evaluate(() => window.__pocketAtlas!);
 
-  const similarity = cosine(got.embedding, meta.parity.embedding);
+  const similarity = cosine(got.embedding, parity.embedding);
   const report = {
     cosine: Math.round(similarity * 10000) / 10000,
+    temperature: temperatureOf(meta),
     browser: got.guess,
-    pytorch: meta.parity.guess,
-    sameCountry: got.guess.country === meta.parity.guess.country,
-    sameCity: got.guess.city === meta.parity.guess.city,
+    pytorch: parity.guess,
+    sameCountry: got.guess.country === parity.guess.country,
+    sameCity: got.guess.city === parity.guess.city,
   };
   mkdirSync("test-results", { recursive: true });
   writeFileSync("test-results/pocket-parity.json", JSON.stringify(report, null, 2));

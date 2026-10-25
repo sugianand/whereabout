@@ -14,6 +14,10 @@ Outputs `index.json` (countries, cities, clue groups, per-row scales) and `vecto
 
 `locate()` below is the reference for web/src/lib/pocket/locate.ts: the same hierarchical
 country-then-city math as `ZeroShotGeolocator.predict`, over the quantized vectors.
+
+With `--calibration eval/results/pocket-calibration.json` (written by `atlas-v0 --pocket-model`)
+the index also carries this model's own temperature, so the browser's "% sure" is scaled like the
+game's, and the reality-check bands the reveal shows ("When Atlas is 60–80% sure, ...").
 """
 
 from __future__ import annotations
@@ -47,8 +51,18 @@ def dequantize(q: np.ndarray, scale: np.ndarray) -> np.ndarray:
     return normalise(q.astype(np.float64) * np.asarray(scale, dtype=np.float64)[:, None])
 
 
-def build_index(locator: ZeroShotGeolocator, model: str) -> tuple[dict, np.ndarray]:
-    """Every text embedding Atlas's zero-shot pipeline needs, and a description of the rows."""
+def build_index(
+    locator: ZeroShotGeolocator, model: str, calibration: dict | None = None
+) -> tuple[dict, np.ndarray]:
+    """Every text embedding Atlas's zero-shot pipeline needs, and a description of the rows.
+
+    `calibration` is `pocket_calibration`'s record for the same model; it must name that model,
+    because a temperature fitted for one CLIP model means nothing for another.
+    """
+    if calibration is not None and calibration.get("model") != model:
+        raise ValueError(
+            f"calibration is for {calibration.get('model')!r}, but this index is {model!r}"
+        )
     gaz = locator.gazetteer
     rows = [locator.country_embeddings]
     countries, cities = [], []
@@ -85,23 +99,37 @@ def build_index(locator: ZeroShotGeolocator, model: str) -> tuple[dict, np.ndarr
         "clueGroups": groups,
         "scales": [float(f"{s:.6g}") for s in scale],
     }
+    if calibration is not None:
+        t = float(calibration["temperature"])
+        if not (t > 0 and np.isfinite(t)):
+            raise ValueError(f"temperature must be a positive number, got {t!r}")
+        meta["temperature"] = t
+        meta["sureness"] = calibration["sureness"]
     return meta, q
 
 
 def locate(meta: dict, vectors: np.ndarray, image: np.ndarray) -> dict:
-    """Atlas's guess from the index alone (the reference for the browser's locate.ts)."""
+    """Atlas's guess from the index alone (the reference for the browser's locate.ts).
+
+    The pin comes from the raw probabilities, exactly as the scored pipeline picks it; the
+    reported "% sure" and shortlist are divided by the index's temperature, as in the game
+    (`calibrate_guesses`), which never reorders countries.
+    """
     img = normalise(np.asarray(image, dtype=np.float64))
     scale = float(meta["logitScale"])
+    temperature = float(meta.get("temperature", 1.0))
     nc = len(meta["countries"])
-    p_country = softmax(scale * vectors[:nc] @ img)
-    order = [int(i) for i in np.argsort(-p_country, kind="stable")[: meta["topKCountries"]]]
+    country_logits = scale * vectors[:nc] @ img
+    p_raw = softmax(country_logits)
+    p_country = softmax(country_logits / temperature)
+    order = [int(i) for i in np.argsort(-p_raw, kind="stable")[: meta["topKCountries"]]]
 
     best: tuple[float, int] | None = None
     for i in order:
         s, n = meta["countries"][i]["cities"]
         p_city = softmax(scale * vectors[s : s + n] @ img)
         j = int(np.argmax(p_city))
-        joint = float(p_country[i] * p_city[j])
+        joint = float(p_raw[i] * p_city[j])
         if best is None or joint > best[0]:
             best = (joint, s + j)
     assert best is not None
@@ -143,6 +171,12 @@ def main(argv: Sequence[str] | None = None) -> None:
         type=Path,
         help="also store this image's embedding, so a browser test can check its encoder agrees",
     )
+    ap.add_argument(
+        "--calibration",
+        type=Path,
+        help="pocket-calibration.json from `atlas-v0 --pocket-model`: this model's temperature "
+        "and reality-check bands",
+    )
     args = ap.parse_args(argv)
 
     from whereabout_ml.clip_encoder import ClipEncoder
@@ -150,7 +184,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     name, _, pretrained = args.model.partition(":")
     encoder = ClipEncoder(name, pretrained)
     locator = ZeroShotGeolocator(encoder, Gazetteer.load(args.gazetteer))
-    meta, q = build_index(locator, encoder.name)
+    calibration = json.loads(args.calibration.read_text()) if args.calibration else None
+    meta, q = build_index(locator, encoder.name, calibration)
     if args.parity_image:
         emb = encoder.encode_images([args.parity_image])[0]
         meta["parity"] = {
@@ -160,7 +195,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         }
     write_index(args.out, meta, q)
     print(
-        f"pocket index: {meta['rows']} rows × {meta['dim']} ({q.nbytes / 1e6:.1f} MB) → {args.out}"
+        f"pocket index: {meta['rows']} rows × {meta['dim']} ({q.nbytes / 1e6:.1f} MB), "
+        f"T = {meta.get('temperature', 1.0)} → {args.out}"
     )
 
 

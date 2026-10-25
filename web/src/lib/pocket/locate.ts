@@ -1,3 +1,5 @@
+import type { SurenessBand } from "../game/sureness";
+
 /**
  * Pocket Atlas, the browser half: decode the precomputed text index and run Atlas's
  * country-then-city math against one image embedding.
@@ -20,6 +22,13 @@ export interface PocketMeta {
   cities: { name: string; country: string; lat: number; lng: number }[];
   clueGroups: { name: string; labels: string[]; start: number }[];
   scales: number[];
+  /**
+   * This model's own temperature, fitted by the Atlas run on the catalog photos
+   * (`pocket_calibration` in ml/src/whereabout_ml/run_atlas_v0.py). Missing means 1, the raw model.
+   */
+  temperature?: number;
+  /** Held-out "When Atlas is 60–80% sure..." bands for this model, as the reveal shows. */
+  sureness?: SurenessBand[];
   parity?: { image: string; embedding: number[]; guess: PocketGuess };
 }
 
@@ -87,7 +96,17 @@ function scores(index: PocketIndex, img: Float64Array, start: number, count: num
 
 const argmax = (xs: number[]) => xs.reduce((best, x, i) => (x > xs[best] ? i : best), 0);
 
-/** Atlas's guess for one image embedding. */
+/** The index's temperature, or 1 (the raw model) when it has none or a broken one. */
+export function temperatureOf(meta: PocketMeta): number {
+  const t = meta.temperature;
+  return typeof t === "number" && Number.isFinite(t) && t > 0 ? t : 1;
+}
+
+/**
+ * Atlas's guess for one image embedding. The pin comes from the raw probabilities, as the scored
+ * pipeline picks it; "% sure" and the shortlist are divided by the index's temperature, as in
+ * the game, which never reorders countries.
+ */
 export function locate(index: PocketIndex, image: ArrayLike<number>): PocketGuess {
   const { meta } = index;
   if (image.length !== meta.dim)
@@ -95,9 +114,12 @@ export function locate(index: PocketIndex, image: ArrayLike<number>): PocketGues
   const img = normalise(Float64Array.from(image));
   const nc = meta.countries.length;
 
-  const pCountry = softmax(scores(index, img, 0, nc));
+  const countryLogits = scores(index, img, 0, nc);
+  const pRaw = softmax(countryLogits);
+  const t = temperatureOf(meta);
+  const pCountry = softmax(countryLogits.map((x) => x / t));
   // Stable: ties keep index order, like numpy's argsort(kind="stable").
-  const order = pCountry
+  const order = pRaw
     .map((p, i) => [p, i] as const)
     .sort((a, b) => b[0] - a[0] || a[1] - b[1])
     .slice(0, meta.topKCountries)
@@ -108,7 +130,7 @@ export function locate(index: PocketIndex, image: ArrayLike<number>): PocketGues
     const [s, n] = meta.countries[i].cities;
     const pCity = softmax(scores(index, img, s, n));
     const j = argmax(pCity);
-    const joint = pCountry[i] * pCity[j];
+    const joint = pRaw[i] * pCity[j];
     if (!best || joint > best.joint) best = { joint, row: s + j };
   }
   if (!best) throw new Error("index has no countries");

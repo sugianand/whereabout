@@ -49,9 +49,9 @@ describe("Pocket Atlas", () => {
 
     const result = screen.getByRole("region", { name: "Atlas's guess" });
     expect(await within(result).findByRole("heading", { name: "Cusco" })).toBeInTheDocument();
-    expect(within(result).getByRole("heading", { name: "Cusco" }).nextElementSibling).toHaveTextContent(
-      "Peru",
-    );
+    expect(
+      within(result).getByRole("heading", { name: "Cusco" }).nextElementSibling,
+    ).toHaveTextContent("Peru");
     const countries = within(result).getByRole("list", { name: "Atlas's most likely countries" });
     expect(within(countries).getAllByRole("listitem")[0]).toHaveTextContent("Peru");
     expect(window.__pocketAtlas?.guess.city).toBe("Cusco");
@@ -67,6 +67,38 @@ describe("Pocket Atlas", () => {
 
     expect(await screen.findByText("Here's how close Atlas got.")).toBeInTheDocument();
     expect(result).toHaveTextContent(/Atlas was 0 m off, worth 5,000 points/);
+  });
+
+  it("checks its own '% sure' against the photos it was calibrated on, like the reveal", async () => {
+    // The last fixture case leans Japan only a little: the toy index's T = 1.8 makes it 64% sure.
+    const unsure = fixture.cases.at(-1)!;
+    render(
+      <PocketAtlas
+        deps={deps({
+          loadEncoder: async () => ({ embed: async () => Float32Array.from(unsure.image) }),
+        })}
+      />,
+    );
+    choosePhoto();
+    const result = screen.getByRole("region", { name: "Atlas's guess" });
+    expect(await within(result).findByText(/64% sure of the country\./)).toBeInTheDocument();
+    expect(within(result).getByTestId("pocket-sureness")).toHaveTextContent(
+      "When Atlas is 60–80% sure, it names the right country in 9 of 14 photos.",
+    );
+  });
+
+  it("says only how sure it is when the index has no calibration yet", async () => {
+    const raw: PocketMeta = {
+      ...(fixture.meta as PocketMeta),
+      temperature: undefined,
+      sureness: undefined,
+    };
+    const uncalibrated = decodeIndex(raw, Int8Array.from(fixture.vectors.flat()));
+    render(<PocketAtlas deps={deps({ loadIndex: async () => uncalibrated })} />);
+    choosePhoto();
+    const result = screen.getByRole("region", { name: "Atlas's guess" });
+    expect(await within(result).findByText(/100% sure of the country\./)).toBeInTheDocument();
+    expect(within(result).queryByTestId("pocket-sureness")).toBeNull();
   });
 
   it("explains the one-time download while it waits", async () => {

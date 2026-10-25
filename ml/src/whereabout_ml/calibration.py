@@ -202,3 +202,30 @@ def calibrate(
         "ships": bool(ships),
     }
     return (crossed if ships else np.ones(len(labels_arr))), summary
+
+
+# The bands of the players' reality check, "When Atlas is 60–80% sure, it names the right country
+# in N of M photos": SURENESS_EDGES in web/src/lib/game/sureness.ts, which must stay equal.
+SURENESS_EDGES = (0.0, 0.2, 0.4, 0.6, 0.8, 1.0)
+
+
+def sureness_bands(confidence: Sequence[float], correct: Sequence[bool]) -> list[dict]:
+    """Every band [lo, hi) (the top one closed at 1, empty ones kept): photos and how many right.
+
+    The same counting as `surenessBands` in web/src/lib/game/sureness.ts, for confidences the
+    game does not ship itself (Pocket Atlas's, from a different CLIP model than the one playing).
+    """
+    if len(confidence) != len(correct):
+        raise ValueError("confidence and correct differ in length")
+    bands = [
+        {"lo": lo, "hi": hi, "n": 0, "right": 0}
+        for lo, hi in zip(SURENESS_EDGES, SURENESS_EDGES[1:], strict=False)
+    ]
+    for c, hit in zip(confidence, correct, strict=True):
+        if not math.isfinite(c):
+            continue
+        c = min(1.0, max(0.0, float(c)))
+        i = next((k for k, hi in enumerate(SURENESS_EDGES[1:-1]) if c < hi), len(bands) - 1)
+        bands[i]["n"] += 1
+        bands[i]["right"] += int(bool(hit))
+    return bands

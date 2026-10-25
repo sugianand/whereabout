@@ -1,10 +1,14 @@
 """Temperature scaling: fits, folds and the ship-only-if-better rule."""
 
+import re
+from pathlib import Path
+
 import numpy as np
 import pytest
 
 from whereabout_api.geo import LatLon
 from whereabout_ml.calibration import (
+    SURENESS_EDGES,
     T_MAX,
     T_MIN,
     calibrate,
@@ -14,7 +18,10 @@ from whereabout_ml.calibration import (
     nll,
     reliability,
     softmax_t,
+    sureness_bands,
 )
+
+SURENESS_TS = Path(__file__).resolve().parents[2] / "web" / "src" / "lib" / "game" / "sureness.ts"
 
 
 def sample(n, true_t, classes=8, seed=0):
@@ -139,3 +146,23 @@ def test_calibrate_needs_aligned_inputs_and_some_known_country():
         calibrate(logits, labels[:3], spread_points(4))
     with pytest.raises(ValueError):
         calibrate(logits, [-1] * 4, spread_points(4))
+
+
+def test_sureness_bands_count_like_the_reveal():
+    conf = [0.05, 0.2, 0.39, 0.61, 0.8, 1.0, 1.2, -0.1, float("nan")]
+    right = [False, True, True, False, True, True, True, False, True]
+    bands = sureness_bands(conf, right)
+    assert [(b["lo"], b["hi"]) for b in bands] == list(
+        zip(SURENESS_EDGES, SURENESS_EDGES[1:], strict=False)
+    )
+    # [lo, hi), the top band closed at 1, out-of-range values clamped, NaN left out.
+    assert [(b["n"], b["right"]) for b in bands] == [(2, 0), (2, 2), (0, 0), (1, 0), (3, 3)]
+    with pytest.raises(ValueError, match="length"):
+        sureness_bands([0.5], [])
+
+
+def test_sureness_edges_match_the_web_game():
+    # Pocket Atlas's bands are counted here and read by surenessLine in the browser.
+    m = re.search(r"SURENESS_EDGES = \[([^\]]*)\]", SURENESS_TS.read_text())
+    assert m, "SURENESS_EDGES not found in sureness.ts"
+    assert tuple(float(x) for x in m.group(1).split(",")) == SURENESS_EDGES

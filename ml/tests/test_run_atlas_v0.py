@@ -484,3 +484,59 @@ def test_calibrate_guesses_keeps_the_raw_probabilities_when_calibration_loses():
         assert got.confidence == pytest.approx(raw.confidence)
         assert [c for c, _ in got.top_countries] == [c for c, _ in raw.top_countries]
     assert beliefs["kyoto"]["JP"] == round(guesses[0].confidence, 3)
+
+
+def test_main_writes_pocket_atlas_its_own_calibration(tmp_path, monkeypatch, capsys):
+    _, results = run_main(tmp_path, monkeypatch, "--pocket-model", "Fake-1:test")
+    pocket = json.loads((results / "pocket-calibration.json").read_text())
+    assert pocket["model"] == "Fake-1/test" and pocket["n"] == 2
+    # The fake is certain and right: scaling cannot help held-out NLL, so T stays 1.
+    assert pocket["ships"] is False and pocket["temperature"] == 1.0
+    assert [b["lo"] for b in pocket["sureness"]] == [0.0, 0.2, 0.4, 0.6, 0.8]
+    assert sum(b["n"] for b in pocket["sureness"]) == 2
+    assert pocket["sureness"][-1] == {"lo": 0.8, "hi": 1.0, "n": 2, "right": 2}
+    assert "pocket calibration (Fake-1/test)" in capsys.readouterr().out
+
+
+def test_pocket_model_must_be_one_of_the_runs(tmp_path, monkeypatch):
+    with pytest.raises(SystemExit, match="not one of --model"):
+        run_main(tmp_path, monkeypatch, "--pocket-model", "Other:x")
+
+
+def test_pocket_calibration_ships_a_temperature_and_counts_held_out_bands():
+    from whereabout_ml.gazetteer import City, Country, Gazetteer
+    from whereabout_ml.zeroshot import ZeroShotGeolocator
+
+    gaz = Gazetteer.build(
+        [Country("JP", "Japan"), Country("PE", "Peru")],
+        [City("Kyoto", "JP", 35.01, 135.77, 1), City("Cusco", "PE", -13.53, -71.97, 1)],
+    )
+    clip = FakeClip("Fake", "x")
+    locator = ZeroShotGeolocator(clip, gaz, top_k_countries=2)
+    # 40 photos spread over the world, each a blend that leans the right way: CLIP's x100 scale
+    # makes the raw model near-certain, yet a quarter lean the wrong way, so it is overconfident.
+    rng = np.random.default_rng(0)
+    jp, pe = clip.encode_texts(["Japan", "Peru"])
+    photos, embeddings = [], []
+    for i in range(40):
+        in_japan = i % 2 == 0
+        lean = 0.1 if i % 4 < 3 else -0.1
+        w = 0.5 + (lean if in_japan else -lean)
+        embeddings.append(w * jp + (1 - w) * pe + rng.normal(0, 0.005, jp.shape))
+        photos.append(
+            Photo(
+                f"p{i}",
+                LatLon(rng.uniform(-60, 60), rng.uniform(-180, 180)),
+                "x",
+                country="JP" if in_japan else "PE",
+                image_url="https://x/p.jpg",
+            )
+        )
+    pocket = run_atlas_v0.pocket_calibration(photos, embeddings, locator, "Fake/x")
+    assert pocket["ships"] is True
+    assert pocket["temperature"] == pocket["fittedTemperature"] > 1.0
+    assert pocket["calibrated"]["nll"] < pocket["raw"]["nll"]
+    assert sum(b["n"] for b in pocket["sureness"]) == 40
+    assert sum(b["right"] for b in pocket["sureness"]) == 30
+    # Held-out, softened probabilities: no longer all piled into the top band.
+    assert pocket["sureness"][-1]["n"] < 40

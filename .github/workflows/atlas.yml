@@ -137,6 +137,7 @@ jobs:
               --model ViT-B-32:laion2b_s34b_b79k \
               --model ViT-B-32:openai \
               --model ViT-L-14:openai \
+              --pocket-model ViT-B-32:openai \
               "${retrieval[@]}" 2> >(tee atlas-stderr.log >&2) | tee atlas-stdout.log; then
             echo "::error title=Atlas v0 failed::$(annotate < atlas-stderr.log)"
             exit 1
@@ -149,6 +150,7 @@ jobs:
           if grep -q "^saliency failed" atlas-stderr.log; then
             echo "::warning title=Saliency failed::$(grep -A3 '^saliency failed' atlas-stderr.log | annotate)"
           fi
+          grep "^pocket calibration" atlas-stdout.log | sed 's/^/::notice title=Pocket Atlas calibration::/' || true
           grep "^saliency:" atlas-stdout.log | sed 's/^/::notice title=Saliency::/' || true
           grep "photos in .* from the embedding cache" atlas-stdout.log \
             | sed 's/^/::notice title=Embeddings::/' || true
@@ -180,7 +182,8 @@ jobs:
 
       # Pocket Atlas: the text half of the ViT-B/32 (OpenAI) pipeline, scored above as
       # "ViT-B-32/openai, country then city", precomputed for the browser. One catalog photo's
-      # PyTorch embedding goes in too, for the parity test below.
+      # PyTorch embedding goes in too, for the parity test below, and the model's own temperature
+      # and reality-check bands (`--pocket-model` above), so its "% sure" is scaled like the game's.
       - name: Build Pocket Atlas's text index
         shell: bash
         run: |
@@ -191,7 +194,8 @@ jobs:
           parity="${images[0]}"
           echo "POCKET_PARITY_IMAGE=$PWD/$parity" >> "$GITHUB_ENV"
           pocket-atlas-index --gazetteer data/geonames --out web/public/pocket-atlas \
-            --model ViT-B-32:openai --parity-image "$parity" | tee pocket.log
+            --model ViT-B-32:openai --parity-image "$parity" \
+            --calibration eval/results/pocket-calibration.json | tee pocket.log
           echo "::notice title=Pocket Atlas index::$(tail -1 pocket.log)"
 
       # The bot's push won't trigger CI, so check here that the game still passes, type-checks
