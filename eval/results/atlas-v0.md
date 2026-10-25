@@ -1,6 +1,6 @@
 # Atlas v0 results
 
-Generated 2026-10-22T15:58:29+00:00 by `.github/workflows/atlas.yml` on 388 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
+Generated 2026-10-25T17:21:39+00:00 by `.github/workflows/atlas.yml` on 388 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
 
 **Playing in the game:** ViT-L-14/openai, country then city (lowest median error).
 
@@ -53,6 +53,30 @@ ViT-L-14/openai, country then city refined by searching 4,322 geotagged referenc
 | ViT-L-14/openai, country then city | 374 | 187 to 600 | no |
 
 It plays only if the whole interval is below zero.
+
+## How sure is Atlas: calibration
+
+Temperature scaling of the playing system's country probabilities, on the 388 photos whose country the gazetteer knows. Each photo's temperature is fitted on the other 4 of 5 folds, dealt by 10° geographic blocks, so every calibrated number below is measured on photos its fit never saw. Fitted on all of them, T = 1.030 (above 1 means the raw model was overconfident).
+
+| Probabilities | Negative log likelihood | Expected calibration error |
+| --- | ---: | ---: |
+| Raw CLIP softmax | 2.366 | 2.3% |
+| Temperature-scaled (held out) | 2.378 | 2.9% |
+
+The game shows the raw probabilities: temperature scaling did not lower held-out NLL.
+
+| Atlas said | Photos | Right country |
+| --- | ---: | ---: |
+| 0% to 10% (mean 7%) | 25 | 8% |
+| 10% to 20% (mean 15%) | 54 | 15% |
+| 20% to 30% (mean 25%) | 59 | 20% |
+| 30% to 40% (mean 35%) | 68 | 35% |
+| 40% to 50% (mean 45%) | 45 | 40% |
+| 50% to 60% (mean 55%) | 38 | 55% |
+| 60% to 70% (mean 65%) | 21 | 67% |
+| 70% to 80% (mean 75%) | 35 | 74% |
+| 80% to 90% (mean 85%) | 19 | 89% |
+| 90% to 100% (mean 94%) | 24 | 88% |
 
 ## Read these numbers carefully
 
