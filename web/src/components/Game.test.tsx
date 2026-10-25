@@ -13,6 +13,7 @@ import { INTRO_KEY, INTRO_TEXT } from "@/lib/intro";
 import { playablePhotos } from "@/lib/game/playable";
 import { RECORD_KEY } from "@/lib/playerRecord";
 import { ROUNDS_PER_GAME } from "@/lib/game/state";
+import { tierBlurb } from "@/lib/game/tiers";
 import type { AtlasData, CatalogPhoto, GameBackend } from "@/lib/game/types";
 import { bundledGame } from "@/test/deck";
 import { FakeMap, resetFakes } from "@/test/maplibre-mock";
@@ -61,6 +62,7 @@ describe("Game", { timeout: 20000 }, () => {
   it("titles the game with today's date", () => {
     expect(modeTitle({ kind: "daily", day: "2026-10-09" })).toBe("Daily Five, October 9");
     expect(modeTitle({ kind: "fresh", game: 2 })).toBe("Fresh game");
+    expect(modeTitle({ kind: "tier", tier: "hard", game: 1 })).toBe("Hard game");
   });
 
   it("offers Pocket Atlas from the first screen, and hides it during the reveal", async () => {
@@ -354,5 +356,78 @@ describe("Game", { timeout: 20000 }, () => {
       get.mockRestore();
       set.mockRestore();
     }
+  });
+
+  describe("difficulty tiers", () => {
+    const tiers = bundledGame.deck.tiers!;
+    const srcToId = new Map((catalog as CatalogPhoto[]).map((p) => [p.imageUrl, p.id]));
+    const shownId = async () =>
+      srcToId.get((await screen.findByRole("img", {}, WAIT)).getAttribute("src")!);
+
+    it("picking a tier next to the Daily Five deals a game from that third only", async () => {
+      render(<Game {...bundledGame} today={TODAY} />);
+      const map = await mapReady();
+      await screen.findByText("Fresh game", {}, WAIT);
+      const picker = screen.getByRole("combobox", {
+        name: "Difficulty: how hard it was for Atlas",
+      });
+      expect(picker).toHaveValue("any");
+
+      fireEvent.change(picker, { target: { value: "hard" } });
+      expect(await screen.findByText("Hard game", {}, WAIT)).toBeInTheDocument();
+      expect(screen.getByText(tierBlurb("hard", tiers))).toBeInTheDocument();
+      await waitFor(() => expect(window.location.search).toBe("?tier=hard"));
+      const read = () => JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]") as string[];
+      await waitFor(() => expect(read().length).toBeGreaterThanOrEqual(2 * ROUNDS_PER_GAME), WAIT);
+      for (const id of read().slice(-ROUNDS_PER_GAME)) expect(tiers.hard.ids).toContain(id);
+
+      // Play it through: every round's photo is a Hard one, and the summary offers another.
+      for (let i = 0; i < ROUNDS_PER_GAME; i++) {
+        expect(tiers.hard.ids).toContain(await shownId());
+        const card = await playRound(map, { lng: 0, lat: 0 });
+        fireEvent.click(
+          within(card).getByRole("button", { name: /^(Next photo|See your results)$/ }),
+        );
+      }
+      fireEvent.click(await screen.findByRole("button", { name: "Play another Hard game" }, WAIT));
+      expect(await screen.findByText("Hard game", {}, WAIT)).toBeInTheDocument();
+      expect(screen.getByText("Round 1 of 5")).toBeInTheDocument();
+    });
+
+    it("opens a tier from ?tier=, and Any level goes back to the whole catalog", async () => {
+      window.history.replaceState(null, "", "/?tier=easy");
+      render(<Game {...bundledGame} today={TODAY} />);
+      await mapReady();
+      expect(await screen.findByText("Easy game", {}, WAIT)).toBeInTheDocument();
+      expect(tiers.easy.ids).toContain(await shownId());
+
+      fireEvent.change(screen.getByRole("combobox", { name: /Difficulty/ }), {
+        target: { value: "any" },
+      });
+      expect(await screen.findByText("Fresh game", {}, WAIT)).toBeInTheDocument();
+      await waitFor(() => expect(window.location.search).toBe(""));
+
+      fireEvent.click(screen.getByRole("button", { name: "Play the Daily Five" }));
+      expect(await screen.findByText("Daily Five, October 9", {}, WAIT)).toBeInTheDocument();
+      await waitFor(() => expect(window.location.search).toBe("?daily"));
+    });
+
+    it("ignores a tier the URL makes up", async () => {
+      window.history.replaceState(null, "", "/?tier=impossible");
+      render(<Game {...bundledGame} today={TODAY} />);
+      await mapReady();
+      expect(await screen.findByText("Fresh game", {}, WAIT)).toBeInTheDocument();
+      await waitFor(() => expect(window.location.search).toBe(""));
+    });
+
+    it("has no picker when the API server deals the photos", async () => {
+      const api = new LocalBackend(daily);
+      render(
+        <Game {...bundledGame} apiUrl="http://api.test" backendFor={() => api} today={TODAY} />,
+      );
+      await mapReady();
+      await screen.findByText("Fresh game", {}, WAIT);
+      expect(screen.queryByRole("combobox", { name: /Difficulty/ })).toBeNull();
+    });
   });
 });

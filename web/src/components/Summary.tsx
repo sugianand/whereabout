@@ -23,6 +23,8 @@ type SummaryProps = {
   title: string;
   /** Deal a fresh game of photos the player hasn't seen lately. */
   onPlayAgain: () => void;
+  /** The play-again button's text; a tier game offers another game from its tier. */
+  playAgainLabel?: string;
   /** Switch to today's Daily Five; omitted when the finished game was the Daily Five. */
   onPlayDaily?: () => void;
   /** The player's record including this game, or null if it couldn't be built. */
@@ -78,7 +80,9 @@ function RecordPanel({
         ))}
       </dl>
       <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-chalk-dim">
-        <p>Kept only in this browser. Streaks follow the Daily Five, which changes at midnight UTC.</p>
+        <p>
+          Kept only in this browser. Streaks follow the Daily Five, which changes at midnight UTC.
+        </p>
         {onReset &&
           (confirming ? (
             <span className="flex items-center gap-3">
@@ -159,6 +163,7 @@ export default function Summary({
   results,
   title,
   onPlayAgain,
+  playAgainLabel = "Play a fresh game",
   onPlayDaily,
   record,
   today = new Date(),
@@ -254,7 +259,7 @@ export default function Summary({
           onClick={onPlayAgain}
           className="rounded-full border border-chalk/40 px-6 py-3 font-semibold transition hover:border-chalk"
         >
-          Play a fresh game
+          {playAgainLabel}
         </button>
         {onPlayDaily && (
           <button

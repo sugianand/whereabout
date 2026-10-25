@@ -12,6 +12,7 @@
 
 import { hashSeed } from "./daily";
 import { playablePhotos } from "./playable";
+import { buildTiers, type Tiers } from "./tiers";
 import type { AtlasData, AtlasGuess, CatalogPhoto } from "./types";
 
 /** Everything the browser needs to play one photo. */
@@ -26,6 +27,8 @@ export interface Deck {
   version: string;
   /** Playable photo ids in catalog order (the Daily Five shuffles this order). */
   ids: string[];
+  /** Easy, Medium and Hard thirds by Atlas's real error, or null with too few guesses. */
+  tiers: Tiers | null;
 }
 
 /** One record per playable photo, in catalog order. */
@@ -42,7 +45,11 @@ export function deckVersion(records: readonly GameRecord[]): string {
 }
 
 export function buildDeck(records: readonly GameRecord[]): Deck {
-  return { version: deckVersion(records), ids: records.map((r) => r.photo.id) };
+  return {
+    version: deckVersion(records),
+    ids: records.map((r) => r.photo.id),
+    tiers: buildTiers(records),
+  };
 }
 
 /** Where a photo's record is served, e.g. "/whereabout/game-data/1a2b3c4d/wm000.json". */

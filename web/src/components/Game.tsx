@@ -8,6 +8,7 @@ import { dayKey, pickDaily } from "@/lib/game/daily";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import { loadRecent, pickFresh, rememberPlayed, saveRecent } from "@/lib/game/fresh";
 import { ROUNDS_PER_GAME, gameReducer, initialState, totals } from "@/lib/game/state";
+import { TIERS, TIER_NAMES, isTier, tierBlurb, type Tier, type Tiers } from "@/lib/game/tiers";
 import type { CatalogPhoto, GameBackend } from "@/lib/game/types";
 import { formatPoints, maxPoints, type LngLat } from "@/lib/geo";
 import { hasSeenIntro, INTRO_TEXT, markIntroSeen } from "@/lib/intro";
@@ -19,11 +20,18 @@ import PhotoViewer from "./PhotoViewer";
 import RevealCard from "./RevealCard";
 import Summary from "./Summary";
 
-/** A fresh game is five photos the player hasn't seen lately; the Daily Five is shared by all. */
-export type GameMode = { kind: "daily"; day: string } | { kind: "fresh"; game: number };
+/**
+ * A fresh game is five photos the player hasn't seen lately; the Daily Five is shared by all; a
+ * tier game is a fresh game drawn from one difficulty third (src/lib/game/tiers.ts).
+ */
+export type GameMode =
+  | { kind: "daily"; day: string }
+  | { kind: "fresh"; game: number }
+  | { kind: "tier"; tier: Tier; game: number };
 
 export function modeTitle(mode: GameMode): string {
   if (mode.kind === "fresh") return "Fresh game";
+  if (mode.kind === "tier") return `${TIER_NAMES[mode.tier]} game`;
   const label = new Date(`${mode.day}T12:00:00Z`).toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
@@ -55,18 +63,56 @@ function urlWantsDaily(): boolean {
   return new URLSearchParams(window.location.search).has("daily");
 }
 
+/** The tier the page URL asks for (`?tier=hard`), if it names one. */
+function urlTier(): Tier | null {
+  const tier = new URLSearchParams(window.location.search).get("tier");
+  return isTier(tier) ? tier : null;
+}
+
 /** Keep the address bar in step with the mode, so a shared link opens the same kind of game. */
-function syncUrl(kind: GameMode["kind"]) {
+function syncUrl(mode: GameMode) {
   const url = new URL(window.location.href);
-  if (kind === "daily") url.searchParams.set("daily", "");
+  if (mode.kind === "daily") url.searchParams.set("daily", "");
   else url.searchParams.delete("daily");
+  if (mode.kind === "tier") url.searchParams.set("tier", mode.tier);
+  else url.searchParams.delete("tier");
   const next = `${url.pathname}${url.search.replace(/daily=(?=&|$)/, "daily")}${url.hash}`;
   if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
     window.history.replaceState(window.history.state, "", next);
   }
 }
 
+/** "Any level" or one tier; picking one deals a new game from it. */
+function TierPicker({
+  tiers,
+  value,
+  onPick,
+}: {
+  tiers: Tiers;
+  value: Tier | null;
+  onPick: (tier: Tier | null) => void;
+}) {
+  return (
+    <select
+      aria-label="Difficulty: how hard it was for Atlas"
+      title="Difficulty: how hard each photo was for Atlas"
+      value={value ?? "any"}
+      onChange={(e) => onPick(isTier(e.target.value) ? e.target.value : null)}
+      className="pointer-events-auto rounded-full border border-chalk/30 bg-ocean-deep/60 py-1 pl-3 pr-1 text-xs font-semibold text-chalk backdrop-blur transition hover:border-chalk"
+    >
+      <option value="any">Any level</option>
+      {TIERS.map((tier) => (
+        <option key={tier} value={tier} title={tierBlurb(tier, tiers)}>
+          {TIER_NAMES[tier]}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 export default function Game({ apiUrl, deck, start, today, backendFor, loadRecords }: GameProps) {
+  // Tiers choose which photos a game deals, so they only exist when the browser deals them.
+  const tiers = apiUrl ? null : deck.tiers;
   // The mode is decided in the browser after hydration: the URL, today's date and the photos
   // this browser played recently are all unknown when the static page is built.
   const [mode, setMode] = useState<GameMode | null>(null);
@@ -80,27 +126,37 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
     if (mode) return;
     const id = requestAnimationFrame(() => {
       const kind = start ?? (urlWantsDaily() ? "daily" : "fresh");
+      const tier = kind === "fresh" && tiers ? urlTier() : null;
       setIntroOpen(!hasSeenIntro());
       setMode(
         kind === "daily"
           ? { kind: "daily", day: dayKey(today ?? new Date()) }
-          : { kind: "fresh", game: 1 },
+          : tier
+            ? { kind: "tier", tier, game: 1 }
+            : { kind: "fresh", game: 1 },
       );
     });
     return () => cancelAnimationFrame(id);
-  }, [mode, start, today]);
+  }, [mode, start, today, tiers]);
 
   const pool = useMemo(() => deck.ids.map((id) => ({ id })), [deck.ids]);
 
-  // Each fresh game is drawn once per mode change and avoids the photos played lately.
+  // Each fresh game is drawn once per mode change and avoids the photos played lately; a tier
+  // game does the same within its third of the catalog.
   const dealt = useMemo(() => {
     if (!mode) return [];
     const picked =
       mode.kind === "daily"
         ? pickDaily(pool, mode.day, ROUNDS_PER_GAME)
-        : pickFresh(pool, loadRecent(), ROUNDS_PER_GAME);
+        : mode.kind === "tier" && tiers
+          ? pickFresh(
+              tiers[mode.tier].ids.map((id) => ({ id })),
+              loadRecent(),
+              ROUNDS_PER_GAME,
+            )
+          : pickFresh(pool, loadRecent(), ROUNDS_PER_GAME);
     return picked.map((p) => p.id);
-  }, [mode, pool]);
+  }, [mode, pool, tiers]);
 
   // Remember what was dealt, so the next visit or fresh game opens on other photos.
   useEffect(() => {
@@ -141,7 +197,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   }, [dealt, records]);
 
   useEffect(() => {
-    if (mode) syncUrl(mode.kind);
+    if (mode) syncUrl(mode);
   }, [mode]);
 
   const backend = useMemo<GameBackend | null>(() => {
@@ -234,8 +290,22 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
     dispatch({ type: "next" });
   }
 
+  /** Another game of the same kind: a tier game stays in its tier, the Daily Five goes fresh. */
   function playFresh() {
-    setMode((m) => ({ kind: "fresh", game: m?.kind === "fresh" ? m.game + 1 : 1 }));
+    setMode((m) =>
+      m?.kind === "tier"
+        ? { ...m, game: m.game + 1 }
+        : { kind: "fresh", game: m?.kind === "fresh" ? m.game + 1 : 1 },
+    );
+    dispatch({ type: "restart" });
+  }
+
+  /** A new game from one tier, or from the whole catalog for "Any level". */
+  function playTier(tier: Tier | null) {
+    setMode((m) => {
+      const game = m && m.kind !== "daily" ? m.game + 1 : 1;
+      return tier ? { kind: "tier", tier, game } : { kind: "fresh", game };
+    });
     dispatch({ type: "restart" });
   }
 
@@ -264,6 +334,9 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
         results={state.results}
         title={title}
         onPlayAgain={playFresh}
+        playAgainLabel={
+          mode?.kind === "tier" ? `Play another ${TIER_NAMES[mode.tier]} game` : undefined
+        }
         onPlayDaily={mode?.kind === "daily" ? undefined : playDaily}
         record={record}
         today={today ?? new Date()}
@@ -323,24 +396,40 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
       </div>
 
       <header className="wb-header pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-4 px-4 pt-4 md:px-6">
-        <div className="pointer-events-auto">
+        {/* Only the controls take taps: on a phone this column spans the photo, and its empty
+            space must not swallow taps meant for the photo's own buttons underneath. */}
+        <div className="min-w-0">
           <p className="font-sign text-3xl font-extrabold leading-none tracking-tight md:text-4xl">
             Whereabout
           </p>
           <p className="mt-1 text-sm text-chalk-dim">{title}</p>
+          {mode?.kind === "tier" && tiers && (
+            <p className="mt-1 inline-block rounded-full bg-ocean-deep/60 px-2 py-0.5 text-[11px] text-chalk-dim backdrop-blur">
+              {tierBlurb(mode.tier, tiers)}
+            </p>
+          )}
           {mode && (
-            <button
-              type="button"
-              onClick={mode.kind === "daily" ? playFresh : playDaily}
-              className="mt-2 rounded-full border border-chalk/30 bg-ocean-deep/60 px-3 py-1 text-xs font-semibold backdrop-blur transition hover:border-chalk"
-            >
-              {mode.kind === "daily" ? "New random game" : "Play the Daily Five"}
-            </button>
+            <div className="mt-2 flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={mode.kind === "daily" ? playFresh : playDaily}
+                className="pointer-events-auto shrink-0 rounded-full border border-chalk/30 bg-ocean-deep/60 px-3 py-1 text-xs font-semibold backdrop-blur transition hover:border-chalk"
+              >
+                {mode.kind === "daily" ? "New random game" : "Play the Daily Five"}
+              </button>
+              {tiers && (
+                <TierPicker
+                  tiers={tiers}
+                  value={mode.kind === "tier" ? mode.tier : null}
+                  onPick={playTier}
+                />
+              )}
+            </div>
           )}
           {state.phase !== "revealed" && (
             <Link
               href="/you"
-              className="wb-try-atlas mt-2 flex max-w-60 items-center gap-2 rounded-full md:mt-3 md:gap-2.5 md:rounded-2xl border border-sonar/40 bg-ocean-deep/70 py-1 pl-1 pr-3 backdrop-blur transition hover:border-sonar md:px-3 md:py-2"
+              className="wb-try-atlas pointer-events-auto mt-2 flex max-w-60 items-center gap-2 rounded-full md:mt-3 md:gap-2.5 md:rounded-2xl border border-sonar/40 bg-ocean-deep/70 py-1 pl-1 pr-3 backdrop-blur transition hover:border-sonar md:px-3 md:py-2"
             >
               <span
                 aria-hidden="true"

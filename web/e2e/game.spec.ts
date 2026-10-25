@@ -155,6 +155,57 @@ test("the Daily Five is one button away from a fresh game", async ({ page }) => 
   await expect(page).toHaveURL(/\?daily/);
 });
 
+/** Atlas's miss on each photo, measured here independently of the app's own code. */
+function atlasErrors(): Map<string, number> {
+  const read = (f: string) => JSON.parse(readFileSync(resolve(process.cwd(), f), "utf8"));
+  const guesses: Record<string, { lat: number; lng: number }> = read("src/data/atlas.json").guesses;
+  const rad = Math.PI / 180;
+  const errors = new Map<string, number>();
+  for (const p of read("src/data/photos.json") as { id: string; lat: number; lng: number }[]) {
+    const g = guesses[p.id];
+    if (!g) continue;
+    const h =
+      Math.sin(((p.lat - g.lat) * rad) / 2) ** 2 +
+      Math.cos(p.lat * rad) * Math.cos(g.lat * rad) * Math.sin(((p.lng - g.lng) * rad) / 2) ** 2;
+    errors.set(p.id, 2 * 6371.0088 * Math.asin(Math.sqrt(h)));
+  }
+  return errors;
+}
+
+test("a Hard game deals only photos Atlas missed by most, chosen next to the Daily Five", async ({
+  page,
+}) => {
+  const errors = atlasErrors();
+  const sorted = [...errors.values()].sort((a, b) => a - b);
+  const hardFrom = sorted[Math.round((2 * sorted.length) / 3)];
+  const dealt: string[] = [];
+  page.on("request", (r) => {
+    const m = r.url().match(/\/game-data\/[0-9a-f]{8}\/([\w-]+)\.json$/);
+    if (m) dealt.push(m[1]);
+  });
+
+  await page.goto("./");
+  await expect(page.getByText("Fresh game", { exact: true })).toBeVisible();
+  const picker = page.getByRole("combobox", { name: "Difficulty: how hard it was for Atlas" });
+  await expect(picker).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play the Daily Five" })).toBeVisible();
+
+  dealt.length = 0;
+  await picker.selectOption("hard");
+  await expect(page.getByText("Hard game", { exact: true })).toBeVisible();
+  await expect(page.getByText(/^Atlas missed these by [\d,]+ km or more$/)).toBeVisible();
+  await expect(page).toHaveURL(/\?tier=hard$/);
+  await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
+  expect(dealt).toHaveLength(5);
+  for (const id of dealt) expect(errors.get(id)!).toBeGreaterThanOrEqual(hardFrom);
+
+  // The round plays as usual, and a reload keeps the tier.
+  await playRoundWithKeyboard(page);
+  await page.reload();
+  await expect(page.getByText("Hard game", { exact: true })).toBeVisible();
+  await expect(picker).toHaveValue("hard");
+});
+
 test("every round starts with the whole globe centred, after any reveal", async ({ page }) => {
   // Regression: the reveal's camera padding used to stick, pushing later rounds' globe aside.
   await page.goto("./?daily");
