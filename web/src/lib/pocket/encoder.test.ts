@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { loadEncoder, progressTracker, type TransformersLib } from "./encoder";
+import { TRANSFORMERS_URL, loadEncoder, progressTracker, type TransformersLib } from "./encoder";
 
 function fakeLib(embedding: number[]) {
   const calls: { id: string; opts?: object }[] = [];
@@ -24,6 +24,15 @@ function fakeLib(embedding: number[]) {
 }
 
 describe("loadEncoder", () => {
+  it("loads the build of transformers.js that a browser can import on its own", () => {
+    // `transformers.web.min.js` imports "onnxruntime-web/webgpu" by bare name, which a browser
+    // cannot resolve without an import map: every photo failed with "Failed to resolve module
+    // specifier". `transformers.min.js` bundles ONNX Runtime, so a plain import() works.
+    expect(TRANSFORMERS_URL).toMatch(
+      /^https:\/\/cdn\.jsdelivr\.net\/npm\/@huggingface\/transformers@\d+\.\d+\.\d+\/dist\/transformers\.min\.js$/,
+    );
+  });
+
   it("loads the named model as 8-bit on wasm and returns unit-length embeddings", async () => {
     const { lib, calls } = fakeLib([3, 4]);
     const encoder = await loadEncoder("Xenova/clip-vit-base-patch32", undefined, async () => lib);

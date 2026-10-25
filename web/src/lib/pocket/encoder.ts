@@ -10,8 +10,13 @@
  */
 import { normalise } from "./locate";
 
+/**
+ * The self-contained build, with ONNX Runtime bundled in. Not `transformers.web.min.js`: that one
+ * imports "onnxruntime-web/webgpu" by bare name, which a browser cannot resolve without an
+ * import map, so Pocket Atlas failed on every photo.
+ */
 export const TRANSFORMERS_URL =
-  "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.1/dist/transformers.web.min.js";
+  "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.1/dist/transformers.min.js";
 
 /** What the encoder needs from transformers.js (a tiny, typed slice of its API). */
 export interface TransformersLib {
