@@ -1,7 +1,7 @@
 {
  "model": "ViT-L-14/openai, country then city",
  "version": "atlas-v0-zeroshot",
- "generatedAt": "2026-10-25T17:21:39+00:00",
+ "generatedAt": "2026-10-25T21:27:11+00:00",
  "guesses": {
   "wm000": {
    "lng": 102.44784,
@@ -842,7 +842,7 @@
     },
     {
      "label": "Temperate",
-     "p": 0.6825
+     "p": 0.6824
     }
    ],
    "belief": {
@@ -11295,12 +11295,12 @@
   "wh3677747": {
    "lng": 166.44884,
    "lat": -22.27407,
-   "confidence": 0.3236,
+   "confidence": 0.3235,
    "guessedPlace": "Noumea, NC",
    "topCountries": [
     {
      "country": "NZ",
-     "p": 0.3236
+     "p": 0.3235
     },
     {
      "country": "NC",
@@ -13583,12 +13583,12 @@
   "wh7179854": {
    "lng": 12.38878,
    "lat": 43.1122,
-   "confidence": 0.3871,
+   "confidence": 0.387,
    "guessedPlace": "Perugia, IT",
    "topCountries": [
     {
      "country": "FR",
-     "p": 0.3871
+     "p": 0.387
     },
     {
      "country": "IT",
@@ -16993,7 +16993,7 @@
     },
     {
      "label": "Temperate",
-     "p": 0.7304
+     "p": 0.7303
     }
    ],
    "belief": {
@@ -23477,7 +23477,7 @@
     },
     {
      "label": "European old town",
-     "p": 0.679
+     "p": 0.6791
     }
    ],
    "belief": {
@@ -24019,7 +24019,7 @@
     },
     {
      "country": "UA",
-     "p": 0.1018
+     "p": 0.1019
     },
     {
      "country": "RU",
@@ -25963,7 +25963,7 @@
     },
     {
      "label": "Mediterranean",
-     "p": 0.6258
+     "p": 0.6259
     }
    ],
    "belief": {
@@ -28687,12 +28687,12 @@
   "wh21322891": {
    "lng": -119.77237,
    "lat": 36.74773,
-   "confidence": 0.4737,
+   "confidence": 0.4736,
    "guessedPlace": "Fresno, US",
    "topCountries": [
     {
      "country": "US",
-     "p": 0.4737
+     "p": 0.4736
     },
     {
      "country": "SH",
@@ -43822,7 +43822,7 @@
     },
     {
      "country": "MM",
-     "p": 0.1065
+     "p": 0.1064
     },
     {
      "country": "LA",
