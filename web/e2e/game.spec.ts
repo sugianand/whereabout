@@ -220,6 +220,12 @@ test("a Hard game deals only photos Atlas missed by most, chosen next to the Dai
   await expect(picker).toHaveValue("hard");
 });
 
+// The frame mirrors the camera only when a move ends, and an ease ends on the first frame drawn
+// after its duration. Software WebGL on a busy CI runner can take seconds per frame while the
+// reveal draws its arcs and heatmap, so a 1.3 s camera move can end well past expect's default
+// 5 s (it did on both attempts on the phone project). Wait for the move to land, not the clock.
+const CAMERA_SETTLES = { timeout: 20_000 };
+
 test("every round starts with the whole globe centred, after any reveal", async ({ page }) => {
   // Regression: the reveal's camera padding used to stick, pushing later rounds' globe aside.
   await page.goto("./?daily");
@@ -230,13 +236,13 @@ test("every round starts with the whole globe centred, after any reveal", async 
 
   for (let round = 1; round <= 3; round++) {
     const card = await playRoundWithKeyboard(page);
-    await expect(frame).not.toHaveAttribute("data-padding", centred.padding);
+    await expect(frame).not.toHaveAttribute("data-padding", centred.padding, CAMERA_SETTLES);
     // The view controls stay usable at the reveal, never hidden under the result card.
     await page.getByRole("button", { name: "Show the answer again" }).click({ trial: true });
     await card.getByRole("button", { name: "Next photo" }).click();
     await expect(page.getByText(`Round ${round + 1} of 5`, { exact: true })).toBeVisible();
-    await expect(frame).toHaveAttribute("data-padding", centred.padding);
-    await expect(frame).toHaveAttribute("data-zoom", centred.zoom);
+    await expect(frame).toHaveAttribute("data-padding", centred.padding, CAMERA_SETTLES);
+    await expect(frame).toHaveAttribute("data-zoom", centred.zoom, CAMERA_SETTLES);
   }
 });
 
