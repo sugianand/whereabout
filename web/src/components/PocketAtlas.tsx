@@ -4,6 +4,14 @@ import { useCallback, useEffect, useRef, useState, type DragEvent } from "react"
 
 import { formatDistance, formatPoints, haversineKm, scoreDistance, type LngLat } from "@/lib/geo";
 import { loadEncoder, type DownloadProgress, type ImageEncoder } from "@/lib/pocket/encoder";
+import {
+  declineMessage,
+  gateOf,
+  screen,
+  type GateVerdict,
+  type PocketGate,
+  type PrivacyReason,
+} from "@/lib/pocket/gate";
 import { IndexUnavailable, loadIndex } from "@/lib/pocket/index";
 import { surenessLine, type SurenessBand } from "@/lib/game/sureness";
 import { locate, type PocketGuess, type PocketIndex } from "@/lib/pocket/locate";
@@ -15,6 +23,7 @@ type Phase =
   | { kind: "idle" }
   | { kind: "loading"; progress: DownloadProgress | null }
   | { kind: "thinking" }
+  | { kind: "declined"; reasons: PrivacyReason[] }
   | { kind: "guessed"; guess: PocketGuess }
   | { kind: "revealed"; guess: PocketGuess; truth: LngLat; distanceKm: number; score: number }
   | { kind: "unavailable" }
@@ -35,8 +44,16 @@ const pct = (p: number) => `${Math.round(p * 100)}%`;
 
 declare global {
   interface Window {
-    /** The last embedding and guess, for the browser-vs-PyTorch parity test (e2e/pocket.spec.ts). */
-    __pocketAtlas?: { embedding: number[]; guess: PocketGuess; model: string };
+    /**
+     * The last embedding, gate verdict and guess (null when the gate declined the photo), for
+     * the browser-vs-PyTorch parity test (e2e/pocket.spec.ts).
+     */
+    __pocketAtlas?: {
+      embedding: number[];
+      gate: GateVerdict;
+      guess: PocketGuess | null;
+      model: string;
+    };
   }
 }
 
@@ -49,7 +66,11 @@ export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps
   const [photo, setPhoto] = useState<string | null>(null);
   const [truth, setTruth] = useState<LngLat | null>(null);
   const [dragging, setDragging] = useState(false);
-  const ready = useRef<Promise<{ index: PocketIndex; encoder: ImageEncoder }> | null>(null);
+  const ready = useRef<Promise<{
+    index: PocketIndex;
+    gate: PocketGate;
+    encoder: ImageEncoder;
+  }> | null>(null);
   const [names, setNames] = useState<ReadonlyMap<string, string>>(new Map());
   const [sureness, setSureness] = useState<readonly SurenessBand[] | null>(null);
 
@@ -60,12 +81,16 @@ export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps
     if (!ready.current) {
       ready.current = (async () => {
         const index = await deps.loadIndex();
+        // No privacy gate, no guesses: an index built before the gate stays closed, before the
+        // 90 MB model is downloaded for nothing.
+        const gate = gateOf(index.meta);
+        if (!gate) throw new IndexUnavailable("Pocket Atlas's privacy gate isn't published yet.");
         setNames(new Map(index.meta.countries.map((c) => [c.code, c.name])));
         setSureness(index.meta.sureness ?? null);
         const encoder = await deps.loadEncoder(index.meta.hfModel, (progress) =>
           setPhase((p) => (p.kind === "loading" ? { kind: "loading", progress } : p)),
         );
-        return { index, encoder };
+        return { index, gate, encoder };
       })();
       // A failed load can be retried with the next photo.
       ready.current.catch(() => (ready.current = null));
@@ -82,12 +107,19 @@ export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps
     setTruth(null);
     setPhase({ kind: "loading", progress: null });
     try {
-      const { index, encoder } = await prepare();
+      const { index, gate, encoder } = await prepare();
       setPhase({ kind: "thinking" });
       const embedding = await encoder.embed(file);
-      const guess = locate(index, embedding);
-      window.__pocketAtlas = { embedding: Array.from(embedding), guess, model: index.meta.model };
-      setPhase({ kind: "guessed", guess });
+      // The privacy gate runs first: a declined photo is never located at all.
+      const verdict = screen(gate, embedding);
+      const guess = verdict.passed ? locate(index, embedding) : null;
+      window.__pocketAtlas = {
+        embedding: Array.from(embedding),
+        gate: verdict,
+        guess,
+        model: index.meta.model,
+      };
+      setPhase(guess ? { kind: "guessed", guess } : { kind: "declined", reasons: verdict.reasons });
     } catch (err) {
       setPhase(
         err instanceof IndexUnavailable
@@ -168,7 +200,8 @@ export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps
         </label>
         <p className="mt-3 text-sm text-chalk-dim">
           Your photo never leaves this device: Atlas runs right here in your browser. Outdoor photos
-          work best. Atlas only ever names a city, never an address.
+          work best. Atlas only ever names a city, never an address, and it won&apos;t guess photos
+          of people or of indoor spaces.
         </p>
       </section>
 
@@ -225,6 +258,13 @@ export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps
             Pocket Atlas isn&apos;t published yet. It appears after Atlas&apos;s next run, usually
             within a day.
           </p>
+        )}
+
+        {phase.kind === "declined" && (
+          <div role="alert" data-testid="pocket-declined">
+            <p className="font-sign text-2xl font-bold">Atlas is keeping this one private</p>
+            <p className="mt-2 text-chalk-dim">{declineMessage(phase.reasons)}</p>
+          </div>
         )}
 
         {phase.kind === "error" && (

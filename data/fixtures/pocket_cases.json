@@ -1,10 +1,10 @@
 {
- "note": "Shared by ml/tests/test_pocket_index.py and web/src/lib/pocket/locate.test.ts. Regenerate with `python ml/tests/test_pocket_index.py`.",
+ "note": "Shared by ml/tests/test_pocket_index.py and web/src/lib/pocket/locate.test.ts and gate.test.ts. Regenerate with `python ml/tests/test_pocket_index.py`.",
  "meta": {
   "version": 1,
   "model": "keyword/toy",
   "hfModel": "Xenova/clip-vit-base-patch32",
-  "dim": 8,
+  "dim": 11,
   "rows": 8,
   "logitScale": 100.0,
   "topKCountries": 2,
@@ -64,14 +64,14 @@
    }
   ],
   "scales": [
-   0.00787399,
-   0.00787399,
+   0.00787398,
+   0.00787398,
    0.00556776,
    0.00556776,
    0.00556776,
    0.00556776,
-   0.00787399,
-   0.00787399
+   0.00787398,
+   0.00787398
   ],
   "temperature": 1.8,
   "sureness": [
@@ -105,7 +105,46 @@
     "n": 30,
     "right": 27
    }
-  ]
+  ],
+  "gate": {
+   "logitScale": 100.0,
+   "reasons": [
+    {
+     "name": "people",
+     "threshold": 5.0,
+     "direction": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.998995,
+      0.0,
+      -0.998995
+     ]
+    },
+    {
+     "name": "indoor",
+     "threshold": 8.0,
+     "direction": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.998995,
+      -0.998995
+     ]
+    }
+   ]
+  }
  },
  "vectors": [
   [
@@ -116,33 +155,6 @@
    0,
    0,
    0,
-   0
-  ],
-  [
-   0,
-   0,
-   0,
-   127,
-   0,
-   0,
-   0,
-   0
-  ],
-  [
-   127,
-   0,
-   127,
-   0,
-   0,
-   0,
-   0,
-   0
-  ],
-  [
-   127,
-   127,
-   0,
-   0,
    0,
    0,
    0,
@@ -154,7 +166,49 @@
    0,
    127,
    0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  [
    127,
+   0,
+   127,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  [
+   127,
+   127,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  [
+   0,
+   0,
+   0,
+   127,
+   0,
+   127,
+   0,
+   0,
+   0,
    0,
    0
   ],
@@ -166,6 +220,9 @@
    127,
    0,
    0,
+   0,
+   0,
+   0,
    0
   ],
   [
@@ -176,6 +233,9 @@
    0,
    0,
    127,
+   0,
+   0,
+   0,
    0
   ],
   [
@@ -186,7 +246,10 @@
    0,
    0,
    0,
-   127
+   127,
+   0,
+   0,
+   0
   ]
  ],
  "cases": [
@@ -197,6 +260,9 @@
     0.001,
     1.0,
     1.0,
+    0.001,
+    0.001,
+    0.001,
     0.001,
     0.001,
     0.001
@@ -218,12 +284,23 @@
      }
     ],
     "clues": []
+   },
+   "gate": {
+    "passed": true,
+    "reasons": [],
+    "scores": {
+     "people": 0.0,
+     "indoor": 0.0
+    }
    }
   },
   {
    "image": [
     1.0,
     1.0,
+    0.001,
+    0.001,
+    0.001,
     0.001,
     0.001,
     0.001,
@@ -248,6 +325,14 @@
      }
     ],
     "clues": []
+   },
+   "gate": {
+    "passed": true,
+    "reasons": [],
+    "scores": {
+     "people": 0.0,
+     "indoor": 0.0
+    }
    }
   },
   {
@@ -259,6 +344,9 @@
     0.001,
     0.001,
     1.0,
+    0.001,
+    0.001,
+    0.001,
     0.001
    ],
    "expected": {
@@ -283,6 +371,14 @@
       "p": 1.0
      }
     ]
+   },
+   "gate": {
+    "passed": true,
+    "reasons": [],
+    "scores": {
+     "people": 0.0,
+     "indoor": 0.0
+    }
    }
   },
   {
@@ -294,7 +390,10 @@
     0.001,
     0.001,
     0.001,
-    1.0
+    1.0,
+    0.001,
+    0.001,
+    0.001
    ],
    "expected": {
     "city": "Lima",
@@ -318,6 +417,185 @@
       "p": 1.0
      }
     ]
+   },
+   "gate": {
+    "passed": true,
+    "reasons": [],
+    "scores": {
+     "people": 0.0,
+     "indoor": 0.0
+    }
+   }
+  },
+  {
+   "image": [
+    0.001,
+    0.001,
+    0.001,
+    1.0,
+    1.0,
+    0.001,
+    0.001,
+    0.001,
+    0.001,
+    0.001,
+    1.0
+   ],
+   "expected": {
+    "city": "Cusco",
+    "country": "PE",
+    "lat": -13.53,
+    "lng": -71.97,
+    "confidence": 1.0,
+    "topCountries": [
+     {
+      "country": "PE",
+      "p": 1.0
+     },
+     {
+      "country": "JP",
+      "p": 0.0
+     }
+    ],
+    "clues": []
+   },
+   "gate": {
+    "passed": true,
+    "reasons": [],
+    "scores": {
+     "people": -57.619,
+     "indoor": -57.619
+    }
+   }
+  },
+  {
+   "image": [
+    1.0,
+    1.0,
+    0.001,
+    0.001,
+    0.001,
+    0.001,
+    0.001,
+    0.001,
+    1.0,
+    0.001,
+    0.001
+   ],
+   "expected": {
+    "city": "Kyoto",
+    "country": "JP",
+    "lat": 35.01,
+    "lng": 135.77,
+    "confidence": 1.0,
+    "topCountries": [
+     {
+      "country": "JP",
+      "p": 1.0
+     },
+     {
+      "country": "PE",
+      "p": 0.0
+     }
+    ],
+    "clues": []
+   },
+   "gate": {
+    "passed": false,
+    "reasons": [
+     "people"
+    ],
+    "scores": {
+     "people": 57.619,
+     "indoor": 0.0
+    }
+   }
+  },
+  {
+   "image": [
+    1.0,
+    0.001,
+    1.0,
+    0.001,
+    0.001,
+    0.001,
+    0.001,
+    0.001,
+    0.001,
+    1.0,
+    0.001
+   ],
+   "expected": {
+    "city": "Osaka",
+    "country": "JP",
+    "lat": 34.69,
+    "lng": 135.5,
+    "confidence": 1.0,
+    "topCountries": [
+     {
+      "country": "JP",
+      "p": 1.0
+     },
+     {
+      "country": "PE",
+      "p": 0.0
+     }
+    ],
+    "clues": []
+   },
+   "gate": {
+    "passed": false,
+    "reasons": [
+     "indoor"
+    ],
+    "scores": {
+     "people": 0.0,
+     "indoor": 57.619
+    }
+   }
+  },
+  {
+   "image": [
+    0.001,
+    0.001,
+    0.001,
+    1.0,
+    0.001,
+    1.0,
+    0.001,
+    0.001,
+    1.0,
+    1.0,
+    0.001
+   ],
+   "expected": {
+    "city": "Lima",
+    "country": "PE",
+    "lat": -12.05,
+    "lng": -77.04,
+    "confidence": 1.0,
+    "topCountries": [
+     {
+      "country": "PE",
+      "p": 1.0
+     },
+     {
+      "country": "JP",
+      "p": 0.0
+     }
+    ],
+    "clues": []
+   },
+   "gate": {
+    "passed": false,
+    "reasons": [
+     "people",
+     "indoor"
+    ],
+    "scores": {
+     "people": 49.9,
+     "indoor": 49.9
+    }
    }
   },
   {
@@ -326,6 +604,9 @@
     0.001,
     0.001,
     0.985,
+    0.001,
+    0.001,
+    0.001,
     0.001,
     0.001,
     0.001,
@@ -348,6 +629,14 @@
      }
     ],
     "clues": []
+   },
+   "gate": {
+    "passed": true,
+    "reasons": [],
+    "scores": {
+     "people": -0.0,
+     "indoor": -0.0
+    }
    }
   }
  ]

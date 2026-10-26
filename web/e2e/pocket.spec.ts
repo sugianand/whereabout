@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import { expect, test } from "@playwright/test";
 
+import { gateOf, screen } from "../src/lib/pocket/gate";
 import { decodeIndex, locate, temperatureOf, type PocketMeta } from "../src/lib/pocket/locate";
 
 /**
@@ -41,6 +42,16 @@ test("Pocket Atlas in the browser agrees with PyTorch", async ({ page }, info) =
   expect([port.city, port.country]).toEqual([parity.guess.city, parity.guess.country]);
   expect(port.confidence).toBeCloseTo(parity.guess.confidence, 3);
   port.topCountries.forEach((c, i) => expect(c.p).toBeCloseTo(parity.guess.topCountries[i].p, 3));
+  // And the site's privacy gate scores PyTorch's embedding as Python does. The parity photo is a
+  // hand-reviewed catalog photo, one of those that set the gate's bars, so it must pass.
+  const gate = gateOf(meta);
+  expect(gate, "index.json has no privacy gate").toBeTruthy();
+  const portGate = screen(gate!, parity.embedding);
+  expect(portGate.reasons).toEqual(parity.gate?.reasons);
+  for (const [r, want] of Object.entries(parity.gate?.scores ?? {})) {
+    expect(portGate.scores[r as keyof typeof portGate.scores]).toBeCloseTo(want, 2);
+  }
+  expect(portGate.passed).toBe(true);
 
   await page.goto("you");
   await page.setInputFiles('input[type="file"]', image!);
@@ -53,13 +64,20 @@ test("Pocket Atlas in the browser agrees with PyTorch", async ({ page }, info) =
     temperature: temperatureOf(meta),
     browser: got.guess,
     pytorch: parity.guess,
-    sameCountry: got.guess.country === parity.guess.country,
-    sameCity: got.guess.city === parity.guess.city,
+    sameCountry: got.guess?.country === parity.guess.country,
+    sameCity: got.guess?.city === parity.guess.city,
+    gate: { browser: got.gate, pytorch: parity.gate },
   };
   mkdirSync("test-results", { recursive: true });
   writeFileSync("test-results/pocket-parity.json", JSON.stringify(report, null, 2));
   console.log(`pocket parity: ${JSON.stringify(report)}`);
 
   expect(similarity).toBeGreaterThanOrEqual(MIN_COSINE);
-  await expect(page.getByRole("heading", { name: got.guess.city })).toBeVisible();
+  // The browser's 8-bit model can move a score that sits right at a bar, so its verdict is
+  // reported rather than required; whichever it is, the page must show it.
+  if (got.guess) {
+    await expect(page.getByRole("heading", { name: got.guess.city })).toBeVisible();
+  } else {
+    await expect(page.getByTestId("pocket-declined")).toBeVisible();
+  }
 });

@@ -18,6 +18,14 @@ country-then-city math as `ZeroShotGeolocator.predict`, over the quantized vecto
 With `--calibration eval/results/pocket-calibration.json` (written by `atlas-v0 --pocket-model`)
 the index also carries this model's own temperature, so the browser's "% sure" is scaled like the
 game's, and the reality-check bands the reveal shows ("When Atlas is 60–80% sure, ...").
+
+With `--gate data/scene_gate/pocket/thresholds.json` (written by `scene-gate --model
+ViT-B-32:openai`, calibrated on the same model) the index carries the privacy gate: the scene
+gate's people and indoor checks (`whereabout_ml.scene_gate`), so the browser declines a photo of
+people or of a room before Atlas guesses where it was taken. Each check is linear in the image
+embedding, `logit_scale * img . (reject_r - accept)`, so the index stores one direction per
+reason, in full precision (two rows; int8 would move a score by about 0.1 log-odds). `screen()`
+below is the reference for web/src/lib/pocket/gate.ts.
 """
 
 from __future__ import annotations
@@ -31,10 +39,16 @@ import numpy as np
 
 from whereabout_ml.clues import MIN_CLUE_PROBABILITY
 from whereabout_ml.gazetteer import Gazetteer
+from whereabout_ml.scene_gate import SceneGate
 from whereabout_ml.zeroshot import LOGIT_SCALE, ZeroShotGeolocator, normalise, softmax
 
 INDEX_VERSION = 1
 HF_MODEL = "Xenova/clip-vit-base-patch32"
+
+# The scene-gate reasons the browser checks before guessing: a photo of people would let Atlas
+# say where those people are, and a photo of a room is usually someone's home. (The other reasons
+# make a poor game round, but guessing them harms nobody, so Pocket Atlas still tries.)
+PRIVACY_REASONS = ("people", "indoor")
 
 
 def quantize(rows: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -51,13 +65,44 @@ def dequantize(q: np.ndarray, scale: np.ndarray) -> np.ndarray:
     return normalise(q.astype(np.float64) * np.asarray(scale, dtype=np.float64)[:, None])
 
 
+def privacy_gate(encoder, model: str, gate: dict) -> dict:
+    """The index's `gate` record from a scene-gate `thresholds.json` calibrated on `model`.
+
+    One direction per privacy reason, `reject_r - accept` from the scene gate's own prompt
+    ensembles, encoded by this index's text encoder: the browser's score is then
+    `logitScale * image . direction`, exactly `SceneGate.score_embeddings`.
+    """
+    if gate.get("model") != model:
+        raise ValueError(
+            f"gate thresholds are for {gate.get('model')!r}, but this index is {model!r}"
+        )
+    if gate.get("score", "log-odds") != "log-odds":
+        raise ValueError(f"gate thresholds must be log-odds, got {gate.get('score')!r}")
+    thresholds = gate["thresholds"]
+    scene = SceneGate(encoder, thresholds)
+    reasons = []
+    for r in PRIVACY_REASONS:
+        t = float(thresholds[r])
+        if not np.isfinite(t):
+            raise ValueError(f"gate threshold for {r} must be a finite number, got {t!r}")
+        direction = scene.reject_embeddings[r] - scene.accept_embedding
+        reasons.append(
+            {"name": r, "threshold": t, "direction": [round(float(v), 7) for v in direction]}
+        )
+    return {"logitScale": scene.logit_scale, "reasons": reasons}
+
+
 def build_index(
-    locator: ZeroShotGeolocator, model: str, calibration: dict | None = None
+    locator: ZeroShotGeolocator,
+    model: str,
+    calibration: dict | None = None,
+    gate: dict | None = None,
 ) -> tuple[dict, np.ndarray]:
     """Every text embedding Atlas's zero-shot pipeline needs, and a description of the rows.
 
     `calibration` is `pocket_calibration`'s record for the same model; it must name that model,
-    because a temperature fitted for one CLIP model means nothing for another.
+    because a temperature fitted for one CLIP model means nothing for another. `gate` is a
+    scene-gate `thresholds.json` for the same model, for the same reason (see `privacy_gate`).
     """
     if calibration is not None and calibration.get("model") != model:
         raise ValueError(
@@ -105,7 +150,31 @@ def build_index(
             raise ValueError(f"temperature must be a positive number, got {t!r}")
         meta["temperature"] = t
         meta["sureness"] = calibration["sureness"]
+    if gate is not None:
+        meta["gate"] = privacy_gate(locator.encoder, model, gate)
     return meta, q
+
+
+def screen(meta: dict, image: np.ndarray) -> dict:
+    """The privacy gate's verdict on one image embedding (the reference for gate.ts).
+
+    A reason is hit when its log-odds reach the threshold, as in `SceneGate.judge`; `reasons`
+    keeps `PRIVACY_REASONS` order. An index without a gate has nothing to check with.
+    """
+    gate = meta.get("gate")
+    if gate is None:
+        raise ValueError("this index has no privacy gate")
+    img = normalise(np.asarray(image, dtype=np.float64))
+    scores = {
+        r["name"]: float(gate["logitScale"]) * float(np.asarray(r["direction"]) @ img)
+        for r in gate["reasons"]
+    }
+    hit = [r["name"] for r in gate["reasons"] if scores[r["name"]] >= r["threshold"]]
+    return {
+        "passed": not hit,
+        "reasons": hit,
+        "scores": {k: round(v, 3) for k, v in scores.items()},
+    }
 
 
 def locate(meta: dict, vectors: np.ndarray, image: np.ndarray) -> dict:
@@ -177,6 +246,12 @@ def main(argv: Sequence[str] | None = None) -> None:
         help="pocket-calibration.json from `atlas-v0 --pocket-model`: this model's temperature "
         "and reality-check bands",
     )
+    ap.add_argument(
+        "--gate",
+        type=Path,
+        help="thresholds.json from `scene-gate --model` with this model: the privacy gate "
+        "(people and indoor) the browser runs before guessing",
+    )
     args = ap.parse_args(argv)
 
     from whereabout_ml.clip_encoder import ClipEncoder
@@ -185,7 +260,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     encoder = ClipEncoder(name, pretrained)
     locator = ZeroShotGeolocator(encoder, Gazetteer.load(args.gazetteer))
     calibration = json.loads(args.calibration.read_text()) if args.calibration else None
-    meta, q = build_index(locator, encoder.name, calibration)
+    gate = json.loads(args.gate.read_text()) if args.gate else None
+    meta, q = build_index(locator, encoder.name, calibration, gate)
     if args.parity_image:
         emb = encoder.encode_images([args.parity_image])[0]
         meta["parity"] = {
@@ -193,10 +269,13 @@ def main(argv: Sequence[str] | None = None) -> None:
             "embedding": [round(float(v), 6) for v in emb],
             "guess": locate(meta, dequantize(q, np.array(meta["scales"])), emb),
         }
+        if gate is not None:
+            meta["parity"]["gate"] = screen(meta, emb)
     write_index(args.out, meta, q)
     print(
         f"pocket index: {meta['rows']} rows × {meta['dim']} ({q.nbytes / 1e6:.1f} MB), "
-        f"T = {meta.get('temperature', 1.0)} → {args.out}"
+        f"T = {meta.get('temperature', 1.0)}, "
+        f"{'privacy gate on' if gate is not None else 'no privacy gate'} → {args.out}"
     )
 
 

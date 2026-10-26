@@ -1,5 +1,7 @@
 import type { SurenessBand } from "../game/sureness";
 
+import type { GateVerdict, PocketGate } from "./gate";
+
 /**
  * Pocket Atlas, the browser half: decode the precomputed text index and run Atlas's
  * country-then-city math against one image embedding.
@@ -29,7 +31,9 @@ export interface PocketMeta {
   temperature?: number;
   /** Held-out "When Atlas is 60–80% sure..." bands for this model, as the reveal shows. */
   sureness?: SurenessBand[];
-  parity?: { image: string; embedding: number[]; guess: PocketGuess };
+  /** The privacy gate (people and indoor), see gate.ts. Missing in indexes built before it. */
+  gate?: PocketGate;
+  parity?: { image: string; embedding: number[]; guess: PocketGuess; gate?: GateVerdict };
 }
 
 export interface PocketIndex {

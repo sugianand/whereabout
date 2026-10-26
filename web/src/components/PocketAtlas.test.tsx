@@ -13,6 +13,8 @@ vi.mock("maplibre-gl", async () => (await import("@/test/maplibre-mock")).maplib
 const index = decodeIndex(fixture.meta as PocketMeta, Int8Array.from(fixture.vectors.flat()));
 // Fixture case 0 is a "Peru, Cusco" image: the toy index guesses Cusco.
 const CUSCO = fixture.cases[0];
+// Photos the toy privacy gate declines: people in Kyoto, a room in Osaka, both in Lima.
+const gated = (reasons: string) => fixture.cases.find((c) => c.gate.reasons.join("+") === reasons)!;
 
 function deps(overrides: Partial<PocketDeps> = {}): PocketDeps {
   return {
@@ -54,7 +56,8 @@ describe("Pocket Atlas", () => {
     ).toHaveTextContent("Peru");
     const countries = within(result).getByRole("list", { name: "Atlas's most likely countries" });
     expect(within(countries).getAllByRole("listitem")[0]).toHaveTextContent("Peru");
-    expect(window.__pocketAtlas?.guess.city).toBe("Cusco");
+    expect(window.__pocketAtlas?.guess?.city).toBe("Cusco");
+    expect(window.__pocketAtlas?.gate.passed).toBe(true);
     expect(window.__pocketAtlas?.embedding).toHaveLength(fixture.meta.dim);
 
     const confirm = screen.getByRole("button", { name: "Place a pin first" });
@@ -137,5 +140,59 @@ describe("Pocket Atlas", () => {
     render(<PocketAtlas deps={deps()} />);
     choosePhoto("notes.txt", "text/plain");
     expect(await screen.findByRole("alert")).toHaveTextContent("That isn't a photo");
+  });
+
+  it("declines a photo of people without guessing where it was, then guesses the next one", async () => {
+    let photo = gated("people").image;
+    render(
+      <PocketAtlas
+        deps={deps({ loadEncoder: async () => ({ embed: async () => Float32Array.from(photo) }) })}
+      />,
+    );
+    choosePhoto("friends.jpg");
+    const result = screen.getByRole("region", { name: "Atlas's guess" });
+    const declined = await within(result).findByTestId("pocket-declined");
+    expect(declined).toHaveTextContent("Atlas is keeping this one private");
+    expect(declined).toHaveTextContent("there are people in it");
+    // Nothing about a place: no city, no shortlist, no globe to score it on.
+    expect(within(result).queryByRole("heading", { name: "Kyoto" })).toBeNull();
+    expect(result).not.toHaveTextContent(/Kyoto|Japan|sure of the country/);
+    expect(within(result).queryByRole("list", { name: "Atlas's most likely countries" })).toBeNull();
+    expect(FakeMap.instances).toHaveLength(0);
+    expect(window.__pocketAtlas?.guess).toBeNull();
+    expect(window.__pocketAtlas?.gate.reasons).toEqual(["people"]);
+
+    photo = CUSCO.image;
+    choosePhoto("andes.jpg");
+    expect(await within(result).findByRole("heading", { name: "Cusco" })).toBeInTheDocument();
+    expect(within(result).queryByTestId("pocket-declined")).toBeNull();
+  });
+
+  it.each([
+    ["indoor", /taken indoors\./],
+    ["people+indoor", /people in it, and it looks like it was taken indoors/],
+  ])("declines a photo the gate flags as %s", async (reasons, message) => {
+    const image = gated(reasons).image;
+    render(
+      <PocketAtlas
+        deps={deps({ loadEncoder: async () => ({ embed: async () => Float32Array.from(image) }) })}
+      />,
+    );
+    choosePhoto();
+    expect(await screen.findByTestId("pocket-declined")).toHaveTextContent(message);
+    expect(window.__pocketAtlas?.guess).toBeNull();
+  });
+
+  it("stays closed, without downloading the model, when the index has no privacy gate", async () => {
+    const ungated = decodeIndex(
+      { ...(fixture.meta as PocketMeta), gate: undefined },
+      Int8Array.from(fixture.vectors.flat()),
+    );
+    const loadEncoder = vi.fn(deps().loadEncoder);
+    render(<PocketAtlas deps={deps({ loadIndex: async () => ungated, loadEncoder })} />);
+    choosePhoto();
+    expect(await screen.findByRole("alert")).toHaveTextContent("isn't published yet");
+    expect(loadEncoder).not.toHaveBeenCalled();
+    expect(window.__pocketAtlas).toBeUndefined();
   });
 });

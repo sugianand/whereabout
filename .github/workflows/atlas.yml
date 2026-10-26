@@ -196,6 +196,24 @@ jobs:
           path: .cache/references
           key: references-${{ github.run_id }}
 
+      # Pocket Atlas's privacy gate: the scene gate's thresholds recalibrated for the browser's
+      # model (the Scene gate workflow calibrates another one), on the same hand-reviewed catalog
+      # photos and labelled rejects, so the browser can decline photos of people and of rooms.
+      # Catalog images are already cached above; only the rejects are fetched, once. If this
+      # fails, the thresholds committed by an earlier run are used.
+      - name: Calibrate Pocket Atlas's privacy gate
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          scene-gate --model ViT-B-32:openai \
+            --catalog data/curation/photos.csv \
+            --rejects data/scene_gate/rejects.csv \
+            --images .cache/images \
+            --out data/scene_gate/pocket > pocket-gate.log
+          { echo "## Pocket Atlas privacy gate (ViT-B-32/openai)"; cat pocket-gate.log; } >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice title=Pocket Atlas privacy gate::$(grep '^Catalog photos passed' pocket-gate.log)"
+
       # Pocket Atlas: the text half of the ViT-B/32 (OpenAI) pipeline, scored above as
       # "ViT-B-32/openai, country then city", precomputed for the browser. One catalog photo's
       # PyTorch embedding goes in too, for the parity test below, and the model's own temperature
@@ -205,13 +223,19 @@ jobs:
         run: |
           set -euo pipefail
           # A glob, not `ls | head -1`: with enough photos head exits first, ls gets SIGPIPE and
-          # pipefail fails the step (it did at 388 photos).
-          images=(.cache/images/*.jpg)
+          # pipefail fails the step (it did at 388 photos). A hand-reviewed photo (`wm`), never a
+          # cached reject image: the parity photo should be one the privacy gate lets through.
+          images=(.cache/images/wm*.jpg)
           parity="${images[0]}"
           echo "POCKET_PARITY_IMAGE=$PWD/$parity" >> "$GITHUB_ENV"
+          # Without thresholds the index ships no gate, and the site keeps Pocket Atlas closed.
+          gate=()
+          if [ -f data/scene_gate/pocket/thresholds.json ]; then
+            gate=(--gate data/scene_gate/pocket/thresholds.json)
+          fi
           pocket-atlas-index --gazetteer data/geonames --out web/public/pocket-atlas \
             --model ViT-B-32:openai --parity-image "$parity" \
-            --calibration eval/results/pocket-calibration.json | tee pocket.log
+            --calibration eval/results/pocket-calibration.json "${gate[@]}" | tee pocket.log
           echo "::notice title=Pocket Atlas index::$(tail -1 pocket.log)"
 
       # The bot's push won't trigger CI, so check here that the game still passes, type-checks
@@ -250,6 +274,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add web/src/data/atlas.json eval/results/
+          if [ -d data/scene_gate/pocket ]; then
+            git add data/scene_gate/pocket/
+          fi
           if [ -f data/reference/references.csv ]; then
             git add data/reference/references.csv
           fi

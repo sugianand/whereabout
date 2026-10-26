@@ -5,9 +5,18 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from test_zeroshot import GAZ, GROUPS, KeywordEncoder, image
+from test_zeroshot import GAZ, GROUPS, VOCAB, KeywordEncoder, image
 
-from whereabout_ml.pocket_index import build_index, dequantize, locate, quantize, write_index
+from whereabout_ml.pocket_index import (
+    PRIVACY_REASONS,
+    build_index,
+    dequantize,
+    locate,
+    quantize,
+    screen,
+    write_index,
+)
+from whereabout_ml.scene_gate import ACCEPT_PROMPTS, REJECT_PROMPTS, SceneGate
 from whereabout_ml.zeroshot import ZeroShotGeolocator
 
 FIXTURE = Path(__file__).resolve().parents[2] / "data" / "fixtures" / "pocket_cases.json"
@@ -26,6 +35,53 @@ CALIBRATION = {
         {"lo": 0.8, "hi": 1.0, "n": 30, "right": 27},
     ],
 }
+
+
+# The privacy gate's toy: three more axes, for photos of people, of rooms and of the outdoors.
+GATE_VOCAB = [*VOCAB, "person", "room", "outdoors"]
+# The scene gate's own prompts land on those axes: people, indoor and "good photo".
+GATE_AXIS = (
+    {p: "person" for p in REJECT_PROMPTS["people"]}
+    | {p: "room" for p in REJECT_PROMPTS["indoor"]}
+    | {p: "outdoors" for p in ACCEPT_PROMPTS}
+)
+# A scene-gate thresholds.json for the toy model (`scene-gate --model`), log-odds.
+GATE = {
+    "thresholds": {"people": 5.0, "indoor": 8.0, "text": 1.0, "not_photo": 1.0, "close_up": 1.0},
+    "score": "log-odds",
+    "model": "keyword/toy",
+    "max_false_reject": 0.0,
+}
+GATE_IMAGES = [
+    ("Peru", "Cusco", "outdoors"),
+    ("Japan", "Kyoto", "person"),
+    ("Japan", "Osaka", "room"),
+    ("Peru", "Lima", "person", "room"),
+]
+
+
+class GateKeywordEncoder(KeywordEncoder):
+    def encode_texts(self, texts):
+        out = np.full((len(texts), len(GATE_VOCAB)), 1e-3)
+        for i, t in enumerate(texts):
+            for j, w in enumerate(GATE_VOCAB):
+                if w in t or GATE_AXIS.get(t) == w:
+                    out[i, j] = 1.0
+        return out / np.linalg.norm(out, axis=1, keepdims=True)
+
+
+def gate_image(*words: str) -> np.ndarray:
+    v = np.full(len(GATE_VOCAB), 1e-3)
+    for w in words:
+        v[GATE_VOCAB.index(w)] = 1.0
+    return v
+
+
+def gated_toy(calibration=CALIBRATION, gate=GATE):
+    encoder = GateKeywordEncoder()
+    locator = ZeroShotGeolocator(encoder, GAZ, top_k_countries=2, concept_groups=GROUPS)
+    meta, q = build_index(locator, "keyword/toy", calibration, gate)
+    return encoder, meta, q
 
 
 def toy(calibration=None):
@@ -107,22 +163,81 @@ def test_calibration_must_be_for_the_same_model_and_a_positive_temperature():
         toy({**CALIBRATION, "temperature": 0})
 
 
+def test_an_index_without_a_gate_has_none_to_screen_with():
+    _, meta, _ = toy()
+    assert "gate" not in meta
+    with pytest.raises(ValueError, match="no privacy gate"):
+        screen(meta, image("Peru"))
+
+
+def test_the_gate_carries_only_the_privacy_reasons_with_their_thresholds():
+    _, meta, _ = gated_toy()
+    reasons = meta["gate"]["reasons"]
+    assert [r["name"] for r in reasons] == list(PRIVACY_REASONS) == ["people", "indoor"]
+    assert [r["threshold"] for r in reasons] == [5.0, 8.0]
+    assert all(len(r["direction"]) == meta["dim"] for r in reasons)
+
+
+@pytest.mark.parametrize("words", GATE_IMAGES)
+def test_the_gate_scores_like_the_scene_gate(words):
+    encoder, meta, _ = gated_toy()
+    img = gate_image(*words)
+    full = SceneGate(encoder, GATE["thresholds"]).screen(img)[0]
+    pocket = screen(meta, img)
+    for r in PRIVACY_REASONS:
+        assert pocket["scores"][r] == pytest.approx(full.scores[r], abs=1e-3)
+    assert pocket["reasons"] == [r for r in full.reasons if r in PRIVACY_REASONS]
+    assert pocket["passed"] == (not pocket["reasons"])
+
+
+def test_the_gate_declines_people_and_rooms_and_passes_places():
+    _, meta, _ = gated_toy()
+    verdict = lambda *w: screen(meta, gate_image(*w))["reasons"]  # noqa: E731
+    assert verdict("Peru", "Cusco", "outdoors") == []
+    assert verdict("Japan", "Kyoto", "person") == ["people"]
+    assert verdict("Japan", "Osaka", "room") == ["indoor"]
+    assert verdict("Peru", "Lima", "person", "room") == ["people", "indoor"]
+
+
+def test_a_score_at_the_threshold_is_declined():
+    # Like SceneGate.judge: rejected when the score *reaches* the threshold.
+    _, meta, _ = gated_toy()
+    img = gate_image("Japan", "Kyoto", "person")
+    at = screen(meta, img)["scores"]["people"]
+    exact = {**GATE, "thresholds": {**GATE["thresholds"], "people": at}}
+    _, meta_at, _ = gated_toy(gate=exact)
+    assert "people" in screen(meta_at, img)["reasons"]
+    above = {**GATE, "thresholds": {**GATE["thresholds"], "people": at + 0.01}}
+    _, meta_above, _ = gated_toy(gate=above)
+    assert screen(meta_above, img)["passed"]
+
+
+def test_gate_thresholds_must_be_for_the_same_model():
+    with pytest.raises(ValueError, match="gate thresholds are for"):
+        gated_toy(gate={**GATE, "model": "ViT-B-32/laion2b_s34b_b79k"})
+    with pytest.raises(ValueError, match="log-odds"):
+        gated_toy(gate={**GATE, "score": "probability"})
+    with pytest.raises(ValueError, match="finite"):
+        gated_toy(gate={**GATE, "thresholds": {**GATE["thresholds"], "indoor": float("nan")}})
+
+
 def fixture_from_toy() -> dict:
-    _, meta, q = toy(CALIBRATION)
+    _, meta, q = gated_toy()
     vectors = dequantize(q, np.array(meta["scales"]))
+    images = [gate_image(*w) for w in IMAGES + GATE_IMAGES] + [np.array(UNSURE + [0.001] * 3)]
     return {
-        "note": "Shared by ml/tests/test_pocket_index.py and web/src/lib/pocket/locate.test.ts. "
-        "Regenerate with `python ml/tests/test_pocket_index.py`.",
+        "note": "Shared by ml/tests/test_pocket_index.py and web/src/lib/pocket/locate.test.ts "
+        "and gate.test.ts. Regenerate with `python ml/tests/test_pocket_index.py`.",
         "meta": meta,
         "vectors": q.astype(int).tolist(),
         "cases": [
             {
-                "image": [round(float(v), 6) for v in image(*w)],
-                "expected": locate(meta, vectors, image(*w)),
+                "image": [round(float(v), 6) for v in img],
+                "expected": locate(meta, vectors, img),
+                "gate": screen(meta, img),
             }
-            for w in IMAGES
-        ]
-        + [{"image": UNSURE, "expected": locate(meta, vectors, np.array(UNSURE))}],
+            for img in images
+        ],
     }
 
 

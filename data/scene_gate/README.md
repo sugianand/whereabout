@@ -14,6 +14,7 @@ the [Scene gate workflow](../../.github/workflows/scene_gate.yml), which commits
 | `thresholds.json` | The calibrated thresholds (log-odds) |
 | `report.json`, `report.md` | The calibration report, machine- and human-readable, with the catalog photos closest to each threshold |
 | `scores.csv` | Per-image gate scores for the catalog photos and the rejects |
+| `pocket/` | The same calibration for Pocket Atlas's model (ViT-B/32, OpenAI weights), written by the [Atlas v0 workflow](../../.github/workflows/atlas.yml). Its people and indoor thresholds become the privacy gate the browser runs before guessing (`pocket-atlas-index --gate`, `web/src/lib/pocket/gate.ts`): thresholds are per model, so the game's gate bars can't be reused |
 
 ## How rejects are labelled
 
