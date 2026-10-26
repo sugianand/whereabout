@@ -1,6 +1,7 @@
 import type {
   AtlasCalibrationSummary,
   AtlasClueHeadResult,
+  AtlasGeocellHeadSummary,
   AtlasRetrievalSummary,
 } from "@/lib/game/types";
 
@@ -47,6 +48,25 @@ export function retrievalNote(r: AtlasRetrievalSummary): string {
     ? `${searched} The whole interval is below zero, so this is the Atlas you play against.`
     : `${searched} It only plays once the whole interval is below zero, so the game keeps ` +
         `the Atlas without it for now.`;
+}
+
+/**
+ * One sentence on the trained geocell head, for the results table: what it learned from, what
+ * placing the pin with it did to the median error, and whether it places the pin players see.
+ */
+export function geocellNote(g: AtlasGeocellHeadSummary): string {
+  const [lo, hi] = g.ci95;
+  const measured =
+    `Atlas also trained a map of its own: a classifier that sorts a photo into one of ` +
+    `${g.cells.toLocaleString("en-US")} regions of the world, learned from ` +
+    `${g.references.toLocaleString("en-US")} geotagged reference photos (never game photos). ` +
+    `Keeping Atlas's country and letting the classifier place the pin inside it moved the pin ` +
+    `on ${g.moved.toLocaleString("en-US")} of ${g.n.toLocaleString("en-US")} photos, and the ` +
+    `median error ${change(g.median_km_delta)} (95% interval ${signed(lo)} to ${signed(hi)}).`;
+  return g.ships
+    ? `${measured} The whole interval is below zero, so it places the pin you play against.`
+    : `${measured} It only plays once the whole interval is below zero, so the game keeps ` +
+        `the pin without it for now.`;
 }
 
 const pct1 = (x: number) => `${(x * 100).toFixed(1)}%`;

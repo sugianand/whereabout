@@ -117,28 +117,46 @@ def fit_probe(
     *,
     iterations: int = FIT_ITERATIONS,
 ) -> Probe:
-    """Fit by Nesterov-accelerated gradient descent on mean cross-entropy + l2/2·|W|².
+    """Fit on hard labels (class indices); see `fit_soft_probe`."""
+    y = np.asarray(y, dtype=np.int64)
+    k = len(classes)
+    if len(y) and (y.min() < 0 or y.max() >= k):
+        raise ValueError("labels must index classes")
+    onehot = np.zeros((len(y), k))
+    onehot[np.arange(len(y)), y] = 1.0
+    return fit_soft_probe(x, onehot, classes, l2, iterations=iterations)
+
+
+def fit_soft_probe(
+    x: np.ndarray,
+    targets: np.ndarray,
+    classes: Sequence[str],
+    l2: float,
+    *,
+    iterations: int = FIT_ITERATIONS,
+) -> Probe:
+    """Fit by Nesterov-accelerated gradient descent on mean cross-entropy against `targets`
+    (one probability row per embedding) + l2/2·|W|².
 
     The loss is convex and, with l2 > 0, strongly convex in W. The step is 1/L with L an upper
-    bound on its curvature: the softmax Hessian is at most 1/2 times the feature covariance, so
-    L = λmax(X̃ᵀX̃/n)/2 + l2, X̃ the standardised features plus a constant column for the bias.
+    bound on its curvature: the softmax Hessian is at most 1/2 times the feature covariance
+    whatever the targets, so L = λmax(X̃ᵀX̃/n)/2 + l2, X̃ the standardised features plus a
+    constant column for the bias.
     """
     x = np.asarray(x, dtype=np.float64)
-    y = np.asarray(y, dtype=np.int64)
-    if x.ndim != 2 or len(x) != len(y) or len(y) == 0:
+    targets = np.asarray(targets, dtype=np.float64)
+    if x.ndim != 2 or targets.ndim != 2 or len(x) != len(targets) or len(x) == 0:
         raise ValueError("need one label per embedding row, and at least one row")
     if l2 <= 0:
         raise ValueError("l2 must be positive")
     k = len(classes)
-    if y.min() < 0 or y.max() >= k:
-        raise ValueError("labels must index classes")
+    if targets.shape[1] != k:
+        raise ValueError("one target column per class")
     mean = x.mean(axis=0)
     scale = x.std(axis=0)
     scale[scale < 1e-12] = 1.0
     xs = (x - mean) / scale
     n, d = xs.shape
-    onehot = np.zeros((n, k))
-    onehot[np.arange(n), y] = 1.0
     xb = np.hstack([xs, np.ones((n, 1))])
     lipschitz = 0.5 * float(np.linalg.eigvalsh(xb.T @ xb / n)[-1]) + l2
     step = 1.0 / lipschitz
@@ -150,7 +168,7 @@ def fit_probe(
         look = theta + momentum * (theta - previous)
         z = xb @ look
         p = np.exp(log_softmax(z))
-        grad = xb.T @ (p - onehot) / n
+        grad = xb.T @ (p - targets) / n
         grad[:d] += l2 * look[:d]
         previous, theta = theta, look - step * grad
     return Probe(tuple(classes), mean, scale, theta[:d], theta[d], l2)

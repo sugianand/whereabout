@@ -1,9 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { calibrationNote, clueHeadNote, retrievalNote, systemLabel } from "@/lib/atlas";
+import {
+  calibrationNote,
+  clueHeadNote,
+  geocellNote,
+  retrievalNote,
+  systemLabel,
+} from "@/lib/atlas";
 import type {
   AtlasCalibrationSummary,
   AtlasClueHeadResult,
+  AtlasGeocellHeadSummary,
   AtlasRetrievalSummary,
 } from "@/lib/game/types";
 
@@ -44,7 +51,45 @@ describe("retrievalNote", () => {
   });
 });
 
+describe("geocellNote", () => {
+  const head = (over: Partial<AtlasGeocellHeadSummary>): AtlasGeocellHeadSummary => ({
+    versus: "ViT-L-14/openai, country then city",
+    model: "ViT-B-32/laion2b_s34b_b79k",
+    references: 4300,
+    cells: 64,
+    l2: 0.01,
+    tauKm: 300,
+    moved: 250,
+    n: 388,
+    median_km_delta: -80.6,
+    ci95: [-150.2, -12.4],
+    ships: true,
+    ...over,
+  });
+
+  it("says the head places the pin when the whole interval is below zero", () => {
+    const note = geocellNote(head({}));
+    expect(note).toContain("one of 64 regions of the world, learned from 4,300 geotagged");
+    expect(note).toContain("on 250 of 388 photos");
+    expect(note).toContain("median error went down by 81 km (95% interval −150 km to −12 km)");
+    expect(note).toContain("it places the pin you play against");
+  });
+
+  it("says the game keeps its pin when the head does not clearly win", () => {
+    const note = geocellNote(head({ median_km_delta: 210, ci95: [90, 330], ships: false }));
+    expect(note).toContain("median error went up by 210 km (95% interval +90 km to +330 km)");
+    expect(note).toContain("the game keeps the pin without it");
+    expect(note).not.toContain("you play against");
+  });
+});
+
 describe("systemLabel", () => {
+  it("names the geocell systems after the models they read", () => {
+    expect(systemLabel("ViT-B-32/laion2b_s34b_b79k geocell head, alone")).toBe(
+      "CLIP ViT-B/32 (LAION-2B) geocell head, alone",
+    );
+  });
+
   it("names the refined system after the model it refines", () => {
     expect(systemLabel("ViT-L-14/openai, country then city, then nearest reference photos")).toBe(
       "CLIP ViT-L/14 (OpenAI), country then city, then nearest reference photos",

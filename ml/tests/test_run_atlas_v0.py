@@ -611,3 +611,49 @@ def test_failing_clue_heads_keep_the_zero_shot_clues(tmp_path, monkeypatch, caps
     assert set(atlas["guesses"]) == {"kyoto", "cusco"}
     assert "clueHeads" not in atlas["evaluation"]
     assert "clue heads failed, keeping the zero-shot clues" in capsys.readouterr().err
+
+
+def test_main_scores_the_geocell_head_alone_and_within_atlas_country(tmp_path, monkeypatch, capsys):
+    fake_phash(monkeypatch)
+    monkeypatch.setattr("whereabout_ml.geocell_head.MIN_REFERENCES", 2)
+    monkeypatch.setattr("whereabout_ml.geocell_head.MAX_CELL_POINTS", 3)
+    monkeypatch.setattr("whereabout_ml.geocell_head.MIN_CELL_POINTS", 2)
+    refs, thumbs = write_references(tmp_path)
+    atlas_out, results = run_main(
+        tmp_path, monkeypatch, "--references", str(refs), "--reference-images", str(thumbs)
+    )
+    atlas = json.loads(atlas_out.read_text())
+    record = atlas["evaluation"]["geocellHead"]
+    # v0 already pins both photos exactly, so the head cannot clearly beat it.
+    assert atlas["model"] == "Fake-1/test, country then city"
+    assert record["ships"] is False and record["versus"] == "Fake-1/test, country then city"
+    assert record["references"] == 6 and record["cells"] == 2 and record["n"] == 2
+    assert record["moved"] == 2 and record["model"] == "Fake-1/test"
+    names = {s["name"]: s for s in atlas["evaluation"]["systems"]}
+    assert names["Fake-1/test geocell head, alone"]["playsInGame"] is False
+    within = names["Fake-1/test, country then city, then geocell head"]
+    assert within["playsInGame"] is False
+    # Each photo looks like its own references, so even the head alone names both countries.
+    assert names["Fake-1/test geocell head, alone"]["country_accuracy"] == 1.0
+    assert within["median_km"] < 10
+    report = json.loads((results / "atlas-v0.json").read_text())
+    assert report["geocell_head"] == record
+    assert "## Geocell head" in (results / "atlas-v0.md").read_text()
+    assert "geocell head: 2 cells" in capsys.readouterr().out
+
+
+def test_a_failing_geocell_head_still_ships_atlas(tmp_path, monkeypatch, capsys):
+    fake_phash(monkeypatch)
+    refs, thumbs = write_references(tmp_path)
+
+    def broken(*args, **kwargs):
+        raise ValueError("singular")
+
+    monkeypatch.setattr(run_atlas_v0, "fit_geocell_head", broken)
+    atlas_out, _ = run_main(
+        tmp_path, monkeypatch, "--references", str(refs), "--reference-images", str(thumbs)
+    )
+    atlas = json.loads(atlas_out.read_text())
+    assert set(atlas["guesses"]) == {"kyoto", "cusco"}
+    assert "geocellHead" not in atlas["evaluation"]
+    assert "geocell head failed, shipping Atlas without it" in capsys.readouterr().err

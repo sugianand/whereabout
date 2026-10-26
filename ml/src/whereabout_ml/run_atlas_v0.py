@@ -18,6 +18,9 @@ game only if a paired bootstrap shows it beats the system it refines. With `--la
 `--reference-labels` too, clue heads (`whereabout_ml.clue_heads`) are fitted on the reference
 photos' embeddings for the driving side and the climate group, scored against today's clues on
 the game photos, and write the reveal's clue for a concept only where they are clearly better.
+A geocell head (`whereabout_ml.geocell_head`) is fitted on the same reference photos and scored
+alone and as the pin within Atlas's country; the latter plays only if it clearly beats the
+playing system.
 """
 
 from __future__ import annotations
@@ -60,6 +63,8 @@ from whereabout_ml.clue_heads import (
 )
 from whereabout_ml.embedding_cache import cached_image_embeddings, safe_name
 from whereabout_ml.gazetteer import Gazetteer
+from whereabout_ml.geocell_head import run_head
+from whereabout_ml.geocell_head import summary as geocell_summary
 from whereabout_ml.labels import driving_side
 from whereabout_ml.retrieval import (
     GamePhotoTrace,
@@ -513,6 +518,44 @@ def fit_clue_heads(
     return shipped, [r.as_dict(model) for r in results]
 
 
+def fit_geocell_head(
+    photos: Sequence[Photo],
+    base: System,
+    query_embeddings: Sequence[np.ndarray],
+    index: ReferenceIndex,
+    *,
+    model: str,
+) -> tuple[list[System], dict] | None:
+    """The geocell head scored alone and as `base`'s pin within its country, and the record.
+
+    The in-country system can play (has guesses) only if it clearly beats `base`; the head
+    alone never plays (its country would not match the shortlist and heatmap Atlas shows).
+    None when there are too few reference photos to fit it.
+    """
+    if base.guesses is None:
+        raise ValueError(f"{base.name} has no guesses to place")
+    run = run_head(
+        index.references,
+        index.embeddings,
+        np.asarray(query_embeddings, dtype=np.float64),
+        base.guesses,
+        base.distances,
+        [p.location for p in photos],
+    )
+    if run is None:
+        return None
+    alone = System(
+        f"{model} geocell head, alone",
+        predictions_from_points(photos, [(pl.at, pl.country) for pl in run.alone]),
+    )
+    within = System(
+        f"{base.name}, then geocell head",
+        predictions_from_guesses(photos, run.within),
+        run.within if run.verdict.ships else None,
+    )
+    return [alone, within], geocell_summary(run, versus=base.name, model=model, n=len(photos))
+
+
 def pick_best(systems: Sequence[System]) -> System:
     """The playable system with the lowest median error; mean score breaks ties."""
     playable = [s for s in systems if s.guesses is not None and s.report is not None]
@@ -531,6 +574,7 @@ def build_outputs(
     retrieval: dict | None = None,
     calibration: dict | None = None,
     clue_heads: list[dict] | None = None,
+    geocell: dict | None = None,
 ):
     """Atlas's guesses for the game, plus a JSON report and a Markdown results page.
 
@@ -538,7 +582,7 @@ def build_outputs(
     distribution, see `belief_from_probabilities`) are attached to its guesses. `retrieval` is
     the record from `refine_with_references`, if the run tried the refinement, and
     `calibration` the one from `calibrate_guesses`, `clue_heads` the records from
-    `fit_clue_heads`.
+    `fit_clue_heads`, `geocell` the one from `fit_geocell_head`.
     """
     saliency = saliency or {}
     beliefs = beliefs or {}
@@ -590,6 +634,8 @@ def build_outputs(
         atlas["evaluation"]["calibration"] = calibration
     if clue_heads:
         atlas["evaluation"]["clueHeads"] = clue_heads
+    if geocell:
+        atlas["evaluation"]["geocellHead"] = geocell
 
     table = markdown_table({s.name: s.report for s in systems if s.report})
     report = {
@@ -605,6 +651,7 @@ def build_outputs(
         "retrieval": retrieval,
         "calibration": calibration,
         "clue_heads": clue_heads,
+        "geocell_head": geocell,
         "table": table,
     }
     return atlas, report, results_markdown(report, now)
@@ -675,6 +722,30 @@ def results_markdown(report: dict, now: str) -> str:
             "| --- | ---: | ---: | --- |",
             f"| {ret['versus']} | {ret['median_km_delta']:,.0f} | {lo:,.0f} to {hi:,.0f} | "
             f"{'yes' if ret['ships'] else 'no'} |",
+            "",
+            "It plays only if the whole interval is below zero.",
+        ]
+    geo = report.get("geocell_head")
+    if geo:
+        lo, hi = geo["ci95"]
+        lines += [
+            "",
+            "## Geocell head: does a trained classifier place the pin better?",
+            "",
+            f"A linear classifier over {geo['cells']} adaptive geocells, on frozen "
+            f"{geo['model']} image embeddings of {geo['references']:,} reference photos (never "
+            "game photos), trained with haversine label smoothing "
+            f"(τ = {geo['tauKm']:g} km, L2 = {geo['l2']:g}, both chosen by 10° geographic "
+            "cross-validation over the reference photos alone). The pin is the candidate with "
+            "the least expected distance under the head's cell probabilities. Scored alone (any "
+            f"cell, in the table above) and within {geo['versus']}'s country, where it moved the "
+            f"pin on {geo['moved']} of {geo['n']} photos.",
+            "",
+            "| Within the country, minus without | Median km difference | 95% CI | Plays in the "
+            "game |",
+            "| --- | ---: | ---: | --- |",
+            f"| {geo['versus']} | {geo['median_km_delta']:,.0f} | {lo:,.0f} to {hi:,.0f} | "
+            f"{'yes' if geo['ships'] else 'no'} |",
             "",
             "It plays only if the whole interval is below zero.",
         ]
@@ -756,8 +827,9 @@ def results_markdown(report: dict, now: str) -> str:
         "Some photos may have been seen in training, which would flatter these scores. Public "
         "benchmarks (Im2GPS3k, YFCC4k) are the next step.",
         "- **The constant baseline is optimistic.** It is fitted on these same photos.",
-        "- **No training happened.** This is zero-shot: the baseline every trained Atlas model "
-        "has to beat.",
+        "- **Little training.** Atlas v0 is zero-shot. The clue heads and the geocell head are "
+        "small classifiers fitted on frozen embeddings of the reference photos, and each plays "
+        "only where it clearly beats what it would replace.",
         "",
     ]
     return "\n".join(lines)
@@ -931,6 +1003,30 @@ def main(argv: Sequence[str] | None = None) -> None:
                 best = refined
         elif index is not None:
             print("retrieval: no reference photos with thumbnails yet; skipped", file=sys.stderr)
+    geocell: dict | None = None
+    if index is not None and len(index):
+        try:
+            fitted = fit_geocell_head(photos, best, r_embeddings, index, model=r_encoder.name)
+        except Exception as err:  # noqa: BLE001 - the head is optional; v0 still ships
+            fitted = None
+            print(f"geocell head failed, shipping Atlas without it: {err!r}", file=sys.stderr)
+        if fitted is None:
+            print("geocell head: too few reference photos to fit; skipped")
+        else:
+            (alone, within), geocell = fitted
+            for s in (alone, within):
+                s.report = evaluate(s.predictions)
+            systems += [alone, within]
+            print(
+                f"geocell head: {geocell['cells']} cells; alone median "
+                f"{alone.report.median_km:.0f} km; within the country it moved the pin on "
+                f"{geocell['moved']} of {geocell['n']} photos, median km change "
+                f"{geocell['median_km_delta']} (95% CI {geocell['ci95']}); "
+                f"{'plays in the game' if geocell['ships'] else 'does not ship'}"
+            )
+            if geocell["ships"]:
+                handles[within.name] = handles[best.name]
+                best = within
     encoder, locator, best_embeddings = handles[best.name]
     best.guesses, beliefs, calibration = calibrate_guesses(
         photos, best.guesses, best_embeddings, locator
@@ -1008,6 +1104,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         retrieval=retrieval,
         calibration=calibration,
         clue_heads=clue_heads,
+        geocell=geocell,
     )
     args.atlas_out.write_text(json.dumps(atlas, indent=1, ensure_ascii=False) + "\n")
     args.results_dir.mkdir(parents=True, exist_ok=True)

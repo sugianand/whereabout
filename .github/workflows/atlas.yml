@@ -12,6 +12,9 @@ name: Atlas v0
 # With the reference photos' concept labels (data/reference/concept_labels.csv, from labels.yml),
 # it fits clue heads (whereabout_ml.clue_heads): probes for the driving side and the climate group
 # on the reference photos' embeddings, which write the reveal's clue only where they beat today's.
+#
+# It also trains a geocell head (whereabout_ml.geocell_head) on the same reference photos, scored
+# alone and as the pin within Atlas's country; it places the pin only if it clearly beats Atlas.
 
 on:
   workflow_dispatch:

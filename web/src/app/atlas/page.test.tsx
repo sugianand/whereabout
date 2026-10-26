@@ -12,6 +12,7 @@ import {
   POCKET_SYSTEM,
   calibrationNote,
   clueHeadNote,
+  geocellNote,
   retrievalNote,
   systemLabel,
 } from "@/lib/atlas";
@@ -60,6 +61,19 @@ describe("How Atlas guesses", () => {
       s.name.endsWith("then nearest reference photos"),
     );
     expect(refined?.playsInGame).toBe(retrieval.ships);
+  });
+
+  it("says whether the trained geocell head places the pin, once a run has fitted it", () => {
+    render(<AtlasPage />);
+    const head = atlas.evaluation?.geocellHead;
+    const note = screen.queryByTestId("geocell-note");
+    if (!head) {
+      expect(note).toBeNull();
+      return;
+    }
+    expect(note).toHaveTextContent(geocellNote(head));
+    const within = atlas.evaluation!.systems.find((s) => s.name.endsWith("then geocell head"));
+    expect(within?.playsInGame).toBe(head.ships);
   });
 
   it("reports every clue head the run scored, or nothing before one has", () => {

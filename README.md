@@ -124,6 +124,12 @@ reference-set --gazetteer data/geonames --exclude data/curation/photos.csv \
 atlas-v0 ... --references data/reference/references.csv --reference-images .cache/references
 ```
 
+The same `--references` run also trains a geocell head: a linear classifier over adaptive
+geocells on frozen CLIP embeddings of the reference photos, with haversine label smoothing
+([decision 0007](docs/decisions/0007-geocell-head.md)). It is scored alone and as the pin within
+Atlas's country, and places the pin in the game only if the paired bootstrap says it clearly
+beats the playing Atlas. It takes a few minutes on a CPU runner.
+
 Concept labels for the clue heads (driving side, climate, land cover) come from open maps by
 coordinates; see [`data/maps/README.md`](data/maps/README.md) for the downloads and
 `python -m pip install -e "ml[maps]"` for the GeoTIFF reader. The catalog's labels are made by
@@ -176,8 +182,9 @@ Docker smoke test of the API, and Playwright games on a desktop and a phone view
 
 ## Honest limitations
 
-- Atlas v0 is zero-shot: nothing is trained yet. It is the baseline that trained models
-  (geocell classification, retrieval refinement, map-derived clue heads) have to beat.
+- Atlas v0 is zero-shot. Its trained parts (the geocell head and the map-derived clue heads)
+  are small classifiers on a frozen encoder, and each only plays where it clearly beats v0;
+  fine-tuning the encoder needs a GPU.
 - The photos come from Wikimedia Commons, which CLIP's web-scale pre-training probably saw.
   Scores on this set may be flattered; public benchmarks are next.
 - In the static demo the answers ship in the page and image URLs contain file names. It's a

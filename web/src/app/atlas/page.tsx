@@ -10,6 +10,7 @@ import {
   POCKET_SYSTEM,
   calibrationNote,
   clueHeadNote,
+  geocellNote,
   retrievalNote,
   systemLabel,
 } from "@/lib/atlas";
@@ -35,6 +36,7 @@ const { best, worst } = extremes(scored, 3);
 const saliency = atlas.evaluation?.saliency;
 const retrieval = atlas.evaluation?.retrieval;
 const calibration = atlas.evaluation?.calibration;
+const geocellHead = atlas.evaluation?.geocellHead;
 const clueHeads = atlas.evaluation?.clueHeads ?? [];
 const sureness = surenessBands(gameRecords(catalog as CatalogPhoto[], atlas)).filter((b) => b.n > 0);
 const surenessTotal = sureness.reduce((sum, b) => sum + b.n, 0);
@@ -262,6 +264,11 @@ export default function AtlasPage() {
           {retrieval && (
             <p className="mt-4 text-chalk-dim" data-testid="retrieval-note">
               {retrievalNote(retrieval)}
+            </p>
+          )}
+          {geocellHead && (
+            <p className="mt-4 text-chalk-dim" data-testid="geocell-note">
+              {geocellNote(geocellHead)}
             </p>
           )}
         </>

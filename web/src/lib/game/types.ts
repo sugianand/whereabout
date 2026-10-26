@@ -194,6 +194,32 @@ export interface AtlasClueHeadResult {
   ships: boolean;
 }
 
+/**
+ * The trained geocell head's run (`summary` in ml/src/whereabout_ml/geocell_head.py): a linear
+ * classifier over adaptive geocells on frozen CLIP embeddings of the reference photos, scored
+ * as the pin within the playing Atlas's country.
+ */
+export interface AtlasGeocellHeadSummary {
+  /** The system whose country it keeps and whose pin it would replace. */
+  versus: string;
+  /** The CLIP model whose image embeddings it reads. */
+  model: string;
+  /** Reference photos it was fitted on (never game photos). */
+  references: number;
+  cells: number;
+  l2: number;
+  /** Haversine label-smoothing distance. */
+  tauKm: number;
+  /** Photos whose pin it moved (the rest are in countries with too few reference photos). */
+  moved: number;
+  n: number;
+  /** In-country head minus playing median error, km, with a paired-bootstrap 95% interval. */
+  median_km_delta: number;
+  ci95: number[];
+  /** True only when the whole interval is below zero; then it places the pin in the game. */
+  ships: boolean;
+}
+
 export interface AtlasData {
   model: string | null;
   version: string | null;
@@ -207,6 +233,7 @@ export interface AtlasData {
     retrieval?: AtlasRetrievalSummary;
     calibration?: AtlasCalibrationSummary;
     clueHeads?: AtlasClueHeadResult[];
+    geocellHead?: AtlasGeocellHeadSummary;
   };
 }
 
