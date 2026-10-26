@@ -1,0 +1,12 @@
+{
+  "thresholds": {
+    "people": 2.663,
+    "indoor": 2.282,
+    "text": 0.337,
+    "not_photo": 2.1,
+    "close_up": -0.836
+  },
+  "score": "log-odds",
+  "model": "ViT-B-32/openai",
+  "max_false_reject": 0.0
+}

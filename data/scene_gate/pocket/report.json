@@ -1,0 +1,123 @@
+{
+  "thresholds": {
+    "people": 2.663,
+    "indoor": 2.282,
+    "text": 0.337,
+    "not_photo": 2.1,
+    "close_up": -0.836
+  },
+  "catalog": {
+    "n": 88,
+    "passed": 88,
+    "rejected_by": {
+      "people": 0,
+      "indoor": 0,
+      "text": 0,
+      "not_photo": 0,
+      "close_up": 0
+    },
+    "closest": {
+      "people": [
+        {
+          "id": "wm126",
+          "score": 2.663
+        },
+        {
+          "id": "wm048",
+          "score": 1.689
+        },
+        {
+          "id": "wm078",
+          "score": 1.504
+        }
+      ],
+      "indoor": [
+        {
+          "id": "wm077",
+          "score": 2.282
+        },
+        {
+          "id": "wm091",
+          "score": 1.99
+        },
+        {
+          "id": "wm101",
+          "score": 1.986
+        }
+      ],
+      "text": [
+        {
+          "id": "wm143",
+          "score": 0.337
+        },
+        {
+          "id": "wm126",
+          "score": -1.058
+        },
+        {
+          "id": "wm048",
+          "score": -1.35
+        }
+      ],
+      "not_photo": [
+        {
+          "id": "wm126",
+          "score": 2.1
+        },
+        {
+          "id": "wm048",
+          "score": 1.448
+        },
+        {
+          "id": "wm101",
+          "score": 0.983
+        }
+      ],
+      "close_up": [
+        {
+          "id": "wm126",
+          "score": -0.836
+        },
+        {
+          "id": "wm139",
+          "score": -1.757
+        },
+        {
+          "id": "wm069",
+          "score": -1.993
+        }
+      ]
+    }
+  },
+  "rejects": {
+    "people": {
+      "n": 12,
+      "caught": 8,
+      "caught_for_label": 5
+    },
+    "indoor": {
+      "n": 12,
+      "caught": 12,
+      "caught_for_label": 12
+    },
+    "text": {
+      "n": 12,
+      "caught": 11,
+      "caught_for_label": 11
+    },
+    "not_photo": {
+      "n": 12,
+      "caught": 12,
+      "caught_for_label": 12
+    },
+    "close_up": {
+      "n": 12,
+      "caught": 12,
+      "caught_for_label": 12
+    }
+  },
+  "skipped": {
+    "catalog": 0,
+    "rejects": 0
+  }
+}
