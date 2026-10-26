@@ -1,6 +1,6 @@
 {
   "system": "atlas-v0-zeroshot",
-  "generatedAt": "2026-10-25T21:27:11+00:00",
+  "generatedAt": "2026-10-26T01:25:31+00:00",
   "dataset": "whereabout-curated (data/curation/photos.csv)",
   "n": 388,
   "skipped": {},
@@ -421,5 +421,6 @@
     },
     "ships": false
   },
+  "clue_heads": null,
   "table": "| System | n | 25 km | 200 km | 750 km | 2,500 km | Median km (95% CI) | Country | Mean score |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n| Random city (baseline) | 388 | 0.3% | 0.8% | 2.3% | 11.3% | 7,744 (7,207–8,262) | 1.5% | 350 |\n| Best constant guess (baseline) | 388 | 2.3% | 2.8% | 7.2% | 22.2% | 6,529 (6,105–7,205) | 9.5% | 654 |\n| ViT-B-32/laion2b_s34b_b79k, country only | 388 | 4.6% | 10.3% | 28.4% | 50.3% | 2,422 (1,911–3,163) | 26.5% | 1,677 |\n| ViT-B-32/laion2b_s34b_b79k, country then city | 388 | 5.7% | 11.6% | 29.9% | 53.6% | 2,139 (1,561–2,604) | 25.5% | 1,814 |\n| ViT-B-32/openai, country only | 388 | 3.1% | 6.7% | 25.0% | 45.9% | 2,997 (2,290–4,106) | 19.8% | 1,502 |\n| ViT-B-32/openai, country then city | 388 | 3.6% | 10.3% | 23.2% | 43.3% | 3,998 (2,721–4,884) | 15.7% | 1,427 |\n| ViT-L-14/openai, country only | 388 | 8.2% | 15.5% | 43.6% | 67.0% | 972 (778–1,120) | 42.0% | 2,360 |\n| ViT-L-14/openai, country then city | 388 | 11.9% | 24.2% | 46.1% | 67.5% | 906 (707–1,178) | 38.1% | 2,487 |\n| ViT-L-14/openai, country then city, then nearest reference photos | 388 | 5.2% | 16.2% | 37.4% | 66.2% | 1,280 (1,012–1,546) | 38.1% | 2,210 |"
 }
