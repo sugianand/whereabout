@@ -164,6 +164,36 @@ export interface AtlasCalibrationSummary {
   ships: boolean;
 }
 
+/**
+ * One clue head's run (`HeadResult.as_dict` in ml/src/whereabout_ml/clue_heads.py): a probe on
+ * frozen CLIP embeddings that reads one concept, scored against today's source of that clue on
+ * game photos from places it never trained on.
+ */
+export interface AtlasClueHeadResult {
+  /** The labels column it reads: "driving_side" or "climate_group". */
+  concept: string;
+  /** The reveal clue group it writes when it ships. */
+  clueGroup: string;
+  classes: string[];
+  /** What it was compared with, in words. */
+  baseline: string;
+  model: string;
+  /** Labelled game photos scored. */
+  n: number;
+  /** Labelled reference photos the probe was fitted on. */
+  references: number;
+  headAccuracy: number;
+  baselineAccuracy: number;
+  /** Always naming the commonest class, for context. */
+  majorityAccuracy: number;
+  /** Probe minus baseline accuracy, with a paired-bootstrap 95% interval. */
+  accuracyDelta: number;
+  ci95: number[];
+  l2: number;
+  /** True only when the whole interval is above zero; then the probe writes the clue. */
+  ships: boolean;
+}
+
 export interface AtlasData {
   model: string | null;
   version: string | null;
@@ -176,6 +206,7 @@ export interface AtlasData {
     saliency?: AtlasSaliencySummary;
     retrieval?: AtlasRetrievalSummary;
     calibration?: AtlasCalibrationSummary;
+    clueHeads?: AtlasClueHeadResult[];
   };
 }
 

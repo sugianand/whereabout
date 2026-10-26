@@ -6,7 +6,13 @@ import GuessGallery from "@/components/GuessGallery";
 import atlasData from "@/data/atlas.json";
 import catalog from "@/data/photos.json";
 import sceneGateData from "@/data/scene_gate.json";
-import { POCKET_SYSTEM, calibrationNote, retrievalNote, systemLabel } from "@/lib/atlas";
+import {
+  POCKET_SYSTEM,
+  calibrationNote,
+  clueHeadNote,
+  retrievalNote,
+  systemLabel,
+} from "@/lib/atlas";
 import { byContinent, extremes, scoreGuesses } from "@/lib/atlasReport";
 import { gameRecords } from "@/lib/game/deck";
 import { MIN_BAND_PHOTOS, bandLabel, surenessBands } from "@/lib/game/sureness";
@@ -29,6 +35,7 @@ const { best, worst } = extremes(scored, 3);
 const saliency = atlas.evaluation?.saliency;
 const retrieval = atlas.evaluation?.retrieval;
 const calibration = atlas.evaluation?.calibration;
+const clueHeads = atlas.evaluation?.clueHeads ?? [];
 const sureness = surenessBands(gameRecords(catalog as CatalogPhoto[], atlas)).filter((b) => b.n > 0);
 const surenessTotal = sureness.reduce((sum, b) => sum + b.n, 0);
 const pctWhole = (x: number) => `${Math.round(x * 100)}%`;
@@ -198,6 +205,21 @@ export default function AtlasPage() {
         buildings&rdquo;, come from the same trick: Atlas compares the photo with a few descriptions
         of the scene and only shows a clue when one clearly wins.
       </p>
+      {clueHeads.length > 0 && (
+        <div data-testid="clue-heads">
+          <p className="mt-4 text-chalk-dim">
+            Some clues can also be learned. Every reference photo is labelled from maps by where it
+            was taken, its climate and the side of the road, and a small classifier on top of
+            CLIP learns to read that from the picture. Each one is tested on game photos from
+            parts of the world it never trained on.
+          </p>
+          {clueHeads.map((h) => (
+            <p key={h.concept} className="mt-4 text-chalk-dim">
+              {clueHeadNote(h)}
+            </p>
+          ))}
+        </div>
+      )}
 
       <h2 className="mt-16 font-sign text-4xl font-bold">Where Atlas looks</h2>
       <p className="mt-4 text-chalk-dim">

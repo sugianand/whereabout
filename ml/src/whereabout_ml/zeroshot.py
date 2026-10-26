@@ -54,6 +54,9 @@ def normalise(x: np.ndarray) -> np.ndarray:
 class Clue:
     label: str
     p: float
+    # The concept group the clue answers ("climate", "driving_side", ...), so a better source
+    # for one group (a trained clue head, `whereabout_ml.clue_heads`) can replace just that one.
+    group: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,13 +106,21 @@ class ZeroShotGeolocator:
             self._city_cache[country_code] = normalise(self.encoder.encode_texts(prompts))
         return self._city_cache[country_code]
 
+    def concept_probabilities(self, image_embedding: np.ndarray) -> dict[str, np.ndarray]:
+        """Softmax over each concept group's options, in the group's option order."""
+        return {
+            group.name: softmax(LOGIT_SCALE * emb @ image_embedding)
+            for group, emb in zip(self.groups, self.group_embeddings, strict=True)
+        }
+
     def clues(self, image_embedding: np.ndarray) -> tuple[Clue, ...]:
         found = []
-        for group, emb in zip(self.groups, self.group_embeddings, strict=True):
-            p = softmax(LOGIT_SCALE * emb @ image_embedding)
+        probabilities = self.concept_probabilities(image_embedding)
+        for group in self.groups:
+            p = probabilities[group.name]
             best = int(np.argmax(p))
             if p[best] >= MIN_CLUE_PROBABILITY:
-                found.append(Clue(group.options[best][0], float(p[best])))
+                found.append(Clue(group.options[best][0], float(p[best]), group.name))
         return tuple(sorted(found, key=lambda c: -c.p))
 
     def country_probabilities(self, image_embedding: np.ndarray) -> np.ndarray:

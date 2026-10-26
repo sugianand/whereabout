@@ -1,4 +1,8 @@
-import type { AtlasCalibrationSummary, AtlasRetrievalSummary } from "@/lib/game/types";
+import type {
+  AtlasCalibrationSummary,
+  AtlasClueHeadResult,
+  AtlasRetrievalSummary,
+} from "@/lib/game/types";
 
 /** The evaluation row for the pipeline Pocket Atlas runs in the browser ("Your photo"). */
 export const POCKET_SYSTEM = "ViT-B-32/openai, country then city";
@@ -68,4 +72,36 @@ export function calibrationNote(c: AtlasCalibrationSummary): string {
   return c.ships
     ? `${measured} That fit held up on unseen photos, so the percentages in the game are the scaled ones.`
     : `${measured} It did not hold up on unseen photos, so the game keeps the raw percentages.`;
+}
+
+const CONCEPT_NAMES: Record<string, string> = {
+  driving_side: "which side of the road traffic drives on",
+  climate_group: "the climate",
+};
+
+const pctWhole = (x: number) => `${Math.round(x * 100)}%`;
+
+/** "+6 points" or "−3 points": an accuracy difference in percentage points. */
+function points(x: number): string {
+  const r = Math.round(x * 100);
+  return `${r > 0 ? "+" : r < 0 ? "−" : ""}${Math.abs(r)} point${Math.abs(r) === 1 ? "" : "s"}`;
+}
+
+/**
+ * One sentence per clue head: how often it read its concept right on photos from places it
+ * never trained on, against what the reveal used before, and whether it now writes that clue.
+ */
+export function clueHeadNote(h: AtlasClueHeadResult): string {
+  const what = CONCEPT_NAMES[h.concept] ?? h.concept.replace(/_/g, " ");
+  const [lo, hi] = h.ci95;
+  const measured =
+    `A probe trained on ${h.references.toLocaleString("en-US")} reference photos to read ` +
+    `${what} got it right on ${pctWhole(h.headAccuracy)} of ${h.n.toLocaleString("en-US")} ` +
+    `game photos from places it never trained on; ${h.baseline} got ` +
+    `${pctWhole(h.baselineAccuracy)} (difference ${points(h.accuracyDelta)}, 95% interval ` +
+    `${points(lo)} to ${points(hi)}).`;
+  return h.ships
+    ? `${measured} The whole interval is above zero, so the probe writes that clue at the reveal.`
+    : `${measured} It only takes over once the whole interval is above zero, so the reveal keeps ` +
+        `its old source for now.`;
 }

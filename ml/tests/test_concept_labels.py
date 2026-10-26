@@ -365,3 +365,53 @@ def test_main_without_maps_asks_for_download(tmp_path, capsys):
     argv, _ = write_world(tmp_path)
     assert cl.main(argv) == 2
     assert "--download" in capsys.readouterr().err
+
+
+REFERENCES_HEADER = "id,title,lat,lon,country,place,author,license,source_url,thumb_url\n"
+
+
+def test_label_references_reads_climate_and_driving_side():
+    from whereabout_ml.retrieval import Reference
+
+    refs = [
+        Reference("wr1", 51.5, -0.1, "GB", "London", "A", "https://c/1"),
+        Reference("wr2", 0.0, -150.0, "FR", "Sea", "B", "https://c/2"),
+        Reference("wr3", 10.0, 10.0, "AQ", "Nowhere", "C", "https://c/3"),
+    ]
+    rows = cl.label_references(
+        refs, grid_map("climate", {(51.5, -0.1): CODE["Cfb"]}, KOPPEN_GEIGER)
+    )
+    assert rows == [
+        {"id": "wr1", "climate": "Cfb", "climate_group": "Temperate", "driving_side": "left"},
+        {"id": "wr2", "climate": "", "climate_group": "", "driving_side": "right"},
+        {"id": "wr3", "climate": "", "climate_group": "", "driving_side": ""},
+    ]
+
+
+def test_main_labels_the_reference_photos_too(tmp_path, capsys):
+    argv, _ = write_world(tmp_path)
+    refs = tmp_path / "references.csv"
+    refs.write_text(
+        REFERENCES_HEADER
+        + "wr1,File:a.jpg,48.85,2.35,FR,Paris,A,CC0,https://c/1,https://t/1.jpg\n"
+        + "wr2,File:b.jpg,0.0,-150.0,KI,Sea,B,CC0,https://c/2,https://t/2.jpg\n"
+    )
+    out = tmp_path / "reference" / "concept_labels.csv"
+    assert (
+        cl.main([*argv, "--download", "--references", str(refs), "--references-out", str(out)]) == 0
+    )
+    with out.open() as fh:
+        assert list(csv.DictReader(fh)) == [
+            {"id": "wr1", "climate": "Cfb", "climate_group": "Temperate", "driving_side": "right"},
+            {"id": "wr2", "climate": "", "climate_group": "", "driving_side": "left"},
+        ]
+    meta = json.loads(out.with_suffix(".meta.json").read_text())
+    assert meta["references"] == 2
+    assert meta["coverage"]["climate_group"] == {"Temperate": 1, "unlabelled": 1}
+    assert "labelled 2 reference photos" in capsys.readouterr().out
+
+
+def test_references_and_their_output_go_together(tmp_path):
+    argv, _ = write_world(tmp_path)
+    with pytest.raises(SystemExit):
+        cl.main([*argv, "--references", str(tmp_path / "r.csv")])

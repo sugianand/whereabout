@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { calibrationNote, retrievalNote, systemLabel } from "@/lib/atlas";
-import type { AtlasCalibrationSummary, AtlasRetrievalSummary } from "@/lib/game/types";
+import { calibrationNote, clueHeadNote, retrievalNote, systemLabel } from "@/lib/atlas";
+import type {
+  AtlasCalibrationSummary,
+  AtlasClueHeadResult,
+  AtlasRetrievalSummary,
+} from "@/lib/game/types";
 
 const run = (over: Partial<AtlasRetrievalSummary>): AtlasRetrievalSummary => ({
   versus: "ViT-L-14/openai, country then city",
@@ -72,5 +76,49 @@ describe("calibrationNote", () => {
     const note = calibrationNote(cal({ temperature: 0.99, ships: false }));
     expect(note).toContain("close to honest already");
     expect(note).toMatch(/game keeps the raw percentages\.$/);
+  });
+});
+
+describe("clueHeadNote", () => {
+  const head: AtlasClueHeadResult = {
+    concept: "climate_group",
+    clueGroup: "climate",
+    classes: ["Tropical", "Arid", "Temperate", "Continental", "Polar"],
+    baseline: "the zero-shot climate clue",
+    model: "ViT-B-32/laion2b_s34b_b79k",
+    n: 380,
+    references: 4100,
+    headAccuracy: 0.712,
+    baselineAccuracy: 0.453,
+    majorityAccuracy: 0.4,
+    accuracyDelta: 0.259,
+    ci95: [0.204, 0.313],
+    l2: 0.01,
+    ships: true,
+  };
+
+  it("compares the probe with the old clue on unseen places and says it now writes the clue", () => {
+    expect(clueHeadNote(head)).toBe(
+      "A probe trained on 4,100 reference photos to read the climate got it right on 71% of " +
+        "380 game photos from places it never trained on; the zero-shot climate clue got 45% " +
+        "(difference +26 points, 95% interval +20 points to +31 points). The whole interval is " +
+        "above zero, so the probe writes that clue at the reveal.",
+    );
+  });
+
+  it("says the reveal keeps its old source when the probe does not clearly win", () => {
+    const note = clueHeadNote({
+      ...head,
+      concept: "driving_side",
+      baseline: "the driving side of the country Atlas guessed",
+      headAccuracy: 0.8,
+      baselineAccuracy: 0.81,
+      accuracyDelta: -0.01,
+      ci95: [-0.05, 0.03],
+      ships: false,
+    });
+    expect(note).toContain("to read which side of the road traffic drives on");
+    expect(note).toContain("(difference −1 point, 95% interval −5 points to +3 points)");
+    expect(note).toMatch(/keeps its old source for now\.$/);
   });
 });

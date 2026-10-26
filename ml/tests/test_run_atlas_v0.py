@@ -540,3 +540,74 @@ def test_pocket_calibration_ships_a_temperature_and_counts_held_out_bands():
     assert sum(b["right"] for b in pocket["sureness"]) == 30
     # Held-out, softened probabilities: no longer all piled into the top band.
     assert pocket["sureness"][-1]["n"] < 40
+
+
+def write_concept_labels(tmp_path):
+    game = tmp_path / "concept_labels.csv"
+    game.write_text(
+        "id,climate,climate_group,land_cover,driving_side\n"
+        "kyoto,Cfa,Temperate,Built-up,left\n"
+        "cusco,Cwb,Temperate,Built-up,right\n"
+    )
+    refs = tmp_path / "reference_labels.csv"
+    refs.write_text(
+        "id,climate,climate_group,driving_side\n"
+        + "".join(f"wr{i},Cfa,Temperate,left\n" for i in range(1, 5))
+        + "".join(f"wr{i},Aw,Tropical,right\n" for i in range(5, 8))
+    )
+    return game, refs
+
+
+def test_main_scores_clue_heads_against_todays_clues(tmp_path, monkeypatch, capsys):
+    fake_phash(monkeypatch)
+    monkeypatch.setattr("whereabout_ml.clue_heads.MIN_TRAINING_PHOTOS", 2)
+    refs, thumbs = write_references(tmp_path)
+    game_labels, ref_labels = write_concept_labels(tmp_path)
+    (tmp_path / "plain").mkdir()
+    plain, _ = run_main(tmp_path / "plain", monkeypatch)
+    atlas_out, results = run_main(
+        tmp_path,
+        monkeypatch,
+        "--references", str(refs),
+        "--reference-images", str(thumbs),
+        "--labels", str(game_labels),
+        "--reference-labels", str(ref_labels),
+    )  # fmt: skip
+    atlas = json.loads(atlas_out.read_text())
+    heads = {h["concept"]: h for h in atlas["evaluation"]["clueHeads"]}
+    assert set(heads) == {"driving_side", "climate_group"}
+    # Atlas guessed both countries right, so the country's driving side is perfect: no probe on
+    # six reference photos can clearly beat it, and the reveal's clues stay as they were.
+    assert heads["driving_side"]["baselineAccuracy"] == 1.0
+    assert heads["driving_side"]["ships"] is False
+    assert heads["driving_side"]["n"] == 2 and heads["driving_side"]["references"] == 6
+    assert heads["climate_group"]["baseline"] == "the zero-shot climate clue"
+    before = json.loads(plain.read_text())["guesses"]
+    assert all(atlas["guesses"][i]["clues"] == before[i]["clues"] for i in before)
+    report = json.loads((results / "atlas-v0.json").read_text())
+    assert report["clue_heads"] == atlas["evaluation"]["clueHeads"]
+    assert "## Clue heads" in (results / "atlas-v0.md").read_text()
+    assert "clue head driving_side:" in capsys.readouterr().out
+
+
+def test_failing_clue_heads_keep_the_zero_shot_clues(tmp_path, monkeypatch, capsys):
+    fake_phash(monkeypatch)
+    refs, thumbs = write_references(tmp_path)
+    game_labels, ref_labels = write_concept_labels(tmp_path)
+
+    def broken(*args, **kwargs):
+        raise ValueError("bad labels")
+
+    monkeypatch.setattr(run_atlas_v0, "fit_clue_heads", broken)
+    atlas_out, _ = run_main(
+        tmp_path,
+        monkeypatch,
+        "--references", str(refs),
+        "--reference-images", str(thumbs),
+        "--labels", str(game_labels),
+        "--reference-labels", str(ref_labels),
+    )  # fmt: skip
+    atlas = json.loads(atlas_out.read_text())
+    assert set(atlas["guesses"]) == {"kyoto", "cusco"}
+    assert "clueHeads" not in atlas["evaluation"]
+    assert "clue heads failed, keeping the zero-shot clues" in capsys.readouterr().err

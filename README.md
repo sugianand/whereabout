@@ -20,6 +20,7 @@ another, until your first miss. Your best streak stays in your browser.
 | Area | What it does | Where |
 | --- | --- | --- |
 | **Atlas v0** | Hierarchical zero-shot CLIP geolocation: country by prompt-ensembled softmax, then city within the top countries, P(city) = P(country) × P(city \| country), over GeoNames. Clues ("Snow and ice 81%") come from zero-shot concept groups and only show when one option clearly wins. | [`ml/`](ml/) |
+| **Clue heads** | Logistic-regression probes on frozen CLIP embeddings read the driving side and the Köppen climate group, trained on reference photos labelled from maps by their coordinates. Each game photo is scored by a probe that never saw its 10° block, against today's source of that clue (the zero-shot climate clue; the driving side of Atlas's guessed country), and a probe writes its clue at the reveal only if a paired bootstrap puts the accuracy gain above zero. | [`ml/src/whereabout_ml/clue_heads.py`](ml/src/whereabout_ml/clue_heads.py) |
 | **Where Atlas looked** | Occlusion saliency: grey out each cell of a 7×7 grid over the square CLIP sees and measure how much Atlas's belief in its country falls. A deletion test (hide the top 5 cells vs 5 random ones) checks that the maps are faithful rather than decorative. The heatmap glows in the reveal card. | [`ml/src/whereabout_ml/saliency.py`](ml/src/whereabout_ml/saliency.py) |
 | **Pocket Atlas** | *Test Atlas on your own photo* with no server: every country, city and clue prompt is embedded once offline and shipped as int8 vectors (a few MB); CLIP's image encoder runs in the browser via transformers.js; the country-then-city math is a TypeScript port pinned to the Python reference by a shared fixture. A real-Chromium test checks the browser's embedding against PyTorch's before the index ships. Your photo never leaves your device. | [`ml/src/whereabout_ml/pocket_index.py`](ml/src/whereabout_ml/pocket_index.py), [`web/src/lib/pocket/`](web/src/lib/pocket/) |
 | **Evaluation** | Accuracy at 1 / 25 / 200 / 750 / 2,500 km, median error with bootstrap CIs, a paired bootstrap to test whether one system really beats another, a country-only ablation and two baselines. All scored with the same haversine that scores players. | [`eval/`](eval/), [`eval/results/`](eval/results/) |
@@ -132,8 +133,15 @@ checks known places against them and commits [`data/labels/`](data/labels/README
 ```bash
 concept-labels --catalog data/curation/photos.csv --maps-dir data/maps \
     --known-places data/fixtures/concept_places.json \
-    --out data/labels/concept_labels.csv --download
+    --out data/labels/concept_labels.csv --download \
+    --references data/reference/references.csv \
+    --references-out data/reference/concept_labels.csv
+atlas-v0 ... --references data/reference/references.csv \
+    --labels data/labels/concept_labels.csv --reference-labels data/reference/concept_labels.csv
 ```
+
+The second half labels the reference photos too, and `atlas-v0` then fits and scores the clue
+heads (`whereabout_ml.clue_heads`, [decision 0006](docs/decisions/0006-clue-heads.md)).
 
 Training images come through an ingestion pipeline that captures each Commons file's license
 and author from the Commons API, rejects anything outside CC0 / public domain / CC BY /

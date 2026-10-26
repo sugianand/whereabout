@@ -14,7 +14,10 @@ median error is the one players meet in the game.
 
 With `--references`, the winner is also refined by retrieval over geotagged reference photos
 (`whereabout_ml.retrieval`). The refined system is scored next to the others, and plays in the
-game only if a paired bootstrap shows it beats the system it refines.
+game only if a paired bootstrap shows it beats the system it refines. With `--labels` and
+`--reference-labels` too, clue heads (`whereabout_ml.clue_heads`) are fitted on the reference
+photos' embeddings for the driving side and the climate group, scored against today's clues on
+the game photos, and write the reveal's clue for a concept only where they are clearly better.
 """
 
 from __future__ import annotations
@@ -44,8 +47,20 @@ from whereabout_eval.metrics import (
 )
 from whereabout_ml.baselines import constant_guesses, random_city_guesses
 from whereabout_ml.calibration import calibrate, softmax_t, sureness_bands
+from whereabout_ml.clue_heads import (
+    CLIMATE_GROUP,
+    CONCEPTS,
+    DRIVING_SIDE,
+    HeadResult,
+    apply_heads,
+    evaluate_head,
+    labels_for,
+    load_labels,
+    zero_shot_climate_groups,
+)
 from whereabout_ml.embedding_cache import cached_image_embeddings, safe_name
 from whereabout_ml.gazetteer import Gazetteer
+from whereabout_ml.labels import driving_side
 from whereabout_ml.retrieval import (
     GamePhotoTrace,
     Reference,
@@ -448,6 +463,56 @@ def load_reference_index(
     return ReferenceIndex(refs, embeddings), dict(dropped)
 
 
+def fit_clue_heads(
+    photos: Sequence[Photo],
+    guesses: Sequence[Guess],
+    playing_embeddings: Sequence[np.ndarray],
+    locator: ZeroShotGeolocator,
+    probe_embeddings: Sequence[np.ndarray],
+    index: ReferenceIndex,
+    game_labels: Path,
+    reference_labels: Path,
+    *,
+    model: str,
+) -> tuple[list[Guess], list[dict]]:
+    """Clue heads for each concept, scored against today's clues; the guesses with the clues
+    of every head that ships, and the records for atlas.json.
+
+    The probes read `probe_embeddings` (the retrieval model's, the space the reference photos
+    are embedded in); the zero-shot baseline is the playing system's own climate clue.
+    """
+    # The index holds unit-length reference embeddings; the game photos' must match.
+    probe_embeddings = normalise(np.asarray(probe_embeddings, dtype=np.float64))
+    game_table = load_labels(game_labels)
+    ref_table = load_labels(reference_labels)
+    ids = [p.id for p in photos]
+    ref_ids = [r.id for r in index.references]
+    ref_points = [LatLon(r.lat, r.lon) for r in index.references]
+    game_points = [p.location for p in photos]
+    baselines = {
+        DRIVING_SIDE.name: [driving_side(g.country) for g in guesses],
+        CLIMATE_GROUP.name: zero_shot_climate_groups(
+            [locator.concept_probabilities(e)["climate"] for e in playing_embeddings]
+        ),
+    }
+    results: list[HeadResult] = []
+    for concept in CONCEPTS:
+        result = evaluate_head(
+            concept,
+            index.embeddings,
+            ref_points,
+            labels_for(ref_ids, ref_table, concept.name),
+            probe_embeddings,
+            game_points,
+            labels_for(ids, game_table, concept.name),
+            baselines[concept.name],
+        )
+        if result is not None:
+            results.append(result)
+    shipped = apply_heads(guesses, probe_embeddings, results)
+    return shipped, [r.as_dict(model) for r in results]
+
+
 def pick_best(systems: Sequence[System]) -> System:
     """The playable system with the lowest median error; mean score breaks ties."""
     playable = [s for s in systems if s.guesses is not None and s.report is not None]
@@ -465,13 +530,15 @@ def build_outputs(
     beliefs: dict[str, dict[str, float]] | None = None,
     retrieval: dict | None = None,
     calibration: dict | None = None,
+    clue_heads: list[dict] | None = None,
 ):
     """Atlas's guesses for the game, plus a JSON report and a Markdown results page.
 
     `saliency` (photo id → where the playing system looked) and `beliefs` (photo id → country
     distribution, see `belief_from_probabilities`) are attached to its guesses. `retrieval` is
     the record from `refine_with_references`, if the run tried the refinement, and
-    `calibration` the one from `calibrate_guesses`.
+    `calibration` the one from `calibrate_guesses`, `clue_heads` the records from
+    `fit_clue_heads`.
     """
     saliency = saliency or {}
     beliefs = beliefs or {}
@@ -521,6 +588,8 @@ def build_outputs(
         atlas["evaluation"]["retrieval"] = retrieval
     if calibration:
         atlas["evaluation"]["calibration"] = calibration
+    if clue_heads:
+        atlas["evaluation"]["clueHeads"] = clue_heads
 
     table = markdown_table({s.name: s.report for s in systems if s.report})
     report = {
@@ -535,6 +604,7 @@ def build_outputs(
         "saliency": faithfulness,
         "retrieval": retrieval,
         "calibration": calibration,
+        "clue_heads": clue_heads,
         "table": table,
     }
     return atlas, report, results_markdown(report, now)
@@ -642,6 +712,31 @@ def results_markdown(report: dict, now: str) -> str:
                 for b in (held if cal["ships"] else raw)["bins"]
             ),
         ]
+    heads = report.get("clue_heads")
+    if heads:
+        lines += [
+            "",
+            "## Clue heads: do trained probes read the scene better than today's clues?",
+            "",
+            "Logistic-regression probes on frozen CLIP image embeddings "
+            f"({heads[0]['model']}), fitted on {heads[0]['references']:,} reference photos "
+            "labelled by their coordinates (Köppen-Geiger climate group, driving side of the "
+            "country). Each game photo is predicted by a probe that never saw a reference photo "
+            "from its 10° geographic block, and scored against the game photo's own map label. "
+            "A probe writes its clue at the reveal only if the paired 95% interval of the "
+            "accuracy difference is above zero.",
+            "",
+            "| Concept | Photos | Probe | Compared with | Their accuracy | Commonest class "
+            "| Difference (95% CI) | Writes the clue |",
+            "| --- | ---: | ---: | --- | ---: | ---: | ---: | --- |",
+            *(
+                f"| {h['concept'].replace('_', ' ')} | {h['n']} | {h['headAccuracy']:.1%} | "
+                f"{h['baseline']} | {h['baselineAccuracy']:.1%} | {h['majorityAccuracy']:.1%} | "
+                f"{h['accuracyDelta']:+.1%} ({h['ci95'][0]:+.1%} to {h['ci95'][1]:+.1%}) | "
+                f"{'yes' if h['ships'] else 'no'} |"
+                for h in heads
+            ),
+        ]
     lines += [
         "",
         "## Read these numbers carefully",
@@ -718,6 +813,19 @@ def main(argv: Sequence[str] | None = None) -> None:
     )
     ap.add_argument("--max-references", type=int, default=None)
     ap.add_argument(
+        "--labels",
+        type=Path,
+        default=None,
+        help="the catalog's concept labels (data/labels/concept_labels.csv), the clue heads' truth",
+    )
+    ap.add_argument(
+        "--reference-labels",
+        type=Path,
+        default=None,
+        help="the reference photos' concept labels (data/reference/concept_labels.csv); with "
+        "--labels and --references, fits and scores the clue heads",
+    )
+    ap.add_argument(
         "--embedding-cache",
         type=Path,
         default=Path(".cache/embeddings"),
@@ -786,6 +894,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     best = pick_best(systems)
 
     retrieval: dict | None = None
+    index: ReferenceIndex | None = None
+    r_encoder = r_embeddings = None
     if args.references is not None:
         spec = args.retrieval_model or models[0]
         if spec not in by_model:
@@ -831,6 +941,37 @@ def main(argv: Sequence[str] | None = None) -> None:
         f"{'ships' if calibration['ships'] else 'raw probabilities ship'}"
     )
 
+    clue_heads: list[dict] | None = None
+    if (
+        index is not None
+        and len(index)
+        and args.labels is not None
+        and args.reference_labels is not None
+        and args.labels.exists()
+        and args.reference_labels.exists()
+    ):
+        try:
+            best.guesses, clue_heads = fit_clue_heads(
+                photos,
+                best.guesses,
+                best_embeddings,
+                locator,
+                r_embeddings,
+                index,
+                args.labels,
+                args.reference_labels,
+                model=r_encoder.name,
+            )
+        except Exception as err:  # noqa: BLE001 - clue heads are optional; the clues stay v0's
+            clue_heads = None
+            print(f"clue heads failed, keeping the zero-shot clues: {err!r}", file=sys.stderr)
+        for h in clue_heads or []:
+            print(
+                f"clue head {h['concept']}: {h['headAccuracy']:.1%} vs {h['baseline']} "
+                f"{h['baselineAccuracy']:.1%} on {h['n']} photos (95% CI {h['ci95']}); "
+                f"{'writes the clue' if h['ships'] else 'does not ship'}"
+            )
+
     saliency: dict[str, Saliency] = {}
     if args.saliency_grid > 0:
         started = time.perf_counter()
@@ -866,6 +1007,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         beliefs=beliefs,
         retrieval=retrieval,
         calibration=calibration,
+        clue_heads=clue_heads,
     )
     args.atlas_out.write_text(json.dumps(atlas, indent=1, ensure_ascii=False) + "\n")
     args.results_dir.mkdir(parents=True, exist_ok=True)

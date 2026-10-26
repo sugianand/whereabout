@@ -2,8 +2,10 @@ name: Concept labels
 
 # Downloads the real Köppen-Geiger climate map and the ESA WorldCover tiles the catalog needs,
 # checks known places against them, and commits the catalog's concept labels
-# (data/labels/concept_labels.csv). The maps are several GB and never committed; the run only
-# repeats when the catalog, the known places or the labelling code change.
+# (data/labels/concept_labels.csv). It also labels the retrieval reference photos with climate
+# and driving side (data/reference/concept_labels.csv), the training labels for Atlas's clue
+# heads (whereabout_ml.clue_heads). The maps are several GB and never committed; the run only
+# repeats when the catalog, the reference photos, the known places or the labelling code change.
 
 on:
   workflow_dispatch:
@@ -14,11 +16,13 @@ on:
       - "ml/src/whereabout_ml/labels.py"
       - "ml/src/whereabout_ml/concept_labels.py"
       - "data/curation/photos.csv"
+      - "data/reference/references.csv"
       - "data/fixtures/concept_places.json"
       - ".github/workflows/labels.yml"
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: concept-labels
@@ -56,6 +60,8 @@ jobs:
               --maps-dir data/maps \
               --known-places data/fixtures/concept_places.json \
               --out data/labels/concept_labels.csv \
+              --references data/reference/references.csv \
+              --references-out data/reference/concept_labels.csv \
               --download 2> >(tee labels-stderr.log >&2) | tee labels-stdout.log; then
             grep '^|' labels-stdout.log >> "$GITHUB_STEP_SUMMARY" || true
             echo "::error title=Concept labels failed::$(annotate < labels-stderr.log)"
@@ -67,6 +73,10 @@ jobs:
             echo
             echo '```json'
             cat data/labels/concept_labels.meta.json
+            echo '```'
+            echo "## Reference photos (clue-head training labels)"
+            echo '```json'
+            cat data/reference/concept_labels.meta.json
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
           echo "::notice title=Concept labels::$(annotate < data/labels/concept_labels.meta.json)"
@@ -83,11 +93,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/labels/concept_labels.csv data/labels/concept_labels.meta.json \
+            data/reference/concept_labels.csv data/reference/concept_labels.meta.json \
             web/src/data/photos.json
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
           fi
+          # New labels change what the clue heads learn from or are scored on.
+          echo "rerun_atlas=1" >> "$GITHUB_ENV"
           git commit -m "chore(labels): catalog concept labels from the real maps"
           for attempt in 1 2 3; do
             git fetch --depth=50 origin main
@@ -97,3 +110,11 @@ jobs:
           done
           echo "::error title=Could not push labels::rebase or push failed three times"
           exit 1
+
+      # Pushes made with GITHUB_TOKEN don't trigger other workflows, so start the Atlas run that
+      # fits and scores the clue heads on the new labels.
+      - name: Rerun Atlas on the new labels
+        if: env.rerun_atlas == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run atlas.yml --ref main

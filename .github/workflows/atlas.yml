@@ -8,6 +8,10 @@ name: Atlas v0
 # It also tries a retrieval refinement (whereabout_ml.retrieval) over geotagged reference photos
 # from Commons that are never game photos (whereabout_ml.reference_set, data/reference/). The
 # refined Atlas is scored next to the others and plays only if it clearly beats the unrefined one.
+#
+# With the reference photos' concept labels (data/reference/concept_labels.csv, from labels.yml),
+# it fits clue heads (whereabout_ml.clue_heads): probes for the driving side and the climate group
+# on the reference photos' embeddings, which write the reveal's clue only where they beat today's.
 
 on:
   workflow_dispatch:
@@ -17,6 +21,7 @@ on:
       - "ml/src/**"
       - "eval/src/**"
       - "data/curation/photos.csv"
+      - "data/reference/concept_labels.csv"
       - ".github/workflows/atlas.yml"
 
 permissions:
@@ -125,6 +130,10 @@ jobs:
             retrieval=(--references data/reference/references.csv
                        --reference-images .cache/references
                        --retrieval-model ViT-B-32:laion2b_s34b_b79k)
+            if [ -f data/reference/concept_labels.csv ]; then
+              retrieval+=(--labels data/labels/concept_labels.csv
+                          --reference-labels data/reference/concept_labels.csv)
+            fi
           fi
           if ! atlas-v0 \
               --catalog data/curation/photos.csv \
@@ -155,6 +164,10 @@ jobs:
           grep "photos in .* from the embedding cache" atlas-stdout.log \
             | sed 's/^/::notice title=Embeddings::/' || true
           grep -E "^(references|retrieval):" atlas-stdout.log | sed 's/^/::notice title=Retrieval::/' || true
+          grep "^clue head" atlas-stdout.log | sed 's/^/::notice title=Clue heads::/' || true
+          if grep -q "^clue heads failed" atlas-stderr.log; then
+            echo "::warning title=Clue heads failed::$(grep -A3 '^clue heads failed' atlas-stderr.log | annotate)"
+          fi
           # Maps the budget left for later: another run picks them up once this one has pushed.
           left=$(sed -n 's/^saliency: .*; \([0-9]*\) left for a later run$/\1/p' atlas-stdout.log)
           echo "saliency_left=${left:-0}" >> "$GITHUB_ENV"

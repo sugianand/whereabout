@@ -16,6 +16,13 @@ proves they say what we think they say, and writes one row of labels per photo:
    so a wrong legend or a misread tile can never reach the training data.
 3. Label: climate, its Köppen group, land cover (majority within ~150 m) and the driving side
    (from the catalog's curated country) for each photo; a sidecar JSON records provenance.
+4. With `--references`, also label the retrieval reference photos (`data/reference/`) with
+   climate, Köppen group and driving side (from their GeoNames country), the training labels
+   for Atlas's clue heads (`whereabout_ml.clue_heads`). Land cover is left out: thousands of
+   reference photos would need hundreds of 10 m tiles, and no clue head uses it.
+
+        concept-labels ... --references data/reference/references.csv \\
+            --references-out data/reference/concept_labels.csv
 
 Downloads go through urllib so the module needs nothing beyond `ml[maps]`; tests point the
 URLs at `file://` fixtures.
@@ -37,6 +44,7 @@ from collections import Counter
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from whereabout_api.catalog import load_catalog
 from whereabout_api.geo import LatLon
@@ -50,6 +58,9 @@ from whereabout_ml.maps import (
     worldcover_map,
     worldcover_tile,
 )
+
+if TYPE_CHECKING:  # retrieval imports this module (through ingest), so only for annotations
+    from whereabout_ml.retrieval import Reference
 
 USER_AGENT = "WhereaboutBot/0.1 (https://github.com/sugianand/whereabout; research demo)"
 
@@ -65,6 +76,7 @@ WORLDCOVER_URL = "https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021
 WORLDCOVER_DIR = "worldcover"
 
 FIELDS = ("id", "climate", "climate_group", "land_cover", "driving_side")
+REFERENCE_FIELDS = ("id", "climate", "climate_group", "driving_side")
 
 
 # --- fetching --------------------------------------------------------------------------------
@@ -283,19 +295,40 @@ def label_catalog(
     return rows
 
 
-def write_labels(rows: Sequence[Mapping[str, str]], path: Path) -> None:
+def label_references(
+    references: Sequence[Reference], climate: CategoricalMap
+) -> list[dict[str, str]]:
+    """Clue-head training labels for each reference photo; unknown is an empty cell."""
+    climates = climate.labels([LatLon(r.lat, r.lon) for r in references])
+    rows = []
+    for ref, clim in zip(references, climates, strict=True):
+        row = {
+            "id": ref.id,
+            "climate": clim,
+            "climate_group": koppen_group(clim),
+            "driving_side": driving_side(ref.country),
+        }
+        rows.append({k: v or "" for k, v in row.items()})
+    return rows
+
+
+def write_labels(
+    rows: Sequence[Mapping[str, str]], path: Path, fields: Sequence[str] = FIELDS
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=FIELDS, lineterminator="\n")
+        writer = csv.DictWriter(fh, fieldnames=list(fields), lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 
 
-def coverage(rows: Sequence[Mapping[str, str]]) -> dict[str, dict[str, int]]:
+def coverage(
+    rows: Sequence[Mapping[str, str]], fields: Sequence[str] = FIELDS
+) -> dict[str, dict[str, int]]:
     """Per concept, how many photos got each label ("" counted as "unlabelled")."""
     return {
         field: dict(sorted(Counter(r[field] or "unlabelled" for r in rows).items()))
-        for field in FIELDS[1:]
+        for field in fields[1:]
     }
 
 
@@ -311,7 +344,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     ap.add_argument("--download", action="store_true", help="fetch missing maps first")
     ap.add_argument("--koppen-article-url", default=KOPPEN_ARTICLE_URL)
     ap.add_argument("--worldcover-url", default=WORLDCOVER_URL)
+    ap.add_argument(
+        "--references", type=Path, default=None, help="reference photos CSV to label as well"
+    )
+    ap.add_argument("--references-out", type=Path, default=None)
     args = ap.parse_args(argv)
+    if (args.references is None) != (args.references_out is None):
+        ap.error("--references and --references-out go together")
 
     photos = load_catalog(args.catalog)
     places = load_known_places(args.known_places)
@@ -350,10 +389,32 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"error: known places read wrong from the real maps: {names}", file=sys.stderr)
             return 1
         rows = label_catalog(photos, climate, land_cover)
+        from whereabout_ml.retrieval import load_references
+
+        reference_rows = (
+            label_references(load_references(args.references), climate)
+            if args.references is not None
+            else None
+        )
     finally:
         climate.source.close()
 
     write_labels(rows, args.out)
+    if reference_rows is not None:
+        write_labels(reference_rows, args.references_out, REFERENCE_FIELDS)
+        ref_meta = {
+            "references": len(reference_rows),
+            "coverage": coverage(reference_rows, REFERENCE_FIELDS),
+            "sources": {
+                "climate": "Köppen-Geiger 1991-2020, 1 km, Beck et al. (2023), CC BY 4.0",
+                "driving_side": "GeoNames country of the nearest place + "
+                "whereabout_ml.labels.LEFT_HAND_TRAFFIC",
+            },
+        }
+        args.references_out.with_suffix(".meta.json").write_text(
+            json.dumps(ref_meta, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
+        print(f"labelled {len(reference_rows)} reference photos -> {args.references_out}")
     meta = {
         "photos": len(rows),
         "coverage": coverage(rows),

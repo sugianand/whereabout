@@ -8,7 +8,13 @@ import { gateStrength } from "@/lib/sceneGate";
 import { niceMax } from "@/components/ContinentChart";
 import type { AtlasData, CatalogPhoto } from "@/lib/game/types";
 
-import { POCKET_SYSTEM, calibrationNote, retrievalNote, systemLabel } from "@/lib/atlas";
+import {
+  POCKET_SYSTEM,
+  calibrationNote,
+  clueHeadNote,
+  retrievalNote,
+  systemLabel,
+} from "@/lib/atlas";
 import { gameRecords } from "@/lib/game/deck";
 import { surenessBands } from "@/lib/game/sureness";
 import { byContinent, scoreGuesses } from "@/lib/atlasReport";
@@ -54,6 +60,17 @@ describe("How Atlas guesses", () => {
       s.name.endsWith("then nearest reference photos"),
     );
     expect(refined?.playsInGame).toBe(retrieval.ships);
+  });
+
+  it("reports every clue head the run scored, or nothing before one has", () => {
+    render(<AtlasPage />);
+    const heads = atlas.evaluation?.clueHeads ?? [];
+    const section = screen.queryByTestId("clue-heads");
+    if (heads.length === 0) {
+      expect(section).toBeNull();
+      return;
+    }
+    for (const h of heads) expect(section).toHaveTextContent(clueHeadNote(h));
   });
 
   it("shows how often Atlas was right at each level of confidence, from the shipped photos", () => {

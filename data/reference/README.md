@@ -33,6 +33,15 @@ from run to run.
 The workflow fetches thumbnails for 30 minutes per run and caches them on the runner; the rest
 are fetched by follow-up runs.
 
+## Concept labels for the clue heads
+
+`concept_labels.csv` (with a `.meta.json` of counts and sources) gives each reference photo the
+labels Atlas's clue heads learn from (`whereabout_ml.clue_heads`): the Köppen-Geiger climate
+class and group at its coordinates (Beck et al. 2023, CC BY 4.0) and the driving side of its
+GeoNames country. It is written by the [concept labels workflow](../../.github/workflows/labels.yml)
+(`concept-labels --references`), never by hand; an empty cell means no label (at sea on the
+1 km map, or a territory with no road rule), and such photos are left out of training.
+
 ## Leakage guard
 
 Before every Atlas run (`leakage_filter` in `retrieval.py`), references are dropped if they are
