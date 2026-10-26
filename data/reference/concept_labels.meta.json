@@ -1,0 +1,49 @@
+{
+  "references": 4345,
+  "coverage": {
+    "climate": {
+      "Af": 331,
+      "Am": 227,
+      "Aw": 488,
+      "BSh": 226,
+      "BSk": 205,
+      "BWh": 390,
+      "BWk": 107,
+      "Cfa": 334,
+      "Cfb": 284,
+      "Cfc": 43,
+      "Csa": 162,
+      "Csb": 119,
+      "Cwa": 130,
+      "Cwb": 89,
+      "Dfa": 89,
+      "Dfb": 384,
+      "Dfc": 206,
+      "Dsa": 16,
+      "Dsb": 19,
+      "Dsc": 34,
+      "Dwa": 34,
+      "Dwb": 63,
+      "Dwc": 13,
+      "ET": 36,
+      "unlabelled": 316
+    },
+    "climate_group": {
+      "Arid": 928,
+      "Continental": 858,
+      "Polar": 36,
+      "Temperate": 1161,
+      "Tropical": 1046,
+      "unlabelled": 316
+    },
+    "driving_side": {
+      "left": 1156,
+      "right": 3173,
+      "unlabelled": 16
+    }
+  },
+  "sources": {
+    "climate": "Köppen-Geiger 1991-2020, 1 km, Beck et al. (2023), CC BY 4.0",
+    "driving_side": "GeoNames country of the nearest place + whereabout_ml.labels.LEFT_HAND_TRAFFIC"
+  }
+}
