@@ -1,3 +1,4 @@
+import { beliefFromProbabilities, type Belief } from "../belief";
 import type { SurenessBand } from "../game/sureness";
 
 import type { GateVerdict, PocketGate } from "./gate";
@@ -33,7 +34,13 @@ export interface PocketMeta {
   sureness?: SurenessBand[];
   /** The privacy gate (people and indoor), see gate.ts. Missing in indexes built before it. */
   gate?: PocketGate;
-  parity?: { image: string; embedding: number[]; guess: PocketGuess; gate?: GateVerdict };
+  /** Python's guess for the parity photo; indexes built before the heatmap have no `belief`. */
+  parity?: {
+    image: string;
+    embedding: number[];
+    guess: Omit<PocketGuess, "belief"> & { belief?: Belief };
+    gate?: GateVerdict;
+  };
 }
 
 export interface PocketIndex {
@@ -50,6 +57,8 @@ export interface PocketGuess {
   confidence: number;
   topCountries: { country: string; p: number }[];
   clues: { label: string; p: number }[];
+  /** The heatmap: every country at p >= 0.5%, from the same tempered probabilities as "% sure". */
+  belief: Belief;
 }
 
 const round4 = (x: number) => Math.round(x * 1e4) / 1e4;
@@ -109,7 +118,7 @@ export function temperatureOf(meta: PocketMeta): number {
 /**
  * Atlas's guess for one image embedding. The pin comes from the raw probabilities, as the scored
  * pipeline picks it; "% sure" and the shortlist are divided by the index's temperature, as in
- * the game, which never reorders countries.
+ * the game, which never reorders countries, and so is the heatmap (`belief`).
  */
 export function locate(index: PocketIndex, image: ArrayLike<number>): PocketGuess {
   const { meta } = index;
@@ -154,6 +163,10 @@ export function locate(index: PocketIndex, image: ArrayLike<number>): PocketGues
     confidence: round4(pCountry[order[0]]),
     topCountries: order.map((i) => ({ country: meta.countries[i].code, p: round4(pCountry[i]) })),
     clues: clues.sort((a, b) => b.p - a.p),
+    belief: beliefFromProbabilities(
+      meta.countries.map((c) => c.code),
+      pCountry,
+    ),
   };
 }
 

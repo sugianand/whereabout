@@ -37,6 +37,7 @@ from pathlib import Path
 
 import numpy as np
 
+from whereabout_ml.belief import belief_from_probabilities
 from whereabout_ml.clues import MIN_CLUE_PROBABILITY
 from whereabout_ml.gazetteer import Gazetteer
 from whereabout_ml.scene_gate import SceneGate
@@ -181,8 +182,8 @@ def locate(meta: dict, vectors: np.ndarray, image: np.ndarray) -> dict:
     """Atlas's guess from the index alone (the reference for the browser's locate.ts).
 
     The pin comes from the raw probabilities, exactly as the scored pipeline picks it; the
-    reported "% sure" and shortlist are divided by the index's temperature, as in the game
-    (`calibrate_guesses`), which never reorders countries.
+    reported "% sure", shortlist and heatmap (`belief`) are divided by the index's temperature,
+    as in the game (`calibrate_guesses`), which never reorders countries.
     """
     img = normalise(np.asarray(image, dtype=np.float64))
     scale = float(meta["logitScale"])
@@ -221,6 +222,8 @@ def locate(meta: dict, vectors: np.ndarray, image: np.ndarray) -> dict:
             for i in order
         ],
         "clues": sorted(clues, key=lambda c: -c["p"]),
+        # The heatmap over every country, from the same tempered probabilities as "% sure".
+        "belief": belief_from_probabilities([c["code"] for c in meta["countries"]], p_country),
     }
 
 

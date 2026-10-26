@@ -5,6 +5,29 @@ import { numericId } from "./countryIds";
 /** Atlas's country distribution as atlas.json carries it: ISO alpha-2 code → probability. */
 export type Belief = Record<string, number>;
 
+/** The heatmap keeps every country at or above this probability (`BELIEF_MIN_P` in Python). */
+export const BELIEF_MIN_P = 0.005;
+
+/**
+ * Compact country distribution for the heatmap, `{code: p}` largest first, ties in input order:
+ * countries below BELIEF_MIN_P dropped, the rest rounded to 3 decimals. A port of
+ * `belief_from_probabilities` in ml/src/whereabout_ml/belief.py, so a heatmap Pocket Atlas
+ * computes in the browser keeps the same countries as the game's precomputed ones.
+ */
+export function beliefFromProbabilities(
+  codes: readonly string[],
+  probabilities: readonly number[],
+): Belief {
+  if (codes.length !== probabilities.length) throw new Error("one probability per country");
+  const kept = codes
+    .map((code, i) => [code, probabilities[i], i] as const)
+    .filter(([, p]) => p >= BELIEF_MIN_P)
+    .sort((a, b) => b[1] - a[1] || a[2] - b[2]);
+  const out: Belief = {};
+  for (const [code, p] of kept) out[code] = Math.round(p * 1000) / 1000;
+  return out;
+}
+
 /** The most opaque a country is ever painted, so borders, arcs and pins stay readable. */
 export const BELIEF_MAX_OPACITY = 0.55;
 

@@ -72,6 +72,55 @@ describe("Pocket Atlas", () => {
     expect(result).toHaveTextContent(/Atlas was 0 m off, worth 5,000 points/);
   });
 
+  it("shades the globe by how sure it was at the reveal, and says how sure of the pinned country", async () => {
+    // The last fixture case leans Japan only a little: 64% Japan, 36% Peru after T = 1.8.
+    const unsure = fixture.cases.at(-1)!;
+    const heat = (map: FakeMap) => map.paint.belief?.["fill-opacity"];
+    const play = async (lng: number, lat: number) => {
+      const rendered = render(
+        <PocketAtlas
+          deps={deps({
+            loadEncoder: async () => ({ embed: async () => Float32Array.from(unsure.image) }),
+          })}
+        />,
+      );
+      choosePhoto();
+      await screen.findByText(/64% sure of the country\./);
+      await waitFor(() => expect(FakeMap.instances.length).toBeGreaterThan(0));
+      const map = FakeMap.instances.at(-1)!;
+      act(() => map.emit("load"));
+      // No heatmap while the player is still placing the real location.
+      expect(heat(map) ?? 0).toBe(0);
+      act(() => map.click(lng, lat));
+      fireEvent.click(screen.getByRole("button", { name: "That's where it was" }));
+      const line = await screen.findByTestId("pocket-heatmap");
+      return { rendered, map, line };
+    };
+
+    // Cusco, Peru: the country Atlas gave the remaining third.
+    const peru = await play(-71.97, -13.53);
+    expect(heat(peru.map)).toEqual([
+      "match",
+      ["get", "n"],
+      "392",
+      expect.any(Number),
+      "604",
+      expect.any(Number),
+      0,
+    ]);
+    expect(peru.line).toHaveTextContent(/darker, the surer\. It gave Peru 36%\./);
+    peru.rendered.unmount();
+
+    // Paris: a country Atlas never considered reads "under 1%", not "0%".
+    const france = await play(2.35, 48.86);
+    expect(france.line).toHaveTextContent(/It gave France under 1%\./);
+    france.rendered.unmount();
+
+    // The middle of the Pacific: no country to name.
+    const sea = await play(-140, 0);
+    expect(sea.line).toHaveTextContent(/darker, the surer\.$/);
+  });
+
   it("checks its own '% sure' against the photos it was calibrated on, like the reveal", async () => {
     // The last fixture case leans Japan only a little: the toy index's T = 1.8 makes it 64% sure.
     const unsure = fixture.cases.at(-1)!;
@@ -157,7 +206,9 @@ describe("Pocket Atlas", () => {
     // Nothing about a place: no city, no shortlist, no globe to score it on.
     expect(within(result).queryByRole("heading", { name: "Kyoto" })).toBeNull();
     expect(result).not.toHaveTextContent(/Kyoto|Japan|sure of the country/);
-    expect(within(result).queryByRole("list", { name: "Atlas's most likely countries" })).toBeNull();
+    expect(
+      within(result).queryByRole("list", { name: "Atlas's most likely countries" }),
+    ).toBeNull();
     expect(FakeMap.instances).toHaveLength(0);
     expect(window.__pocketAtlas?.guess).toBeNull();
     expect(window.__pocketAtlas?.gate.reasons).toEqual(["people"]);

@@ -42,6 +42,10 @@ test("Pocket Atlas in the browser agrees with PyTorch", async ({ page }, info) =
   expect([port.city, port.country]).toEqual([parity.guess.city, parity.guess.country]);
   expect(port.confidence).toBeCloseTo(parity.guess.confidence, 3);
   port.topCountries.forEach((c, i) => expect(c.p).toBeCloseTo(parity.guess.topCountries[i].p, 3));
+  // The heatmap too, once the index's parity guess carries one (indexes from before it don't).
+  for (const [code, p] of Object.entries(parity.guess.belief ?? {})) {
+    expect(port.belief[code] ?? 0).toBeCloseTo(p, 2);
+  }
   // And the site's privacy gate scores PyTorch's embedding as Python does. The parity photo is a
   // hand-reviewed catalog photo, one of those that set the gate's bars, so it must pass.
   const gate = gateOf(meta);

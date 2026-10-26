@@ -123,6 +123,20 @@ def test_index_guesses_like_the_full_pipeline(words):
     assert [c["label"] for c in pocket["clues"]] == [c.label for c in full.clues]
 
 
+def test_the_heatmap_is_the_tempered_country_distribution_like_the_game():
+    # Pocket Atlas shades the globe from the same probabilities as its "% sure", in the same
+    # compact form as the game's atlas.json (belief_from_probabilities).
+    _, meta, q = toy(CALIBRATION)
+    vectors = dequantize(q, np.array(meta["scales"]))
+    unsure = locate(meta, vectors, np.array(UNSURE))
+    assert list(unsure["belief"]) == ["JP", "PE"]
+    assert unsure["belief"]["JP"] == round(unsure["confidence"], 3)
+    assert sum(unsure["belief"].values()) == pytest.approx(1, abs=2e-3)
+    # A sure guess drops the countries below half a percent.
+    sure = locate(meta, vectors, image("Peru", "Cusco"))
+    assert sure["belief"] == {"PE": 1.0}
+
+
 def test_written_index_round_trips(tmp_path):
     _, meta, q = toy()
     write_index(tmp_path, meta, q)

@@ -283,7 +283,10 @@
       "p": 0.0
      }
     ],
-    "clues": []
+    "clues": [],
+    "belief": {
+     "PE": 1.0
+    }
    },
    "gate": {
     "passed": true,
@@ -324,7 +327,10 @@
       "p": 0.0
      }
     ],
-    "clues": []
+    "clues": [],
+    "belief": {
+     "JP": 1.0
+    }
    },
    "gate": {
     "passed": true,
@@ -370,7 +376,10 @@
       "label": "Snow and ice",
       "p": 1.0
      }
-    ]
+    ],
+    "belief": {
+     "JP": 1.0
+    }
    },
    "gate": {
     "passed": true,
@@ -416,7 +425,10 @@
       "label": "Desert",
       "p": 1.0
      }
-    ]
+    ],
+    "belief": {
+     "PE": 1.0
+    }
    },
    "gate": {
     "passed": true,
@@ -457,7 +469,10 @@
       "p": 0.0
      }
     ],
-    "clues": []
+    "clues": [],
+    "belief": {
+     "PE": 1.0
+    }
    },
    "gate": {
     "passed": true,
@@ -498,7 +513,10 @@
       "p": 0.0
      }
     ],
-    "clues": []
+    "clues": [],
+    "belief": {
+     "JP": 1.0
+    }
    },
    "gate": {
     "passed": false,
@@ -541,7 +559,10 @@
       "p": 0.0
      }
     ],
-    "clues": []
+    "clues": [],
+    "belief": {
+     "JP": 1.0
+    }
    },
    "gate": {
     "passed": false,
@@ -584,7 +605,10 @@
       "p": 0.0
      }
     ],
-    "clues": []
+    "clues": [],
+    "belief": {
+     "PE": 1.0
+    }
    },
    "gate": {
     "passed": false,
@@ -628,7 +652,11 @@
       "p": 0.3558
      }
     ],
-    "clues": []
+    "clues": [],
+    "belief": {
+     "JP": 0.644,
+     "PE": 0.356
+    }
    },
    "gate": {
     "passed": true,

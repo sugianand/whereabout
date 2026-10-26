@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 
+import { countryAt } from "@/lib/countryHit";
 import { formatDistance, formatPoints, haversineKm, scoreDistance, type LngLat } from "@/lib/geo";
 import { loadEncoder, type DownloadProgress, type ImageEncoder } from "@/lib/pocket/encoder";
 import {
@@ -25,7 +26,15 @@ type Phase =
   | { kind: "thinking" }
   | { kind: "declined"; reasons: PrivacyReason[] }
   | { kind: "guessed"; guess: PocketGuess }
-  | { kind: "revealed"; guess: PocketGuess; truth: LngLat; distanceKm: number; score: number }
+  | {
+      kind: "revealed";
+      guess: PocketGuess;
+      truth: LngLat;
+      distanceKm: number;
+      score: number;
+      /** The country the player pinned (null over the sea) and how sure Atlas was of it. */
+      truthCountry: { code: string; p: number } | null;
+    }
   | { kind: "unavailable" }
   | { kind: "error"; message: string };
 
@@ -41,6 +50,17 @@ const DEFAULT_DEPS: PocketDeps = { loadIndex: () => loadIndex(), loadEncoder };
 
 const mb = (bytes: number) => `${Math.round(bytes / 1e6)} MB`;
 const pct = (p: number) => `${Math.round(p * 100)}%`;
+/** A country the index doesn't list (the player can pin anywhere) still gets a name. */
+function regionName(code: string): string {
+  try {
+    return new Intl.DisplayNames(["en"], { type: "region" }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
+/** "87%", or "under 1%" for a country Atlas all but ruled out (never a misleading "0%"). */
+const sureOf = (p: number) => (p < 0.01 ? "under 1%" : pct(p));
 
 declare global {
   interface Window {
@@ -139,21 +159,29 @@ export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps
   function reveal() {
     if (phase.kind !== "guessed" || !truth) return;
     const distanceKm = haversineKm(phase.guess, truth);
+    const code = countryAt(truth);
     setPhase({
       kind: "revealed",
       guess: phase.guess,
       truth,
       distanceKm,
       score: scoreDistance(distanceKm),
+      // A country below the heatmap's half a percent was as good as ruled out.
+      truthCountry: code ? { code, p: phase.guess.belief[code] ?? 0 } : null,
     });
   }
 
   const guess = phase.kind === "guessed" || phase.kind === "revealed" ? phase.guess : null;
   const revealView: RevealView | null =
     phase.kind === "revealed"
-      ? { truth: phase.truth, guesses: [{ actor: "atlas", at: phase.guess }] }
+      ? {
+          truth: phase.truth,
+          guesses: [{ actor: "atlas", at: phase.guess }],
+          // The heatmap, as at the game's reveal: every country shaded by how sure Atlas was.
+          belief: phase.guess.belief,
+        }
       : null;
-  const countryName = (code: string) => names.get(code) ?? code;
+  const countryName = (code: string) => names.get(code) ?? regionName(code);
   const busy = phase.kind === "loading" || phase.kind === "thinking";
   // The reveal's reality check, from this model's own held-out bands (null when too few photos).
   const realityCheck = guess && sureness ? surenessLine(sureness, guess.confidence) : null;
@@ -344,6 +372,19 @@ export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps
                   <strong className="tabular text-sonar">{formatDistance(phase.distanceKm)}</strong>{" "}
                   off, worth <strong className="tabular">{formatPoints(phase.score)}</strong> points
                   in the game.
+                </p>
+              )}
+              {phase.kind === "revealed" && (
+                <p className="mt-2 text-sm text-chalk-dim" data-testid="pocket-heatmap">
+                  The shading is how sure Atlas was of each country: the darker, the surer.
+                  {phase.truthCountry && (
+                    <>
+                      {" "}
+                      It gave {countryName(phase.truthCountry.code)}{" "}
+                      <strong className="tabular text-chalk">{sureOf(phase.truthCountry.p)}</strong>
+                      .
+                    </>
+                  )}
                 </p>
               )}
             </div>

@@ -1,6 +1,29 @@
 import { describe, expect, it } from "vitest";
 
-import { BELIEF_MAX_OPACITY, beliefByNumericId, beliefFillOpacity, beliefOpacity } from "./belief";
+import {
+  BELIEF_MAX_OPACITY,
+  beliefByNumericId,
+  beliefFillOpacity,
+  beliefFromProbabilities,
+  beliefOpacity,
+} from "./belief";
+
+describe("beliefFromProbabilities (a port of belief.py)", () => {
+  it("keeps countries at or above half a percent, rounded, largest first", () => {
+    // The same case as Python's test_belief_keeps_countries_at_or_above_half_a_percent...
+    const belief = beliefFromProbabilities(
+      ["ES", "FR", "IT", "DE"],
+      [0.12049, 0.41249, 0.005, 0.00499],
+    );
+    expect(belief).toEqual({ FR: 0.412, ES: 0.12, IT: 0.005 });
+    expect(Object.keys(belief)).toEqual(["FR", "ES", "IT"]);
+  });
+
+  it("keeps input order for ties and refuses mismatched lengths", () => {
+    expect(Object.keys(beliefFromProbabilities(["PE", "JP"], [0.5, 0.5]))).toEqual(["PE", "JP"]);
+    expect(() => beliefFromProbabilities(["PE"], [0.5, 0.5])).toThrow(/one probability/);
+  });
+});
 
 describe("beliefOpacity", () => {
   it("scales with the square root of the probability, up to the cap", () => {

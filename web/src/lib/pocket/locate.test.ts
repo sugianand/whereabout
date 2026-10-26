@@ -23,6 +23,15 @@ describe("Pocket Atlas locate (pinned to Python by data/fixtures/pocket_cases.js
     got.topCountries.forEach((t, i) => expect(t.p).toBeCloseTo(want.topCountries[i].p, 3));
     expect(got.confidence).toBeCloseTo(want.confidence, 3);
     expect(got.clues.map((x) => x.label)).toEqual(want.clues.map((x) => x.label));
+    // The heatmap: the same countries, in the same order, as Python's.
+    expect(Object.keys(got.belief)).toEqual(Object.keys(want.belief));
+    for (const [code, p] of Object.entries(want.belief)) expect(got.belief[code]).toBeCloseTo(p, 3);
+  });
+
+  it("shades the globe from the tempered probabilities, as '% sure' is", () => {
+    const unsure = locate(index, fixture.cases.at(-1)!.image);
+    expect(Object.keys(unsure.belief)).toEqual(["JP", "PE"]);
+    expect(unsure.belief.JP).toBeCloseTo(unsure.confidence, 3);
   });
 
   it("softens '% sure' by the index's temperature without moving the pin", () => {

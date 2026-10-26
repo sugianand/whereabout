@@ -49,6 +49,7 @@ from whereabout_eval.metrics import (
     paired_median_delta_ci,
 )
 from whereabout_ml.baselines import constant_guesses, random_city_guesses
+from whereabout_ml.belief import belief_from_probabilities
 from whereabout_ml.calibration import calibrate, softmax_t, sureness_bands
 from whereabout_ml.clue_heads import (
     CLIMATE_GROUP,
@@ -87,9 +88,6 @@ from whereabout_ml.zeroshot import LOGIT_SCALE, Guess, ZeroShotGeolocator, norma
 VERSION = "atlas-v0-zeroshot"
 # Countries each guess reports for the reveal's shortlist (the city step still searches 3).
 REVEAL_TOP_COUNTRIES = 5
-# The heatmap keeps every country at or above this probability, rounded to BELIEF_DECIMALS.
-BELIEF_MIN_P = 0.005
-BELIEF_DECIMALS = 3
 USER_AGENT = "WhereaboutBot/0.1 (https://github.com/sugianand/whereabout; research demo)"
 
 
@@ -171,19 +169,6 @@ def predictions_from_points(photos: Sequence[Photo], points) -> list[Prediction]
         Prediction(p.id, at, p.location, country, p.country)
         for p, (at, country) in zip(photos, points, strict=True)
     ]
-
-
-def belief_from_probabilities(
-    codes: Sequence[str], probabilities: Sequence[float], min_p: float = BELIEF_MIN_P
-) -> dict[str, float]:
-    """Compact country distribution for the reveal heatmap: {ISO alpha-2: p}, largest first.
-
-    Countries below `min_p` are dropped and the rest rounded to 3 decimals, so a photo costs
-    a few hundred bytes. The values need not sum to 1 (the tail is left out).
-    """
-    kept = [(c, float(p)) for c, p in zip(codes, probabilities, strict=True) if p >= min_p]
-    kept.sort(key=lambda cp: -cp[1])
-    return {c: round(p, BELIEF_DECIMALS) for c, p in kept}
 
 
 def country_logits(locator: ZeroShotGeolocator, embeddings: Sequence[np.ndarray]) -> np.ndarray:
