@@ -1,7 +1,7 @@
 {
  "model": "ViT-L-14/openai, country then city",
  "version": "atlas-v0-zeroshot",
- "generatedAt": "2026-10-26T01:25:31+00:00",
+ "generatedAt": "2026-10-26T13:31:21+00:00",
  "guesses": {
   "wm000": {
    "lng": 102.44784,
@@ -40,8 +40,8 @@
      "p": 0.896
     },
     {
-     "label": "Temperate",
-     "p": 0.7321
+     "label": "Tropical climate",
+     "p": 0.7673
     }
    ],
    "belief": {
@@ -140,8 +140,8 @@
    ],
    "clues": [
     {
-     "label": "Snow and ice",
-     "p": 0.9809
+     "label": "Continental climate",
+     "p": 0.8267
     },
     {
      "label": "Countryside",
@@ -266,12 +266,12 @@
    ],
    "clues": [
     {
-     "label": "Snow and ice",
-     "p": 0.9817
-    },
-    {
      "label": "No buildings",
      "p": 0.7881
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.5732
     }
    ],
    "belief": {
@@ -384,10 +384,6 @@
      "p": 0.9696
     },
     {
-     "label": "Arctic",
-     "p": 0.9512
-    },
-    {
      "label": "Mountains",
      "p": 0.8978
     }
@@ -498,8 +494,8 @@
      "p": 0.913
     },
     {
-     "label": "Temperate",
-     "p": 0.8439
+     "label": "Continental climate",
+     "p": 0.6177
     }
    ],
    "belief": {
@@ -631,8 +627,8 @@
      "p": 0.8144
     },
     {
-     "label": "Mediterranean",
-     "p": 0.766
+     "label": "Arid climate",
+     "p": 0.6025
     }
    ],
    "belief": {
@@ -731,10 +727,6 @@
     }
    ],
    "clues": [
-    {
-     "label": "Mediterranean",
-     "p": 0.9008
-    },
     {
      "label": "European old town",
      "p": 0.8854
@@ -841,8 +833,8 @@
      "p": 0.9582
     },
     {
-     "label": "Temperate",
-     "p": 0.6824
+     "label": "Arid climate",
+     "p": 0.6597
     }
    ],
    "belief": {
@@ -946,10 +938,6 @@
     }
    ],
    "clues": [
-    {
-     "label": "Temperate",
-     "p": 0.8266
-    },
     {
      "label": "Countryside",
      "p": 0.7378
@@ -1077,6 +1065,10 @@
     {
      "label": "City",
      "p": 0.8691
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.6221
     }
    ],
    "belief": {
@@ -1182,6 +1174,10 @@
     }
    ],
    "clues": [
+    {
+     "label": "Arid climate",
+     "p": 0.8741
+    },
     {
      "label": "No buildings",
      "p": 0.8111
@@ -1297,8 +1293,8 @@
      "p": 0.9643
     },
     {
-     "label": "Mediterranean",
-     "p": 0.7023
+     "label": "Temperate climate",
+     "p": 0.7771
     }
    ],
    "belief": {
@@ -1525,8 +1521,8 @@
      "p": 0.7151
     },
     {
-     "label": "Mediterranean",
-     "p": 0.6715
+     "label": "Temperate climate",
+     "p": 0.6085
     }
    ],
    "belief": {
@@ -1644,8 +1640,8 @@
    ],
    "clues": [
     {
-     "label": "Mediterranean",
-     "p": 0.8392
+     "label": "Arid climate",
+     "p": 0.8439
     },
     {
      "label": "European old town",
@@ -1757,12 +1753,12 @@
    ],
    "clues": [
     {
-     "label": "Islamic architecture",
-     "p": 0.8248
+     "label": "Arid climate",
+     "p": 0.9171
     },
     {
-     "label": "Mediterranean",
-     "p": 0.5577
+     "label": "Islamic architecture",
+     "p": 0.8248
     }
    ],
    "belief": {
@@ -1871,8 +1867,8 @@
      "p": 0.9203
     },
     {
-     "label": "Temperate",
-     "p": 0.6174
+     "label": "Continental climate",
+     "p": 0.7686
     }
    ],
    "belief": {
@@ -2101,8 +2097,8 @@
      "p": 0.691
     },
     {
-     "label": "Arctic",
-     "p": 0.6388
+     "label": "Continental climate",
+     "p": 0.6369
     }
    ],
    "belief": {
@@ -2477,10 +2473,6 @@
     {
      "label": "Mountains",
      "p": 0.9274
-    },
-    {
-     "label": "Mediterranean",
-     "p": 0.5915
     }
    ],
    "belief": {
@@ -2589,10 +2581,6 @@
     {
      "label": "Mountains",
      "p": 0.9177
-    },
-    {
-     "label": "Temperate",
-     "p": 0.6977
     }
    ],
    "belief": {
@@ -2707,10 +2695,6 @@
     {
      "label": "Coast",
      "p": 0.5867
-    },
-    {
-     "label": "Mediterranean",
-     "p": 0.5515
     }
    ],
    "belief": {
@@ -3041,12 +3025,12 @@
   "wm051": {
    "lng": -62.72499,
    "lat": 17.2955,
-   "confidence": 0.7931,
+   "confidence": 0.793,
    "guessedPlace": "Basseterre, KN",
    "topCountries": [
     {
      "country": "KN",
-     "p": 0.7931
+     "p": 0.793
     },
     {
      "country": "BQ",
@@ -3067,8 +3051,8 @@
    ],
    "clues": [
     {
-     "label": "Tropical",
-     "p": 0.7173
+     "label": "Tropical climate",
+     "p": 0.5707
     }
    ],
    "belief": {
@@ -3170,8 +3154,8 @@
      "p": 0.9895
     },
     {
-     "label": "Desert",
-     "p": 0.5768
+     "label": "Arid climate",
+     "p": 0.6393
     }
    ],
    "belief": {
@@ -3401,8 +3385,8 @@
    ],
    "clues": [
     {
-     "label": "Temperate",
-     "p": 0.5889
+     "label": "Temperate climate",
+     "p": 0.8063
     },
     {
      "label": "Mountains",
@@ -3537,6 +3521,10 @@
     {
      "label": "Village",
      "p": 0.95
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.7387
     }
    ],
    "belief": {
@@ -3641,10 +3629,6 @@
     {
      "label": "No buildings",
      "p": 0.9743
-    },
-    {
-     "label": "Arctic",
-     "p": 0.5635
     }
    ],
    "belief": {
@@ -3763,8 +3747,8 @@
    ],
    "clues": [
     {
-     "label": "Temperate",
-     "p": 0.7455
+     "label": "Tropical climate",
+     "p": 0.8591
     },
     {
      "label": "East Asian architecture",
@@ -3903,12 +3887,12 @@
    ],
    "clues": [
     {
-     "label": "Coast",
-     "p": 0.9524
+     "label": "Tropical climate",
+     "p": 0.9734
     },
     {
-     "label": "Tropical",
-     "p": 0.9223
+     "label": "Coast",
+     "p": 0.9524
     },
     {
      "label": "No buildings",
@@ -4032,6 +4016,10 @@
     {
      "label": "No buildings",
      "p": 0.9367
+    },
+    {
+     "label": "Tropical climate",
+     "p": 0.9126
     }
    ],
    "belief": {
@@ -4153,10 +4141,6 @@
     {
      "label": "Mountains",
      "p": 0.7116
-    },
-    {
-     "label": "Temperate",
-     "p": 0.6041
     }
    ],
    "belief": {
@@ -4289,8 +4273,8 @@
      "p": 0.8626
     },
     {
-     "label": "Temperate",
-     "p": 0.5756
+     "label": "Tropical climate",
+     "p": 0.5605
     }
    ],
    "belief": {
@@ -4397,8 +4381,8 @@
      "p": 0.9498
     },
     {
-     "label": "Desert",
-     "p": 0.572
+     "label": "Arid climate",
+     "p": 0.8554
     }
    ],
    "belief": {
@@ -4531,6 +4515,10 @@
     {
      "label": "City",
      "p": 0.8202
+    },
+    {
+     "label": "Continental climate",
+     "p": 0.6765
     }
    ],
    "belief": {
@@ -4641,8 +4629,8 @@
    ],
    "clues": [
     {
-     "label": "Tropical",
-     "p": 0.6955
+     "label": "Tropical climate",
+     "p": 0.9591
     },
     {
      "label": "Coast",
@@ -4855,12 +4843,7 @@
      "p": 0.0426
     }
    ],
-   "clues": [
-    {
-     "label": "Mediterranean",
-     "p": 0.8401
-    }
-   ],
+   "clues": [],
    "belief": {
     "KW": 0.056,
     "DK": 0.053,
@@ -5004,12 +4987,12 @@
      "p": 0.8764
     },
     {
-     "label": "Coast",
-     "p": 0.8278
+     "label": "Temperate climate",
+     "p": 0.8441
     },
     {
-     "label": "Temperate",
-     "p": 0.552
+     "label": "Coast",
+     "p": 0.8278
     }
    ],
    "belief": {
@@ -5130,10 +5113,6 @@
     {
      "label": "Coast",
      "p": 0.813
-    },
-    {
-     "label": "Temperate",
-     "p": 0.6987
     }
    ],
    "belief": {
@@ -5242,12 +5221,12 @@
    ],
    "clues": [
     {
-     "label": "Tropical",
-     "p": 0.8976
-    },
-    {
      "label": "Colonial architecture",
      "p": 0.8428
+    },
+    {
+     "label": "Tropical climate",
+     "p": 0.752
     },
     {
      "label": "Coast",
@@ -5373,6 +5352,10 @@
     {
      "label": "No buildings",
      "p": 0.8634
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.8056
     }
    ],
    "belief": {
@@ -5481,6 +5464,10 @@
     {
      "label": "No buildings",
      "p": 0.9255
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.9118
     }
    ],
    "belief": {
@@ -5586,6 +5573,10 @@
     {
      "label": "No buildings",
      "p": 0.9899
+    },
+    {
+     "label": "Arid climate",
+     "p": 0.7112
     }
    ],
    "belief": {
@@ -5708,8 +5699,8 @@
      "p": 0.9909
     },
     {
-     "label": "Temperate",
-     "p": 0.689
+     "label": "Temperate climate",
+     "p": 0.6448
     }
    ],
    "belief": {
@@ -5818,8 +5809,8 @@
      "p": 0.9184
     },
     {
-     "label": "Mediterranean",
-     "p": 0.6707
+     "label": "Temperate climate",
+     "p": 0.6292
     }
    ],
    "belief": {
@@ -5955,8 +5946,8 @@
      "p": 0.9969
     },
     {
-     "label": "Desert",
-     "p": 0.8973
+     "label": "Arid climate",
+     "p": 0.9339
     },
     {
      "label": "Countryside",
@@ -6092,8 +6083,8 @@
      "p": 0.9588
     },
     {
-     "label": "Tropical",
-     "p": 0.5837
+     "label": "Temperate climate",
+     "p": 0.6372
     }
    ],
    "belief": {
@@ -6227,8 +6218,8 @@
      "p": 0.9271
     },
     {
-     "label": "Mediterranean",
-     "p": 0.7165
+     "label": "Temperate climate",
+     "p": 0.648
     }
    ],
    "belief": {
@@ -6329,8 +6320,8 @@
      "p": 0.9788
     },
     {
-     "label": "Temperate",
-     "p": 0.7413
+     "label": "Arid climate",
+     "p": 0.9443
     }
    ],
    "belief": {
@@ -6439,8 +6430,8 @@
      "p": 0.9828
     },
     {
-     "label": "Temperate",
-     "p": 0.6086
+     "label": "Temperate climate",
+     "p": 0.8178
     }
    ],
    "belief": {
@@ -6546,12 +6537,12 @@
      "p": 0.9823
     },
     {
-     "label": "Mountains",
-     "p": 0.9175
+     "label": "Tropical climate",
+     "p": 0.938
     },
     {
-     "label": "Tropical",
-     "p": 0.8482
+     "label": "Mountains",
+     "p": 0.9175
     }
    ],
    "belief": {
@@ -6670,10 +6661,6 @@
      "p": 0.9877
     },
     {
-     "label": "Snow and ice",
-     "p": 0.8674
-    },
-    {
      "label": "Mountains",
      "p": 0.5953
     }
@@ -6790,6 +6777,10 @@
     {
      "label": "Coast",
      "p": 0.947
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.8201
     }
    ],
    "belief": {
@@ -6926,10 +6917,6 @@
     {
      "label": "Mountains",
      "p": 0.9823
-    },
-    {
-     "label": "Temperate",
-     "p": 0.561
     }
    ],
    "belief": {
@@ -7190,10 +7177,6 @@
     {
      "label": "No buildings",
      "p": 0.9863
-    },
-    {
-     "label": "Snow and ice",
-     "p": 0.8528
     }
    ],
    "belief": {
@@ -7427,6 +7410,10 @@
     {
      "label": "Modern skyline",
      "p": 0.8287
+    },
+    {
+     "label": "Tropical climate",
+     "p": 0.6556
     }
    ],
    "belief": {
@@ -7526,8 +7513,8 @@
      "p": 0.9976
     },
     {
-     "label": "Desert",
-     "p": 0.9937
+     "label": "Arid climate",
+     "p": 0.9433
     },
     {
      "label": "Countryside",
@@ -7631,10 +7618,6 @@
     {
      "label": "East Asian architecture",
      "p": 0.9824
-    },
-    {
-     "label": "Temperate",
-     "p": 0.8306
     }
    ],
    "belief": {
@@ -7843,8 +7826,8 @@
      "p": 0.9845
     },
     {
-     "label": "Tropical",
-     "p": 0.889
+     "label": "Tropical climate",
+     "p": 0.9142
     },
     {
      "label": "Coast",
@@ -8088,8 +8071,8 @@
      "p": 0.9876
     },
     {
-     "label": "Desert",
-     "p": 0.9314
+     "label": "Arid climate",
+     "p": 0.9461
     },
     {
      "label": "Mountains",
@@ -8207,10 +8190,6 @@
     {
      "label": "Coast",
      "p": 0.8435
-    },
-    {
-     "label": "Tropical",
-     "p": 0.7845
     },
     {
      "label": "No buildings",
@@ -8341,16 +8320,16 @@
    ],
    "clues": [
     {
-     "label": "Desert",
-     "p": 0.9418
-    },
-    {
      "label": "No buildings",
      "p": 0.9378
     },
     {
      "label": "Mountains",
      "p": 0.9262
+    },
+    {
+     "label": "Arid climate",
+     "p": 0.7447
     }
    ],
    "belief": {
@@ -8476,7 +8455,12 @@
      "p": 0.0424
     }
    ],
-   "clues": [],
+   "clues": [
+    {
+     "label": "Arid climate",
+     "p": 0.8694
+    }
+   ],
    "belief": {
     "LY": 0.194,
     "IQ": 0.152,
@@ -8598,6 +8582,10 @@
     {
      "label": "European old town",
      "p": 0.7624
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.6657
     }
    ],
    "belief": {
@@ -8717,8 +8705,8 @@
      "p": 0.9608
     },
     {
-     "label": "Tropical",
-     "p": 0.9414
+     "label": "Tropical climate",
+     "p": 0.9319
     }
    ],
    "belief": {
@@ -8849,10 +8837,6 @@
     {
      "label": "Mountains",
      "p": 0.648
-    },
-    {
-     "label": "Temperate",
-     "p": 0.6086
     }
    ],
    "belief": {
@@ -9080,8 +9064,8 @@
    ],
    "clues": [
     {
-     "label": "Tropical",
-     "p": 0.9353
+     "label": "Tropical climate",
+     "p": 0.9297
     },
     {
      "label": "Coast",
@@ -9202,10 +9186,6 @@
     {
      "label": "No buildings",
      "p": 0.7235
-    },
-    {
-     "label": "Temperate",
-     "p": 0.5849
     }
    ],
    "belief": {
@@ -9303,8 +9283,8 @@
    ],
    "clues": [
     {
-     "label": "Desert",
-     "p": 0.8765
+     "label": "Arid climate",
+     "p": 0.8826
     },
     {
      "label": "City",
@@ -9454,10 +9434,6 @@
     {
      "label": "No buildings",
      "p": 0.9722
-    },
-    {
-     "label": "Snow and ice",
-     "p": 0.9351
     }
    ],
    "belief": {
@@ -9570,6 +9546,10 @@
     {
      "label": "Colonial architecture",
      "p": 0.8475
+    },
+    {
+     "label": "Tropical climate",
+     "p": 0.6074
     }
    ],
    "belief": {
@@ -9789,12 +9769,12 @@
      "p": 0.9933
     },
     {
-     "label": "Countryside",
-     "p": 0.7109
+     "label": "Continental climate",
+     "p": 0.794
     },
     {
-     "label": "Arctic",
-     "p": 0.6376
+     "label": "Countryside",
+     "p": 0.7109
     }
    ],
    "belief": {
@@ -10026,16 +10006,16 @@
    ],
    "clues": [
     {
-     "label": "Arctic",
-     "p": 0.6883
-    },
-    {
      "label": "Village",
      "p": 0.663
     },
     {
      "label": "No buildings",
      "p": 0.6024
+    },
+    {
+     "label": "Continental climate",
+     "p": 0.5813
     }
    ],
    "belief": {
@@ -10138,6 +10118,10 @@
     {
      "label": "No buildings",
      "p": 0.9626
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.7867
     }
    ],
    "belief": {
@@ -10532,10 +10516,6 @@
      "p": 0.9906
     },
     {
-     "label": "Temperate",
-     "p": 0.6272
-    },
-    {
      "label": "Village",
      "p": 0.5529
     }
@@ -10745,8 +10725,8 @@
      "p": 0.9766
     },
     {
-     "label": "Temperate",
-     "p": 0.5887
+     "label": "Temperate climate",
+     "p": 0.6175
     }
    ],
    "belief": {
@@ -10849,8 +10829,8 @@
      "p": 0.9908
     },
     {
-     "label": "Temperate",
-     "p": 0.6275
+     "label": "Temperate climate",
+     "p": 0.6978
     },
     {
      "label": "Village",
@@ -10951,10 +10931,6 @@
     }
    ],
    "clues": [
-    {
-     "label": "Temperate",
-     "p": 0.9093
-    },
     {
      "label": "No buildings",
      "p": 0.8594
@@ -11100,6 +11076,10 @@
     {
      "label": "Countryside",
      "p": 0.6387
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.5643
     }
    ],
    "belief": {
@@ -11209,8 +11189,8 @@
      "p": 0.9475
     },
     {
-     "label": "Temperate",
-     "p": 0.9346
+     "label": "Temperate climate",
+     "p": 0.6969
     },
     {
      "label": "Village",
@@ -11295,12 +11275,12 @@
   "wh3677747": {
    "lng": 166.44884,
    "lat": -22.27407,
-   "confidence": 0.3236,
+   "confidence": 0.3235,
    "guessedPlace": "Noumea, NC",
    "topCountries": [
     {
      "country": "NZ",
-     "p": 0.3236
+     "p": 0.3235
     },
     {
      "country": "NC",
@@ -11327,6 +11307,10 @@
     {
      "label": "Modern skyline",
      "p": 0.7166
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.6648
     }
    ],
    "belief": {
@@ -11434,12 +11418,7 @@
      "p": 0.0638
     }
    ],
-   "clues": [
-    {
-     "label": "Temperate",
-     "p": 0.844
-    }
-   ],
+   "clues": [],
    "belief": {
     "LT": 0.265,
     "PL": 0.25,
@@ -11549,8 +11528,8 @@
      "p": 0.7616
     },
     {
-     "label": "Tropical",
-     "p": 0.7387
+     "label": "Tropical climate",
+     "p": 0.6426
     }
    ],
    "belief": {
@@ -11783,10 +11762,6 @@
     {
      "label": "European old town",
      "p": 0.9066
-    },
-    {
-     "label": "Temperate",
-     "p": 0.752
     }
    ],
    "belief": {
@@ -11898,16 +11873,16 @@
    ],
    "clues": [
     {
-     "label": "Temperate",
-     "p": 0.9738
-    },
-    {
      "label": "No buildings",
      "p": 0.8971
     },
     {
      "label": "Countryside",
      "p": 0.8832
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.7779
     }
    ],
    "belief": {
@@ -12141,8 +12116,8 @@
      "p": 0.9599
     },
     {
-     "label": "Temperate",
-     "p": 0.7893
+     "label": "Temperate climate",
+     "p": 0.6209
     }
    ],
    "belief": {
@@ -12244,8 +12219,8 @@
      "p": 0.7737
     },
     {
-     "label": "Temperate",
-     "p": 0.746
+     "label": "Temperate climate",
+     "p": 0.6546
     }
    ],
    "belief": {
@@ -12365,8 +12340,8 @@
      "p": 0.9275
     },
     {
-     "label": "Mediterranean",
-     "p": 0.6536
+     "label": "Temperate climate",
+     "p": 0.8341
     }
    ],
    "belief": {
@@ -12641,12 +12616,12 @@
    ],
    "clues": [
     {
-     "label": "Mediterranean",
-     "p": 0.9496
-    },
-    {
      "label": "Islamic architecture",
      "p": 0.8958
+    },
+    {
+     "label": "Arid climate",
+     "p": 0.6335
     }
    ],
    "belief": {
@@ -12752,8 +12727,8 @@
      "p": 0.9123
     },
     {
-     "label": "Tropical",
-     "p": 0.8061
+     "label": "Tropical climate",
+     "p": 0.761
     },
     {
      "label": "Village",
@@ -13018,8 +12993,8 @@
    ],
    "clues": [
     {
-     "label": "Temperate",
-     "p": 0.7893
+     "label": "Continental climate",
+     "p": 0.7695
     },
     {
      "label": "City",
@@ -13145,10 +13120,6 @@
     {
      "label": "East Asian architecture",
      "p": 0.9982
-    },
-    {
-     "label": "Tropical",
-     "p": 0.7766
     }
    ],
    "belief": {
@@ -13378,16 +13349,16 @@
    ],
    "clues": [
     {
-     "label": "Temperate",
-     "p": 0.7032
-    },
-    {
      "label": "City",
      "p": 0.7016
     },
     {
      "label": "No buildings",
      "p": 0.5699
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.5521
     }
    ],
    "belief": {
@@ -13497,10 +13468,6 @@
     {
      "label": "Countryside",
      "p": 0.6599
-    },
-    {
-     "label": "Temperate",
-     "p": 0.6595
     }
    ],
    "belief": {
@@ -13583,12 +13550,12 @@
   "wh7179854": {
    "lng": 12.38878,
    "lat": 43.1122,
-   "confidence": 0.3871,
+   "confidence": 0.387,
    "guessedPlace": "Perugia, IT",
    "topCountries": [
     {
      "country": "FR",
-     "p": 0.3871
+     "p": 0.387
     },
     {
      "country": "IT",
@@ -13609,8 +13576,8 @@
    ],
    "clues": [
     {
-     "label": "Mediterranean",
-     "p": 0.6791
+     "label": "Temperate climate",
+     "p": 0.6838
     },
     {
      "label": "European old town",
@@ -13722,7 +13689,12 @@
      "p": 0.0356
     }
    ],
-   "clues": [],
+   "clues": [
+    {
+     "label": "Temperate climate",
+     "p": 0.5821
+    }
+   ],
    "belief": {
     "AU": 0.463,
     "NR": 0.056,
@@ -13845,8 +13817,8 @@
      "p": 0.8715
     },
     {
-     "label": "Temperate",
-     "p": 0.6874
+     "label": "Temperate climate",
+     "p": 0.7968
     }
    ],
    "belief": {
@@ -13952,12 +13924,7 @@
      "p": 0.059
     }
    ],
-   "clues": [
-    {
-     "label": "Mediterranean",
-     "p": 0.5665
-    }
-   ],
+   "clues": [],
    "belief": {
     "CW": 0.072,
     "GP": 0.069,
@@ -14092,10 +14059,6 @@
     {
      "label": "No buildings",
      "p": 0.5972
-    },
-    {
-     "label": "Mediterranean",
-     "p": 0.5914
     }
    ],
    "belief": {
@@ -14339,8 +14302,8 @@
      "p": 0.9164
     },
     {
-     "label": "Tropical",
-     "p": 0.6867
+     "label": "Temperate climate",
+     "p": 0.638
     }
    ],
    "belief": {
@@ -14454,10 +14417,6 @@
     }
    ],
    "clues": [
-    {
-     "label": "Mediterranean",
-     "p": 0.9238
-    },
     {
      "label": "European old town",
      "p": 0.8644
@@ -14577,8 +14536,8 @@
      "p": 0.9891
     },
     {
-     "label": "Mediterranean",
-     "p": 0.8757
+     "label": "Arid climate",
+     "p": 0.8451
     }
    ],
    "belief": {
@@ -14684,8 +14643,8 @@
    ],
    "clues": [
     {
-     "label": "Mediterranean",
-     "p": 0.8849
+     "label": "Temperate climate",
+     "p": 0.6767
     }
    ],
    "belief": {
@@ -14787,12 +14746,12 @@
    ],
    "clues": [
     {
-     "label": "Mediterranean",
-     "p": 0.9552
-    },
-    {
      "label": "Islamic architecture",
      "p": 0.9266
+    },
+    {
+     "label": "Arid climate",
+     "p": 0.8296
     }
    ],
    "belief": {
@@ -14901,8 +14860,8 @@
      "p": 0.9661
     },
     {
-     "label": "Mediterranean",
-     "p": 0.9599
+     "label": "Arid climate",
+     "p": 0.7477
     }
    ],
    "belief": {
@@ -15016,8 +14975,8 @@
      "p": 0.9535
     },
     {
-     "label": "Mediterranean",
-     "p": 0.7429
+     "label": "Arid climate",
+     "p": 0.8693
     },
     {
      "label": "City",
@@ -15131,8 +15090,8 @@
      "p": 0.6512
     },
     {
-     "label": "Mediterranean",
-     "p": 0.6034
+     "label": "Arid climate",
+     "p": 0.6358
     }
    ],
    "belief": {
@@ -15233,8 +15192,8 @@
    ],
    "clues": [
     {
-     "label": "Mediterranean",
-     "p": 0.7777
+     "label": "Arid climate",
+     "p": 0.678
     },
     {
      "label": "Islamic architecture",
@@ -15347,8 +15306,8 @@
      "p": 0.9761
     },
     {
-     "label": "Mediterranean",
-     "p": 0.9134
+     "label": "Arid climate",
+     "p": 0.8581
     },
     {
      "label": "Village",
@@ -15464,8 +15423,8 @@
      "p": 0.966
     },
     {
-     "label": "Temperate",
-     "p": 0.8631
+     "label": "Temperate climate",
+     "p": 0.6642
     },
     {
      "label": "Countryside",
@@ -15567,8 +15526,8 @@
    ],
    "clues": [
     {
-     "label": "Arctic",
-     "p": 0.8858
+     "label": "Continental climate",
+     "p": 0.7094
     },
     {
      "label": "Mountains",
@@ -15675,10 +15634,6 @@
     }
    ],
    "clues": [
-    {
-     "label": "Temperate",
-     "p": 0.8581
-    },
     {
      "label": "European old town",
      "p": 0.7624
@@ -15807,10 +15762,6 @@
    ],
    "clues": [
     {
-     "label": "Arctic",
-     "p": 0.7253
-    },
-    {
      "label": "No buildings",
      "p": 0.7228
     }
@@ -15923,8 +15874,8 @@
      "p": 0.9895
     },
     {
-     "label": "Temperate",
-     "p": 0.5578
+     "label": "Temperate climate",
+     "p": 0.6369
     }
    ],
    "belief": {
@@ -16019,10 +15970,6 @@
     }
    ],
    "clues": [
-    {
-     "label": "Tropical",
-     "p": 0.9583
-    },
     {
      "label": "Colonial architecture",
      "p": 0.727
@@ -16280,12 +16227,12 @@
    ],
    "clues": [
     {
-     "label": "Islamic architecture",
-     "p": 0.9073
+     "label": "Arid climate",
+     "p": 0.9304
     },
     {
-     "label": "Mediterranean",
-     "p": 0.67
+     "label": "Islamic architecture",
+     "p": 0.9073
     },
     {
      "label": "City",
@@ -16394,8 +16341,8 @@
      "p": 0.984
     },
     {
-     "label": "Mediterranean",
-     "p": 0.9395
+     "label": "Arid climate",
+     "p": 0.5802
     },
     {
      "label": "City",
@@ -16503,6 +16450,10 @@
     }
    ],
    "clues": [
+    {
+     "label": "Arid climate",
+     "p": 0.8679
+    },
     {
      "label": "Countryside",
      "p": 0.7624
@@ -16626,12 +16577,12 @@
    ],
    "clues": [
     {
-     "label": "Islamic architecture",
-     "p": 0.9336
+     "label": "Arid climate",
+     "p": 0.937
     },
     {
-     "label": "Temperate",
-     "p": 0.6343
+     "label": "Islamic architecture",
+     "p": 0.9336
     },
     {
      "label": "Village",
@@ -16745,6 +16696,10 @@
     {
      "label": "Coast",
      "p": 0.9638
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.6444
     }
    ],
    "belief": {
@@ -16846,12 +16801,12 @@
   "wh14236999": {
    "lng": -99.90891,
    "lat": 16.84942,
-   "confidence": 0.2475,
+   "confidence": 0.2474,
    "guessedPlace": "Acapulco de Juarez, MX",
    "topCountries": [
     {
      "country": "SV",
-     "p": 0.2475
+     "p": 0.2474
     },
     {
      "country": "MX",
@@ -16878,6 +16833,10 @@
     {
      "label": "Coast",
      "p": 0.7809
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.752
     }
    ],
    "belief": {
@@ -16992,8 +16951,8 @@
      "p": 0.9796
     },
     {
-     "label": "Temperate",
-     "p": 0.7303
+     "label": "Temperate climate",
+     "p": 0.7974
     }
    ],
    "belief": {
@@ -17102,12 +17061,12 @@
    ],
    "clues": [
     {
-     "label": "Colonial architecture",
-     "p": 0.7917
+     "label": "Tropical climate",
+     "p": 0.8947
     },
     {
-     "label": "Tropical",
-     "p": 0.6981
+     "label": "Colonial architecture",
+     "p": 0.7917
     },
     {
      "label": "Coast",
@@ -17230,12 +17189,12 @@
    ],
    "clues": [
     {
-     "label": "Village",
-     "p": 0.7356
+     "label": "Arid climate",
+     "p": 0.9227
     },
     {
-     "label": "Mediterranean",
-     "p": 0.6282
+     "label": "Village",
+     "p": 0.7356
     }
    ],
    "belief": {
@@ -17337,16 +17296,16 @@
    ],
    "clues": [
     {
+     "label": "Arid climate",
+     "p": 0.9196
+    },
+    {
      "label": "Islamic architecture",
      "p": 0.7179
     },
     {
      "label": "Village",
      "p": 0.5846
-    },
-    {
-     "label": "Mediterranean",
-     "p": 0.5794
     }
    ],
    "belief": {
@@ -17450,16 +17409,16 @@
    ],
    "clues": [
     {
+     "label": "Arid climate",
+     "p": 0.9692
+    },
+    {
      "label": "Islamic architecture",
      "p": 0.8878
     },
     {
      "label": "Village",
      "p": 0.8452
-    },
-    {
-     "label": "Desert",
-     "p": 0.5914
     }
    ],
    "belief": {
@@ -17570,6 +17529,10 @@
     }
    ],
    "clues": [
+    {
+     "label": "Arid climate",
+     "p": 0.9175
+    },
     {
      "label": "Islamic architecture",
      "p": 0.7888
@@ -17684,12 +17647,12 @@
      "p": 0.9903
     },
     {
-     "label": "Temperate",
-     "p": 0.9049
-    },
-    {
      "label": "Countryside",
      "p": 0.8457
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.7818
     }
    ],
    "belief": {
@@ -17796,12 +17759,12 @@
      "p": 0.9812
     },
     {
-     "label": "Temperate",
-     "p": 0.8648
-    },
-    {
      "label": "Countryside",
      "p": 0.8184
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.6175
     }
    ],
    "belief": {
@@ -17914,10 +17877,6 @@
     {
      "label": "No buildings",
      "p": 0.8984
-    },
-    {
-     "label": "Temperate",
-     "p": 0.8677
     },
     {
      "label": "Countryside",
@@ -18044,6 +18003,10 @@
     {
      "label": "City",
      "p": 0.8937
+    },
+    {
+     "label": "Continental climate",
+     "p": 0.6198
     }
    ],
    "belief": {
@@ -18152,10 +18115,6 @@
     }
    ],
    "clues": [
-    {
-     "label": "Tropical",
-     "p": 0.9017
-    },
     {
      "label": "East Asian architecture",
      "p": 0.7959
@@ -18286,8 +18245,8 @@
      "p": 0.636
     },
     {
-     "label": "Tropical",
-     "p": 0.584
+     "label": "Temperate climate",
+     "p": 0.598
     }
    ],
    "belief": {
@@ -18401,6 +18360,10 @@
     {
      "label": "East Asian architecture",
      "p": 0.9746
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.6916
     }
    ],
    "belief": {
@@ -18508,8 +18471,8 @@
    ],
    "clues": [
     {
-     "label": "Temperate",
-     "p": 0.8639
+     "label": "Temperate climate",
+     "p": 0.7506
     },
     {
      "label": "Countryside",
@@ -18618,8 +18581,8 @@
    ],
    "clues": [
     {
-     "label": "Tropical",
-     "p": 0.9378
+     "label": "Tropical climate",
+     "p": 0.8358
     },
     {
      "label": "Village",
@@ -18759,8 +18722,8 @@
      "p": 0.921
     },
     {
-     "label": "Mediterranean",
-     "p": 0.7922
+     "label": "Temperate climate",
+     "p": 0.7106
     }
    ],
    "belief": {
@@ -18877,8 +18840,8 @@
      "p": 0.8466
     },
     {
-     "label": "Mediterranean",
-     "p": 0.7518
+     "label": "Continental climate",
+     "p": 0.5985
     }
    ],
    "belief": {
@@ -18990,8 +18953,8 @@
      "p": 0.8626
     },
     {
-     "label": "Mediterranean",
-     "p": 0.8558
+     "label": "Temperate climate",
+     "p": 0.7147
     },
     {
      "label": "Village",
@@ -19100,6 +19063,10 @@
     {
      "label": "European old town",
      "p": 0.914
+    },
+    {
+     "label": "Continental climate",
+     "p": 0.9057
     }
    ],
    "belief": {
@@ -19208,12 +19175,12 @@
    ],
    "clues": [
     {
-     "label": "No buildings",
-     "p": 0.8387
+     "label": "Tropical climate",
+     "p": 0.9082
     },
     {
-     "label": "Tropical",
-     "p": 0.6188
+     "label": "No buildings",
+     "p": 0.8387
     }
    ],
    "belief": {
@@ -19343,10 +19310,6 @@
     {
      "label": "Colonial architecture",
      "p": 0.9861
-    },
-    {
-     "label": "Tropical",
-     "p": 0.8899
     }
    ],
    "belief": {
@@ -19457,12 +19420,12 @@
   "wh19194913": {
    "lng": -56.1773,
    "lat": 46.77914,
-   "confidence": 0.3171,
+   "confidence": 0.3172,
    "guessedPlace": "Saint-Pierre, PM",
    "topCountries": [
     {
      "country": "PM",
-     "p": 0.3171
+     "p": 0.3172
     },
     {
      "country": "NF",
@@ -19597,8 +19560,8 @@
      "p": 0.7515
     },
     {
-     "label": "Arctic",
-     "p": 0.732
+     "label": "Temperate climate",
+     "p": 0.5795
     }
    ],
    "belief": {
@@ -20033,7 +19996,7 @@
     },
     {
      "country": "US",
-     "p": 0.0301
+     "p": 0.0302
     },
     {
      "country": "PM",
@@ -20052,10 +20015,6 @@
     {
      "label": "European old town",
      "p": 0.9367
-    },
-    {
-     "label": "Temperate",
-     "p": 0.8309
     },
     {
      "label": "City",
@@ -20164,8 +20123,8 @@
      "p": 0.9556
     },
     {
-     "label": "Desert",
-     "p": 0.6941
+     "label": "Arid climate",
+     "p": 0.6278
     }
    ],
    "belief": {
@@ -20293,6 +20252,10 @@
     {
      "label": "European old town",
      "p": 0.679
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.6706
     }
    ],
    "belief": {
@@ -20418,6 +20381,10 @@
    ],
    "clues": [
     {
+     "label": "Arid climate",
+     "p": 0.8379
+    },
+    {
      "label": "Mountains",
      "p": 0.5921
     }
@@ -20524,8 +20491,8 @@
    ],
    "clues": [
     {
-     "label": "Desert",
-     "p": 0.9757
+     "label": "Arid climate",
+     "p": 0.8202
     },
     {
      "label": "Countryside",
@@ -20657,8 +20624,8 @@
      "p": 0.952
     },
     {
-     "label": "Mediterranean",
-     "p": 0.7483
+     "label": "Arid climate",
+     "p": 0.8966
     },
     {
      "label": "Colonial architecture",
@@ -20769,8 +20736,8 @@
    ],
    "clues": [
     {
-     "label": "Temperate",
-     "p": 0.9132
+     "label": "Continental climate",
+     "p": 0.9693
     }
    ],
    "belief": {
@@ -20873,7 +20840,12 @@
      "p": 0.0203
     }
    ],
-   "clues": [],
+   "clues": [
+    {
+     "label": "Tropical climate",
+     "p": 0.6343
+    }
+   ],
    "belief": {
     "MY": 0.03,
     "BN": 0.029,
@@ -21023,8 +20995,8 @@
    ],
    "clues": [
     {
-     "label": "Mediterranean",
-     "p": 0.752
+     "label": "Arid climate",
+     "p": 0.8691
     },
     {
      "label": "Village",
@@ -21143,7 +21115,12 @@
      "p": 0.0299
     }
    ],
-   "clues": [],
+   "clues": [
+    {
+     "label": "Continental climate",
+     "p": 0.713
+    }
+   ],
    "belief": {
     "RU": 0.483,
     "BY": 0.211,
@@ -21249,6 +21226,10 @@
     {
      "label": "No buildings",
      "p": 0.997
+    },
+    {
+     "label": "Continental climate",
+     "p": 0.6983
     }
    ],
    "belief": {
@@ -21356,6 +21337,10 @@
     }
    ],
    "clues": [
+    {
+     "label": "Tropical climate",
+     "p": 0.6029
+    },
     {
      "label": "Colonial architecture",
      "p": 0.5704
@@ -21499,8 +21484,8 @@
      "p": 0.9625
     },
     {
-     "label": "Temperate",
-     "p": 0.7723
+     "label": "Continental climate",
+     "p": 0.8772
     }
    ],
    "belief": {
@@ -21611,10 +21596,6 @@
     }
    ],
    "clues": [
-    {
-     "label": "Temperate",
-     "p": 0.9641
-    },
     {
      "label": "No buildings",
      "p": 0.9627
@@ -21727,8 +21708,8 @@
      "p": 0.9317
     },
     {
-     "label": "Tropical",
-     "p": 0.571
+     "label": "Arid climate",
+     "p": 0.7222
     }
    ],
    "belief": {
@@ -21980,12 +21961,12 @@
    ],
    "clues": [
     {
-     "label": "European old town",
-     "p": 0.741
+     "label": "Temperate climate",
+     "p": 0.7458
     },
     {
-     "label": "Mediterranean",
-     "p": 0.7127
+     "label": "European old town",
+     "p": 0.741
     }
    ],
    "belief": {
@@ -22094,6 +22075,10 @@
     {
      "label": "Mountains",
      "p": 0.7356
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.6891
     }
    ],
    "belief": {
@@ -22221,10 +22206,6 @@
     {
      "label": "East Asian architecture",
      "p": 0.9795
-    },
-    {
-     "label": "Tropical",
-     "p": 0.6057
     }
    ],
    "belief": {
@@ -22436,6 +22417,10 @@
     }
    ],
    "clues": [
+    {
+     "label": "Arid climate",
+     "p": 0.7457
+    },
     {
      "label": "Colonial architecture",
      "p": 0.6639
@@ -22738,10 +22723,6 @@
      "p": 0.9891
     },
     {
-     "label": "Temperate",
-     "p": 0.9652
-    },
-    {
      "label": "Countryside",
      "p": 0.8855
     }
@@ -22872,8 +22853,8 @@
    ],
    "clues": [
     {
-     "label": "Temperate",
-     "p": 0.6729
+     "label": "Continental climate",
+     "p": 0.815
     },
     {
      "label": "European old town",
@@ -23015,8 +22996,8 @@
      "p": 0.8461
     },
     {
-     "label": "Mediterranean",
-     "p": 0.8139
+     "label": "Arid climate",
+     "p": 0.592
     },
     {
      "label": "European old town",
@@ -23121,8 +23102,8 @@
    ],
    "clues": [
     {
-     "label": "Mediterranean",
-     "p": 0.7069
+     "label": "Temperate climate",
+     "p": 0.5934
     }
    ],
    "belief": {
@@ -23228,8 +23209,8 @@
    ],
    "clues": [
     {
-     "label": "Mediterranean",
-     "p": 0.8061
+     "label": "Temperate climate",
+     "p": 0.7768
     },
     {
      "label": "City",
@@ -23346,8 +23327,8 @@
      "p": 0.714
     },
     {
-     "label": "Temperate",
-     "p": 0.6843
+     "label": "Temperate climate",
+     "p": 0.5637
     }
    ],
    "belief": {
@@ -23472,12 +23453,8 @@
    ],
    "clues": [
     {
-     "label": "Mediterranean",
-     "p": 0.8987
-    },
-    {
      "label": "European old town",
-     "p": 0.679
+     "p": 0.6791
     }
    ],
    "belief": {
@@ -23581,6 +23558,10 @@
     {
      "label": "European old town",
      "p": 0.9704
+    },
+    {
+     "label": "Continental climate",
+     "p": 0.7945
     },
     {
      "label": "City",
@@ -23691,8 +23672,8 @@
      "p": 0.9762
     },
     {
-     "label": "Temperate",
-     "p": 0.6402
+     "label": "Continental climate",
+     "p": 0.8831
     },
     {
      "label": "Village",
@@ -23805,8 +23786,8 @@
      "p": 0.9817
     },
     {
-     "label": "Temperate",
-     "p": 0.7442
+     "label": "Continental climate",
+     "p": 0.9022
     },
     {
      "label": "Countryside",
@@ -23921,10 +23902,6 @@
     {
      "label": "European old town",
      "p": 0.7601
-    },
-    {
-     "label": "Temperate",
-     "p": 0.76
     }
    ],
    "belief": {
@@ -24019,7 +23996,7 @@
     },
     {
      "country": "UA",
-     "p": 0.1018
+     "p": 0.1019
     },
     {
      "country": "RU",
@@ -24036,12 +24013,12 @@
      "p": 0.9332
     },
     {
-     "label": "Temperate",
-     "p": 0.9309
-    },
-    {
      "label": "No buildings",
      "p": 0.8939
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.5502
     }
    ],
    "belief": {
@@ -24155,12 +24132,12 @@
    ],
    "clues": [
     {
-     "label": "European old town",
-     "p": 0.858
+     "label": "Continental climate",
+     "p": 0.8798
     },
     {
-     "label": "Temperate",
-     "p": 0.7062
+     "label": "European old town",
+     "p": 0.858
     },
     {
      "label": "Village",
@@ -24277,8 +24254,8 @@
      "p": 0.6531
     },
     {
-     "label": "Mediterranean",
-     "p": 0.5551
+     "label": "Temperate climate",
+     "p": 0.6288
     }
    ],
    "belief": {
@@ -24420,6 +24397,10 @@
      "p": 0.9812
     },
     {
+     "label": "Continental climate",
+     "p": 0.659
+    },
+    {
      "label": "Countryside",
      "p": 0.5942
     }
@@ -24523,12 +24504,7 @@
      "p": 0.0149
     }
    ],
-   "clues": [
-    {
-     "label": "Mediterranean",
-     "p": 0.7636
-    }
-   ],
+   "clues": [],
    "belief": {
     "GI": 0.382,
     "ES": 0.174,
@@ -24636,17 +24612,17 @@
    ],
    "clues": [
     {
-     "label": "Mediterranean",
-     "p": 0.8189
-    },
-    {
      "label": "Countryside",
      "p": 0.6695
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.5881
     }
    ],
    "belief": {
     "GI": 0.242,
-    "ES": 0.209,
+    "ES": 0.208,
     "CY": 0.168,
     "GR": 0.067,
     "MS": 0.038,
@@ -24756,10 +24732,6 @@
    ],
    "clues": [
     {
-     "label": "Mediterranean",
-     "p": 0.8156
-    },
-    {
      "label": "Countryside",
      "p": 0.5509
     }
@@ -24866,12 +24838,12 @@
    ],
    "clues": [
     {
-     "label": "Mediterranean",
-     "p": 0.9062
-    },
-    {
      "label": "European old town",
      "p": 0.8507
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.6216
     }
    ],
    "belief": {
@@ -24983,16 +24955,16 @@
    ],
    "clues": [
     {
-     "label": "Temperate",
-     "p": 0.8842
-    },
-    {
      "label": "European old town",
      "p": 0.8039
     },
     {
      "label": "Countryside",
      "p": 0.7057
+    },
+    {
+     "label": "Continental climate",
+     "p": 0.6181
     }
    ],
    "belief": {
@@ -25096,12 +25068,12 @@
    ],
    "clues": [
     {
-     "label": "Mountains",
-     "p": 0.826
+     "label": "Arid climate",
+     "p": 0.8802
     },
     {
-     "label": "Temperate",
-     "p": 0.5839
+     "label": "Mountains",
+     "p": 0.826
     }
    ],
    "belief": {
@@ -25215,8 +25187,8 @@
      "p": 0.9294
     },
     {
-     "label": "Temperate",
-     "p": 0.8909
+     "label": "Temperate climate",
+     "p": 0.6217
     }
    ],
    "belief": {
@@ -25340,10 +25312,6 @@
     }
    ],
    "clues": [
-    {
-     "label": "Temperate",
-     "p": 0.9173
-    },
     {
      "label": "No buildings",
      "p": 0.7579
@@ -25487,10 +25455,6 @@
     {
      "label": "European old town",
      "p": 0.8815
-    },
-    {
-     "label": "Mediterranean",
-     "p": 0.8316
     },
     {
      "label": "Village",
@@ -25736,8 +25700,8 @@
      "p": 0.7361
     },
     {
-     "label": "Tropical",
-     "p": 0.5849
+     "label": "Temperate climate",
+     "p": 0.606
     }
    ],
    "belief": {
@@ -25837,10 +25801,6 @@
     {
      "label": "Modern skyline",
      "p": 0.6768
-    },
-    {
-     "label": "Tropical",
-     "p": 0.6302
     }
    ],
    "belief": {
@@ -25960,10 +25920,6 @@
     {
      "label": "Village",
      "p": 0.8499
-    },
-    {
-     "label": "Mediterranean",
-     "p": 0.6259
     }
    ],
    "belief": {
@@ -26074,6 +26030,10 @@
     {
      "label": "Coast",
      "p": 0.9482
+    },
+    {
+     "label": "Tropical climate",
+     "p": 0.898
     },
     {
      "label": "No buildings",
@@ -26206,8 +26166,8 @@
      "p": 0.8025
     },
     {
-     "label": "Tropical",
-     "p": 0.6144
+     "label": "Tropical climate",
+     "p": 0.7206
     }
    ],
    "belief": {
@@ -26332,8 +26292,8 @@
      "p": 0.9111
     },
     {
-     "label": "Tropical",
-     "p": 0.8983
+     "label": "Tropical climate",
+     "p": 0.864
     },
     {
      "label": "Village",
@@ -26453,6 +26413,10 @@
    ],
    "clues": [
     {
+     "label": "Continental climate",
+     "p": 0.968
+    },
+    {
      "label": "European old town",
      "p": 0.8882
     },
@@ -26560,7 +26524,12 @@
      "p": 0.0527
     }
    ],
-   "clues": [],
+   "clues": [
+    {
+     "label": "Temperate climate",
+     "p": 0.8669
+    }
+   ],
    "belief": {
     "US": 0.428,
     "NF": 0.084,
@@ -26674,10 +26643,6 @@
     {
      "label": "Countryside",
      "p": 0.6629
-    },
-    {
-     "label": "Arctic",
-     "p": 0.5825
     }
    ],
    "belief": {
@@ -26918,6 +26883,10 @@
     {
      "label": "City",
      "p": 0.8099
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.6248
     }
    ],
    "belief": {
@@ -27018,6 +26987,10 @@
     {
      "label": "Mountains",
      "p": 0.8309
+    },
+    {
+     "label": "Arid climate",
+     "p": 0.7965
     }
    ],
    "belief": {
@@ -27476,6 +27449,10 @@
     {
      "label": "City",
      "p": 0.8452
+    },
+    {
+     "label": "Arid climate",
+     "p": 0.6697
     }
    ],
    "belief": {
@@ -27579,8 +27556,8 @@
    ],
    "clues": [
     {
-     "label": "Temperate",
-     "p": 0.7837
+     "label": "Arid climate",
+     "p": 0.658
     },
     {
      "label": "Village",
@@ -27692,10 +27669,6 @@
     {
      "label": "East Asian architecture",
      "p": 0.9051
-    },
-    {
-     "label": "Temperate",
-     "p": 0.6443
     }
    ],
    "belief": {
@@ -27914,10 +27887,6 @@
     {
      "label": "Mountains",
      "p": 0.6776
-    },
-    {
-     "label": "Temperate",
-     "p": 0.6364
     }
    ],
    "belief": {
@@ -28021,8 +27990,8 @@
      "p": 0.9483
     },
     {
-     "label": "Tropical",
-     "p": 0.6649
+     "label": "Tropical climate",
+     "p": 0.7088
     }
    ],
    "belief": {
@@ -28153,8 +28122,8 @@
      "p": 0.9481
     },
     {
-     "label": "Tropical",
-     "p": 0.7538
+     "label": "Tropical climate",
+     "p": 0.5784
     }
    ],
    "belief": {
@@ -28274,12 +28243,12 @@
      "p": 0.871
     },
     {
-     "label": "City",
-     "p": 0.7161
+     "label": "Arid climate",
+     "p": 0.771
     },
     {
-     "label": "Mediterranean",
-     "p": 0.6835
+     "label": "City",
+     "p": 0.7161
     }
    ],
    "belief": {
@@ -28382,8 +28351,8 @@
      "p": 0.9449
     },
     {
-     "label": "Mediterranean",
-     "p": 0.6469
+     "label": "Arid climate",
+     "p": 0.741
     },
     {
      "label": "Islamic architecture",
@@ -28493,8 +28462,8 @@
      "p": 0.9424
     },
     {
-     "label": "Mediterranean",
-     "p": 0.7478
+     "label": "Arid climate",
+     "p": 0.8579
     }
    ],
    "belief": {
@@ -28602,12 +28571,12 @@
      "p": 0.9747
     },
     {
-     "label": "Countryside",
-     "p": 0.6512
+     "label": "Temperate climate",
+     "p": 0.6752
     },
     {
-     "label": "Temperate",
-     "p": 0.6453
+     "label": "Countryside",
+     "p": 0.6512
     }
    ],
    "belief": {
@@ -28719,10 +28688,6 @@
     {
      "label": "No buildings",
      "p": 0.6648
-    },
-    {
-     "label": "Temperate",
-     "p": 0.6299
     }
    ],
    "belief": {
@@ -28836,6 +28801,10 @@
     {
      "label": "Countryside",
      "p": 0.7649
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.6481
     }
    ],
    "belief": {
@@ -28949,10 +28918,6 @@
     {
      "label": "East Asian architecture",
      "p": 0.9789
-    },
-    {
-     "label": "Temperate",
-     "p": 0.8009
     }
    ],
    "belief": {
@@ -29055,8 +29020,8 @@
      "p": 0.9107
     },
     {
-     "label": "Arctic",
-     "p": 0.5536
+     "label": "Continental climate",
+     "p": 0.7997
     }
    ],
    "belief": {
@@ -29163,12 +29128,12 @@
    ],
    "clues": [
     {
-     "label": "Snow and ice",
-     "p": 0.991
-    },
-    {
      "label": "European old town",
      "p": 0.9365
+    },
+    {
+     "label": "Continental climate",
+     "p": 0.6753
     }
    ],
    "belief": {
@@ -29278,6 +29243,10 @@
     {
      "label": "European old town",
      "p": 0.9783
+    },
+    {
+     "label": "Continental climate",
+     "p": 0.8364
     }
    ],
    "belief": {
@@ -29384,8 +29353,8 @@
      "p": 0.9807
     },
     {
-     "label": "Temperate",
-     "p": 0.8961
+     "label": "Continental climate",
+     "p": 0.9111
     }
    ],
    "belief": {
@@ -29492,8 +29461,8 @@
      "p": 0.9747
     },
     {
-     "label": "Temperate",
-     "p": 0.5771
+     "label": "Continental climate",
+     "p": 0.6872
     }
    ],
    "belief": {
@@ -29597,10 +29566,6 @@
     {
      "label": "European old town",
      "p": 0.9528
-    },
-    {
-     "label": "Snow and ice",
-     "p": 0.8702
     }
    ],
    "belief": {
@@ -29701,10 +29666,6 @@
     }
    ],
    "clues": [
-    {
-     "label": "Mediterranean",
-     "p": 0.9133
-    },
     {
      "label": "European old town",
      "p": 0.862
@@ -29822,8 +29783,8 @@
      "p": 0.9637
     },
     {
-     "label": "Temperate",
-     "p": 0.6193
+     "label": "Continental climate",
+     "p": 0.6603
     }
    ],
    "belief": {
@@ -29932,10 +29893,6 @@
     {
      "label": "European old town",
      "p": 0.9272
-    },
-    {
-     "label": "Temperate",
-     "p": 0.764
     }
    ],
    "belief": {
@@ -30053,8 +30010,8 @@
      "p": 0.8509
     },
     {
-     "label": "Mediterranean",
-     "p": 0.7835
+     "label": "Temperate climate",
+     "p": 0.6476
     }
    ],
    "belief": {
@@ -30153,16 +30110,16 @@
    ],
    "clues": [
     {
-     "label": "Mediterranean",
-     "p": 0.8435
-    },
-    {
      "label": "European old town",
      "p": 0.759
     },
     {
      "label": "Countryside",
      "p": 0.6095
+    },
+    {
+     "label": "Arid climate",
+     "p": 0.6049
     }
    ],
    "belief": {
@@ -30279,12 +30236,12 @@
    ],
    "clues": [
     {
-     "label": "Mediterranean",
-     "p": 0.7667
-    },
-    {
      "label": "European old town",
      "p": 0.6501
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.5803
     }
    ],
    "belief": {
@@ -30402,10 +30359,6 @@
    ],
    "clues": [
     {
-     "label": "Mediterranean",
-     "p": 0.9778
-    },
-    {
      "label": "European old town",
      "p": 0.7141
     }
@@ -30514,8 +30467,8 @@
    ],
    "clues": [
     {
-     "label": "Mediterranean",
-     "p": 0.6523
+     "label": "Temperate climate",
+     "p": 0.7325
     },
     {
      "label": "European old town",
@@ -30636,8 +30589,8 @@
      "p": 0.7643
     },
     {
-     "label": "Mediterranean",
-     "p": 0.5504
+     "label": "Temperate climate",
+     "p": 0.5837
     }
    ],
    "belief": {
@@ -30742,12 +30695,12 @@
    ],
    "clues": [
     {
-     "label": "Mediterranean",
-     "p": 0.8968
-    },
-    {
      "label": "European old town",
      "p": 0.7615
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.6841
     },
     {
      "label": "Village",
@@ -30859,10 +30812,6 @@
     {
      "label": "Countryside",
      "p": 0.5945
-    },
-    {
-     "label": "Mediterranean",
-     "p": 0.5753
     }
    ],
    "belief": {
@@ -31147,10 +31096,6 @@
    ],
    "clues": [
     {
-     "label": "Temperate",
-     "p": 0.7164
-    },
-    {
      "label": "No buildings",
      "p": 0.6028
     }
@@ -31256,8 +31201,8 @@
      "p": 0.906
     },
     {
-     "label": "Tropical",
-     "p": 0.7678
+     "label": "Tropical climate",
+     "p": 0.6648
     }
    ],
    "belief": {
@@ -31372,6 +31317,10 @@
     {
      "label": "Colonial architecture",
      "p": 0.7581
+    },
+    {
+     "label": "Tropical climate",
+     "p": 0.5603
     }
    ],
    "belief": {
@@ -31493,10 +31442,6 @@
    ],
    "clues": [
     {
-     "label": "Tropical",
-     "p": 0.911
-    },
-    {
      "label": "Colonial architecture",
      "p": 0.6164
     }
@@ -31610,8 +31555,8 @@
      "p": 0.8086
     },
     {
-     "label": "Temperate",
-     "p": 0.7818
+     "label": "Temperate climate",
+     "p": 0.621
     }
    ],
    "belief": {
@@ -31715,12 +31660,12 @@
    ],
    "clues": [
     {
-     "label": "East Asian architecture",
-     "p": 0.836
+     "label": "Tropical climate",
+     "p": 0.9034
     },
     {
-     "label": "Temperate",
-     "p": 0.7928
+     "label": "East Asian architecture",
+     "p": 0.836
     }
    ],
    "belief": {
@@ -31821,6 +31766,10 @@
     }
    ],
    "clues": [
+    {
+     "label": "Tropical climate",
+     "p": 0.8058
+    },
     {
      "label": "East Asian architecture",
      "p": 0.7194
@@ -31930,8 +31879,8 @@
    ],
    "clues": [
     {
-     "label": "Tropical",
-     "p": 0.8028
+     "label": "Tropical climate",
+     "p": 0.9758
     }
    ],
    "belief": {
@@ -32033,8 +31982,8 @@
    ],
    "clues": [
     {
-     "label": "Tropical",
-     "p": 0.8447
+     "label": "Tropical climate",
+     "p": 0.9765
     },
     {
      "label": "Village",
@@ -32138,8 +32087,8 @@
      "p": 0.7336
     },
     {
-     "label": "Mediterranean",
-     "p": 0.6916
+     "label": "Arid climate",
+     "p": 0.561
     }
    ],
    "belief": {
@@ -32252,8 +32201,8 @@
      "p": 0.9978
     },
     {
-     "label": "Tropical",
-     "p": 0.7447
+     "label": "Arid climate",
+     "p": 0.8061
     },
     {
      "label": "Village",
@@ -32372,12 +32321,12 @@
      "p": 0.9813
     },
     {
-     "label": "Tropical",
-     "p": 0.8698
-    },
-    {
      "label": "City",
      "p": 0.6951
+    },
+    {
+     "label": "Tropical climate",
+     "p": 0.5607
     }
    ],
    "belief": {
@@ -32497,10 +32446,6 @@
     {
      "label": "Colonial architecture",
      "p": 0.9593
-    },
-    {
-     "label": "Tropical",
-     "p": 0.6202
     }
    ],
    "belief": {
@@ -32617,16 +32562,16 @@
    ],
    "clues": [
     {
+     "label": "Tropical climate",
+     "p": 0.8405
+    },
+    {
      "label": "Village",
      "p": 0.7999
     },
     {
      "label": "Colonial architecture",
      "p": 0.7212
-    },
-    {
-     "label": "Tropical",
-     "p": 0.7195
     }
    ],
    "belief": {
@@ -32751,10 +32696,6 @@
     {
      "label": "Village",
      "p": 0.6428
-    },
-    {
-     "label": "Tropical",
-     "p": 0.5625
     }
    ],
    "belief": {
@@ -32862,12 +32803,7 @@
      "p": 0.0806
     }
    ],
-   "clues": [
-    {
-     "label": "Temperate",
-     "p": 0.706
-    }
-   ],
+   "clues": [],
    "belief": {
     "MD": 0.199,
     "UA": 0.189,
@@ -32979,8 +32915,8 @@
    ],
    "clues": [
     {
-     "label": "Temperate",
-     "p": 0.8646
+     "label": "Continental climate",
+     "p": 0.823
     }
    ],
    "belief": {
@@ -33094,8 +33030,8 @@
    ],
    "clues": [
     {
-     "label": "Temperate",
-     "p": 0.9448
+     "label": "Continental climate",
+     "p": 0.8494
     },
     {
      "label": "No buildings",
@@ -33216,8 +33152,8 @@
      "p": 0.739
     },
     {
-     "label": "Temperate",
-     "p": 0.7344
+     "label": "Continental climate",
+     "p": 0.5797
     }
    ],
    "belief": {
@@ -33351,10 +33287,6 @@
      "p": 0.9684
     },
     {
-     "label": "Tropical",
-     "p": 0.8443
-    },
-    {
      "label": "Village",
      "p": 0.7442
     }
@@ -33470,10 +33402,6 @@
    ],
    "clues": [
     {
-     "label": "Temperate",
-     "p": 0.6148
-    },
-    {
      "label": "No buildings",
      "p": 0.611
     }
@@ -33579,6 +33507,10 @@
    ],
    "clues": [
     {
+     "label": "Temperate climate",
+     "p": 0.964
+    },
+    {
      "label": "Village",
      "p": 0.8262
     }
@@ -33678,6 +33610,10 @@
     }
    ],
    "clues": [
+    {
+     "label": "Temperate climate",
+     "p": 0.9656
+    },
     {
      "label": "Village",
      "p": 0.9074
@@ -33784,8 +33720,8 @@
      "p": 0.9951
     },
     {
-     "label": "Temperate",
-     "p": 0.8856
+     "label": "Continental climate",
+     "p": 0.8559
     },
     {
      "label": "Countryside",
@@ -33906,12 +33842,12 @@
      "p": 0.987
     },
     {
-     "label": "Temperate",
-     "p": 0.902
-    },
-    {
      "label": "Countryside",
      "p": 0.7034
+    },
+    {
+     "label": "Continental climate",
+     "p": 0.6195
     }
    ],
    "belief": {
@@ -34025,8 +33961,8 @@
      "p": 0.9909
     },
     {
-     "label": "Temperate",
-     "p": 0.6518
+     "label": "Continental climate",
+     "p": 0.7234
     },
     {
      "label": "Countryside",
@@ -34133,12 +34069,7 @@
      "p": 0.0378
     }
    ],
-   "clues": [
-    {
-     "label": "Arctic",
-     "p": 0.6454
-    }
-   ],
+   "clues": [],
    "belief": {
     "PA": 0.076,
     "MV": 0.047,
@@ -34394,10 +34325,6 @@
      "p": 0.9416
     },
     {
-     "label": "Mediterranean",
-     "p": 0.7411
-    },
-    {
      "label": "Modern skyline",
      "p": 0.7032
     }
@@ -34505,12 +34432,12 @@
    ],
    "clues": [
     {
-     "label": "City",
-     "p": 0.7898
+     "label": "Continental climate",
+     "p": 0.9407
     },
     {
-     "label": "Arctic",
-     "p": 0.6308
+     "label": "City",
+     "p": 0.7898
     }
    ],
    "belief": {
@@ -34619,10 +34546,6 @@
     {
      "label": "European old town",
      "p": 0.8213
-    },
-    {
-     "label": "Temperate",
-     "p": 0.6122
     },
     {
      "label": "City",
@@ -34846,8 +34769,8 @@
    ],
    "clues": [
     {
-     "label": "Temperate",
-     "p": 0.7844
+     "label": "Temperate climate",
+     "p": 0.7342
     },
     {
      "label": "No buildings",
@@ -35081,16 +35004,16 @@
    ],
    "clues": [
     {
+     "label": "Tropical climate",
+     "p": 0.7233
+    },
+    {
      "label": "City",
      "p": 0.6661
     },
     {
      "label": "East Asian architecture",
      "p": 0.6005
-    },
-    {
-     "label": "Tropical",
-     "p": 0.5719
     }
    ],
    "belief": {
@@ -35190,8 +35113,8 @@
    ],
    "clues": [
     {
-     "label": "Tropical",
-     "p": 0.6093
+     "label": "Tropical climate",
+     "p": 0.9174
     },
     {
      "label": "City",
@@ -35299,12 +35222,12 @@
    ],
    "clues": [
     {
-     "label": "East Asian architecture",
-     "p": 0.7093
+     "label": "Tropical climate",
+     "p": 0.7839
     },
     {
-     "label": "Tropical",
-     "p": 0.6326
+     "label": "East Asian architecture",
+     "p": 0.7093
     },
     {
      "label": "Village",
@@ -35410,7 +35333,12 @@
      "p": 0.0031
     }
    ],
-   "clues": [],
+   "clues": [
+    {
+     "label": "Tropical climate",
+     "p": 0.7813
+    }
+   ],
    "belief": {
     "SG": 0.694,
     "MY": 0.261,
@@ -35507,8 +35435,8 @@
    ],
    "clues": [
     {
-     "label": "Tropical",
-     "p": 0.8293
+     "label": "Tropical climate",
+     "p": 0.8743
     },
     {
      "label": "East Asian architecture",
@@ -35634,6 +35562,10 @@
      "p": 0.9228
     },
     {
+     "label": "Tropical climate",
+     "p": 0.715
+    },
+    {
      "label": "Village",
      "p": 0.6978
     }
@@ -35734,6 +35666,10 @@
     }
    ],
    "clues": [
+    {
+     "label": "Tropical climate",
+     "p": 0.9114
+    },
     {
      "label": "East Asian architecture",
      "p": 0.8393
@@ -35850,10 +35786,6 @@
     {
      "label": "Village",
      "p": 0.671
-    },
-    {
-     "label": "Tropical",
-     "p": 0.5506
     }
    ],
    "belief": {
@@ -35957,10 +35889,6 @@
     {
      "label": "Colonial architecture",
      "p": 0.8956
-    },
-    {
-     "label": "Mediterranean",
-     "p": 0.7129
     },
     {
      "label": "Village",
@@ -36098,6 +36026,10 @@
     {
      "label": "East Asian architecture",
      "p": 0.6144
+    },
+    {
+     "label": "Tropical climate",
+     "p": 0.5544
     }
    ],
    "belief": {
@@ -36332,12 +36264,12 @@
    ],
    "clues": [
     {
-     "label": "East Asian architecture",
-     "p": 0.5854
+     "label": "Tropical climate",
+     "p": 0.806
     },
     {
-     "label": "Temperate",
-     "p": 0.5671
+     "label": "East Asian architecture",
+     "p": 0.5854
     }
    ],
    "belief": {
@@ -36447,7 +36379,12 @@
      "p": 0.0404
     }
    ],
-   "clues": [],
+   "clues": [
+    {
+     "label": "Tropical climate",
+     "p": 0.882
+    }
+   ],
    "belief": {
     "KH": 0.34,
     "VN": 0.189,
@@ -36562,8 +36499,8 @@
    ],
    "clues": [
     {
-     "label": "Tropical",
-     "p": 0.6924
+     "label": "Tropical climate",
+     "p": 0.7971
     },
     {
      "label": "Colonial architecture",
@@ -36686,8 +36623,8 @@
    ],
    "clues": [
     {
-     "label": "Mediterranean",
-     "p": 0.8149
+     "label": "Arid climate",
+     "p": 0.9515
     }
    ],
    "belief": {
@@ -36802,12 +36739,12 @@
      "p": 0.954
     },
     {
-     "label": "Mediterranean",
-     "p": 0.7187
-    },
-    {
      "label": "Village",
      "p": 0.6455
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.6315
     }
    ],
    "belief": {
@@ -36936,6 +36873,10 @@
     {
      "label": "Mountains",
      "p": 0.8076
+    },
+    {
+     "label": "Arid climate",
+     "p": 0.6674
     }
    ],
    "belief": {
@@ -37041,10 +36982,6 @@
     {
      "label": "Coast",
      "p": 0.864
-    },
-    {
-     "label": "Mediterranean",
-     "p": 0.7224
     },
     {
      "label": "No buildings",
@@ -37178,6 +37115,10 @@
     {
      "label": "No buildings",
      "p": 0.8971
+    },
+    {
+     "label": "Arid climate",
+     "p": 0.6301
     }
    ],
    "belief": {
@@ -37291,8 +37232,8 @@
    ],
    "clues": [
     {
-     "label": "Temperate",
-     "p": 0.8417
+     "label": "Continental climate",
+     "p": 0.8738
     },
     {
      "label": "No buildings",
@@ -37406,8 +37347,8 @@
    ],
    "clues": [
     {
-     "label": "Tropical",
-     "p": 0.923
+     "label": "Tropical climate",
+     "p": 0.8933
     },
     {
      "label": "No buildings",
@@ -37649,8 +37590,8 @@
      "p": 0.9788
     },
     {
-     "label": "Mediterranean",
-     "p": 0.7826
+     "label": "Temperate climate",
+     "p": 0.5832
     }
    ],
    "belief": {
@@ -37756,10 +37697,6 @@
     {
      "label": "European old town",
      "p": 0.9482
-    },
-    {
-     "label": "Mediterranean",
-     "p": 0.7093
     },
     {
      "label": "City",
@@ -38025,10 +37962,6 @@
    ],
    "clues": [
     {
-     "label": "Temperate",
-     "p": 0.8731
-    },
-    {
      "label": "No buildings",
      "p": 0.7566
     }
@@ -38161,8 +38094,8 @@
      "p": 0.9498
     },
     {
-     "label": "Temperate",
-     "p": 0.7971
+     "label": "Continental climate",
+     "p": 0.614
     }
    ],
    "belief": {
@@ -38268,10 +38201,6 @@
     {
      "label": "Countryside",
      "p": 0.6043
-    },
-    {
-     "label": "Mediterranean",
-     "p": 0.5928
     }
    ],
    "belief": {
@@ -38521,8 +38450,8 @@
    ],
    "clues": [
     {
-     "label": "Temperate",
-     "p": 0.7257
+     "label": "Continental climate",
+     "p": 0.9428
     },
     {
      "label": "Village",
@@ -38633,6 +38562,10 @@
     }
    ],
    "clues": [
+    {
+     "label": "Continental climate",
+     "p": 0.7578
+    },
     {
      "label": "European old town",
      "p": 0.6928
@@ -38856,6 +38789,10 @@
      "p": 0.9855
     },
     {
+     "label": "Temperate climate",
+     "p": 0.6167
+    },
+    {
      "label": "Countryside",
      "p": 0.5946
     }
@@ -38961,6 +38898,10 @@
     {
      "label": "Countryside",
      "p": 0.8257
+    },
+    {
+     "label": "Tropical climate",
+     "p": 0.5847
     }
    ],
    "belief": {
@@ -39119,6 +39060,10 @@
     {
      "label": "No buildings",
      "p": 0.9764
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.7805
     }
    ],
    "belief": {
@@ -39244,8 +39189,8 @@
      "p": 0.9731
     },
     {
-     "label": "Temperate",
-     "p": 0.7872
+     "label": "Temperate climate",
+     "p": 0.6111
     }
    ],
    "belief": {
@@ -39370,6 +39315,10 @@
     {
      "label": "No buildings",
      "p": 0.9785
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.7609
     }
    ],
    "belief": {
@@ -39484,6 +39433,10 @@
     {
      "label": "No buildings",
      "p": 0.9857
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.79
     }
    ],
    "belief": {
@@ -39696,12 +39649,12 @@
    ],
    "clues": [
     {
-     "label": "Tropical",
-     "p": 0.9364
-    },
-    {
      "label": "Colonial architecture",
      "p": 0.9216
+    },
+    {
+     "label": "Tropical climate",
+     "p": 0.9008
     },
     {
      "label": "Village",
@@ -39835,8 +39788,8 @@
    ],
    "clues": [
     {
-     "label": "Tropical",
-     "p": 0.9588
+     "label": "Tropical climate",
+     "p": 0.8841
     }
    ],
    "belief": {
@@ -39956,8 +39909,8 @@
    ],
    "clues": [
     {
-     "label": "Tropical",
-     "p": 0.879
+     "label": "Tropical climate",
+     "p": 0.9014
     },
     {
      "label": "No buildings",
@@ -40221,6 +40174,10 @@
    ],
    "clues": [
     {
+     "label": "Continental climate",
+     "p": 0.7343
+    },
+    {
      "label": "Mountains",
      "p": 0.6826
     },
@@ -40344,12 +40301,12 @@
      "p": 0.843
     },
     {
-     "label": "Temperate",
-     "p": 0.8393
-    },
-    {
      "label": "Village",
      "p": 0.8344
+    },
+    {
+     "label": "Arid climate",
+     "p": 0.7716
     }
    ],
    "belief": {
@@ -40697,10 +40654,6 @@
    ],
    "clues": [
     {
-     "label": "Temperate",
-     "p": 0.8566
-    },
-    {
      "label": "No buildings",
      "p": 0.8293
     },
@@ -40845,10 +40798,6 @@
      "p": 0.8651
     },
     {
-     "label": "Temperate",
-     "p": 0.863
-    },
-    {
      "label": "Countryside",
      "p": 0.7635
     }
@@ -40980,8 +40929,8 @@
      "p": 0.7187
     },
     {
-     "label": "Temperate",
-     "p": 0.7176
+     "label": "Continental climate",
+     "p": 0.596
     }
    ],
    "belief": {
@@ -41106,12 +41055,12 @@
    ],
    "clues": [
     {
-     "label": "European old town",
-     "p": 0.6569
+     "label": "Temperate climate",
+     "p": 0.8288
     },
     {
-     "label": "Temperate",
-     "p": 0.5942
+     "label": "European old town",
+     "p": 0.6569
     }
    ],
    "belief": {
@@ -41215,7 +41164,12 @@
      "p": 0.0326
     }
    ],
-   "clues": [],
+   "clues": [
+    {
+     "label": "Continental climate",
+     "p": 0.6244
+    }
+   ],
    "belief": {
     "US": 0.369,
     "GE": 0.242,
@@ -41323,8 +41277,8 @@
    ],
    "clues": [
     {
-     "label": "Temperate",
-     "p": 0.6986
+     "label": "Continental climate",
+     "p": 0.6098
     },
     {
      "label": "Countryside",
@@ -41451,6 +41405,10 @@
     {
      "label": "No buildings",
      "p": 0.9826
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.8865
     }
    ],
    "belief": {
@@ -41565,10 +41523,6 @@
     {
      "label": "City",
      "p": 0.9501
-    },
-    {
-     "label": "Snow and ice",
-     "p": 0.5932
     }
    ],
    "belief": {
@@ -41702,8 +41656,8 @@
      "p": 0.727
     },
     {
-     "label": "Temperate",
-     "p": 0.6516
+     "label": "Continental climate",
+     "p": 0.7248
     }
    ],
    "belief": {
@@ -41804,10 +41758,6 @@
     }
    ],
    "clues": [
-    {
-     "label": "Mediterranean",
-     "p": 0.9841
-    },
     {
      "label": "European old town",
      "p": 0.7795
@@ -41917,8 +41867,8 @@
      "p": 0.9865
     },
     {
-     "label": "Temperate",
-     "p": 0.8471
+     "label": "Temperate climate",
+     "p": 0.7763
     }
    ],
    "belief": {
@@ -42033,10 +41983,6 @@
     {
      "label": "East Asian architecture",
      "p": 0.9913
-    },
-    {
-     "label": "Temperate",
-     "p": 0.7233
     }
    ],
    "belief": {
@@ -42145,8 +42091,8 @@
      "p": 0.9941
     },
     {
-     "label": "Temperate",
-     "p": 0.8343
+     "label": "Tropical climate",
+     "p": 0.7311
     }
    ],
    "belief": {
@@ -42252,6 +42198,10 @@
      "p": 0.9908
     },
     {
+     "label": "Temperate climate",
+     "p": 0.8595
+    },
+    {
      "label": "City",
      "p": 0.6712
     }
@@ -42353,6 +42303,10 @@
     {
      "label": "European old town",
      "p": 0.9861
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.6058
     }
    ],
    "belief": {
@@ -42450,12 +42404,12 @@
    ],
    "clues": [
     {
-     "label": "East Asian architecture",
-     "p": 0.7394
+     "label": "Tropical climate",
+     "p": 0.9713
     },
     {
-     "label": "Tropical",
-     "p": 0.7245
+     "label": "East Asian architecture",
+     "p": 0.7394
     },
     {
      "label": "Village",
@@ -42559,12 +42513,12 @@
    ],
    "clues": [
     {
-     "label": "East Asian architecture",
-     "p": 0.7306
+     "label": "Tropical climate",
+     "p": 0.9032
     },
     {
-     "label": "Tropical",
-     "p": 0.5631
+     "label": "East Asian architecture",
+     "p": 0.7306
     }
    ],
    "belief": {
@@ -42667,8 +42621,8 @@
      "p": 0.9764
     },
     {
-     "label": "Temperate",
-     "p": 0.9301
+     "label": "Temperate climate",
+     "p": 0.923
     },
     {
      "label": "Countryside",
@@ -42776,6 +42730,10 @@
     {
      "label": "No buildings",
      "p": 0.8038
+    },
+    {
+     "label": "Tropical climate",
+     "p": 0.6813
     }
    ],
    "belief": {
@@ -42912,12 +42870,12 @@
      "p": 0.9776
     },
     {
-     "label": "Countryside",
-     "p": 0.6899
+     "label": "Temperate climate",
+     "p": 0.7148
     },
     {
-     "label": "Tropical",
-     "p": 0.5567
+     "label": "Countryside",
+     "p": 0.6899
     }
    ],
    "belief": {
@@ -43041,10 +42999,6 @@
     {
      "label": "No buildings",
      "p": 0.9226
-    },
-    {
-     "label": "Temperate",
-     "p": 0.748
     }
    ],
    "belief": {
@@ -43161,10 +43115,6 @@
     {
      "label": "Village",
      "p": 0.8441
-    },
-    {
-     "label": "Temperate",
-     "p": 0.5784
     }
    ],
    "belief": {
@@ -43276,6 +43226,10 @@
     {
      "label": "Village",
      "p": 0.6979
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.6214
     }
    ],
    "belief": {
@@ -43386,8 +43340,8 @@
    ],
    "clues": [
     {
-     "label": "Temperate",
-     "p": 0.6633
+     "label": "Temperate climate",
+     "p": 0.7725
     }
    ],
    "belief": {
@@ -43493,6 +43447,10 @@
     {
      "label": "No buildings",
      "p": 0.8575
+    },
+    {
+     "label": "Temperate climate",
+     "p": 0.61
     }
    ],
    "belief": {
@@ -43618,8 +43576,8 @@
      "p": 0.7696
     },
     {
-     "label": "Mediterranean",
-     "p": 0.653
+     "label": "Temperate climate",
+     "p": 0.6775
     }
    ],
    "belief": {
@@ -43727,8 +43685,8 @@
      "p": 0.7897
     },
     {
-     "label": "Tropical",
-     "p": 0.5863
+     "label": "Tropical climate",
+     "p": 0.6831
     }
    ],
    "belief": {
@@ -43822,7 +43780,7 @@
     },
     {
      "country": "MM",
-     "p": 0.1065
+     "p": 0.1064
     },
     {
      "country": "LA",
@@ -43834,6 +43792,10 @@
     }
    ],
    "clues": [
+    {
+     "label": "Tropical climate",
+     "p": 0.716
+    },
     {
      "label": "Colonial architecture",
      "p": 0.6331
@@ -43952,12 +43914,12 @@
      "p": 0.9048
     },
     {
-     "label": "Mediterranean",
-     "p": 0.7542
-    },
-    {
      "label": "Colonial architecture",
      "p": 0.694
+    },
+    {
+     "label": "Arid climate",
+     "p": 0.5526
     }
    ],
    "belief": {
@@ -44096,8 +44058,8 @@
      "p": 0.7174
     },
     {
-     "label": "Temperate",
-     "p": 0.6691
+     "label": "Continental climate",
+     "p": 0.5859
     }
    ],
    "belief": {
@@ -44354,10 +44316,6 @@
     {
      "label": "No buildings",
      "p": 0.8987
-    },
-    {
-     "label": "Arctic",
-     "p": 0.7188
     },
     {
      "label": "Mountains",
@@ -44644,8 +44602,8 @@
    ],
    "clues": [
     {
-     "label": "Temperate",
-     "p": 0.734
+     "label": "Temperate climate",
+     "p": 0.8066
     },
     {
      "label": "No buildings",
@@ -44765,8 +44723,8 @@
      "p": 0.9086
     },
     {
-     "label": "Temperate",
-     "p": 0.6141
+     "label": "Temperate climate",
+     "p": 0.7126
     },
     {
      "label": "Countryside",
@@ -44881,8 +44839,8 @@
      "p": 0.9854
     },
     {
-     "label": "Desert",
-     "p": 0.9814
+     "label": "Arid climate",
+     "p": 0.9577
     },
     {
      "label": "Countryside",
@@ -45106,10 +45064,6 @@
      "p": 0.8722
     },
     {
-     "label": "Temperate",
-     "p": 0.7848
-    },
-    {
      "label": "No buildings",
      "p": 0.6416
     }
@@ -45216,8 +45170,8 @@
      "p": 0.9458
     },
     {
-     "label": "Temperate",
-     "p": 0.7243
+     "label": "Continental climate",
+     "p": 0.7189
     },
     {
      "label": "Village",
@@ -45328,10 +45282,6 @@
     {
      "label": "Colonial architecture",
      "p": 0.9798
-    },
-    {
-     "label": "Temperate",
-     "p": 0.5853
     }
    ],
    "belief": {
@@ -45443,6 +45393,10 @@
     {
      "label": "Islamic architecture",
      "p": 0.9929
+    },
+    {
+     "label": "Arid climate",
+     "p": 0.9153
     }
    ],
    "belief": {
@@ -45671,10 +45625,6 @@
     }
    ],
    "clues": [
-    {
-     "label": "Temperate",
-     "p": 0.6897
-    },
     {
      "label": "Countryside",
      "p": 0.6434
@@ -46110,6 +46060,46 @@
      1011.6,
      1546.3
     ]
+   },
+   {
+    "name": "ViT-B-32/laion2b_s34b_b79k geocell head, alone",
+    "playsInGame": false,
+    "n": 388,
+    "accuracy_at_km": {
+     "1": 0.0,
+     "25": 0.0,
+     "200": 0.0258,
+     "750": 0.2139,
+     "2500": 0.5309
+    },
+    "median_km": 2401.9,
+    "mean_km": 4143.5,
+    "mean_score": 1501.9,
+    "country_accuracy": 0.2371,
+    "median_km_ci95": [
+     1910.6,
+     2659.1
+    ]
+   },
+   {
+    "name": "ViT-L-14/openai, country then city, then geocell head",
+    "playsInGame": false,
+    "n": 388,
+    "accuracy_at_km": {
+     "1": 0.0026,
+     "25": 0.018,
+     "200": 0.1701,
+     "750": 0.4201,
+     "2500": 0.6778
+    },
+    "median_km": 1173.9,
+    "mean_km": 3085.4,
+    "mean_score": 2277.7,
+    "country_accuracy": 0.3814,
+    "median_km_ci95": [
+     863.1,
+     1511.1
+    ]
    }
   ],
   "saliency": {
@@ -46296,6 +46286,71 @@
      }
     ]
    },
+   "ships": false
+  },
+  "clueHeads": [
+   {
+    "concept": "driving_side",
+    "clueGroup": "driving_side",
+    "classes": [
+     "left",
+     "right"
+    ],
+    "baseline": "the driving side of the country Atlas guessed",
+    "model": "ViT-B-32/laion2b_s34b_b79k",
+    "n": 387,
+    "references": 4306,
+    "headAccuracy": 0.7984,
+    "baselineAccuracy": 0.7829,
+    "majorityAccuracy": 0.7313,
+    "accuracyDelta": 0.0155,
+    "ci95": [
+     -0.0362,
+     0.0698
+    ],
+    "l2": 0.1,
+    "ships": false
+   },
+   {
+    "concept": "climate_group",
+    "clueGroup": "climate",
+    "classes": [
+     "Tropical",
+     "Arid",
+     "Temperate",
+     "Continental",
+     "Polar"
+    ],
+    "baseline": "the zero-shot climate clue",
+    "model": "ViT-B-32/laion2b_s34b_b79k",
+    "n": 351,
+    "references": 4007,
+    "headAccuracy": 0.6296,
+    "baselineAccuracy": 0.4416,
+    "majorityAccuracy": 0.3362,
+    "accuracyDelta": 0.188,
+    "ci95": [
+     0.1197,
+     0.2564
+    ],
+    "l2": 0.1,
+    "ships": true
+   }
+  ],
+  "geocellHead": {
+   "versus": "ViT-L-14/openai, country then city",
+   "model": "ViT-B-32/laion2b_s34b_b79k",
+   "references": 4322,
+   "cells": 93,
+   "l2": 0.01,
+   "tauKm": 300.0,
+   "moved": 275,
+   "n": 388,
+   "median_km_delta": 267.7,
+   "ci95": [
+    73.8,
+    470.9
+   ],
    "ships": false
   }
  }

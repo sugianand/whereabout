@@ -1,6 +1,6 @@
 # Atlas v0 results
 
-Generated 2026-10-26T01:25:31+00:00 by `.github/workflows/atlas.yml` on 388 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
+Generated 2026-10-26T13:31:21+00:00 by `.github/workflows/atlas.yml` on 388 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
 
 **Playing in the game:** ViT-L-14/openai, country then city (lowest median error).
 
@@ -15,6 +15,8 @@ Generated 2026-10-26T01:25:31+00:00 by `.github/workflows/atlas.yml` on 388 phot
 | ViT-L-14/openai, country only | 388 | 8.2% | 15.5% | 43.6% | 67.0% | 972 (778–1,120) | 42.0% | 2,360 |
 | ViT-L-14/openai, country then city | 388 | 11.9% | 24.2% | 46.1% | 67.5% | 906 (707–1,178) | 38.1% | 2,487 |
 | ViT-L-14/openai, country then city, then nearest reference photos | 388 | 5.2% | 16.2% | 37.4% | 66.2% | 1,280 (1,012–1,546) | 38.1% | 2,210 |
+| ViT-B-32/laion2b_s34b_b79k geocell head, alone | 388 | 0.0% | 2.6% | 21.4% | 53.1% | 2,402 (1,911–2,659) | 23.7% | 1,502 |
+| ViT-L-14/openai, country then city, then geocell head | 388 | 1.8% | 17.0% | 42.0% | 67.8% | 1,174 (863–1,511) | 38.1% | 2,278 |
 
 Accuracy columns are the share of photos guessed within that distance. Median error has a 95% bootstrap confidence interval. Mean score uses the game's scoring (5,000 for a perfect guess).
 
@@ -32,6 +34,8 @@ Paired bootstrap on the same photos: the winner's median error minus each other 
 | ViT-B-32/openai, country then city | -3,092 | -3,945 to -1,886 |
 | ViT-L-14/openai, country only | -66 | -223 to 118 |
 | ViT-L-14/openai, country then city, then nearest reference photos | -374 | -600 to -187 |
+| ViT-B-32/laion2b_s34b_b79k geocell head, alone | -1,496 | -1,740 to -1,018 |
+| ViT-L-14/openai, country then city, then geocell head | -268 | -471 to -74 |
 
 ## Where Atlas looked: is the map faithful?
 
@@ -51,6 +55,16 @@ ViT-L-14/openai, country then city refined by searching 4,322 geotagged referenc
 | Refined minus unrefined | Median km difference | 95% CI | Plays in the game |
 | --- | ---: | ---: | --- |
 | ViT-L-14/openai, country then city | 374 | 187 to 600 | no |
+
+It plays only if the whole interval is below zero.
+
+## Geocell head: does a trained classifier place the pin better?
+
+A linear classifier over 93 adaptive geocells, on frozen ViT-B-32/laion2b_s34b_b79k image embeddings of 4,322 reference photos (never game photos), trained with haversine label smoothing (τ = 300 km, L2 = 0.01, both chosen by 10° geographic cross-validation over the reference photos alone). The pin is the candidate with the least expected distance under the head's cell probabilities. Scored alone (any cell, in the table above) and within ViT-L-14/openai, country then city's country, where it moved the pin on 275 of 388 photos.
+
+| Within the country, minus without | Median km difference | 95% CI | Plays in the game |
+| --- | ---: | ---: | --- |
+| ViT-L-14/openai, country then city | 268 | 74 to 471 | no |
 
 It plays only if the whole interval is below zero.
 
@@ -78,9 +92,18 @@ The game shows the raw probabilities: temperature scaling did not lower held-out
 | 80% to 90% (mean 85%) | 19 | 89% |
 | 90% to 100% (mean 94%) | 24 | 88% |
 
+## Clue heads: do trained probes read the scene better than today's clues?
+
+Logistic-regression probes on frozen CLIP image embeddings (ViT-B-32/laion2b_s34b_b79k), fitted on 4,306 reference photos labelled by their coordinates (Köppen-Geiger climate group, driving side of the country). Each game photo is predicted by a probe that never saw a reference photo from its 10° geographic block, and scored against the game photo's own map label. A probe writes its clue at the reveal only if the paired 95% interval of the accuracy difference is above zero.
+
+| Concept | Photos | Probe | Compared with | Their accuracy | Commonest class | Difference (95% CI) | Writes the clue |
+| --- | ---: | ---: | --- | ---: | ---: | ---: | --- |
+| driving side | 387 | 79.8% | the driving side of the country Atlas guessed | 78.3% | 73.1% | +1.6% (-3.6% to +7.0%) | no |
+| climate group | 351 | 63.0% | the zero-shot climate clue | 44.2% | 33.6% | +18.8% (+12.0% to +25.6%) | yes |
+
 ## Read these numbers carefully
 
 - **Small test set.** 388 photos, so intervals are wide.
 - **Possible leakage.** The photos come from Wikimedia Commons, and CLIP models were pre-trained on large web scrapes that probably include Commons images or captions. Some photos may have been seen in training, which would flatter these scores. Public benchmarks (Im2GPS3k, YFCC4k) are the next step.
 - **The constant baseline is optimistic.** It is fitted on these same photos.
-- **No training happened.** This is zero-shot: the baseline every trained Atlas model has to beat.
+- **Little training.** Atlas v0 is zero-shot. The clue heads and the geocell head are small classifiers fitted on frozen embeddings of the reference photos, and each plays only where it clearly beats what it would replace.

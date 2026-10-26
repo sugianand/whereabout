@@ -1,6 +1,6 @@
 {
   "system": "atlas-v0-zeroshot",
-  "generatedAt": "2026-10-26T01:25:31+00:00",
+  "generatedAt": "2026-10-26T13:31:21+00:00",
   "dataset": "whereabout-curated (data/curation/photos.csv)",
   "n": 388,
   "skipped": {},
@@ -167,6 +167,42 @@
         1011.6,
         1546.3
       ]
+    },
+    "ViT-B-32/laion2b_s34b_b79k geocell head, alone": {
+      "n": 388,
+      "accuracy_at_km": {
+        "1": 0.0,
+        "25": 0.0,
+        "200": 0.0258,
+        "750": 0.2139,
+        "2500": 0.5309
+      },
+      "median_km": 2401.9,
+      "mean_km": 4143.5,
+      "mean_score": 1501.9,
+      "country_accuracy": 0.2371,
+      "median_km_ci95": [
+        1910.6,
+        2659.1
+      ]
+    },
+    "ViT-L-14/openai, country then city, then geocell head": {
+      "n": 388,
+      "accuracy_at_km": {
+        "1": 0.0026,
+        "25": 0.018,
+        "200": 0.1701,
+        "750": 0.4201,
+        "2500": 0.6778
+      },
+      "median_km": 1173.9,
+      "mean_km": 3085.4,
+      "mean_score": 2277.7,
+      "country_accuracy": 0.3814,
+      "median_km_ci95": [
+        863.1,
+        1511.1
+      ]
     }
   },
   "best_vs_others": [
@@ -232,6 +268,22 @@
       "ci95": [
         -599.8,
         -186.8
+      ]
+    },
+    {
+      "versus": "ViT-B-32/laion2b_s34b_b79k geocell head, alone",
+      "median_km_delta": -1495.7,
+      "ci95": [
+        -1740.5,
+        -1018.3
+      ]
+    },
+    {
+      "versus": "ViT-L-14/openai, country then city, then geocell head",
+      "median_km_delta": -267.7,
+      "ci95": [
+        -470.9,
+        -73.8
       ]
     }
   ],
@@ -421,6 +473,70 @@
     },
     "ships": false
   },
-  "clue_heads": null,
-  "table": "| System | n | 25 km | 200 km | 750 km | 2,500 km | Median km (95% CI) | Country | Mean score |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n| Random city (baseline) | 388 | 0.3% | 0.8% | 2.3% | 11.3% | 7,744 (7,207–8,262) | 1.5% | 350 |\n| Best constant guess (baseline) | 388 | 2.3% | 2.8% | 7.2% | 22.2% | 6,529 (6,105–7,205) | 9.5% | 654 |\n| ViT-B-32/laion2b_s34b_b79k, country only | 388 | 4.6% | 10.3% | 28.4% | 50.3% | 2,422 (1,911–3,163) | 26.5% | 1,677 |\n| ViT-B-32/laion2b_s34b_b79k, country then city | 388 | 5.7% | 11.6% | 29.9% | 53.6% | 2,139 (1,561–2,604) | 25.5% | 1,814 |\n| ViT-B-32/openai, country only | 388 | 3.1% | 6.7% | 25.0% | 45.9% | 2,997 (2,290–4,106) | 19.8% | 1,502 |\n| ViT-B-32/openai, country then city | 388 | 3.6% | 10.3% | 23.2% | 43.3% | 3,998 (2,721–4,884) | 15.7% | 1,427 |\n| ViT-L-14/openai, country only | 388 | 8.2% | 15.5% | 43.6% | 67.0% | 972 (778–1,120) | 42.0% | 2,360 |\n| ViT-L-14/openai, country then city | 388 | 11.9% | 24.2% | 46.1% | 67.5% | 906 (707–1,178) | 38.1% | 2,487 |\n| ViT-L-14/openai, country then city, then nearest reference photos | 388 | 5.2% | 16.2% | 37.4% | 66.2% | 1,280 (1,012–1,546) | 38.1% | 2,210 |"
+  "clue_heads": [
+    {
+      "concept": "driving_side",
+      "clueGroup": "driving_side",
+      "classes": [
+        "left",
+        "right"
+      ],
+      "baseline": "the driving side of the country Atlas guessed",
+      "model": "ViT-B-32/laion2b_s34b_b79k",
+      "n": 387,
+      "references": 4306,
+      "headAccuracy": 0.7984,
+      "baselineAccuracy": 0.7829,
+      "majorityAccuracy": 0.7313,
+      "accuracyDelta": 0.0155,
+      "ci95": [
+        -0.0362,
+        0.0698
+      ],
+      "l2": 0.1,
+      "ships": false
+    },
+    {
+      "concept": "climate_group",
+      "clueGroup": "climate",
+      "classes": [
+        "Tropical",
+        "Arid",
+        "Temperate",
+        "Continental",
+        "Polar"
+      ],
+      "baseline": "the zero-shot climate clue",
+      "model": "ViT-B-32/laion2b_s34b_b79k",
+      "n": 351,
+      "references": 4007,
+      "headAccuracy": 0.6296,
+      "baselineAccuracy": 0.4416,
+      "majorityAccuracy": 0.3362,
+      "accuracyDelta": 0.188,
+      "ci95": [
+        0.1197,
+        0.2564
+      ],
+      "l2": 0.1,
+      "ships": true
+    }
+  ],
+  "geocell_head": {
+    "versus": "ViT-L-14/openai, country then city",
+    "model": "ViT-B-32/laion2b_s34b_b79k",
+    "references": 4322,
+    "cells": 93,
+    "l2": 0.01,
+    "tauKm": 300.0,
+    "moved": 275,
+    "n": 388,
+    "median_km_delta": 267.7,
+    "ci95": [
+      73.8,
+      470.9
+    ],
+    "ships": false
+  },
+  "table": "| System | n | 25 km | 200 km | 750 km | 2,500 km | Median km (95% CI) | Country | Mean score |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n| Random city (baseline) | 388 | 0.3% | 0.8% | 2.3% | 11.3% | 7,744 (7,207–8,262) | 1.5% | 350 |\n| Best constant guess (baseline) | 388 | 2.3% | 2.8% | 7.2% | 22.2% | 6,529 (6,105–7,205) | 9.5% | 654 |\n| ViT-B-32/laion2b_s34b_b79k, country only | 388 | 4.6% | 10.3% | 28.4% | 50.3% | 2,422 (1,911–3,163) | 26.5% | 1,677 |\n| ViT-B-32/laion2b_s34b_b79k, country then city | 388 | 5.7% | 11.6% | 29.9% | 53.6% | 2,139 (1,561–2,604) | 25.5% | 1,814 |\n| ViT-B-32/openai, country only | 388 | 3.1% | 6.7% | 25.0% | 45.9% | 2,997 (2,290–4,106) | 19.8% | 1,502 |\n| ViT-B-32/openai, country then city | 388 | 3.6% | 10.3% | 23.2% | 43.3% | 3,998 (2,721–4,884) | 15.7% | 1,427 |\n| ViT-L-14/openai, country only | 388 | 8.2% | 15.5% | 43.6% | 67.0% | 972 (778–1,120) | 42.0% | 2,360 |\n| ViT-L-14/openai, country then city | 388 | 11.9% | 24.2% | 46.1% | 67.5% | 906 (707–1,178) | 38.1% | 2,487 |\n| ViT-L-14/openai, country then city, then nearest reference photos | 388 | 5.2% | 16.2% | 37.4% | 66.2% | 1,280 (1,012–1,546) | 38.1% | 2,210 |\n| ViT-B-32/laion2b_s34b_b79k geocell head, alone | 388 | 0.0% | 2.6% | 21.4% | 53.1% | 2,402 (1,911–2,659) | 23.7% | 1,502 |\n| ViT-L-14/openai, country then city, then geocell head | 388 | 1.8% | 17.0% | 42.0% | 67.8% | 1,174 (863–1,511) | 38.1% | 2,278 |"
 }
