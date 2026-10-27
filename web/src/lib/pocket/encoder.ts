@@ -9,6 +9,7 @@
  * Nothing leaves the device: the photo is decoded, embedded and matched locally.
  */
 import { normalise } from "./locate";
+import { clipPixels } from "./preprocess";
 import type { Pixels } from "./saliency";
 
 /**
@@ -28,19 +29,21 @@ export interface TensorLike {
 /** What the encoder needs from transformers.js (a tiny, typed slice of its API). */
 export interface TransformersLib {
   env: { allowLocalModels: boolean };
-  AutoProcessor: {
-    from_pretrained(
-      id: string,
-      opts?: object,
-    ): Promise<(img: unknown) => Promise<{ pixel_values: TensorLike }>>;
-  };
   CLIPVisionModelWithProjection: {
     from_pretrained(
       id: string,
       opts?: object,
     ): Promise<(inputs: { pixel_values: TensorLike }) => Promise<{ image_embeds: TensorLike }>>;
   };
-  RawImage: { fromBlob(blob: Blob): Promise<{ width: number; height: number }> };
+  /** Decodes through the browser, which turns the photo upright by its EXIF tag. */
+  RawImage: {
+    fromBlob(blob: Blob): Promise<{
+      data: ArrayLike<number>;
+      width: number;
+      height: number;
+      channels: number;
+    }>;
+  };
   Tensor: new (type: "float32", data: Float32Array, dims: number[]) => TensorLike;
 }
 
@@ -92,41 +95,33 @@ export async function loadEncoder(
 ): Promise<ImageEncoder> {
   const lib = await load();
   lib.env.allowLocalModels = false;
-  const progress_callback = progressTracker(onProgress);
-  const [processor, model] = await Promise.all([
-    lib.AutoProcessor.from_pretrained(modelId, { progress_callback }),
-    // Half-precision weights (about 180 MB, half of full precision). The 8-bit build was half
-    // that again, but it quantises activations on the fly and moved embeddings far enough from
-    // PyTorch's that the parity test never passed (cosine 0.80 on the Atlas run's photo), so
-    // Pocket Atlas was never published. fp16 matches full precision on the wasm backend.
-    lib.CLIPVisionModelWithProjection.from_pretrained(modelId, {
-      dtype: "fp16",
-      device: "wasm",
-      progress_callback,
-    }),
-  ]);
+  // Half-precision weights (about 180 MB, half of full precision). The 8-bit build was half
+  // that again, but it quantises activations on the fly and moved embeddings far enough from
+  // PyTorch's that the parity test never passed (cosine 0.80 on the Atlas run's photo), so
+  // Pocket Atlas was never published. fp16 matches full precision on the wasm backend.
+  const model = await lib.CLIPVisionModelWithProjection.from_pretrained(modelId, {
+    dtype: "fp16",
+    device: "wasm",
+    progress_callback: progressTracker(onProgress),
+  });
   const run = async (pixel_values: TensorLike) => {
     const { image_embeds } = await model({ pixel_values });
     return normalise(Float32Array.from(image_embeds.data));
   };
+  // CLIP's input is computed here, exactly as open_clip computes it (preprocess.ts), not by
+  // transformers.js's processor: its canvas resize barely antialiases a big photo on the way
+  // down to 224 px, which alone kept the parity test failing on a full-size catalog photo.
   const prepare = async (photo: Blob): Promise<PreparedPhoto> => {
-    const image = await lib.RawImage.fromBlob(photo);
-    const { pixel_values } = await processor(image);
-    const [, c, h, w] = pixel_values.dims;
-    return {
-      pixels: { data: Float32Array.from(pixel_values.data), dims: [c, h, w] },
-      width: image.width,
-      height: image.height,
-    };
+    const { data, width, height, channels } = await lib.RawImage.fromBlob(photo);
+    return { pixels: clipPixels(data, width, height, channels), width, height };
   };
+  // Always a batch of one, so an edited copy is embedded exactly as the photo was, and a phone
+  // holds one copy's activations at a time.
+  const embedPixels = ({ data, dims }: Pixels) =>
+    run(new lib.Tensor("float32", data, [1, ...dims]));
   return {
-    async embed(photo: Blob) {
-      const image = await lib.RawImage.fromBlob(photo);
-      return run((await processor(image)).pixel_values);
-    },
+    embed: async (photo: Blob) => embedPixels((await prepare(photo)).pixels),
     prepare,
-    // Always a batch of one, so an edited copy is embedded exactly as the photo was, and a
-    // phone holds one copy's activations at a time.
-    embedPixels: ({ data, dims }) => run(new lib.Tensor("float32", data, [1, ...dims])),
+    embedPixels,
   };
 }

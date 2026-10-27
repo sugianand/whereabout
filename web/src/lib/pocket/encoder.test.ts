@@ -1,19 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { TRANSFORMERS_URL, loadEncoder, progressTracker, type TransformersLib } from "./encoder";
+import { clipPixels } from "./preprocess";
+
+// A decoded 640 × 480 RGBA photo, as the browser hands it over.
+const PHOTO = { width: 640, height: 480, channels: 4 };
+const RGBA = new Uint8ClampedArray(640 * 480 * 4).map((_, i) => (i * 37) % 251);
 
 function fakeLib(embedding: number[]) {
   const calls: { id: string; opts?: object }[] = [];
   const lib: TransformersLib = {
     env: { allowLocalModels: true },
-    AutoProcessor: {
-      async from_pretrained(id, opts) {
-        calls.push({ id, opts });
-        return async () => ({
-          pixel_values: { data: Float32Array.from([1, 2, 3, 4, 5, 6, 7, 8]), dims: [1, 2, 2, 2] },
-        });
-      },
-    },
     CLIPVisionModelWithProjection: {
       async from_pretrained(id, opts) {
         calls.push({ id, opts });
@@ -23,7 +20,7 @@ function fakeLib(embedding: number[]) {
         };
       },
     },
-    RawImage: { fromBlob: vi.fn(async () => ({ width: 640, height: 480 })) },
+    RawImage: { fromBlob: vi.fn(async () => ({ ...PHOTO, data: RGBA })) },
     Tensor: class {
       constructor(
         public type: "float32",
@@ -50,14 +47,20 @@ describe("loadEncoder", () => {
     const { lib, calls } = fakeLib([3, 4]);
     const encoder = await loadEncoder("Xenova/clip-vit-base-patch32", undefined, async () => lib);
     expect(lib.env.allowLocalModels).toBe(false);
-    expect(calls.map((c) => c.id)).toEqual([
-      "Xenova/clip-vit-base-patch32",
-      "Xenova/clip-vit-base-patch32",
-    ]);
-    expect(calls[1].opts).toMatchObject({ dtype: "fp16", device: "wasm" });
+    expect(calls.map((c) => c.id)).toEqual(["Xenova/clip-vit-base-patch32"]);
+    expect(calls[0].opts).toMatchObject({ dtype: "fp16", device: "wasm" });
     const v = await encoder.embed(new Blob(["x"]));
     expect(Array.from(v)).toEqual([0.6000000238418579, 0.800000011920929]);
     expect(lib.RawImage.fromBlob).toHaveBeenCalledOnce();
+  });
+
+  it("feeds the model open_clip's preprocessing of the decoded photo, not transformers.js's", async () => {
+    const { lib, inputsSeen } = fakeLib([3, 4]);
+    const encoder = await loadEncoder("Xenova/clip-vit-base-patch32", undefined, async () => lib);
+    await encoder.embed(new Blob(["x"]));
+    const want = clipPixels(RGBA, 640, 480, 4);
+    expect(inputsSeen.at(-1)!.dims).toEqual([1, 3, 224, 224]);
+    expect(inputsSeen.at(-1)!.data).toEqual(want.data);
   });
 
   it("hands out CLIP's preprocessed pixels and embeds edited copies one photo at a time", async () => {
@@ -66,8 +69,8 @@ describe("loadEncoder", () => {
     const prepared = await encoder.prepare(new Blob(["x"]));
     expect(prepared.width).toBe(640);
     expect(prepared.height).toBe(480);
-    expect(prepared.pixels.dims).toEqual([2, 2, 2]);
-    expect(Array.from(prepared.pixels.data)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(prepared.pixels.dims).toEqual([3, 224, 224]);
+    expect(prepared.pixels.data).toEqual(clipPixels(RGBA, 640, 480, 4).data);
 
     const greyed = {
       ...prepared.pixels,
@@ -75,8 +78,8 @@ describe("loadEncoder", () => {
     };
     expect(Array.from(await encoder.embedPixels(greyed))).toEqual([0, 1]);
     // A batch of one, with the edited pixels.
-    expect(inputsSeen.at(-1)!.dims).toEqual([1, 2, 2, 2]);
-    expect(Array.from(inputsSeen.at(-1)!.data)).toEqual([0, 0, 0, 0, 5, 6, 7, 8]);
+    expect(inputsSeen.at(-1)!.dims).toEqual([1, 3, 224, 224]);
+    expect(Array.from(inputsSeen.at(-1)!.data).slice(0, 5)).toEqual([0, 0, 0, 0, greyed.data[4]]);
   });
 });
 
