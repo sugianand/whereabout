@@ -1,6 +1,6 @@
 {
   "system": "atlas-v0-zeroshot",
-  "generatedAt": "2026-10-27T07:14:47+00:00",
+  "generatedAt": "2026-10-27T09:07:01+00:00",
   "dataset": "whereabout-curated (data/curation/photos.csv)",
   "n": 388,
   "skipped": {},
@@ -288,12 +288,12 @@
     }
   ],
   "saliency": {
-    "n": 223,
+    "n": 348,
     "k": 5,
     "grid": 7,
-    "mean_top_k_drop": 0.5865,
-    "mean_random_k_drop": 0.2693,
-    "share_top_worse": 0.9327
+    "mean_top_k_drop": 0.5882,
+    "mean_random_k_drop": 0.251,
+    "share_top_worse": 0.9425
   },
   "retrieval": {
     "versus": "ViT-L-14/openai, country then city",

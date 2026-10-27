@@ -1,6 +1,6 @@
 # Atlas v0 results
 
-Generated 2026-10-27T07:14:47+00:00 by `.github/workflows/atlas.yml` on 388 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
+Generated 2026-10-27T09:07:01+00:00 by `.github/workflows/atlas.yml` on 388 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
 
 **Playing in the game:** ViT-L-14/openai, country then city (lowest median error).
 
@@ -39,14 +39,14 @@ Paired bootstrap on the same photos: the winner's median error minus each other 
 
 ## Where Atlas looked: is the map faithful?
 
-Occlusion saliency on a 7×7 grid over the square CLIP sees, for 223 photos. Deletion test: hide the 5 cells the map ranks highest, or 5 random cells, and measure the relative drop in Atlas's probability for the country it chose.
+Occlusion saliency on a 7×7 grid over the square CLIP sees, for 348 photos. Deletion test: hide the 5 cells the map ranks highest, or 5 random cells, and measure the relative drop in Atlas's probability for the country it chose.
 
 | Cells hidden | Mean drop in p(country) |
 | --- | ---: |
-| Top 5 by saliency | 58.7% |
-| 5 random (mean of 3 draws) | 26.9% |
+| Top 5 by saliency | 58.8% |
+| 5 random (mean of 3 draws) | 25.1% |
 
-Hiding the top cells hurt more than hiding random ones on 93% of photos.
+Hiding the top cells hurt more than hiding random ones on 94% of photos.
 
 ## Retrieval refinement: does it beat the system it refines?
 

@@ -1,0 +1,140 @@
+{
+  "cosine": 1,
+  "temperature": 1.2121,
+  "browser": {
+    "city": "Plymouth",
+    "country": "MS",
+    "lat": 16.70555,
+    "lng": -62.21292,
+    "confidence": 0.2697,
+    "topCountries": [
+      {
+        "country": "MS",
+        "p": 0.2697
+      },
+      {
+        "country": "LA",
+        "p": 0.1696
+      },
+      {
+        "country": "VN",
+        "p": 0.0569
+      }
+    ],
+    "clues": [
+      {
+        "label": "No buildings",
+        "p": 0.9522
+      },
+      {
+        "label": "Mountains",
+        "p": 0.6727
+      }
+    ],
+    "belief": {
+      "MS": 0.27,
+      "LA": 0.17,
+      "VN": 0.057,
+      "TH": 0.044,
+      "SM": 0.025,
+      "VE": 0.02,
+      "LC": 0.02,
+      "GI": 0.019,
+      "TF": 0.018,
+      "MG": 0.013,
+      "ID": 0.013,
+      "BR": 0.012,
+      "RE": 0.011,
+      "LK": 0.01,
+      "CO": 0.009,
+      "ME": 0.008,
+      "PH": 0.007,
+      "MY": 0.007,
+      "MU": 0.007,
+      "GN": 0.006,
+      "SI": 0.006,
+      "DM": 0.006,
+      "YT": 0.005
+    }
+  },
+  "pytorch": {
+    "city": "Plymouth",
+    "country": "MS",
+    "lat": 16.70555,
+    "lng": -62.21292,
+    "confidence": 0.27,
+    "topCountries": [
+      {
+        "country": "MS",
+        "p": 0.27
+      },
+      {
+        "country": "LA",
+        "p": 0.1688
+      },
+      {
+        "country": "VN",
+        "p": 0.0567
+      }
+    ],
+    "clues": [
+      {
+        "label": "No buildings",
+        "p": 0.9522
+      },
+      {
+        "label": "Mountains",
+        "p": 0.6724
+      }
+    ],
+    "belief": {
+      "MS": 0.27,
+      "LA": 0.169,
+      "VN": 0.057,
+      "TH": 0.044,
+      "SM": 0.025,
+      "VE": 0.02,
+      "LC": 0.02,
+      "GI": 0.019,
+      "TF": 0.018,
+      "MG": 0.013,
+      "ID": 0.013,
+      "BR": 0.012,
+      "RE": 0.011,
+      "LK": 0.01,
+      "CO": 0.009,
+      "ME": 0.008,
+      "PH": 0.007,
+      "MY": 0.007,
+      "MU": 0.007,
+      "GN": 0.006,
+      "SI": 0.006,
+      "DM": 0.006,
+      "YT": 0.005
+    }
+  },
+  "sameCountry": true,
+  "sameCity": true,
+  "gate": {
+    "browser": {
+      "passed": true,
+      "reasons": [],
+      "scores": {
+        "people": -6.093,
+        "indoor": -7.218
+      }
+    },
+    "pytorch": {
+      "passed": true,
+      "reasons": [],
+      "scores": {
+        "people": -6.092,
+        "indoor": -7.217
+      }
+    }
+  },
+  "looked": {
+    "topKDrop": 0.9409,
+    "randomKDrop": 0.2492
+  }
+}
