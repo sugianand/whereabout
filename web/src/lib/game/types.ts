@@ -233,6 +233,8 @@ export interface AtlasData {
     retrieval?: AtlasRetrievalSummary;
     calibration?: AtlasCalibrationSummary;
     clueHeads?: AtlasClueHeadResult[];
+    /** The same probes on Pocket Atlas's model, against its clues; they decide the browser only. */
+    pocketClueHeads?: AtlasClueHeadResult[];
     geocellHead?: AtlasGeocellHeadSummary;
   };
 }

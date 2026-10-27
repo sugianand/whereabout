@@ -355,6 +355,27 @@ def evaluate_head(
     )
 
 
+def export_probe(probe: Probe) -> dict:
+    """The probe as one affine map on the raw embedding, for a browser to run.
+
+    Standardisation is folded in: z = W'x + b' with W' = W / scale and
+    b' = b - (mean / scale) W, so `logits = weights @ x + bias`, one weight row per class, gives
+    the same log-probabilities as `Probe.log_probabilities` up to rounding. Seven significant
+    digits keep the logits within about 1e-5 of the fitted probe's on unit-length embeddings.
+    """
+    w = probe.weights / probe.scale[:, None]
+    b = probe.bias - (probe.mean / probe.scale) @ probe.weights
+
+    def r(v: float) -> float:
+        return float(f"{v:.7g}")
+
+    return {
+        "classes": list(probe.classes),
+        "weights": [[r(v) for v in row] for row in w.T],
+        "bias": [r(v) for v in b],
+    }
+
+
 def zero_shot_climate_groups(climate_probabilities: Sequence[np.ndarray]) -> list[str]:
     """Today's zero-shot climate clue as a Köppen group: its top option, never abstaining."""
     from whereabout_ml.clues import CONCEPT_GROUPS

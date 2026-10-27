@@ -167,6 +167,10 @@ jobs:
           if grep -q "^pocket retrieval failed" atlas-stderr.log; then
             echo "::warning title=Pocket Atlas retrieval failed::$(grep -A3 '^pocket retrieval failed' atlas-stderr.log | annotate)"
           fi
+          grep "^pocket clue head " atlas-stdout.log | sed 's/^/::notice title=Pocket Atlas clue heads::/' || true
+          if grep -q "^pocket clue heads failed" atlas-stderr.log; then
+            echo "::warning title=Pocket Atlas clue heads failed::$(grep -A3 '^pocket clue heads failed' atlas-stderr.log | annotate)"
+          fi
           grep "^saliency:" atlas-stdout.log | sed 's/^/::notice title=Saliency::/' || true
           grep "photos in .* from the embedding cache" atlas-stdout.log \
             | sed 's/^/::notice title=Embeddings::/' || true

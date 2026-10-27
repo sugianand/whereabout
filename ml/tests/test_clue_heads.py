@@ -189,3 +189,19 @@ def test_labels_for_reads_empty_cells_and_missing_ids_as_unlabelled(tmp_path):
     table = ch.load_labels(path)
     assert ch.labels_for(["a", "b", "c"], table, "climate_group") == ["Arid", None, None]
     assert ch.labels_for(["a", "b", "c"], table, "driving_side") == ["left", "right", None]
+
+
+def test_an_exported_probe_is_the_same_probe_as_one_affine_map():
+    # The browser runs `weights @ x + bias` on the unit embedding, with no standardisation step.
+    rng = np.random.default_rng(3)
+    classes = ("Tropical", "Arid", "Temperate")
+    y = rng.integers(0, 3, size=200)
+    x = informative([classes[i] for i in y], list(classes), rng, dim=32)
+    x /= np.linalg.norm(x, axis=1, keepdims=True)
+    probe = ch.fit_probe(x, y, classes, 1e-2)
+    exported = ch.export_probe(probe)
+    assert exported["classes"] == list(classes)
+    w, b = np.array(exported["weights"]), np.array(exported["bias"])
+    assert w.shape == (3, 32) and b.shape == (3,)
+    assert np.abs(log_softmax(x @ w.T + b) - probe.log_probabilities(x)).max() < 1e-4
+    assert ((x @ w.T + b).argmax(axis=1) == probe.probabilities(x).argmax(axis=1)).all()

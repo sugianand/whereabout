@@ -26,6 +26,12 @@ people or of a room before Atlas guesses where it was taken. Each check is linea
 embedding, `logit_scale * img . (reject_r - accept)`, so the index stores one direction per
 reason, in full precision (two rows; int8 would move a score by about 0.1 log-odds). `screen()`
 below is the reference for web/src/lib/pocket/gate.ts.
+
+When `pocket-calibration.json` holds clue heads that won their paired comparison on this model
+(`pocket_clue_heads` in `run_atlas_v0.py`), the index carries them too: logistic-regression probes
+on the image embedding, as one affine map each (`clue_heads.export_probe`). `locate()` then takes
+that concept's clue from the probe instead of the zero-shot scene descriptions ("Temperate
+climate" in place of "Mediterranean"), or adds one no description reads ("Drives on the left").
 """
 
 from __future__ import annotations
@@ -93,6 +99,42 @@ def privacy_gate(encoder, model: str, gate: dict) -> dict:
     return {"logitScale": scene.logit_scale, "reasons": reasons}
 
 
+def shipping_clue_heads(calibration: dict, dim: int) -> list[dict]:
+    """The index's `clueHeads`: every head in `calibration` that ships, checked for shape."""
+    heads = []
+    for h in calibration.get("clueHeads") or []:
+        if not h.get("ships"):
+            continue
+        probe = h.get("probe")
+        if probe is None:
+            raise ValueError(f"clue head {h['concept']} ships without its probe")
+        classes = list(probe["classes"])
+        weights = np.asarray(probe["weights"], dtype=np.float64)
+        bias = np.asarray(probe["bias"], dtype=np.float64)
+        if classes != list(h["classes"]) or weights.shape != (len(classes), dim):
+            raise ValueError(
+                f"clue head {h['concept']} has {weights.shape} weights, expected "
+                f"{(len(h['classes']), dim)}"
+            )
+        if bias.shape != (len(classes),) or not (
+            np.isfinite(weights).all() and np.isfinite(bias).all()
+        ):
+            raise ValueError(f"clue head {h['concept']} has a broken bias or weights")
+        if "{}" not in h["clue"]:
+            raise ValueError(f"clue head {h['concept']} has no place for its class in the clue")
+        heads.append(
+            {
+                "concept": h["concept"],
+                "group": h["clueGroup"],
+                "clue": h["clue"],
+                "classes": classes,
+                "weights": probe["weights"],
+                "bias": probe["bias"],
+            }
+        )
+    return heads
+
+
 def build_index(
     locator: ZeroShotGeolocator,
     model: str,
@@ -151,6 +193,9 @@ def build_index(
             raise ValueError(f"temperature must be a positive number, got {t!r}")
         meta["temperature"] = t
         meta["sureness"] = calibration["sureness"]
+        heads = shipping_clue_heads(calibration, int(q.shape[1]))
+        if heads:
+            meta["clueHeads"] = heads
     if gate is not None:
         meta["gate"] = privacy_gate(locator.encoder, model, gate)
     return meta, q
@@ -205,12 +250,22 @@ def locate(meta: dict, vectors: np.ndarray, image: np.ndarray) -> dict:
     assert best is not None
     city = meta["cities"][best[1] - nc]
 
+    # A clue head replaces the zero-shot clue of its group, shown or not: it read it better.
+    heads = meta.get("clueHeads") or []
+    learned = {h["group"] for h in heads}
     clues = []
     for g in meta["clueGroups"]:
+        if g["name"] in learned:
+            continue
         p = softmax(scale * vectors[g["start"] : g["start"] + len(g["labels"])] @ img)
         k = int(np.argmax(p))
         if p[k] >= meta["minClueProbability"]:
             clues.append({"label": g["labels"][k], "p": round(float(p[k]), 4)})
+    for h in heads:
+        p = softmax(np.asarray(h["weights"], dtype=np.float64) @ img + np.asarray(h["bias"]))
+        k = int(np.argmax(p))
+        if p[k] >= meta["minClueProbability"]:
+            clues.append({"label": h["clue"].format(h["classes"][k]), "p": round(float(p[k]), 4)})
     return {
         "city": city["name"],
         "country": city["country"],

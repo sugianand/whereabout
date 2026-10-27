@@ -32,6 +32,12 @@ export interface PocketMeta {
   temperature?: number;
   /** Held-out "When Atlas is 60–80% sure..." bands for this model, as the reveal shows. */
   sureness?: SurenessBand[];
+  /**
+   * Clue heads that beat Pocket Atlas's zero-shot clues on the catalog photos (`pocket_clue_heads`
+   * in ml/src/whereabout_ml/run_atlas_v0.py): each an affine map on the image embedding, one
+   * weight row per class. A head replaces the zero-shot clue of its `group`. Missing when none won.
+   */
+  clueHeads?: PocketClueHead[];
   /** The privacy gate (people and indoor), see gate.ts. Missing in indexes built before it. */
   gate?: PocketGate;
   /** Python's guess for the parity photo; indexes built before the heatmap have no `belief`. */
@@ -41,6 +47,17 @@ export interface PocketMeta {
     guess: Omit<PocketGuess, "belief"> & { belief?: Belief };
     gate?: GateVerdict;
   };
+}
+
+export interface PocketClueHead {
+  concept: string;
+  group: string;
+  /** The clue with `{}` where the class goes, e.g. "Drives on the {}". */
+  clue: string;
+  classes: string[];
+  /** classes × dim */
+  weights: number[][];
+  bias: number[];
 }
 
 export interface PocketIndex {
@@ -109,6 +126,20 @@ function scores(index: PocketIndex, img: Float64Array, start: number, count: num
 
 const argmax = (xs: number[]) => xs.reduce((best, x, i) => (x > xs[best] ? i : best), 0);
 
+/** softmax(weights · image + bias) for one clue head, on the unit-length image embedding. */
+export function headProbabilities(head: PocketClueHead, img: ArrayLike<number>): number[] {
+  return softmax(
+    head.weights.map((row, c) => {
+      if (row.length !== img.length) {
+        throw new Error(`clue head ${head.concept} has ${row.length} dims, not ${img.length}`);
+      }
+      let z = head.bias[c];
+      for (let d = 0; d < row.length; d++) z += row[d] * img[d];
+      return z;
+    }),
+  );
+}
+
 /** The index's temperature, or 1 (the raw model) when it has none or a broken one. */
 export function temperatureOf(meta: PocketMeta): number {
   const t = meta.temperature;
@@ -161,11 +192,22 @@ export function locate(index: PocketIndex, image: ArrayLike<number>): PocketGues
   if (!best) throw new Error("index has no countries");
   const city = meta.cities[best.row - nc];
 
+  // A clue head replaces the zero-shot clue of its group, shown or not: it read it better.
+  const heads = meta.clueHeads ?? [];
+  const learned = new Set(heads.map((h) => h.group));
   const clues = meta.clueGroups.flatMap((g) => {
+    if (learned.has(g.name)) return [];
     const p = softmax(scores(index, img, g.start, g.labels.length));
     const k = argmax(p);
     return p[k] >= meta.minClueProbability ? [{ label: g.labels[k], p: round4(p[k]) }] : [];
   });
+  for (const h of heads) {
+    const p = headProbabilities(h, img);
+    const k = argmax(p);
+    if (p[k] >= meta.minClueProbability) {
+      clues.push({ label: h.clue.replace("{}", h.classes[k]), p: round4(p[k]) });
+    }
+  }
 
   return {
     city: city.name,

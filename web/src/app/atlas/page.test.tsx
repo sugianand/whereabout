@@ -12,6 +12,7 @@ import {
   POCKET_SYSTEM,
   calibrationNote,
   clueHeadNote,
+  pocketClueHeadNote,
   geocellNote,
   retrievalNote,
   systemLabel,
@@ -85,6 +86,17 @@ describe("How Atlas guesses", () => {
       return;
     }
     for (const h of heads) expect(section).toHaveTextContent(clueHeadNote(h));
+  });
+
+  it("reports Pocket Atlas's clue heads, or nothing before a run has scored them", () => {
+    render(<AtlasPage />);
+    const heads = atlas.evaluation?.pocketClueHeads ?? [];
+    const section = screen.queryByTestId("pocket-clue-heads");
+    if (heads.length === 0) {
+      expect(section).toBeNull();
+      return;
+    }
+    for (const h of heads) expect(section).toHaveTextContent(pocketClueHeadNote(h));
   });
 
   it("shows how often Atlas was right at each level of confidence, from the shipped photos", () => {

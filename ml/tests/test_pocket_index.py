@@ -37,6 +37,42 @@ CALIBRATION = {
 }
 
 
+def toy_heads(dim: int, *, climate_ships: bool = True) -> list[dict]:
+    """`pocket_clue_heads` records for the toy (axes as in `VOCAB`): the climate probe reads
+    the desert and snow axes, the driving-side probe reads the country axes, and a third head
+    that lost its comparison carries no probe."""
+
+    def probe(classes, rows):
+        weights = [[0.0] * dim for _ in classes]
+        for c, axis, w in rows:
+            weights[classes.index(c)][VOCAB.index(axis)] = w
+        return {"classes": list(classes), "weights": weights, "bias": [0.0] * len(classes)}
+
+    climate = ["Tropical", "Arid", "Temperate", "Continental", "Polar"]
+    record = {"clueGroup": "climate", "clue": "{} climate", "classes": climate}
+    return [
+        {
+            "concept": "climate_group",
+            **record,
+            "ships": climate_ships,
+            **(
+                {"probe": probe(climate, [("Arid", "desert", 10.0), ("Continental", "snow", 10.0)])}
+                if climate_ships
+                else {}
+            ),
+        },
+        {
+            "concept": "driving_side",
+            "clueGroup": "driving_side",
+            "clue": "Drives on the {}",
+            "classes": ["left", "right"],
+            "ships": True,
+            "probe": probe(["left", "right"], [("left", "Japan", 8.0), ("right", "Peru", 8.0)]),
+        },
+        {"concept": "land_cover", **record, "ships": False},
+    ]
+
+
 # The privacy gate's toy: three more axes, for photos of people, of rooms and of the outdoors.
 GATE_VOCAB = [*VOCAB, "person", "room", "outdoors"]
 # The scene gate's own prompts land on those axes: people, indoor and "good photo".
@@ -235,10 +271,68 @@ def test_gate_thresholds_must_be_for_the_same_model():
         gated_toy(gate={**GATE, "thresholds": {**GATE["thresholds"], "indoor": float("nan")}})
 
 
-def fixture_from_toy() -> dict:
-    _, meta, q = gated_toy()
+def test_only_the_clue_heads_that_won_ship_in_the_index():
+    _, meta, _ = toy({**CALIBRATION, "clueHeads": toy_heads(8)})
+    heads = meta["clueHeads"]
+    assert [h["concept"] for h in heads] == ["climate_group", "driving_side"]
+    assert heads[1] == {
+        "concept": "driving_side",
+        "group": "driving_side",
+        "clue": "Drives on the {}",
+        "classes": ["left", "right"],
+        "weights": toy_heads(8)[1]["probe"]["weights"],
+        "bias": [0.0, 0.0],
+    }
+    # Without any winner, the index has no heads and Pocket Atlas keeps its zero-shot clues.
+    _, plain, _ = toy({**CALIBRATION, "clueHeads": toy_heads(8, climate_ships=False)[2:]})
+    assert "clueHeads" not in plain
+
+
+def test_a_clue_head_replaces_its_groups_zero_shot_clue_and_adds_new_ones():
+    _, plain, q = toy(CALIBRATION)
+    _, meta, _ = toy({**CALIBRATION, "clueHeads": toy_heads(8)})
     vectors = dequantize(q, np.array(meta["scales"]))
-    images = [gate_image(*w) for w in IMAGES + GATE_IMAGES] + [np.array(UNSURE + [0.001] * 3)]
+    desert = image("Peru", "desert")
+    assert [c["label"] for c in locate(plain, vectors, desert)["clues"]] == ["Desert"]
+    learned = locate(meta, vectors, desert)
+    assert sorted(c["label"] for c in learned["clues"]) == ["Arid climate", "Drives on the right"]
+    assert all(c["p"] >= meta["minClueProbability"] for c in learned["clues"])
+    # The heads change clues only: the pin, "% sure" and the heatmap stay the same.
+    zero_shot = locate(plain, vectors, desert)
+    assert {k: v for k, v in learned.items() if k != "clues"} == {
+        k: v for k, v in zero_shot.items() if k != "clues"
+    }
+    # An unsure head shows nothing, and the zero-shot clue it replaced stays gone.
+    kyoto = locate(meta, vectors, image("Japan", "Kyoto"))
+    assert [c["label"] for c in kyoto["clues"]] == ["Drives on the left"]
+    # Only the head that won is used: a climate head that lost leaves the zero-shot clue.
+    _, driving_only, _ = toy({**CALIBRATION, "clueHeads": toy_heads(8, climate_ships=False)})
+    labels = [c["label"] for c in locate(driving_only, vectors, desert)["clues"]]
+    assert sorted(labels) == ["Desert", "Drives on the right"]
+
+
+def test_a_shipping_clue_head_must_fit_the_index():
+    heads = toy_heads(8)
+    with pytest.raises(ValueError, match="weights"):
+        toy({**CALIBRATION, "clueHeads": toy_heads(11)})
+    with pytest.raises(ValueError, match="without its probe"):
+        toy({**CALIBRATION, "clueHeads": [{**heads[1], "probe": None}]})
+    broken = {**heads[1]["probe"], "bias": [float("nan"), 0.0]}
+    with pytest.raises(ValueError, match="broken"):
+        toy({**CALIBRATION, "clueHeads": [{**heads[1], "probe": broken}]})
+    with pytest.raises(ValueError, match="no place"):
+        toy({**CALIBRATION, "clueHeads": [{**heads[1], "clue": "Drives"}]})
+
+
+def fixture_from_toy() -> dict:
+    # The toy's index with every part the browser runs: temperature, privacy gate, clue heads.
+    _, meta, q = gated_toy({**CALIBRATION, "clueHeads": toy_heads(len(GATE_VOCAB))})
+    vectors = dequantize(q, np.array(meta["scales"]))
+    images = (
+        [gate_image(*w) for w in IMAGES + GATE_IMAGES]
+        + [gate_image("Peru", "desert", "outdoors")]
+        + [np.array(UNSURE + [0.001] * 3)]
+    )
     return {
         "note": "Shared by ml/tests/test_pocket_index.py and web/src/lib/pocket/locate.test.ts "
         "and gate.test.ts. Regenerate with `python ml/tests/test_pocket_index.py`.",

@@ -747,3 +747,67 @@ def test_a_failing_pocket_retrieval_keeps_the_game_and_pocket_calibration(
     pocket = json.loads((results / "pocket-calibration.json").read_text())
     assert "retrieval" not in pocket and pocket["model"] == "Fake-2/pocket"
     assert "pocket retrieval failed" in capsys.readouterr().err
+
+
+def test_main_scores_clue_heads_for_pocket_atlas_on_its_own_model(tmp_path, monkeypatch, capsys):
+    fake_phash(monkeypatch)
+    monkeypatch.setattr("whereabout_ml.clue_heads.MIN_TRAINING_PHOTOS", 2)
+    refs, thumbs = write_references(tmp_path)
+    game_labels, ref_labels = write_concept_labels(tmp_path)
+    atlas_out, results = run_main(
+        tmp_path,
+        monkeypatch,
+        "--model", "Fake-2:pocket",
+        "--pocket-model", "Fake-2:pocket",
+        "--references", str(refs),
+        "--reference-images", str(thumbs),
+        "--retrieval-model", "Fake-1:test",
+        "--labels", str(game_labels),
+        "--reference-labels", str(ref_labels),
+    )  # fmt: skip
+    pocket = json.loads((results / "pocket-calibration.json").read_text())
+    heads = {h["concept"]: h for h in pocket["clueHeads"]}
+    assert set(heads) == {"driving_side", "climate_group"}
+    # Fitted on the browser model's embeddings of the same references, past the same guard.
+    assert all(h["model"] == "Fake-2/pocket" and h["references"] == 6 for h in heads.values())
+    assert heads["driving_side"]["clue"] == "Drives on the {}"
+    # Pocket Atlas names both countries right, so the driving side it implies is perfect and no
+    # probe can clearly beat it: nothing ships, so no weights go to the browser.
+    assert heads["driving_side"]["baselineAccuracy"] == 1.0
+    assert not any(h["ships"] or "probe" in h for h in heads.values())
+    atlas = json.loads(atlas_out.read_text())
+    assert atlas["evaluation"]["pocketClueHeads"] == pocket["clueHeads"]
+    # The game's own clue heads are on the game's retrieval model, untouched by these.
+    assert {h["model"] for h in atlas["evaluation"]["clueHeads"]} == {"Fake-1/test"}
+    md = (results / "atlas-v0.md").read_text()
+    assert "## Pocket Atlas: do clue heads read your photo better?" in md
+    assert "pocket clue head driving_side (Fake-2/pocket)" in capsys.readouterr().out
+
+
+def test_a_pocket_clue_head_that_wins_carries_its_probe_for_the_browser(monkeypatch):
+    from whereabout_ml import clue_heads as ch
+
+    probe = ch.Probe(
+        ("left", "right"), np.zeros(3), np.ones(3), np.eye(3)[:, :2] * 4.0, np.zeros(2), 0.01
+    )
+
+    def result(concept, lo):
+        return ch.HeadResult(concept, 20, 100, 0.9, 0.6, 0.5, 0.3, (lo, 0.4), 0.01, probe)
+
+    won, lost = result(ch.DRIVING_SIDE, 0.1), result(ch.CLIMATE_GROUP, -0.1)
+    monkeypatch.setattr(
+        run_atlas_v0, "score_clue_heads", lambda *a, **k: (np.zeros((1, 3)), [won, lost])
+    )
+    photo = Photo("p", LatLon(0.0, 0.0), "X", country="JP")
+    guess = Guess(0.0, 0.0, "X", "JP", 0.9, (("JP", 0.9),), ())
+    base = System("Pocket, country then city", [], [guess])
+    records = run_atlas_v0.pocket_clue_heads(
+        [photo], base, [np.ones(3)], None, None, None, None, model="Pocket"
+    )
+    assert [r["ships"] for r in records] == [True, False]
+    assert records[0]["probe"] == ch.export_probe(probe) and "probe" not in records[1]
+    assert records[1]["clue"] == "{} climate"
+    with pytest.raises(ValueError, match="no guesses"):
+        run_atlas_v0.pocket_clue_heads(
+            [photo], System("x", [], None), [np.ones(3)], None, None, None, None, model="P"
+        )

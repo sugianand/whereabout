@@ -6,7 +6,9 @@ import {
   cosine,
   countryProbabilities,
   decodeIndex,
+  headProbabilities,
   locate,
+  normalise,
   softmax,
   temperatureOf,
   type PocketMeta,
@@ -31,6 +33,7 @@ describe("Pocket Atlas locate (pinned to Python by data/fixtures/pocket_cases.js
     got.topCountries.forEach((t, i) => expect(t.p).toBeCloseTo(want.topCountries[i].p, 3));
     expect(got.confidence).toBeCloseTo(want.confidence, 3);
     expect(got.clues.map((x) => x.label)).toEqual(want.clues.map((x) => x.label));
+    got.clues.forEach((x, i) => expect(x.p).toBeCloseTo(want.clues[i].p, 4));
     // The heatmap: the same countries, in the same order, as Python's.
     expect(Object.keys(got.belief)).toEqual(Object.keys(want.belief));
     for (const [code, p] of Object.entries(want.belief)) expect(got.belief[code]).toBeCloseTo(p, 3);
@@ -61,6 +64,33 @@ describe("Pocket Atlas locate (pinned to Python by data/fixtures/pocket_cases.js
     expect(temperatureOf({ ...meta, temperature: 0 })).toBe(1);
     expect(temperatureOf({ ...meta, temperature: Number.NaN })).toBe(1);
     expect(temperatureOf({ ...meta, temperature: 2.5 })).toBe(2.5);
+  });
+
+  it("takes a clue from a trained head instead of the zero-shot descriptions", () => {
+    expect(meta.clueHeads?.map((h) => h.concept)).toEqual(["climate_group", "driving_side"]);
+    // The desert photo: the zero-shot "Desert" clue gives way to the climate head's reading.
+    const desert = fixture.cases.find((c) =>
+      c.expected.clues.some((x) => x.label === "Arid climate"),
+    );
+    expect(desert).toBeDefined();
+    const learned = locate(index, desert!.image).clues.map((x) => x.label);
+    expect(learned).toContain("Arid climate");
+    expect(learned).not.toContain("Desert");
+    const zeroShot = locate(decodeIndex({ ...meta, clueHeads: undefined }, int8), desert!.image);
+    expect(zeroShot.clues.map((x) => x.label)).toEqual(["Desert"]);
+    // Heads change the clues only, never the pin or "% sure".
+    const withHeads = locate(index, desert!.image);
+    expect([withHeads.city, withHeads.confidence]).toEqual([zeroShot.city, zeroShot.confidence]);
+  });
+
+  it("refuses a clue head that doesn't fit the embedding", () => {
+    const head = meta.clueHeads![1];
+    const short = { ...head, weights: head.weights.map((row) => row.slice(1)) };
+    const broken = decodeIndex({ ...meta, clueHeads: [short] }, int8);
+    expect(() => locate(broken, fixture.cases[0].image)).toThrow(/dims/);
+    const p = headProbabilities(head, normalise(Float64Array.from(fixture.cases[0].image)));
+    expect(p).toHaveLength(head.classes.length);
+    expect(p.reduce((a, b) => a + b, 0)).toBeCloseTo(1, 12);
   });
 
   it("decodes rows to unit vectors", () => {

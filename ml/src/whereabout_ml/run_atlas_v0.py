@@ -23,8 +23,9 @@ alone and as the pin within Atlas's country; the latter plays only if it clearly
 playing system.
 
 With `--pocket-model` too, the same reference photos are embedded by the browser's model and
-refine Pocket Atlas's own zero-shot guesses; that paired verdict is reported and written into
-`pocket-calibration.json` for `pocket-atlas-index`, and never changes the game.
+refine Pocket Atlas's own zero-shot guesses, and (with the labels) clue heads are fitted on them
+against Pocket Atlas's own clues; those paired verdicts are reported and written into
+`pocket-calibration.json` for `pocket-atlas-index`, and never change the game.
 """
 
 from __future__ import annotations
@@ -62,6 +63,7 @@ from whereabout_ml.clue_heads import (
     HeadResult,
     apply_heads,
     evaluate_head,
+    export_probe,
     labels_for,
     load_labels,
     zero_shot_climate_groups,
@@ -509,7 +511,7 @@ def load_reference_index(
     return ReferenceIndex(refs, embeddings), dict(dropped)
 
 
-def fit_clue_heads(
+def score_clue_heads(
     photos: Sequence[Photo],
     guesses: Sequence[Guess],
     playing_embeddings: Sequence[np.ndarray],
@@ -518,16 +520,13 @@ def fit_clue_heads(
     index: ReferenceIndex,
     game_labels: Path,
     reference_labels: Path,
-    *,
-    model: str,
-) -> tuple[list[Guess], list[dict]]:
-    """Clue heads for each concept, scored against today's clues; the guesses with the clues
-    of every head that ships, and the records for atlas.json.
+) -> tuple[np.ndarray, list[HeadResult]]:
+    """A probe for each concept on `index`'s reference embeddings, scored on the game photos
+    against the clues `guesses` (made by `locator` from `playing_embeddings`) give today.
 
-    The probes read `probe_embeddings` (the retrieval model's, the space the reference photos
-    are embedded in); the zero-shot baseline is the playing system's own climate clue.
+    The probes read `probe_embeddings`, which must be in the same space as the reference photos;
+    they are returned unit-length, as the index's are, for `apply_heads`.
     """
-    # The index holds unit-length reference embeddings; the game photos' must match.
     probe_embeddings = normalise(np.asarray(probe_embeddings, dtype=np.float64))
     game_table = load_labels(game_labels)
     ref_table = load_labels(reference_labels)
@@ -555,8 +554,72 @@ def fit_clue_heads(
         )
         if result is not None:
             results.append(result)
+    return probe_embeddings, results
+
+
+def fit_clue_heads(
+    photos: Sequence[Photo],
+    guesses: Sequence[Guess],
+    playing_embeddings: Sequence[np.ndarray],
+    locator: ZeroShotGeolocator,
+    probe_embeddings: Sequence[np.ndarray],
+    index: ReferenceIndex,
+    game_labels: Path,
+    reference_labels: Path,
+    *,
+    model: str,
+) -> tuple[list[Guess], list[dict]]:
+    """Clue heads for each concept, scored against today's clues; the guesses with the clues
+    of every head that ships, and the records for atlas.json.
+
+    The probes read `probe_embeddings` (the retrieval model's, the space the reference photos
+    are embedded in); the zero-shot baseline is the playing system's own climate clue.
+    """
+    probe_embeddings, results = score_clue_heads(
+        photos,
+        guesses,
+        playing_embeddings,
+        locator,
+        probe_embeddings,
+        index,
+        game_labels,
+        reference_labels,
+    )
     shipped = apply_heads(guesses, probe_embeddings, results)
     return shipped, [r.as_dict(model) for r in results]
+
+
+def pocket_clue_heads(
+    photos: Sequence[Photo],
+    base: System,
+    embeddings: Sequence[np.ndarray],
+    locator: ZeroShotGeolocator,
+    index: ReferenceIndex,
+    game_labels: Path,
+    reference_labels: Path,
+    *,
+    model: str,
+) -> list[dict]:
+    """Clue heads for Pocket Atlas, on the browser model's own embeddings. Never changes the game.
+
+    `base` is Pocket Atlas's zero-shot system and `index` the reference photos embedded by the
+    browser's model (`reembed_references`). Each probe is scored against what the browser shows
+    today: its own zero-shot climate clue, and the driving side of the country it guessed. A
+    record that ships carries the probe as an affine map (`export_probe`), which
+    `pocket-atlas-index` puts in the index for the browser to run.
+    """
+    if base.guesses is None:
+        raise ValueError(f"{base.name} has no guesses to compare clues with")
+    _, results = score_clue_heads(
+        photos, base.guesses, embeddings, locator, embeddings, index, game_labels, reference_labels
+    )
+    records = []
+    for r in results:
+        record = {**r.as_dict(model), "clue": r.concept.clue}
+        if r.ships:
+            record["probe"] = export_probe(r.probe)
+        records.append(record)
+    return records
 
 
 def fit_geocell_head(
@@ -617,6 +680,7 @@ def build_outputs(
     clue_heads: list[dict] | None = None,
     geocell: dict | None = None,
     pocket_retrieval: dict | None = None,
+    pocket_clue_heads: list[dict] | None = None,
 ):
     """Atlas's guesses for the game, plus a JSON report and a Markdown results page.
 
@@ -625,7 +689,8 @@ def build_outputs(
     the record from `refine_with_references`, if the run tried the refinement, and
     `calibration` the one from `calibrate_guesses`, `clue_heads` the records from
     `fit_clue_heads`, `geocell` the one from `fit_geocell_head`, `pocket_retrieval` the one
-    from `pocket_retrieval` (reported only: it decides the browser, not the game).
+    from `pocket_retrieval` and `pocket_clue_heads` the records from `pocket_clue_heads`
+    (both reported only: they decide the browser, not the game).
     """
     saliency = saliency or {}
     beliefs = beliefs or {}
@@ -681,6 +746,13 @@ def build_outputs(
         atlas["evaluation"]["geocellHead"] = geocell
     if pocket_retrieval:
         atlas["evaluation"]["pocketRetrieval"] = pocket_retrieval
+    # The site's results page shows the comparison; the probes' weights travel only in
+    # pocket-calibration.json, to the browser's index.
+    pocket_heads = [
+        {k: v for k, v in h.items() if k != "probe"} for h in pocket_clue_heads or []
+    ] or None
+    if pocket_heads:
+        atlas["evaluation"]["pocketClueHeads"] = pocket_heads
 
     table = markdown_table({s.name: s.report for s in systems if s.report})
     report = {
@@ -698,6 +770,7 @@ def build_outputs(
         "clue_heads": clue_heads,
         "geocell_head": geocell,
         "pocket_retrieval": pocket_retrieval,
+        "pocket_clue_heads": pocket_heads,
         "table": table,
     }
     return atlas, report, results_markdown(report, now)
@@ -873,6 +946,30 @@ def results_markdown(report: dict, now: str) -> str:
                 f"{h['accuracyDelta']:+.1%} ({h['ci95'][0]:+.1%} to {h['ci95'][1]:+.1%}) | "
                 f"{'yes' if h['ships'] else 'no'} |"
                 for h in heads
+            ),
+        ]
+    pheads = report.get("pocket_clue_heads")
+    if pheads:
+        lines += [
+            "",
+            "## Pocket Atlas: do clue heads read your photo better?",
+            "",
+            f"The same probes, fitted on {pheads[0]['references']:,} reference photos embedded by "
+            f"the browser's model ({pheads[0]['model']}), scored the same way against what "
+            '"Try Atlas on your photo" shows today: its zero-shot climate clue, and the driving '
+            "side of the country it guessed. A probe that clearly wins ships in the browser's "
+            "index and writes that clue for players' own photos. The game's Atlas is never "
+            "changed by these rows.",
+            "",
+            "| Concept | Photos | Probe | Compared with | Their accuracy | Difference (95% CI) "
+            "| Runs in the browser |",
+            "| --- | ---: | ---: | --- | ---: | ---: | --- |",
+            *(
+                f"| {h['concept'].replace('_', ' ')} | {h['n']} | {h['headAccuracy']:.1%} | "
+                f"{h['baseline']} | {h['baselineAccuracy']:.1%} | "
+                f"{h['accuracyDelta']:+.1%} ({h['ci95'][0]:+.1%} to {h['ci95'][1]:+.1%}) | "
+                f"{'yes' if h['ships'] else 'no'} |"
+                for h in pheads
             ),
         ]
     lines += [
@@ -1137,8 +1234,11 @@ def main(argv: Sequence[str] | None = None) -> None:
             )
 
     pocket_ret: dict | None = None
+    pocket_heads: list[dict] | None = None
+    p_index: ReferenceIndex | None = None
     if args.pocket_model and index is not None and len(index):
         p_encoder, p_embeddings = by_model[args.pocket_model]
+        p_base = next(s for s in systems if s.name == f"{p_encoder.name}, country then city")
         try:
             p_index = (
                 index
@@ -1147,7 +1247,6 @@ def main(argv: Sequence[str] | None = None) -> None:
                     index, args.reference_images, p_encoder, args.embedding_cache
                 )
             )
-            p_base = next(s for s in systems if s.name == f"{p_encoder.name}, country then city")
             p_system, pocket_ret = pocket_retrieval(
                 photos, p_base, p_embeddings, p_index, model=p_encoder.name, dropped=ref_dropped
             )
@@ -1162,6 +1261,37 @@ def main(argv: Sequence[str] | None = None) -> None:
         except Exception as err:  # noqa: BLE001 - a score for the browser; never lose the game
             pocket_ret = None
             print(f"pocket retrieval failed, Pocket Atlas stays as it is: {err!r}", file=sys.stderr)
+        if (
+            p_index is not None
+            and args.labels is not None
+            and args.reference_labels is not None
+            and args.labels.exists()
+            and args.reference_labels.exists()
+        ):
+            try:
+                pocket_heads = pocket_clue_heads(
+                    photos,
+                    p_base,
+                    p_embeddings,
+                    locators[args.pocket_model],
+                    p_index,
+                    args.labels,
+                    args.reference_labels,
+                    model=p_encoder.name,
+                )
+            except Exception as err:  # noqa: BLE001 - the browser keeps its zero-shot clues
+                pocket_heads = None
+                print(
+                    f"pocket clue heads failed, Pocket Atlas keeps its zero-shot clues: {err!r}",
+                    file=sys.stderr,
+                )
+            for h in pocket_heads or []:
+                print(
+                    f"pocket clue head {h['concept']} ({h['model']}): {h['headAccuracy']:.1%} vs "
+                    f"{h['baseline']} {h['baselineAccuracy']:.1%} on {h['n']} photos "
+                    f"(95% CI {h['ci95']}); "
+                    f"{'runs in the browser' if h['ships'] else 'stays off'}"
+                )
 
     saliency: dict[str, Saliency] = {}
     if args.saliency_grid > 0:
@@ -1201,6 +1331,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         clue_heads=clue_heads,
         geocell=geocell,
         pocket_retrieval=pocket_ret,
+        pocket_clue_heads=pocket_heads,
     )
     args.atlas_out.write_text(json.dumps(atlas, indent=1, ensure_ascii=False) + "\n")
     args.results_dir.mkdir(parents=True, exist_ok=True)
@@ -1217,6 +1348,9 @@ def main(argv: Sequence[str] | None = None) -> None:
             # pocket-atlas-index reads this file: the verdict decides whether the index ships
             # the reference photos the browser's retrieval would search.
             pocket["retrieval"] = pocket_ret
+        if pocket_heads is not None:
+            # Shipping probes carry their weights, which `pocket-atlas-index` puts in the index.
+            pocket["clueHeads"] = pocket_heads
         (args.results_dir / "pocket-calibration.json").write_text(
             json.dumps(pocket, indent=2) + "\n"
         )

@@ -111,6 +111,21 @@ function points(x: number): string {
  * One sentence per clue head: how often it read its concept right on photos from places it
  * never trained on, against what the reveal used before, and whether it now writes that clue.
  */
+/** The same comparison, run on the browser's model for "Try Atlas on your photo". */
+export function pocketClueHeadNote(h: AtlasClueHeadResult): string {
+  const what = CONCEPT_NAMES[h.concept] ?? h.concept.replace(/_/g, " ");
+  const [lo, hi] = h.ci95;
+  const measured =
+    `On your own photos, Atlas runs a smaller CLIP model (${h.model}) in your browser. A probe ` +
+    `trained on that model's view of the same reference photos read ${what} right on ` +
+    `${pctWhole(h.headAccuracy)} of ${h.n.toLocaleString("en-US")} game photos; ${h.baseline} ` +
+    `got ${pctWhole(h.baselineAccuracy)} (difference ${points(h.accuracyDelta)}, 95% interval ` +
+    `${points(lo)} to ${points(hi)}).`;
+  return h.ships
+    ? `${measured} So it runs in your browser and writes that clue for your photo.`
+    : `${measured} That is not a clear win, so your photo keeps its old clue.`;
+}
+
 export function clueHeadNote(h: AtlasClueHeadResult): string {
   const what = CONCEPT_NAMES[h.concept] ?? h.concept.replace(/_/g, " ");
   const [lo, hi] = h.ci95;

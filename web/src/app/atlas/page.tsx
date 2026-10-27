@@ -10,6 +10,7 @@ import {
   POCKET_SYSTEM,
   calibrationNote,
   clueHeadNote,
+  pocketClueHeadNote,
   geocellNote,
   retrievalNote,
   systemLabel,
@@ -38,7 +39,10 @@ const retrieval = atlas.evaluation?.retrieval;
 const calibration = atlas.evaluation?.calibration;
 const geocellHead = atlas.evaluation?.geocellHead;
 const clueHeads = atlas.evaluation?.clueHeads ?? [];
-const sureness = surenessBands(gameRecords(catalog as CatalogPhoto[], atlas)).filter((b) => b.n > 0);
+const pocketClueHeads = atlas.evaluation?.pocketClueHeads ?? [];
+const sureness = surenessBands(gameRecords(catalog as CatalogPhoto[], atlas)).filter(
+  (b) => b.n > 0,
+);
 const surenessTotal = sureness.reduce((sum, b) => sum + b.n, 0);
 const pctWhole = (x: number) => `${Math.round(x * 100)}%`;
 
@@ -211,13 +215,22 @@ export default function AtlasPage() {
         <div data-testid="clue-heads">
           <p className="mt-4 text-chalk-dim">
             Some clues can also be learned. Every reference photo is labelled from maps by where it
-            was taken, its climate and the side of the road, and a small classifier on top of
-            CLIP learns to read that from the picture. Each one is tested on game photos from
-            parts of the world it never trained on.
+            was taken, its climate and the side of the road, and a small classifier on top of CLIP
+            learns to read that from the picture. Each one is tested on game photos from parts of
+            the world it never trained on.
           </p>
           {clueHeads.map((h) => (
             <p key={h.concept} className="mt-4 text-chalk-dim">
               {clueHeadNote(h)}
+            </p>
+          ))}
+        </div>
+      )}
+      {pocketClueHeads.length > 0 && (
+        <div data-testid="pocket-clue-heads">
+          {pocketClueHeads.map((h) => (
+            <p key={h.concept} className="mt-4 text-chalk-dim">
+              {pocketClueHeadNote(h)}
             </p>
           ))}
         </div>
@@ -293,10 +306,9 @@ export default function AtlasPage() {
           </h2>
           <p className="mt-4 text-chalk-dim">
             Every reveal says how sure Atlas was of the country. Here is what those numbers have
-            been worth on the {surenessTotal} photos in the game: of all the photos where Atlas
-            was that sure, how many were really taken in the country it put first. The reveal
-            quotes the line for a photo&apos;s band once it holds at least {MIN_BAND_PHOTOS}{" "}
-            photos.
+            been worth on the {surenessTotal} photos in the game: of all the photos where Atlas was
+            that sure, how many were really taken in the country it put first. The reveal quotes the
+            line for a photo&apos;s band once it holds at least {MIN_BAND_PHOTOS} photos.
           </p>
           <table className="mt-6 w-full text-left tabular" data-testid="sureness-table">
             <caption className="sr-only">
@@ -371,11 +383,10 @@ export default function AtlasPage() {
       <p className="mt-4 text-chalk-dim">
         A good round needs an outdoor photo of a place, with no faces and no sign that simply names
         the town. To grow the game past hand-picked photos, CLIP screens each candidate first: it
-        scores how much a picture looks like people, an interior, readable text, not-a-photo at
-        all or a close-up of an animal or plant (nothing to locate), and turns it away if any score
-        is too high. The bar is set so the hand-reviewed game
-        photos get through ({gate.catalog.passed} of {gate.catalog.n} do), then tested on images
-        that should be turned away.
+        scores how much a picture looks like people, an interior, readable text, not-a-photo at all
+        or a close-up of an animal or plant (nothing to locate), and turns it away if any score is
+        too high. The bar is set so the hand-reviewed game photos get through ({gate.catalog.passed}{" "}
+        of {gate.catalog.n} do), then tested on images that should be turned away.
       </p>
       <div className="mt-6 overflow-x-auto rounded-xl border border-graticule/70">
         <table className="w-full text-left text-sm">

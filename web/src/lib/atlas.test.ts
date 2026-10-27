@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   calibrationNote,
   clueHeadNote,
+  pocketClueHeadNote,
   geocellNote,
   retrievalNote,
   systemLabel,
@@ -148,6 +149,20 @@ describe("clueHeadNote", () => {
         "380 game photos from places it never trained on; the zero-shot climate clue got 45% " +
         "(difference +26 points, 95% interval +20 points to +31 points). The whole interval is " +
         "above zero, so the probe writes that clue at the reveal.",
+    );
+  });
+
+  it("says whether Pocket Atlas's own probe writes the clue for the player's photo", () => {
+    const pocket = { ...head, model: "ViT-B-32/openai" };
+    expect(pocketClueHeadNote(pocket)).toBe(
+      "On your own photos, Atlas runs a smaller CLIP model (ViT-B-32/openai) in your browser. A " +
+        "probe trained on that model's view of the same reference photos read the climate right " +
+        "on 71% of 380 game photos; the zero-shot climate clue got 45% (difference +26 points, " +
+        "95% interval +20 points to +31 points). So it runs in your browser and writes that clue " +
+        "for your photo.",
+    );
+    expect(pocketClueHeadNote({ ...pocket, ci95: [-0.01, 0.3], ships: false })).toMatch(
+      /not a clear win, so your photo keeps its old clue\.$/,
     );
   });
 

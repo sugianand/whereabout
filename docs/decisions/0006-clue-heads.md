@@ -36,5 +36,9 @@ have cached embeddings and coordinates.
 - Results come only from the Atlas workflow run (`eval/results/atlas-v0.md`, "How Atlas
   guesses"). The reference labels are written by `labels.yml`, which queues an Atlas run when
   they change.
-- Pocket Atlas (in the browser) keeps its zero-shot clues; porting a shipped probe's weights
-  there is a separate step.
+- Pocket Atlas (in the browser) runs a different CLIP model (ViT-B/32 OpenAI), so its probes are
+  fitted again on that model's embeddings of the same reference photos and scored by the same
+  rule against its own clues (`pocket_clue_heads` in `run_atlas_v0.py`). A winner's weights go
+  into `pocket-calibration.json` as one affine map (`clue_heads.export_probe`), from there into
+  the browser's index, and `locate()` in `pocket_index.py` and `locate.ts` run it, pinned to each
+  other by `data/fixtures/pocket_cases.json`.

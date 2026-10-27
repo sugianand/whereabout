@@ -106,6 +106,135 @@
     "right": 27
    }
   ],
+  "clueHeads": [
+   {
+    "concept": "climate_group",
+    "group": "climate",
+    "clue": "{} climate",
+    "classes": [
+     "Tropical",
+     "Arid",
+     "Temperate",
+     "Continental",
+     "Polar"
+    ],
+    "weights": [
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      10.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      10.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "bias": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   {
+    "concept": "driving_side",
+    "group": "driving_side",
+    "clue": "Drives on the {}",
+    "classes": [
+     "left",
+     "right"
+    ],
+    "weights": [
+     [
+      8.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      0.0,
+      0.0,
+      0.0,
+      8.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "bias": [
+     0.0,
+     0.0
+    ]
+   }
+  ],
   "gate": {
    "logitScale": 100.0,
    "reasons": [
@@ -283,7 +412,12 @@
       "p": 0.0
      }
     ],
-    "clues": [],
+    "clues": [
+     {
+      "label": "Drives on the right",
+      "p": 0.9965
+     }
+    ],
     "belief": {
      "PE": 1.0
     }
@@ -327,7 +461,12 @@
       "p": 0.0
      }
     ],
-    "clues": [],
+    "clues": [
+     {
+      "label": "Drives on the left",
+      "p": 0.9965
+     }
+    ],
     "belief": {
      "JP": 1.0
     }
@@ -373,8 +512,12 @@
     ],
     "clues": [
      {
-      "label": "Snow and ice",
-      "p": 1.0
+      "label": "Drives on the left",
+      "p": 0.9902
+     },
+     {
+      "label": "Continental climate",
+      "p": 0.9877
      }
     ],
     "belief": {
@@ -422,8 +565,12 @@
     ],
     "clues": [
      {
-      "label": "Desert",
-      "p": 1.0
+      "label": "Arid climate",
+      "p": 0.9966
+     },
+     {
+      "label": "Drives on the right",
+      "p": 0.9965
      }
     ],
     "belief": {
@@ -469,7 +616,12 @@
       "p": 0.0
      }
     ],
-    "clues": [],
+    "clues": [
+     {
+      "label": "Drives on the right",
+      "p": 0.9902
+     }
+    ],
     "belief": {
      "PE": 1.0
     }
@@ -513,7 +665,12 @@
       "p": 0.0
      }
     ],
-    "clues": [],
+    "clues": [
+     {
+      "label": "Drives on the left",
+      "p": 0.9902
+     }
+    ],
     "belief": {
      "JP": 1.0
     }
@@ -559,7 +716,12 @@
       "p": 0.0
      }
     ],
-    "clues": [],
+    "clues": [
+     {
+      "label": "Drives on the left",
+      "p": 0.9902
+     }
+    ],
     "belief": {
      "JP": 1.0
     }
@@ -605,7 +767,12 @@
       "p": 0.0
      }
     ],
-    "clues": [],
+    "clues": [
+     {
+      "label": "Drives on the right",
+      "p": 0.9819
+     }
+    ],
     "belief": {
      "PE": 1.0
     }
@@ -619,6 +786,59 @@
     "scores": {
      "people": 49.9,
      "indoor": 49.9
+    }
+   }
+  },
+  {
+   "image": [
+    0.001,
+    0.001,
+    0.001,
+    1.0,
+    0.001,
+    0.001,
+    0.001,
+    1.0,
+    0.001,
+    0.001,
+    1.0
+   ],
+   "expected": {
+    "city": "Lima",
+    "country": "PE",
+    "lat": -12.05,
+    "lng": -77.04,
+    "confidence": 1.0,
+    "topCountries": [
+     {
+      "country": "PE",
+      "p": 1.0
+     },
+     {
+      "country": "JP",
+      "p": 0.0
+     }
+    ],
+    "clues": [
+     {
+      "label": "Drives on the right",
+      "p": 0.9902
+     },
+     {
+      "label": "Arid climate",
+      "p": 0.9877
+     }
+    ],
+    "belief": {
+     "PE": 1.0
+    }
+   },
+   "gate": {
+    "passed": true,
+    "reasons": [],
+    "scores": {
+     "people": -57.619,
+     "indoor": -57.619
     }
    }
   },
