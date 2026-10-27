@@ -173,8 +173,20 @@ def test_given_random_cells_reproduce_the_seeded_deletion_test():
     assert fx["expected"]["topKDrop"] > fx["expected"]["randomKDrop"]
 
 
+def same(a, b) -> bool:
+    """Equal, but floats only to 1e-9: BLAS sums in a different order on another machine."""
+    if isinstance(a, dict):
+        return isinstance(b, dict) and a.keys() == b.keys() and all(same(a[k], b[k]) for k in a)
+    if isinstance(a, list):
+        return isinstance(b, list) and len(a) == len(b) and all(map(same, a, b))
+    if isinstance(a, float) or isinstance(b, float):
+        return abs(a - b) <= 1e-9
+    return a == b
+
+
 def test_the_shared_fixture_is_current():
-    assert json.loads(FIXTURE.read_text()) == json.loads(json.dumps(fixture_from_toy()))
+    assert same(json.loads(FIXTURE.read_text()), json.loads(json.dumps(fixture_from_toy())))
+    assert not same({"x": [1.0]}, {"x": [1.0 + 1e-6]})
 
 
 if __name__ == "__main__":
