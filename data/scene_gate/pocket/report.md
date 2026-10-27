@@ -6,11 +6,11 @@ Scores and thresholds are log-odds that a photo matches the reason rather than a
 
 | Reason | Threshold | Catalog photos rejected | Fixture n | Caught (any reason) | Caught (this reason) |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| people | 2.663 | 0 | 12 | 8 | 5 |
-| indoor | 2.282 | 0 | 12 | 12 | 12 |
-| text | 0.337 | 0 | 12 | 11 | 11 |
-| not_photo | 2.1 | 0 | 12 | 12 | 12 |
-| close_up | -0.836 | 0 | 12 | 12 | 12 |
+| people | 2.296 | 0 | 12 | 9 | 5 |
+| indoor | 3.027 | 0 | 12 | 12 | 11 |
+| text | -1.502 | 0 | 12 | 12 | 12 |
+| not_photo | 1.536 | 0 | 12 | 12 | 12 |
+| close_up | -1.368 | 0 | 12 | 12 | 12 |
 
 ## Catalog photos closest to each threshold
 
@@ -18,8 +18,8 @@ Hand-reviewed keepers with the highest score per reason: the ones that set the b
 
 | Reason | Threshold | Photos (score) |
 | --- | ---: | --- |
-| people | 2.663 | wm126 (2.663), wm048 (1.689), wm078 (1.504) |
-| indoor | 2.282 | wm077 (2.282), wm091 (1.99), wm101 (1.986) |
-| text | 0.337 | wm143 (0.337), wm126 (-1.058), wm048 (-1.35) |
-| not_photo | 2.1 | wm126 (2.1), wm048 (1.448), wm101 (0.983) |
-| close_up | -0.836 | wm126 (-0.836), wm139 (-1.757), wm069 (-1.993) |
+| people | 2.296 | wm126 (2.295), wm048 (1.415), wm078 (1.091) |
+| indoor | 3.027 | wm077 (3.027), wm101 (1.656), wm091 (1.645) |
+| text | -1.502 | wm143 (-1.503), wm126 (-1.823), wm101 (-2.581) |
+| not_photo | 1.536 | wm048 (1.536), wm126 (1.526), wm101 (0.665) |
+| close_up | -1.368 | wm126 (-1.368), wm139 (-2.67), wm069 (-3.338) |

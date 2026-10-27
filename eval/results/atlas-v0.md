@@ -1,6 +1,6 @@
 # Atlas v0 results
 
-Generated 2026-10-27T01:35:26+00:00 by `.github/workflows/atlas.yml` on 388 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
+Generated 2026-10-27T05:18:32+00:00 by `.github/workflows/atlas.yml` on 388 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
 
 **Playing in the game:** ViT-L-14/openai, country then city (lowest median error).
 
@@ -10,13 +10,13 @@ Generated 2026-10-27T01:35:26+00:00 by `.github/workflows/atlas.yml` on 388 phot
 | Best constant guess (baseline) | 388 | 2.3% | 2.8% | 7.2% | 22.2% | 6,529 (6,105–7,205) | 9.5% | 654 |
 | ViT-B-32/laion2b_s34b_b79k, country only | 388 | 4.6% | 10.3% | 28.4% | 50.3% | 2,422 (1,911–3,163) | 26.5% | 1,677 |
 | ViT-B-32/laion2b_s34b_b79k, country then city | 388 | 5.7% | 11.6% | 29.9% | 53.6% | 2,139 (1,561–2,604) | 25.5% | 1,814 |
-| ViT-B-32/openai, country only | 388 | 3.1% | 6.7% | 25.0% | 45.9% | 2,997 (2,290–4,106) | 19.8% | 1,502 |
-| ViT-B-32/openai, country then city | 388 | 3.6% | 10.3% | 23.2% | 43.3% | 3,998 (2,721–4,884) | 15.7% | 1,427 |
-| ViT-L-14/openai, country only | 388 | 8.2% | 15.5% | 43.6% | 67.0% | 972 (778–1,120) | 42.0% | 2,360 |
-| ViT-L-14/openai, country then city | 388 | 11.9% | 24.2% | 46.1% | 67.5% | 906 (707–1,178) | 38.1% | 2,487 |
-| ViT-L-14/openai, country then city, then nearest reference photos | 388 | 5.2% | 16.2% | 37.4% | 66.2% | 1,280 (1,012–1,546) | 38.1% | 2,210 |
+| ViT-B-32/openai, country only | 388 | 3.1% | 7.0% | 25.8% | 44.6% | 2,900 (2,520–3,928) | 20.4% | 1,539 |
+| ViT-B-32/openai, country then city | 388 | 4.9% | 12.1% | 27.1% | 45.6% | 2,961 (2,481–4,448) | 17.0% | 1,572 |
+| ViT-L-14/openai, country only | 388 | 9.5% | 18.8% | 45.1% | 68.0% | 896 (746–1,080) | 46.9% | 2,457 |
+| ViT-L-14/openai, country then city | 388 | 11.6% | 26.8% | 50.0% | 68.3% | 758 (517–973) | 44.1% | 2,621 |
+| ViT-L-14/openai, country then city, then nearest reference photos | 388 | 6.4% | 18.8% | 42.3% | 68.6% | 1,021 (827–1,331) | 44.1% | 2,393 |
 | ViT-B-32/laion2b_s34b_b79k geocell head, alone | 388 | 0.0% | 2.6% | 21.4% | 53.1% | 2,402 (1,911–2,659) | 23.7% | 1,502 |
-| ViT-L-14/openai, country then city, then geocell head | 388 | 1.8% | 17.0% | 42.0% | 67.8% | 1,174 (863–1,511) | 38.1% | 2,278 |
+| ViT-L-14/openai, country then city, then geocell head | 388 | 2.3% | 18.0% | 46.9% | 69.8% | 857 (670–1,174) | 44.1% | 2,444 |
 
 Accuracy columns are the share of photos guessed within that distance. Median error has a 95% bootstrap confidence interval. Mean score uses the game's scoring (5,000 for a perfect guess).
 
@@ -26,71 +26,71 @@ Paired bootstrap on the same photos: the winner's median error minus each other 
 
 | Compared with | Median km difference | 95% CI |
 | --- | ---: | ---: |
-| Random city (baseline) | -6,837 | -7,358 to -6,243 |
-| Best constant guess (baseline) | -5,623 | -6,333 to -5,085 |
-| ViT-B-32/laion2b_s34b_b79k, country only | -1,516 | -2,128 to -1,078 |
-| ViT-B-32/laion2b_s34b_b79k, country then city | -1,232 | -1,645 to -733 |
-| ViT-B-32/openai, country only | -2,091 | -3,182 to -1,470 |
-| ViT-B-32/openai, country then city | -3,092 | -3,945 to -1,886 |
-| ViT-L-14/openai, country only | -66 | -223 to 118 |
-| ViT-L-14/openai, country then city, then nearest reference photos | -374 | -600 to -187 |
-| ViT-B-32/laion2b_s34b_b79k geocell head, alone | -1,496 | -1,740 to -1,018 |
-| ViT-L-14/openai, country then city, then geocell head | -268 | -471 to -74 |
+| Random city (baseline) | -6,986 | -7,533 to -6,407 |
+| Best constant guess (baseline) | -5,771 | -6,478 to -5,234 |
+| ViT-B-32/laion2b_s34b_b79k, country only | -1,664 | -2,248 to -1,236 |
+| ViT-B-32/laion2b_s34b_b79k, country then city | -1,381 | -1,827 to -896 |
+| ViT-B-32/openai, country only | -2,142 | -3,195 to -1,721 |
+| ViT-B-32/openai, country then city | -2,203 | -3,579 to -1,758 |
+| ViT-L-14/openai, country only | -138 | -330 to 18 |
+| ViT-L-14/openai, country then city, then nearest reference photos | -263 | -462 to -108 |
+| ViT-B-32/laion2b_s34b_b79k geocell head, alone | -1,644 | -1,915 to -1,176 |
+| ViT-L-14/openai, country then city, then geocell head | -98 | -287 to 12 |
 
 ## Where Atlas looked: is the map faithful?
 
-Occlusion saliency on a 7×7 grid over the square CLIP sees, for 388 photos. Deletion test: hide the 5 cells the map ranks highest, or 5 random cells, and measure the relative drop in Atlas's probability for the country it chose.
+Occlusion saliency on a 7×7 grid over the square CLIP sees, for 121 photos. Deletion test: hide the 5 cells the map ranks highest, or 5 random cells, and measure the relative drop in Atlas's probability for the country it chose.
 
 | Cells hidden | Mean drop in p(country) |
 | --- | ---: |
-| Top 5 by saliency | 62.8% |
-| 5 random (mean of 3 draws) | 31.5% |
+| Top 5 by saliency | 57.0% |
+| 5 random (mean of 3 draws) | 28.7% |
 
-Hiding the top cells hurt more than hiding random ones on 92% of photos.
+Hiding the top cells hurt more than hiding random ones on 90% of photos.
 
 ## Retrieval refinement: does it beat the system it refines?
 
-ViT-L-14/openai, country then city refined by searching 4,322 geotagged reference photos in 156 countries (never game photos; image similarity from ViT-B-32/laion2b_s34b_b79k): within Atlas's chosen country, the pin moves to the weighted medoid of the 10 most similar reference photos. It moved the pin on 275 of 388 photos; the others had too few reference photos in their country. References dropped by the leakage guard: 23 same photographer near a game photo.
+ViT-L-14/openai, country then city refined by searching 4,322 geotagged reference photos in 156 countries (never game photos; image similarity from ViT-B-32/laion2b_s34b_b79k): within Atlas's chosen country, the pin moves to the weighted medoid of the 10 most similar reference photos. It moved the pin on 284 of 388 photos; the others had too few reference photos in their country. References dropped by the leakage guard: 23 same photographer near a game photo.
 
 | Refined minus unrefined | Median km difference | 95% CI | Plays in the game |
 | --- | ---: | ---: | --- |
-| ViT-L-14/openai, country then city | 374 | 187 to 600 | no |
+| ViT-L-14/openai, country then city | 263 | 108 to 462 | no |
 
 It plays only if the whole interval is below zero.
 
 ## Geocell head: does a trained classifier place the pin better?
 
-A linear classifier over 93 adaptive geocells, on frozen ViT-B-32/laion2b_s34b_b79k image embeddings of 4,322 reference photos (never game photos), trained with haversine label smoothing (τ = 300 km, L2 = 0.01, both chosen by 10° geographic cross-validation over the reference photos alone). The pin is the candidate with the least expected distance under the head's cell probabilities. Scored alone (any cell, in the table above) and within ViT-L-14/openai, country then city's country, where it moved the pin on 275 of 388 photos.
+A linear classifier over 93 adaptive geocells, on frozen ViT-B-32/laion2b_s34b_b79k image embeddings of 4,322 reference photos (never game photos), trained with haversine label smoothing (τ = 300 km, L2 = 0.01, both chosen by 10° geographic cross-validation over the reference photos alone). The pin is the candidate with the least expected distance under the head's cell probabilities. Scored alone (any cell, in the table above) and within ViT-L-14/openai, country then city's country, where it moved the pin on 284 of 388 photos.
 
 | Within the country, minus without | Median km difference | 95% CI | Plays in the game |
 | --- | ---: | ---: | --- |
-| ViT-L-14/openai, country then city | 268 | 74 to 471 | no |
+| ViT-L-14/openai, country then city | 98 | -12 to 287 | no |
 
 It plays only if the whole interval is below zero.
 
 ## How sure is Atlas: calibration
 
-Temperature scaling of the playing system's country probabilities, on the 388 photos whose country the gazetteer knows. Each photo's temperature is fitted on the other 4 of 5 folds, dealt by 10° geographic blocks, so every calibrated number below is measured on photos its fit never saw. Fitted on all of them, T = 1.030 (above 1 means the raw model was overconfident).
+Temperature scaling of the playing system's country probabilities, on the 388 photos whose country the gazetteer knows. Each photo's temperature is fitted on the other 4 of 5 folds, dealt by 10° geographic blocks, so every calibrated number below is measured on photos its fit never saw. Fitted on all of them, T = 1.170 (above 1 means the raw model was overconfident).
 
 | Probabilities | Negative log likelihood | Expected calibration error |
 | --- | ---: | ---: |
-| Raw CLIP softmax | 2.366 | 2.3% |
-| Temperature-scaled (held out) | 2.378 | 2.9% |
+| Raw CLIP softmax | 2.065 | 8.2% |
+| Temperature-scaled (held out) | 2.043 | 3.8% |
 
-The game shows the raw probabilities: temperature scaling did not lower held-out NLL.
+The game shows the temperature-scaled probabilities, because they lowered held-out NLL.
 
 | Atlas said | Photos | Right country |
 | --- | ---: | ---: |
-| 0% to 10% (mean 7%) | 25 | 8% |
-| 10% to 20% (mean 15%) | 54 | 15% |
-| 20% to 30% (mean 25%) | 59 | 20% |
-| 30% to 40% (mean 35%) | 68 | 35% |
-| 40% to 50% (mean 45%) | 45 | 40% |
-| 50% to 60% (mean 55%) | 38 | 55% |
-| 60% to 70% (mean 65%) | 21 | 67% |
-| 70% to 80% (mean 75%) | 35 | 74% |
-| 80% to 90% (mean 85%) | 19 | 89% |
-| 90% to 100% (mean 94%) | 24 | 88% |
+| 0% to 10% (mean 7%) | 11 | 0% |
+| 10% to 20% (mean 15%) | 37 | 11% |
+| 20% to 30% (mean 25%) | 61 | 25% |
+| 30% to 40% (mean 35%) | 62 | 32% |
+| 40% to 50% (mean 45%) | 49 | 41% |
+| 50% to 60% (mean 55%) | 40 | 57% |
+| 60% to 70% (mean 64%) | 38 | 74% |
+| 70% to 80% (mean 74%) | 28 | 75% |
+| 80% to 90% (mean 85%) | 40 | 80% |
+| 90% to 100% (mean 94%) | 22 | 86% |
 
 ## Clue heads: do trained probes read the scene better than today's clues?
 
@@ -98,8 +98,8 @@ Logistic-regression probes on frozen CLIP image embeddings (ViT-B-32/laion2b_s34
 
 | Concept | Photos | Probe | Compared with | Their accuracy | Commonest class | Difference (95% CI) | Writes the clue |
 | --- | ---: | ---: | --- | ---: | ---: | ---: | --- |
-| driving side | 387 | 79.8% | the driving side of the country Atlas guessed | 78.3% | 73.1% | +1.6% (-3.6% to +7.0%) | no |
-| climate group | 351 | 63.0% | the zero-shot climate clue | 44.2% | 33.6% | +18.8% (+12.0% to +25.6%) | yes |
+| driving side | 387 | 79.8% | the driving side of the country Atlas guessed | 80.6% | 73.1% | -0.8% (-5.9% to +4.4%) | no |
+| climate group | 351 | 63.0% | the zero-shot climate clue | 45.3% | 33.6% | +17.7% (+10.8% to +24.5%) | yes |
 
 ## Read these numbers carefully
 

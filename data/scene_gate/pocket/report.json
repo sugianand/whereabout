@@ -1,10 +1,10 @@
 {
   "thresholds": {
-    "people": 2.663,
-    "indoor": 2.282,
-    "text": 0.337,
-    "not_photo": 2.1,
-    "close_up": -0.836
+    "people": 2.296,
+    "indoor": 3.027,
+    "text": -1.502,
+    "not_photo": 1.536,
+    "close_up": -1.368
   },
   "catalog": {
     "n": 88,
@@ -20,71 +20,71 @@
       "people": [
         {
           "id": "wm126",
-          "score": 2.663
+          "score": 2.295
         },
         {
           "id": "wm048",
-          "score": 1.689
+          "score": 1.415
         },
         {
           "id": "wm078",
-          "score": 1.504
+          "score": 1.091
         }
       ],
       "indoor": [
         {
           "id": "wm077",
-          "score": 2.282
-        },
-        {
-          "id": "wm091",
-          "score": 1.99
+          "score": 3.027
         },
         {
           "id": "wm101",
-          "score": 1.986
+          "score": 1.656
+        },
+        {
+          "id": "wm091",
+          "score": 1.645
         }
       ],
       "text": [
         {
           "id": "wm143",
-          "score": 0.337
+          "score": -1.503
         },
         {
           "id": "wm126",
-          "score": -1.058
+          "score": -1.823
         },
         {
-          "id": "wm048",
-          "score": -1.35
+          "id": "wm101",
+          "score": -2.581
         }
       ],
       "not_photo": [
         {
-          "id": "wm126",
-          "score": 2.1
+          "id": "wm048",
+          "score": 1.536
         },
         {
-          "id": "wm048",
-          "score": 1.448
+          "id": "wm126",
+          "score": 1.526
         },
         {
           "id": "wm101",
-          "score": 0.983
+          "score": 0.665
         }
       ],
       "close_up": [
         {
           "id": "wm126",
-          "score": -0.836
+          "score": -1.368
         },
         {
           "id": "wm139",
-          "score": -1.757
+          "score": -2.67
         },
         {
           "id": "wm069",
-          "score": -1.993
+          "score": -3.338
         }
       ]
     }
@@ -92,18 +92,18 @@
   "rejects": {
     "people": {
       "n": 12,
-      "caught": 8,
+      "caught": 9,
       "caught_for_label": 5
     },
     "indoor": {
       "n": 12,
       "caught": 12,
-      "caught_for_label": 12
+      "caught_for_label": 11
     },
     "text": {
       "n": 12,
-      "caught": 11,
-      "caught_for_label": 11
+      "caught": 12,
+      "caught_for_label": 12
     },
     "not_photo": {
       "n": 12,
