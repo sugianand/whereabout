@@ -1,7 +1,7 @@
 {
  "model": "ViT-L-14/openai, country then city",
  "version": "atlas-v0-zeroshot",
- "generatedAt": "2026-10-26T21:26:43+00:00",
+ "generatedAt": "2026-10-27T01:35:26+00:00",
  "guesses": {
   "wm000": {
    "lng": 102.44784,
@@ -3025,12 +3025,12 @@
   "wm051": {
    "lng": -62.72499,
    "lat": 17.2955,
-   "confidence": 0.7931,
+   "confidence": 0.793,
    "guessedPlace": "Basseterre, KN",
    "topCountries": [
     {
      "country": "KN",
-     "p": 0.7931
+     "p": 0.793
     },
     {
      "country": "BQ",
@@ -11275,12 +11275,12 @@
   "wh3677747": {
    "lng": 166.44884,
    "lat": -22.27407,
-   "confidence": 0.3236,
+   "confidence": 0.3235,
    "guessedPlace": "Noumea, NC",
    "topCountries": [
     {
      "country": "NZ",
-     "p": 0.3236
+     "p": 0.3235
     },
     {
      "country": "NC",
@@ -13550,12 +13550,12 @@
   "wh7179854": {
    "lng": 12.38878,
    "lat": 43.1122,
-   "confidence": 0.3871,
+   "confidence": 0.387,
    "guessedPlace": "Perugia, IT",
    "topCountries": [
     {
      "country": "FR",
-     "p": 0.3871
+     "p": 0.387
     },
     {
      "country": "IT",
@@ -16801,12 +16801,12 @@
   "wh14236999": {
    "lng": -99.90891,
    "lat": 16.84942,
-   "confidence": 0.2475,
+   "confidence": 0.2474,
    "guessedPlace": "Acapulco de Juarez, MX",
    "topCountries": [
     {
      "country": "SV",
-     "p": 0.2475
+     "p": 0.2474
     },
     {
      "country": "MX",
@@ -19420,12 +19420,12 @@
   "wh19194913": {
    "lng": -56.1773,
    "lat": 46.77914,
-   "confidence": 0.3171,
+   "confidence": 0.3172,
    "guessedPlace": "Saint-Pierre, PM",
    "topCountries": [
     {
      "country": "PM",
-     "p": 0.3171
+     "p": 0.3172
     },
     {
      "country": "NF",
@@ -19996,7 +19996,7 @@
     },
     {
      "country": "US",
-     "p": 0.0301
+     "p": 0.0302
     },
     {
      "country": "PM",
@@ -23454,7 +23454,7 @@
    "clues": [
     {
      "label": "European old town",
-     "p": 0.679
+     "p": 0.6791
     }
    ],
    "belief": {
@@ -23996,7 +23996,7 @@
     },
     {
      "country": "UA",
-     "p": 0.1018
+     "p": 0.1019
     },
     {
      "country": "RU",
@@ -24622,7 +24622,7 @@
    ],
    "belief": {
     "GI": 0.242,
-    "ES": 0.209,
+    "ES": 0.208,
     "CY": 0.168,
     "GR": 0.067,
     "MS": 0.038,
@@ -43780,7 +43780,7 @@
     },
     {
      "country": "MM",
-     "p": 0.1065
+     "p": 0.1064
     },
     {
      "country": "LA",
