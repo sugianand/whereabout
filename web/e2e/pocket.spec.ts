@@ -10,7 +10,8 @@ import { decodeIndex, locate, temperatureOf, type PocketMeta } from "../src/lib/
  *
  * Runs only with POCKET_PARITY_IMAGE set (the Atlas workflow sets it), because it downloads the
  * real model from the Hugging Face Hub. It uploads the same photo whose PyTorch embedding the
- * index stores, and compares the embedding transformers.js computes in Chromium.
+ * index stores, and compares the embedding transformers.js computes in Chromium. Then it asks
+ * where Atlas looked, so the browser's occlusion saliency runs once on the real model too.
  */
 const image = process.env.POCKET_PARITY_IMAGE;
 const MIN_COSINE = 0.95;
@@ -81,6 +82,19 @@ test("Pocket Atlas in the browser agrees with PyTorch", async ({ page }, info) =
   // reported rather than required; whichever it is, the page must show it.
   if (got.guess) {
     await expect(page.getByRole("heading", { name: got.guess.city })).toBeVisible();
+    // "Where Atlas looked" on the same photo, with the real model: the map shows, and its
+    // deletion test (top 5 cells vs 5 random ones) goes into the report.
+    await page.getByRole("button", { name: "Where did Atlas look?" }).click();
+    await expect(page.getByRole("img", { name: /^Where Atlas looked/ })).toBeVisible({
+      timeout: 5 * 60_000,
+    });
+    const looked = await page.evaluate(() => window.__pocketAtlas!.looked!);
+    expect(looked.cells).toHaveLength(looked.grid * looked.grid);
+    const { topKDrop, randomKDrop } = looked;
+    writeFileSync(
+      "test-results/pocket-parity.json",
+      JSON.stringify({ ...report, looked: { topKDrop, randomKDrop } }, null, 2),
+    );
   } else {
     await expect(page.getByTestId("pocket-declined")).toBeVisible();
   }

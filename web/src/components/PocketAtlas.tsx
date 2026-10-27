@@ -15,9 +15,16 @@ import {
 } from "@/lib/pocket/gate";
 import { IndexUnavailable, loadIndex } from "@/lib/pocket/index";
 import { surenessLine, type SurenessBand } from "@/lib/game/sureness";
-import { locate, type PocketGuess, type PocketIndex } from "@/lib/pocket/locate";
+import {
+  countryProbabilities,
+  locate,
+  type PocketGuess,
+  type PocketIndex,
+} from "@/lib/pocket/locate";
+import { centreCropBox, DELETION_K, explain, type PocketLooked } from "@/lib/pocket/saliency";
 import type { RevealView } from "@/lib/reveal";
 
+import AtlasEyes from "./AtlasEyes";
 import Globe from "./Globe";
 
 type Phase =
@@ -37,6 +44,16 @@ type Phase =
     }
   | { kind: "unavailable" }
   | { kind: "error"; message: string };
+
+/** "Where Atlas looked" on the current photo: on request only, as it costs ~55 model passes. */
+type Looking =
+  | { kind: "idle" }
+  | { kind: "running"; done: number; total: number }
+  | { kind: "done"; looked: PocketLooked; country: string }
+  | { kind: "error"; message: string };
+
+/** Thrown inside a "Where Atlas looked" run once its photo has been replaced. */
+class Superseded extends Error {}
 
 export interface PocketDeps {
   loadIndex: () => Promise<PocketIndex>;
@@ -62,6 +79,9 @@ function regionName(code: string): string {
 /** "87%", or "under 1%" for a country Atlas all but ruled out (never a misleading "0%"). */
 const sureOf = (p: number) => (p < 0.01 ? "under 1%" : pct(p));
 
+/** "cut it by 62%" or, when hiding patches made Atlas surer, "raised it by 3%". */
+const dropOf = (d: number) => (d >= 0 ? `cut it by ${pct(d)}` : `raised it by ${pct(-d)}`);
+
 declare global {
   interface Window {
     /**
@@ -73,6 +93,8 @@ declare global {
       gate: GateVerdict;
       guess: PocketGuess | null;
       model: string;
+      /** "Where Atlas looked", once the player asks for it. */
+      looked?: PocketLooked;
     };
   }
 }
@@ -93,6 +115,10 @@ export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps
   }> | null>(null);
   const [names, setNames] = useState<ReadonlyMap<string, string>>(new Map());
   const [sureness, setSureness] = useState<readonly SurenessBand[] | null>(null);
+  const [looking, setLooking] = useState<Looking>({ kind: "idle" });
+  // The photo being guessed, and a counter that retires a "Where Atlas looked" run when it changes.
+  const photoFile = useRef<File | null>(null);
+  const photoRun = useRef(0);
 
   // Free the preview's object URL when the photo changes or the page goes away.
   useEffect(() => () => void (photo && URL.revokeObjectURL(photo)), [photo]);
@@ -124,6 +150,9 @@ export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps
       return;
     }
     setPhoto(URL.createObjectURL(file));
+    photoFile.current = file;
+    photoRun.current += 1;
+    setLooking({ kind: "idle" });
     setTruth(null);
     setPhase({ kind: "loading", progress: null });
     try {
@@ -154,6 +183,44 @@ export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps
     setDragging(false);
     const file = event.dataTransfer.files?.[0];
     if (file) void guessFor(file);
+  }
+
+  /** Occlusion saliency for the current photo, entirely on the device (lib/pocket/saliency.ts). */
+  async function lookAgain(country: string) {
+    const file = photoFile.current;
+    if (!file || !ready.current) return;
+    const run = photoRun.current;
+    const live = () => {
+      if (photoRun.current !== run) throw new Superseded();
+    };
+    setLooking({ kind: "running", done: 0, total: 0 });
+    try {
+      const { index, encoder } = await ready.current;
+      const at = index.meta.countries.findIndex((c) => c.code === country);
+      if (at < 0) throw new Error("Atlas can't explain a country outside its index.");
+      const { pixels, width, height } = await encoder.prepare(file);
+      const looked = await explain(
+        pixels,
+        centreCropBox(width, height),
+        async (px) => {
+          live();
+          const p = countryProbabilities(index, await encoder.embedPixels(px))[at];
+          return Math.log(Math.max(p, 1e-300));
+        },
+        {
+          onProgress: (done, total) => {
+            live();
+            setLooking({ kind: "running", done, total });
+          },
+        },
+      );
+      live();
+      if (window.__pocketAtlas) window.__pocketAtlas.looked = looked;
+      setLooking({ kind: "done", looked, country });
+    } catch (err) {
+      if (err instanceof Superseded) return;
+      setLooking({ kind: "error", message: (err as Error).message || "Something went wrong." });
+    }
   }
 
   function reveal() {
@@ -340,6 +407,65 @@ export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps
                 ))}
               </ul>
             )}
+
+            <div className="mt-6" data-testid="pocket-looked">
+              {looking.kind === "idle" && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => void lookAgain(guess.country)}
+                    className="rounded-full border border-sonar/60 px-5 py-2 text-sm font-semibold text-sonar transition hover:bg-sonar/10"
+                  >
+                    Where did Atlas look?
+                  </button>
+                  <p className="mt-2 text-xs text-chalk-dim">
+                    Atlas hides one patch of your photo at a time and looks again, about 55 times,
+                    still on your device. It can take a minute on a phone.
+                  </p>
+                </>
+              )}
+              {looking.kind === "running" && (
+                <div>
+                  <p className="text-sm">Atlas is hiding patches of your photo…</p>
+                  <div
+                    role="progressbar"
+                    aria-label="Finding where Atlas looked"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={
+                      looking.total ? Math.round((looking.done / looking.total) * 100) : 0
+                    }
+                    className="mt-2 h-2 max-w-xs overflow-hidden rounded-full bg-chalk/15"
+                  >
+                    <div
+                      className="h-full rounded-full bg-sonar transition-[width]"
+                      style={{
+                        width: looking.total ? `${(looking.done / looking.total) * 100}%` : "4%",
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+              {looking.kind === "done" && photo && (
+                <div className="grid gap-3 sm:grid-cols-[12rem_1fr] sm:items-start">
+                  <AtlasEyes src={photo} looked={looking.looked} className="w-48" />
+                  <p className="text-sm text-chalk-dim">
+                    The glow is where hiding the photo hurt Atlas&apos;s belief in{" "}
+                    {countryName(looking.country)} most. Hiding the {DELETION_K} patches it leaned
+                    on most {dropOf(looking.looked.topKDrop)}; hiding {DELETION_K} random patches{" "}
+                    {dropOf(looking.looked.randomKDrop)}.{" "}
+                    {looking.looked.topKDrop > looking.looked.randomKDrop
+                      ? "So the glow does show what this guess rests on."
+                      : "So for this photo the glow is a weak guide: no one part carried the guess."}
+                  </p>
+                </div>
+              )}
+              {looking.kind === "error" && (
+                <p role="alert" className="text-sm text-flare">
+                  {looking.message}
+                </p>
+              )}
+            </div>
 
             <div className="mt-6">
               <p className="font-semibold">

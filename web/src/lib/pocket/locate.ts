@@ -116,6 +116,18 @@ export function temperatureOf(meta: PocketMeta): number {
 }
 
 /**
+ * p(country | image), untempered: what "Where Atlas looked" measures, as the game's maps do
+ * (`country_log_prob` in ml/src/whereabout_ml/run_atlas_v0.py). In index order.
+ */
+export function countryProbabilities(index: PocketIndex, image: ArrayLike<number>): number[] {
+  if (image.length !== index.meta.dim)
+    throw new Error(`embedding has ${image.length} dims, not ${index.meta.dim}`);
+  return softmax(
+    scores(index, normalise(Float64Array.from(image)), 0, index.meta.countries.length),
+  );
+}
+
+/**
  * Atlas's guess for one image embedding. The pin comes from the raw probabilities, as the scored
  * pipeline picks it; "% sure" and the shortlist are divided by the index's temperature, as in
  * the game, which never reorders countries, and so is the heatmap (`belief`).

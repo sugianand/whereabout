@@ -2,7 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import fixture from "../../../../data/fixtures/pocket_cases.json";
 
-import { cosine, decodeIndex, locate, softmax, temperatureOf, type PocketMeta } from "./locate";
+import {
+  cosine,
+  countryProbabilities,
+  decodeIndex,
+  locate,
+  softmax,
+  temperatureOf,
+  type PocketMeta,
+} from "./locate";
 
 const meta = fixture.meta as PocketMeta;
 const int8 = Int8Array.from(fixture.vectors.flat());
@@ -75,5 +83,20 @@ describe("softmax and cosine", () => {
     expect(p).toEqual([0.5, 0.5]);
     expect(cosine([1, 0], [0, 1])).toBe(0);
     expect(cosine([2, 0], [1, 0])).toBe(1);
+  });
+});
+
+describe("countryProbabilities", () => {
+  const index = decodeIndex(meta, int8);
+  it("is the untempered distribution the pin comes from", () => {
+    const unsure = fixture.cases.at(-1)!.image;
+    const p = countryProbabilities(index, unsure);
+    expect(p.reduce((a, b) => a + b, 0)).toBeCloseTo(1, 12);
+    const raw = locate(decodeIndex({ ...meta, temperature: undefined }, int8), unsure);
+    const jp = meta.countries.findIndex((c) => c.code === "JP");
+    expect(p[jp]).toBeCloseTo(raw.confidence, 4);
+    // Not the tempered "% sure": the temperature is for display, not for saliency.
+    expect(p[jp]).toBeGreaterThan(locate(index, unsure).confidence);
+    expect(() => countryProbabilities(index, [1])).toThrow(/dims/);
   });
 });

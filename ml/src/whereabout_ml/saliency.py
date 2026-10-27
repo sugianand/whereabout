@@ -86,6 +86,45 @@ def normalise_map(raw: np.ndarray) -> np.ndarray:
     return pos / peak if peak > 0 else np.zeros_like(pos)
 
 
+def random_cells(
+    rng: np.random.Generator,
+    n_cells: int,
+    k: int = DELETION_K,
+    trials: int = DELETION_RANDOM_TRIALS,
+) -> list[list[int]]:
+    """`trials` sets of k distinct cells, each sorted: the deletion test's random baseline."""
+    return [
+        sorted(int(i) for i in rng.choice(n_cells, size=k, replace=False)) for _ in range(trials)
+    ]
+
+
+def top_cells(raw: np.ndarray, k: int = DELETION_K) -> list[int]:
+    """The k cells whose hiding hurt most; ties go to the earlier cell (row-major)."""
+    return [int(i) for i in np.argsort(-raw.ravel(), kind="stable")[:k]]
+
+
+def deletion_drops(
+    pixels: np.ndarray, raw: np.ndarray, prob: Scorer, randoms: list[list[int]], k: int = DELETION_K
+) -> tuple[float, float]:
+    """Relative drop in probability after hiding the top-k cells, and after each random set (mean).
+
+    Split from `deletion_test` so the random sets can be given: the browser's port
+    (web/src/lib/pocket/saliency.ts) draws its own, and the shared fixture pins both to the same.
+    """
+    grid = raw.shape[0]
+    batch = np.stack(
+        [
+            pixels,
+            occlude(pixels, top_cells(raw, k), grid),
+            *(occlude(pixels, r, grid) for r in randoms),
+        ]
+    )
+    p = np.asarray(prob(batch), dtype=np.float64)
+    base = max(p[0], 1e-12)
+    drops = (base - p[1:]) / base
+    return float(drops[0]), float(drops[1:].mean())
+
+
 def deletion_test(
     pixels: np.ndarray,
     raw: np.ndarray,
@@ -98,19 +137,8 @@ def deletion_test(
 
     `prob` returns probabilities (not logs). The random figure is the mean over `trials` draws.
     """
-    grid = raw.shape[0]
-    top = [int(i) for i in np.argsort(-raw.ravel(), kind="stable")[:k]]
-    randoms = [
-        sorted(int(i) for i in rng.choice(grid * grid, size=k, replace=False))
-        for _ in range(trials)
-    ]
-    batch = np.stack(
-        [pixels, occlude(pixels, top, grid), *(occlude(pixels, r, grid) for r in randoms)]
-    )
-    p = np.asarray(prob(batch), dtype=np.float64)
-    base = max(p[0], 1e-12)
-    drops = (base - p[1:]) / base
-    return float(drops[0]), float(drops[1:].mean())
+    randoms = random_cells(rng, raw.size, k, trials)
+    return deletion_drops(pixels, raw, prob, randoms, k)
 
 
 def centre_crop_box(width: int, height: int) -> tuple[float, float, float, float]:

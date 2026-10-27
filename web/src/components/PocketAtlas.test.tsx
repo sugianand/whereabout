@@ -2,7 +2,9 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import fixture from "../../../data/fixtures/pocket_cases.json";
+import type { ImageEncoder } from "@/lib/pocket/encoder";
 import { IndexUnavailable } from "@/lib/pocket/index";
+import type { Pixels } from "@/lib/pocket/saliency";
 import { decodeIndex, type PocketMeta } from "@/lib/pocket/locate";
 import { FakeMap, resetFakes } from "@/test/maplibre-mock";
 
@@ -16,12 +18,28 @@ const CUSCO = fixture.cases[0];
 // Photos the toy privacy gate declines: people in Kyoto, a room in Osaka, both in Lima.
 const gated = (reasons: string) => fixture.cases.find((c) => c.gate.reasons.join("+") === reasons)!;
 
+/** A fake encoder that embeds every photo as `image`, and every edited copy by `look`. */
+function encoderFor(
+  image: number[],
+  look: (pixels: Pixels) => Promise<number[]> | number[] = () => image,
+): ImageEncoder {
+  return {
+    embed: async () => Float32Array.from(image),
+    prepare: async () => ({
+      pixels: { data: new Float32Array(3 * 14 * 14).fill(1), dims: [3, 14, 14] },
+      width: 640,
+      height: 480,
+    }),
+    embedPixels: async (pixels) => Float32Array.from(await look(pixels)),
+  };
+}
+
 function deps(overrides: Partial<PocketDeps> = {}): PocketDeps {
   return {
     loadIndex: async () => index,
     loadEncoder: async (_id, onProgress) => {
       onProgress({ loaded: 45e6, total: 90e6 });
-      return { embed: async () => Float32Array.from(CUSCO.image) };
+      return encoderFor(CUSCO.image);
     },
     ...overrides,
   };
@@ -80,7 +98,7 @@ describe("Pocket Atlas", () => {
       const rendered = render(
         <PocketAtlas
           deps={deps({
-            loadEncoder: async () => ({ embed: async () => Float32Array.from(unsure.image) }),
+            loadEncoder: async () => encoderFor(unsure.image),
           })}
         />,
       );
@@ -127,7 +145,7 @@ describe("Pocket Atlas", () => {
     render(
       <PocketAtlas
         deps={deps({
-          loadEncoder: async () => ({ embed: async () => Float32Array.from(unsure.image) }),
+          loadEncoder: async () => encoderFor(unsure.image),
         })}
       />,
     );
@@ -159,7 +177,7 @@ describe("Pocket Atlas", () => {
       loadEncoder: (_id, onProgress) =>
         new Promise((resolve) => {
           onProgress({ loaded: 45e6, total: 90e6 });
-          finish = () => resolve({ embed: async () => Float32Array.from(CUSCO.image) });
+          finish = () => resolve(encoderFor(CUSCO.image));
         }),
     });
     render(<PocketAtlas deps={slow} />);
@@ -195,7 +213,12 @@ describe("Pocket Atlas", () => {
     let photo = gated("people").image;
     render(
       <PocketAtlas
-        deps={deps({ loadEncoder: async () => ({ embed: async () => Float32Array.from(photo) }) })}
+        deps={deps({
+          loadEncoder: async () => ({
+            ...encoderFor([]),
+            embed: async () => Float32Array.from(photo),
+          }),
+        })}
       />,
     );
     choosePhoto("friends.jpg");
@@ -224,11 +247,7 @@ describe("Pocket Atlas", () => {
     ["people+indoor", /people in it, and it looks like it was taken indoors/],
   ])("declines a photo the gate flags as %s", async (reasons, message) => {
     const image = gated(reasons).image;
-    render(
-      <PocketAtlas
-        deps={deps({ loadEncoder: async () => ({ embed: async () => Float32Array.from(image) }) })}
-      />,
-    );
+    render(<PocketAtlas deps={deps({ loadEncoder: async () => encoderFor(image) })} />);
     choosePhoto();
     expect(await screen.findByTestId("pocket-declined")).toHaveTextContent(message);
     expect(window.__pocketAtlas?.guess).toBeNull();
@@ -245,5 +264,97 @@ describe("Pocket Atlas", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("isn't published yet");
     expect(loadEncoder).not.toHaveBeenCalled();
     expect(window.__pocketAtlas).toBeUndefined();
+  });
+
+  describe("Where Atlas looked", () => {
+    // A photo whose top-left corner is all Atlas needs: with it, Cusco; without it, the unsure
+    // Japan-leaning case. So hiding that one cell is what costs Atlas its belief in Peru.
+    const UNSURE = fixture.cases.at(-1)!.image;
+    const cornerOnly = (pixels: Pixels) => (pixels.data[0] === 0 ? UNSURE : CUSCO.image);
+
+    beforeEach(() => {
+      // The random cells, made repeatable: {1, 3, 24, 25, 26}, none of them the corner.
+      vi.spyOn(Math, "random").mockReturnValue(0.5);
+    });
+    afterEach(() => vi.restoreAllMocks());
+
+    it("shows, on request, the part of the photo the guess rests on, and checks it", async () => {
+      const look = vi.fn(cornerOnly);
+      render(
+        <PocketAtlas deps={deps({ loadEncoder: async () => encoderFor(CUSCO.image, look) })} />,
+      );
+      choosePhoto();
+      const result = screen.getByRole("region", { name: "Atlas's guess" });
+      await within(result).findByRole("heading", { name: "Cusco" });
+      // Nothing runs until the player asks: phones only pay for it on request.
+      expect(look).not.toHaveBeenCalled();
+      expect(within(result).queryByRole("img", { name: /Where Atlas looked/ })).toBeNull();
+
+      fireEvent.click(within(result).getByRole("button", { name: "Where did Atlas look?" }));
+      const eyes = await within(result).findByRole("img", { name: /Where Atlas looked/ });
+      expect(eyes).toHaveAccessibleName("Where Atlas looked: mostly the top left of the photo");
+      // The photo, 49 cells hidden one at a time, then the deletion test's 5 passes.
+      expect(look).toHaveBeenCalledTimes(1 + 49 + 2 + 3);
+
+      const looked = window.__pocketAtlas?.looked;
+      expect(looked?.cells[0]).toBe(1);
+      expect(looked?.cells.slice(1).every((v) => v === 0)).toBe(true);
+      // 640 × 480: CLIP sees the centre 480 × 480 square.
+      expect(looked?.crop).toEqual([0.125, 0, 0.75, 1]);
+      expect(looked!.topKDrop).toBeGreaterThan(0.5);
+      expect(looked!.randomKDrop).toBe(0);
+      expect(within(result).getByTestId("pocket-looked")).toHaveTextContent(
+        new RegExp(
+          `belief in Peru most\\. Hiding the 5 patches it leaned on most cut it by ` +
+            `${Math.round(looked!.topKDrop * 100)}%; hiding 5 random patches cut it by 0%\\. ` +
+            `So the glow does show what this guess rests on\\.`,
+        ),
+      );
+      expect(within(result).queryByRole("button", { name: "Where did Atlas look?" })).toBeNull();
+    });
+
+    it("says when the map is a weak guide, and forgets it when the next photo arrives", async () => {
+      // Nothing in particular matters: every copy embeds the same, so no cell stands out.
+      render(<PocketAtlas deps={deps()} />);
+      choosePhoto();
+      fireEvent.click(await screen.findByRole("button", { name: "Where did Atlas look?" }));
+      const looked = await screen.findByTestId("pocket-looked");
+      await waitFor(() => expect(looked).toHaveTextContent(/weak guide/));
+      expect(screen.getByRole("img", { name: /Where Atlas looked/ })).toHaveAccessibleName(
+        "Where Atlas looked: no single part of the photo stood out",
+      );
+
+      choosePhoto("next.jpg");
+      expect(
+        await screen.findByRole("button", { name: "Where did Atlas look?" }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("img", { name: /Where Atlas looked/ })).toBeNull();
+    });
+
+    it("drops a run that was still going when a new photo arrived", async () => {
+      let release!: () => void;
+      const gate = new Promise<void>((r) => (release = r));
+      const look = vi.fn(async (pixels: Pixels) => {
+        await gate;
+        return cornerOnly(pixels);
+      });
+      render(
+        <PocketAtlas deps={deps({ loadEncoder: async () => encoderFor(CUSCO.image, look) })} />,
+      );
+      choosePhoto();
+      fireEvent.click(await screen.findByRole("button", { name: "Where did Atlas look?" }));
+      expect(
+        await screen.findByRole("progressbar", { name: "Finding where Atlas looked" }),
+      ).toBeInTheDocument();
+
+      choosePhoto("next.jpg");
+      await screen.findByRole("button", { name: "Where did Atlas look?" });
+      await act(async () => release());
+      // The old run stops at its next pass instead of finishing ~55 passes for a photo that's gone.
+      expect(look).toHaveBeenCalledTimes(1);
+      expect(screen.queryByRole("img", { name: /Where Atlas looked/ })).toBeNull();
+      expect(screen.queryByRole("progressbar", { name: "Finding where Atlas looked" })).toBeNull();
+      expect(window.__pocketAtlas?.looked).toBeUndefined();
+    });
   });
 });

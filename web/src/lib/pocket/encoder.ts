@@ -9,6 +9,7 @@
  * Nothing leaves the device: the photo is decoded, embedded and matched locally.
  */
 import { normalise } from "./locate";
+import type { Pixels } from "./saliency";
 
 /**
  * The self-contained build, with ONNX Runtime bundled in. Not `transformers.web.min.js`: that one
@@ -18,19 +19,29 @@ import { normalise } from "./locate";
 export const TRANSFORMERS_URL =
   "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.1/dist/transformers.min.js";
 
+/** A transformers.js tensor, as far as the encoder uses one. */
+export interface TensorLike {
+  data: ArrayLike<number>;
+  dims: number[];
+}
+
 /** What the encoder needs from transformers.js (a tiny, typed slice of its API). */
 export interface TransformersLib {
   env: { allowLocalModels: boolean };
   AutoProcessor: {
-    from_pretrained(id: string, opts?: object): Promise<(img: unknown) => Promise<object>>;
+    from_pretrained(
+      id: string,
+      opts?: object,
+    ): Promise<(img: unknown) => Promise<{ pixel_values: TensorLike }>>;
   };
   CLIPVisionModelWithProjection: {
     from_pretrained(
       id: string,
       opts?: object,
-    ): Promise<(inputs: object) => Promise<{ image_embeds: { data: ArrayLike<number> } }>>;
+    ): Promise<(inputs: { pixel_values: TensorLike }) => Promise<{ image_embeds: TensorLike }>>;
   };
-  RawImage: { fromBlob(blob: Blob): Promise<unknown> };
+  RawImage: { fromBlob(blob: Blob): Promise<{ width: number; height: number }> };
+  Tensor: new (type: "float32", data: Float32Array, dims: number[]) => TensorLike;
 }
 
 export interface DownloadProgress {
@@ -39,8 +50,19 @@ export interface DownloadProgress {
   total: number;
 }
 
+/** The pixels CLIP sees for a photo, and the photo's own size (to place the square on it). */
+export interface PreparedPhoto {
+  pixels: Pixels;
+  width: number;
+  height: number;
+}
+
 export interface ImageEncoder {
   embed(photo: Blob): Promise<Float32Array>;
+  /** Decode and preprocess a photo (resize, centre-crop, normalise) without embedding it. */
+  prepare(photo: Blob): Promise<PreparedPhoto>;
+  /** Embed already-preprocessed pixels, e.g. a copy with part of the photo greyed out. */
+  embedPixels(pixels: Pixels): Promise<Float32Array>;
 }
 
 /** Bypasses the bundler: the URL is fetched by the browser at runtime, not at build time. */
@@ -81,11 +103,28 @@ export async function loadEncoder(
       progress_callback,
     }),
   ]);
+  const run = async (pixel_values: TensorLike) => {
+    const { image_embeds } = await model({ pixel_values });
+    return normalise(Float32Array.from(image_embeds.data));
+  };
+  const prepare = async (photo: Blob): Promise<PreparedPhoto> => {
+    const image = await lib.RawImage.fromBlob(photo);
+    const { pixel_values } = await processor(image);
+    const [, c, h, w] = pixel_values.dims;
+    return {
+      pixels: { data: Float32Array.from(pixel_values.data), dims: [c, h, w] },
+      width: image.width,
+      height: image.height,
+    };
+  };
   return {
     async embed(photo: Blob) {
       const image = await lib.RawImage.fromBlob(photo);
-      const { image_embeds } = await model(await processor(image));
-      return normalise(Float32Array.from(image_embeds.data));
+      return run((await processor(image)).pixel_values);
     },
+    prepare,
+    // Always a batch of one: the 8-bit model quantises activations over the whole batch, so a
+    // photo embedded alongside others comes out differently than it does on its own.
+    embedPixels: ({ data, dims }) => run(new lib.Tensor("float32", data, [1, ...dims])),
   };
 }
