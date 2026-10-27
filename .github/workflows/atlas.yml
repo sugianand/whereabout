@@ -163,6 +163,10 @@ jobs:
             echo "::warning title=Saliency failed::$(grep -A3 '^saliency failed' atlas-stderr.log | annotate)"
           fi
           grep "^pocket calibration" atlas-stdout.log | sed 's/^/::notice title=Pocket Atlas calibration::/' || true
+          grep "^pocket retrieval (" atlas-stdout.log | sed 's/^/::notice title=Pocket Atlas retrieval::/' || true
+          if grep -q "^pocket retrieval failed" atlas-stderr.log; then
+            echo "::warning title=Pocket Atlas retrieval failed::$(grep -A3 '^pocket retrieval failed' atlas-stderr.log | annotate)"
+          fi
           grep "^saliency:" atlas-stdout.log | sed 's/^/::notice title=Saliency::/' || true
           grep "photos in .* from the embedding cache" atlas-stdout.log \
             | sed 's/^/::notice title=Embeddings::/' || true

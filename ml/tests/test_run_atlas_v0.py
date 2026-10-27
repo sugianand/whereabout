@@ -657,3 +657,93 @@ def test_a_failing_geocell_head_still_ships_atlas(tmp_path, monkeypatch, capsys)
     assert set(atlas["guesses"]) == {"kyoto", "cusco"}
     assert "geocellHead" not in atlas["evaluation"]
     assert "geocell head failed, shipping Atlas without it" in capsys.readouterr().err
+
+
+def test_main_scores_retrieval_for_pocket_atlas_with_its_own_model(tmp_path, monkeypatch, capsys):
+    fake_phash(monkeypatch, unreadable={"wr7.jpg"})
+    refs, thumbs = write_references(tmp_path)
+    FakeClip.images_encoded = 0
+    atlas_out, results = run_main(
+        tmp_path,
+        monkeypatch,
+        "--model",
+        "Fake-2:pocket",
+        "--pocket-model",
+        "Fake-2:pocket",
+        "--references",
+        str(refs),
+        "--reference-images",
+        str(thumbs),
+        "--retrieval-model",
+        "Fake-1:test",
+    )
+    # 2 game photos per model, and the 5 references once for each model that searches them.
+    assert FakeClip.images_encoded == 2 * 2 + 5 * 2
+    pocket = json.loads((results / "pocket-calibration.json").read_text())
+    record = pocket["retrieval"]
+    assert record["model"] == "Fake-2/pocket"
+    assert record["versus"] == "Fake-2/pocket, country then city"
+    # The same references as the game's search, after the same leakage guard.
+    assert record["references"] == 5
+    assert record["dropped"] == {"same file as a game photo": 1, "unreadable thumbnail": 1}
+    assert record["moved"] == 1 and record["n"] == 2
+    # Its zero-shot guesses are already exact, so retrieval cannot clearly beat them.
+    assert record["ships"] is False
+    atlas = json.loads(atlas_out.read_text())
+    assert atlas["evaluation"]["pocketRetrieval"] == record
+    plays = {s["name"]: s["playsInGame"] for s in atlas["evaluation"]["systems"]}
+    name = "Fake-2/pocket, country then city, then nearest reference photos (Pocket Atlas)"
+    assert plays[name] is False
+    assert json.loads((results / "atlas-v0.json").read_text())["pocket_retrieval"] == record
+    md = (results / "atlas-v0.md").read_text()
+    assert "## Pocket Atlas: would retrieval help the browser's model?" in md
+    assert "pocket retrieval (Fake-2/pocket): moved the pin on 1 of 2" in capsys.readouterr().out
+
+
+def test_pocket_retrieval_never_plays_in_the_game_even_when_it_wins():
+    from whereabout_ml.retrieval import Reference, ReferenceIndex
+
+    photos = [Photo(f"p{i}", LatLon(35.0, 135.0), "Kyoto", country="JP") for i in range(30)]
+    far = Guess(43.06, 141.35, "Sapporo", "JP", 0.9, (("JP", 0.9),), ())
+    base = System(
+        "Pocket, country then city",
+        run_atlas_v0.predictions_from_guesses(photos, [far] * 30),
+        [far] * 30,
+    )
+    refs = [Reference(f"r{i}", 35.0, 135.0, "JP", "Kyoto", "", "") for i in range(3)]
+    index = ReferenceIndex(refs, np.eye(3))
+    query = [np.array([1.0, 0.0, 0.0])] * 30
+    system, record = run_atlas_v0.pocket_retrieval(photos, base, query, index, model="Pocket")
+    assert record["ships"] is True and record["median_km_delta"] < 0
+    assert system.guesses is None, "the browser's verdict must never change the game"
+    assert system.name.endswith("(Pocket Atlas)")
+
+
+def test_a_failing_pocket_retrieval_keeps_the_game_and_pocket_calibration(
+    tmp_path, monkeypatch, capsys
+):
+    fake_phash(monkeypatch)
+    refs, thumbs = write_references(tmp_path)
+
+    def broken(*args, **kwargs):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(run_atlas_v0, "reembed_references", broken)
+    atlas_out, results = run_main(
+        tmp_path,
+        monkeypatch,
+        "--model",
+        "Fake-2:pocket",
+        "--pocket-model",
+        "Fake-2:pocket",
+        "--references",
+        str(refs),
+        "--reference-images",
+        str(thumbs),
+        "--retrieval-model",
+        "Fake-1:test",
+    )
+    assert "pocketRetrieval" not in json.loads(atlas_out.read_text())["evaluation"]
+    pocket = json.loads((results / "pocket-calibration.json").read_text())
+    assert "retrieval" not in pocket and pocket["model"] == "Fake-2/pocket"
+    assert "pocket retrieval failed" in capsys.readouterr().err

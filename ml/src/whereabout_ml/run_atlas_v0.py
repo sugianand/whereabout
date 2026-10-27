@@ -21,6 +21,10 @@ the game photos, and write the reveal's clue for a concept only where they are c
 A geocell head (`whereabout_ml.geocell_head`) is fitted on the same reference photos and scored
 alone and as the pin within Atlas's country; the latter plays only if it clearly beats the
 playing system.
+
+With `--pocket-model` too, the same reference photos are embedded by the browser's model and
+refine Pocket Atlas's own zero-shot guesses; that paired verdict is reported and written into
+`pocket-calibration.json` for `pocket-atlas-index`, and never changes the game.
 """
 
 from __future__ import annotations
@@ -385,6 +389,58 @@ def refine_with_references(
     return system, record
 
 
+def reembed_references(
+    index: ReferenceIndex, images: Path, encoder, embedding_cache: Path
+) -> ReferenceIndex:
+    """The same reference photos (already past the leakage guard), embedded by `encoder`.
+
+    Retrieval compares image with image, so a model can only search references embedded by
+    itself: Pocket Atlas's ViT-B/32 cannot use the game's retrieval-model embeddings.
+    """
+    from whereabout_ml.reference_set import thumbnail_path
+
+    refs = index.references
+    embeddings, cached = cached_image_embeddings(
+        encoder, [r.id for r in refs], [thumbnail_path(images, r.id) for r in refs], embedding_cache
+    )
+    print(
+        f"references for {encoder.name}: {len(refs)} ({cached.encoded} encoded, "
+        f"{cached.reused} from the embedding cache)"
+    )
+    return ReferenceIndex(
+        refs,
+        embeddings,
+        k=index.k,
+        temperature=index.temperature,
+        min_references=index.min_references,
+    )
+
+
+def pocket_retrieval(
+    photos: Sequence[Photo],
+    base: System,
+    embeddings: Sequence[np.ndarray],
+    index: ReferenceIndex,
+    *,
+    model: str,
+    dropped: dict[str, int] | None = None,
+) -> tuple[System, dict]:
+    """Would retrieval move Pocket Atlas's pins closer? Scored, never played in the game.
+
+    `base` is Pocket Atlas's own zero-shot system (the browser model, country then city) and
+    `index` the reference photos embedded by that model. The verdict is the same paired
+    bootstrap as the game's refinement (`retrieval.ships`); the browser may turn retrieval on
+    only when it says yes. The game is never changed by it, so the refined system is reported
+    without guesses whatever the verdict, and the record keeps the verdict instead.
+    """
+    system, record = refine_with_references(
+        photos, base, embeddings, index, model=model, dropped=dropped
+    )
+    system.name = f"{base.name}, then nearest reference photos (Pocket Atlas)"
+    system.guesses = None
+    return system, record
+
+
 def _phash_or_none(path: Path) -> int | None:
     from whereabout_ml.ingest import phash_file
 
@@ -560,6 +616,7 @@ def build_outputs(
     calibration: dict | None = None,
     clue_heads: list[dict] | None = None,
     geocell: dict | None = None,
+    pocket_retrieval: dict | None = None,
 ):
     """Atlas's guesses for the game, plus a JSON report and a Markdown results page.
 
@@ -567,7 +624,8 @@ def build_outputs(
     distribution, see `belief_from_probabilities`) are attached to its guesses. `retrieval` is
     the record from `refine_with_references`, if the run tried the refinement, and
     `calibration` the one from `calibrate_guesses`, `clue_heads` the records from
-    `fit_clue_heads`, `geocell` the one from `fit_geocell_head`.
+    `fit_clue_heads`, `geocell` the one from `fit_geocell_head`, `pocket_retrieval` the one
+    from `pocket_retrieval` (reported only: it decides the browser, not the game).
     """
     saliency = saliency or {}
     beliefs = beliefs or {}
@@ -621,6 +679,8 @@ def build_outputs(
         atlas["evaluation"]["clueHeads"] = clue_heads
     if geocell:
         atlas["evaluation"]["geocellHead"] = geocell
+    if pocket_retrieval:
+        atlas["evaluation"]["pocketRetrieval"] = pocket_retrieval
 
     table = markdown_table({s.name: s.report for s in systems if s.report})
     report = {
@@ -637,6 +697,7 @@ def build_outputs(
         "calibration": calibration,
         "clue_heads": clue_heads,
         "geocell_head": geocell,
+        "pocket_retrieval": pocket_retrieval,
         "table": table,
     }
     return atlas, report, results_markdown(report, now)
@@ -709,6 +770,27 @@ def results_markdown(report: dict, now: str) -> str:
             f"{'yes' if ret['ships'] else 'no'} |",
             "",
             "It plays only if the whole interval is below zero.",
+        ]
+    pret = report.get("pocket_retrieval")
+    if pret:
+        lo, hi = pret["ci95"]
+        lines += [
+            "",
+            "## Pocket Atlas: would retrieval help the browser's model?",
+            "",
+            f'"Try Atlas on your photo" runs {pret["model"]} in the browser. The same reference '
+            f"photos, embedded by that model, refine its own guesses ({pret['versus']}) as above: "
+            f"the pin moves to the weighted medoid of the {pret['k']} most similar reference "
+            f"photos within its chosen country. It moved the pin on {pret['moved']} of "
+            f"{pret['n']} catalog photos.",
+            "",
+            "| Refined minus unrefined | Median km difference | 95% CI | Turns on in the browser |",
+            "| --- | ---: | ---: | --- |",
+            f"| {pret['versus']} | {pret['median_km_delta']:,.0f} | {lo:,.0f} to {hi:,.0f} | "
+            f"{'yes' if pret['ships'] else 'no'} |",
+            "",
+            "It may turn on only if the whole interval is below zero. The game's own Atlas is "
+            "never changed by this row.",
         ]
     geo = report.get("geocell_head")
     if geo:
@@ -952,6 +1034,7 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     retrieval: dict | None = None
     index: ReferenceIndex | None = None
+    ref_dropped: dict[str, int] = {}
     r_encoder = r_embeddings = None
     if args.references is not None:
         spec = args.retrieval_model or models[0]
@@ -959,7 +1042,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             raise SystemExit(f"--retrieval-model {spec} is not one of the --model runs")
         r_encoder, r_embeddings = by_model[spec]
         try:
-            index, dropped = load_reference_index(
+            index, ref_dropped = load_reference_index(
                 args.references,
                 args.reference_images,
                 photos,
@@ -969,11 +1052,11 @@ def main(argv: Sequence[str] | None = None) -> None:
                 args.max_references,
             )
         except Exception as err:  # noqa: BLE001 - the refinement is optional; v0 still ships
-            index, dropped = None, {}
+            index, ref_dropped = None, {}
             print(f"retrieval failed, shipping Atlas without it: {err!r}", file=sys.stderr)
         if index is not None and len(index):
             refined, retrieval = refine_with_references(
-                photos, best, r_embeddings, index, model=r_encoder.name, dropped=dropped
+                photos, best, r_embeddings, index, model=r_encoder.name, dropped=ref_dropped
             )
             refined.report = evaluate(refined.predictions)
             systems.append(refined)
@@ -1053,6 +1136,33 @@ def main(argv: Sequence[str] | None = None) -> None:
                 f"{'writes the clue' if h['ships'] else 'does not ship'}"
             )
 
+    pocket_ret: dict | None = None
+    if args.pocket_model and index is not None and len(index):
+        p_encoder, p_embeddings = by_model[args.pocket_model]
+        try:
+            p_index = (
+                index
+                if p_encoder is r_encoder
+                else reembed_references(
+                    index, args.reference_images, p_encoder, args.embedding_cache
+                )
+            )
+            p_base = next(s for s in systems if s.name == f"{p_encoder.name}, country then city")
+            p_system, pocket_ret = pocket_retrieval(
+                photos, p_base, p_embeddings, p_index, model=p_encoder.name, dropped=ref_dropped
+            )
+            p_system.report = evaluate(p_system.predictions)
+            systems.append(p_system)
+            print(
+                f"pocket retrieval ({p_encoder.name}): moved the pin on {pocket_ret['moved']} of "
+                f"{pocket_ret['n']} photos; median km change {pocket_ret['median_km_delta']} "
+                f"(95% CI {pocket_ret['ci95']}); "
+                f"{'turns on in the browser' if pocket_ret['ships'] else 'stays off'}"
+            )
+        except Exception as err:  # noqa: BLE001 - a score for the browser; never lose the game
+            pocket_ret = None
+            print(f"pocket retrieval failed, Pocket Atlas stays as it is: {err!r}", file=sys.stderr)
+
     saliency: dict[str, Saliency] = {}
     if args.saliency_grid > 0:
         started = time.perf_counter()
@@ -1090,6 +1200,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         calibration=calibration,
         clue_heads=clue_heads,
         geocell=geocell,
+        pocket_retrieval=pocket_ret,
     )
     args.atlas_out.write_text(json.dumps(atlas, indent=1, ensure_ascii=False) + "\n")
     args.results_dir.mkdir(parents=True, exist_ok=True)
@@ -1102,6 +1213,10 @@ def main(argv: Sequence[str] | None = None) -> None:
         pocket = pocket_calibration(
             photos, p_embeddings, locators[args.pocket_model], p_encoder.name
         )
+        if pocket_ret is not None:
+            # pocket-atlas-index reads this file: the verdict decides whether the index ships
+            # the reference photos the browser's retrieval would search.
+            pocket["retrieval"] = pocket_ret
         (args.results_dir / "pocket-calibration.json").write_text(
             json.dumps(pocket, indent=2) + "\n"
         )
