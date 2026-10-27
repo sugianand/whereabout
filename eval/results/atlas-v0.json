@@ -1,6 +1,6 @@
 {
   "system": "atlas-v0-zeroshot",
-  "generatedAt": "2026-10-27T10:08:56+00:00",
+  "generatedAt": "2026-10-27T17:13:55+00:00",
   "dataset": "whereabout-curated (data/curation/photos.csv)",
   "n": 388,
   "skipped": {},
@@ -203,6 +203,24 @@
         669.9,
         1173.9
       ]
+    },
+    "ViT-B-32/openai, country then city, then nearest reference photos (Pocket Atlas)": {
+      "n": 388,
+      "accuracy_at_km": {
+        "1": 0.0052,
+        "25": 0.0258,
+        "200": 0.0825,
+        "750": 0.232,
+        "2500": 0.4459
+      },
+      "median_km": 3237.1,
+      "mean_km": 5259.3,
+      "mean_score": 1439.6,
+      "country_accuracy": 0.1701,
+      "median_km_ci95": [
+        2550.0,
+        4300.6
+      ]
     }
   },
   "best_vs_others": [
@@ -284,6 +302,14 @@
       "ci95": [
         -287.4,
         11.9
+      ]
+    },
+    {
+      "versus": "ViT-B-32/openai, country then city, then nearest reference photos (Pocket Atlas)",
+      "median_km_delta": -2479.0,
+      "ci95": [
+        -3521.6,
+        -1843.5
       ]
     }
   ],
@@ -538,5 +564,23 @@
     ],
     "ships": false
   },
-  "table": "| System | n | 25 km | 200 km | 750 km | 2,500 km | Median km (95% CI) | Country | Mean score |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n| Random city (baseline) | 388 | 0.3% | 0.8% | 2.3% | 11.3% | 7,744 (7,207–8,262) | 1.5% | 350 |\n| Best constant guess (baseline) | 388 | 2.3% | 2.8% | 7.2% | 22.2% | 6,529 (6,105–7,205) | 9.5% | 654 |\n| ViT-B-32/laion2b_s34b_b79k, country only | 388 | 4.6% | 10.3% | 28.4% | 50.3% | 2,422 (1,911–3,163) | 26.5% | 1,677 |\n| ViT-B-32/laion2b_s34b_b79k, country then city | 388 | 5.7% | 11.6% | 29.9% | 53.6% | 2,139 (1,561–2,604) | 25.5% | 1,814 |\n| ViT-B-32/openai, country only | 388 | 3.1% | 7.0% | 25.8% | 44.6% | 2,900 (2,520–3,928) | 20.4% | 1,539 |\n| ViT-B-32/openai, country then city | 388 | 4.9% | 12.1% | 27.1% | 45.6% | 2,961 (2,481–4,448) | 17.0% | 1,572 |\n| ViT-L-14/openai, country only | 388 | 9.5% | 18.8% | 45.1% | 68.0% | 896 (746–1,080) | 46.9% | 2,457 |\n| ViT-L-14/openai, country then city | 388 | 11.6% | 26.8% | 50.0% | 68.3% | 758 (517–973) | 44.1% | 2,621 |\n| ViT-L-14/openai, country then city, then nearest reference photos | 388 | 6.4% | 18.8% | 42.3% | 68.6% | 1,021 (827–1,331) | 44.1% | 2,393 |\n| ViT-B-32/laion2b_s34b_b79k geocell head, alone | 388 | 0.0% | 2.6% | 21.4% | 53.1% | 2,402 (1,911–2,659) | 23.7% | 1,502 |\n| ViT-L-14/openai, country then city, then geocell head | 388 | 2.3% | 18.0% | 46.9% | 69.8% | 857 (670–1,174) | 44.1% | 2,444 |"
+  "pocket_retrieval": {
+    "versus": "ViT-B-32/openai, country then city",
+    "model": "ViT-B-32/openai",
+    "references": 4322,
+    "countries": 156,
+    "moved": 215,
+    "n": 388,
+    "dropped": {
+      "same photographer near a game photo": 23
+    },
+    "k": 10,
+    "median_km_delta": 276.1,
+    "ci95": [
+      -150.0,
+      511.7
+    ],
+    "ships": false
+  },
+  "table": "| System | n | 25 km | 200 km | 750 km | 2,500 km | Median km (95% CI) | Country | Mean score |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n| Random city (baseline) | 388 | 0.3% | 0.8% | 2.3% | 11.3% | 7,744 (7,207–8,262) | 1.5% | 350 |\n| Best constant guess (baseline) | 388 | 2.3% | 2.8% | 7.2% | 22.2% | 6,529 (6,105–7,205) | 9.5% | 654 |\n| ViT-B-32/laion2b_s34b_b79k, country only | 388 | 4.6% | 10.3% | 28.4% | 50.3% | 2,422 (1,911–3,163) | 26.5% | 1,677 |\n| ViT-B-32/laion2b_s34b_b79k, country then city | 388 | 5.7% | 11.6% | 29.9% | 53.6% | 2,139 (1,561–2,604) | 25.5% | 1,814 |\n| ViT-B-32/openai, country only | 388 | 3.1% | 7.0% | 25.8% | 44.6% | 2,900 (2,520–3,928) | 20.4% | 1,539 |\n| ViT-B-32/openai, country then city | 388 | 4.9% | 12.1% | 27.1% | 45.6% | 2,961 (2,481–4,448) | 17.0% | 1,572 |\n| ViT-L-14/openai, country only | 388 | 9.5% | 18.8% | 45.1% | 68.0% | 896 (746–1,080) | 46.9% | 2,457 |\n| ViT-L-14/openai, country then city | 388 | 11.6% | 26.8% | 50.0% | 68.3% | 758 (517–973) | 44.1% | 2,621 |\n| ViT-L-14/openai, country then city, then nearest reference photos | 388 | 6.4% | 18.8% | 42.3% | 68.6% | 1,021 (827–1,331) | 44.1% | 2,393 |\n| ViT-B-32/laion2b_s34b_b79k geocell head, alone | 388 | 0.0% | 2.6% | 21.4% | 53.1% | 2,402 (1,911–2,659) | 23.7% | 1,502 |\n| ViT-L-14/openai, country then city, then geocell head | 388 | 2.3% | 18.0% | 46.9% | 69.8% | 857 (670–1,174) | 44.1% | 2,444 |\n| ViT-B-32/openai, country then city, then nearest reference photos (Pocket Atlas) | 388 | 2.6% | 8.2% | 23.2% | 44.6% | 3,237 (2,550–4,301) | 17.0% | 1,440 |"
 }

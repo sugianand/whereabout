@@ -1,7 +1,7 @@
 {
  "model": "ViT-L-14/openai, country then city",
  "version": "atlas-v0-zeroshot",
- "generatedAt": "2026-10-27T10:08:56+00:00",
+ "generatedAt": "2026-10-27T17:13:55+00:00",
  "guesses": {
   "wm000": {
    "lng": 102.44784,
@@ -9557,7 +9557,7 @@
     },
     {
      "country": "FI",
-     "p": 0.0582
+     "p": 0.0581
     },
     {
      "country": "NO",
@@ -23620,12 +23620,12 @@
   "wh27751827": {
    "lng": 19.93481,
    "lat": 60.09726,
-   "confidence": 0.2765,
+   "confidence": 0.2764,
    "guessedPlace": "Mariehamn, AX",
    "topCountries": [
     {
      "country": "BY",
-     "p": 0.2765
+     "p": 0.2764
     },
     {
      "country": "LV",
@@ -25497,7 +25497,7 @@
     },
     {
      "country": "RS",
-     "p": 0.2
+     "p": 0.1999
     },
     {
      "country": "HU",
@@ -45329,6 +45329,26 @@
      669.9,
      1173.9
     ]
+   },
+   {
+    "name": "ViT-B-32/openai, country then city, then nearest reference photos (Pocket Atlas)",
+    "playsInGame": false,
+    "n": 388,
+    "accuracy_at_km": {
+     "1": 0.0052,
+     "25": 0.0258,
+     "200": 0.0825,
+     "750": 0.232,
+     "2500": 0.4459
+    },
+    "median_km": 3237.1,
+    "mean_km": 5259.3,
+    "mean_score": 1439.6,
+    "country_accuracy": 0.1701,
+    "median_km_ci95": [
+     2550.0,
+     4300.6
+    ]
    }
   ],
   "saliency": {
@@ -45579,6 +45599,24 @@
    "ci95": [
     -11.9,
     287.4
+   ],
+   "ships": false
+  },
+  "pocketRetrieval": {
+   "versus": "ViT-B-32/openai, country then city",
+   "model": "ViT-B-32/openai",
+   "references": 4322,
+   "countries": 156,
+   "moved": 215,
+   "n": 388,
+   "dropped": {
+    "same photographer near a game photo": 23
+   },
+   "k": 10,
+   "median_km_delta": 276.1,
+   "ci95": [
+    -150.0,
+    511.7
    ],
    "ships": false
   }

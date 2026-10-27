@@ -1,6 +1,6 @@
 # Atlas v0 results
 
-Generated 2026-10-27T10:08:56+00:00 by `.github/workflows/atlas.yml` on 388 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
+Generated 2026-10-27T17:13:55+00:00 by `.github/workflows/atlas.yml` on 388 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
 
 **Playing in the game:** ViT-L-14/openai, country then city (lowest median error).
 
@@ -17,6 +17,7 @@ Generated 2026-10-27T10:08:56+00:00 by `.github/workflows/atlas.yml` on 388 phot
 | ViT-L-14/openai, country then city, then nearest reference photos | 388 | 6.4% | 18.8% | 42.3% | 68.6% | 1,021 (827–1,331) | 44.1% | 2,393 |
 | ViT-B-32/laion2b_s34b_b79k geocell head, alone | 388 | 0.0% | 2.6% | 21.4% | 53.1% | 2,402 (1,911–2,659) | 23.7% | 1,502 |
 | ViT-L-14/openai, country then city, then geocell head | 388 | 2.3% | 18.0% | 46.9% | 69.8% | 857 (670–1,174) | 44.1% | 2,444 |
+| ViT-B-32/openai, country then city, then nearest reference photos (Pocket Atlas) | 388 | 2.6% | 8.2% | 23.2% | 44.6% | 3,237 (2,550–4,301) | 17.0% | 1,440 |
 
 Accuracy columns are the share of photos guessed within that distance. Median error has a 95% bootstrap confidence interval. Mean score uses the game's scoring (5,000 for a perfect guess).
 
@@ -36,6 +37,7 @@ Paired bootstrap on the same photos: the winner's median error minus each other 
 | ViT-L-14/openai, country then city, then nearest reference photos | -263 | -462 to -108 |
 | ViT-B-32/laion2b_s34b_b79k geocell head, alone | -1,644 | -1,915 to -1,176 |
 | ViT-L-14/openai, country then city, then geocell head | -98 | -287 to 12 |
+| ViT-B-32/openai, country then city, then nearest reference photos (Pocket Atlas) | -2,479 | -3,522 to -1,844 |
 
 ## Where Atlas looked: is the map faithful?
 
@@ -57,6 +59,16 @@ ViT-L-14/openai, country then city refined by searching 4,322 geotagged referenc
 | ViT-L-14/openai, country then city | 263 | 108 to 462 | no |
 
 It plays only if the whole interval is below zero.
+
+## Pocket Atlas: would retrieval help the browser's model?
+
+"Try Atlas on your photo" runs ViT-B-32/openai in the browser. The same reference photos, embedded by that model, refine its own guesses (ViT-B-32/openai, country then city) as above: the pin moves to the weighted medoid of the 10 most similar reference photos within its chosen country. It moved the pin on 215 of 388 catalog photos.
+
+| Refined minus unrefined | Median km difference | 95% CI | Turns on in the browser |
+| --- | ---: | ---: | --- |
+| ViT-B-32/openai, country then city | 276 | -150 to 512 | no |
+
+It may turn on only if the whole interval is below zero. The game's own Atlas is never changed by this row.
 
 ## Geocell head: does a trained classifier place the pin better?
 

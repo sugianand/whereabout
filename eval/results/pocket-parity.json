@@ -62,11 +62,11 @@
     "country": "MS",
     "lat": 16.70555,
     "lng": -62.21292,
-    "confidence": 0.27,
+    "confidence": 0.2699,
     "topCountries": [
       {
         "country": "MS",
-        "p": 0.27
+        "p": 0.2699
       },
       {
         "country": "LA",
@@ -135,6 +135,6 @@
   },
   "looked": {
     "topKDrop": 0.9409,
-    "randomKDrop": 0.0275
+    "randomKDrop": -0.137
   }
 }
