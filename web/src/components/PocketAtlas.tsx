@@ -128,7 +128,7 @@ export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps
       ready.current = (async () => {
         const index = await deps.loadIndex();
         // No privacy gate, no guesses: an index built before the gate stays closed, before the
-        // 90 MB model is downloaded for nothing.
+        // 180 MB model is downloaded for nothing.
         const gate = gateOf(index.meta);
         if (!gate) throw new IndexUnavailable("Pocket Atlas's privacy gate isn't published yet.");
         setNames(new Map(index.meta.countries.map((c) => [c.code, c.name])));
@@ -312,7 +312,7 @@ export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps
           <div>
             <p className="font-sign text-2xl font-bold">Waking Atlas up…</p>
             <p className="mt-2 text-chalk-dim">
-              The first time, your browser downloads Atlas&apos;s eyes (a vision model of about 90
+              The first time, your browser downloads Atlas&apos;s eyes (a vision model of about 180
               MB). After that it is cached, so the next photo is instant.
             </p>
             <div

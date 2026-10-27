@@ -27,7 +27,8 @@ import numpy as np
 # coarse enough to stay at 50 forward passes per photo.
 DEFAULT_GRID = 7
 # Bump when the method changes, so cached maps from the old method are not reused.
-SALIENCY_VERSION = 1
+# 2: maps from before photos were turned upright by EXIF and OpenAI's weights used QuickGELU.
+SALIENCY_VERSION = 2
 DELETION_K = 5
 DELETION_RANDOM_TRIALS = 3
 

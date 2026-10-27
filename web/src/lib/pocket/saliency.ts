@@ -84,8 +84,8 @@ export async function occlusionMap(
   const base = await logProb(pixels);
   onPass();
   const raw: number[] = [];
-  // One at a time: the browser's 8-bit model quantises activations per call, so a batch of
-  // photos changes each one's embedding; a lone pass matches the base pass exactly.
+  // One at a time, as the base pass was: a batch can change how a quantised model rounds
+  // activations, and phones only need to hold one copy at a time.
   for (let cell = 0; cell < grid * grid; cell++) {
     raw.push(base - (await logProb(occlude(pixels, [cell], grid))));
     onPass();

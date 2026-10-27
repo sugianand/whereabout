@@ -78,7 +78,7 @@ test("Pocket Atlas in the browser agrees with PyTorch", async ({ page }, info) =
   console.log(`pocket parity: ${JSON.stringify(report)}`);
 
   expect(similarity).toBeGreaterThanOrEqual(MIN_COSINE);
-  // The browser's 8-bit model can move a score that sits right at a bar, so its verdict is
+  // The browser's half-precision model can move a score that sits right at a bar, so its verdict is
   // reported rather than required; whichever it is, the page must show it.
   if (got.guess) {
     await expect(page.getByRole("heading", { name: got.guess.city })).toBeVisible();

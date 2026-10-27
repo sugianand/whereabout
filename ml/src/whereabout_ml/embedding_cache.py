@@ -22,7 +22,8 @@ from typing import Protocol
 
 import numpy as np
 
-EMBEDDING_VERSION = 1
+# 2: photos are turned upright by their EXIF tag, and OpenAI's weights run with QuickGELU.
+EMBEDDING_VERSION = 2
 
 
 class ImageEncoder(Protocol):

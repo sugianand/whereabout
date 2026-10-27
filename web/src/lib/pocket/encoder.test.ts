@@ -46,7 +46,7 @@ describe("loadEncoder", () => {
     );
   });
 
-  it("loads the named model as 8-bit on wasm and returns unit-length embeddings", async () => {
+  it("loads the named model in half precision on wasm and returns unit-length embeddings", async () => {
     const { lib, calls } = fakeLib([3, 4]);
     const encoder = await loadEncoder("Xenova/clip-vit-base-patch32", undefined, async () => lib);
     expect(lib.env.allowLocalModels).toBe(false);
@@ -54,7 +54,7 @@ describe("loadEncoder", () => {
       "Xenova/clip-vit-base-patch32",
       "Xenova/clip-vit-base-patch32",
     ]);
-    expect(calls[1].opts).toMatchObject({ dtype: "q8", device: "wasm" });
+    expect(calls[1].opts).toMatchObject({ dtype: "fp16", device: "wasm" });
     const v = await encoder.embed(new Blob(["x"]));
     expect(Array.from(v)).toEqual([0.6000000238418579, 0.800000011920929]);
     expect(lib.RawImage.fromBlob).toHaveBeenCalledOnce();
@@ -74,7 +74,7 @@ describe("loadEncoder", () => {
       data: prepared.pixels.data.map((v, i) => (i < 4 ? 0 : v)),
     };
     expect(Array.from(await encoder.embedPixels(greyed))).toEqual([0, 1]);
-    // A batch of one, with the edited pixels: batching changes the 8-bit model's answers.
+    // A batch of one, with the edited pixels.
     expect(inputsSeen.at(-1)!.dims).toEqual([1, 2, 2, 2]);
     expect(Array.from(inputsSeen.at(-1)!.data)).toEqual([0, 0, 0, 0, 5, 6, 7, 8]);
   });

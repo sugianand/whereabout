@@ -95,10 +95,12 @@ export async function loadEncoder(
   const progress_callback = progressTracker(onProgress);
   const [processor, model] = await Promise.all([
     lib.AutoProcessor.from_pretrained(modelId, { progress_callback }),
-    // 8-bit weights: about a quarter of the download, for a small loss in agreement with
-    // PyTorch that the parity test measures.
+    // Half-precision weights (about 180 MB, half of full precision). The 8-bit build was half
+    // that again, but it quantises activations on the fly and moved embeddings far enough from
+    // PyTorch's that the parity test never passed (cosine 0.80 on the Atlas run's photo), so
+    // Pocket Atlas was never published. fp16 matches full precision on the wasm backend.
     lib.CLIPVisionModelWithProjection.from_pretrained(modelId, {
-      dtype: "q8",
+      dtype: "fp16",
       device: "wasm",
       progress_callback,
     }),
@@ -123,8 +125,8 @@ export async function loadEncoder(
       return run((await processor(image)).pixel_values);
     },
     prepare,
-    // Always a batch of one: the 8-bit model quantises activations over the whole batch, so a
-    // photo embedded alongside others comes out differently than it does on its own.
+    // Always a batch of one, so an edited copy is embedded exactly as the photo was, and a
+    // phone holds one copy's activations at a time.
     embedPixels: ({ data, dims }) => run(new lib.Tensor("float32", data, [1, ...dims])),
   };
 }
