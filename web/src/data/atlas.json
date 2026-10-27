@@ -1,7 +1,7 @@
 {
  "model": "ViT-L-14/openai, country then city",
  "version": "atlas-v0-zeroshot",
- "generatedAt": "2026-10-27T17:13:55+00:00",
+ "generatedAt": "2026-10-27T21:32:33+00:00",
  "guesses": {
   "wm000": {
    "lng": 102.44784,
@@ -9557,7 +9557,7 @@
     },
     {
      "country": "FI",
-     "p": 0.0581
+     "p": 0.0582
     },
     {
      "country": "NO",
@@ -23620,12 +23620,12 @@
   "wh27751827": {
    "lng": 19.93481,
    "lat": 60.09726,
-   "confidence": 0.2764,
+   "confidence": 0.2765,
    "guessedPlace": "Mariehamn, AX",
    "topCountries": [
     {
      "country": "BY",
-     "p": 0.2764
+     "p": 0.2765
     },
     {
      "country": "LV",
@@ -25497,7 +25497,7 @@
     },
     {
      "country": "RS",
-     "p": 0.1999
+     "p": 0.2
     },
     {
      "country": "HU",
@@ -45619,6 +45619,57 @@
     511.7
    ],
    "ships": false
-  }
+  },
+  "pocketClueHeads": [
+   {
+    "concept": "driving_side",
+    "clueGroup": "driving_side",
+    "classes": [
+     "left",
+     "right"
+    ],
+    "baseline": "the driving side of the country Atlas guessed",
+    "model": "ViT-B-32/openai",
+    "n": 387,
+    "references": 4306,
+    "headAccuracy": 0.7933,
+    "baselineAccuracy": 0.6977,
+    "majorityAccuracy": 0.7313,
+    "accuracyDelta": 0.0956,
+    "ci95": [
+     0.0465,
+     0.1473
+    ],
+    "l2": 0.1,
+    "ships": true,
+    "clue": "Drives on the {}"
+   },
+   {
+    "concept": "climate_group",
+    "clueGroup": "climate",
+    "classes": [
+     "Tropical",
+     "Arid",
+     "Temperate",
+     "Continental",
+     "Polar"
+    ],
+    "baseline": "the zero-shot climate clue",
+    "model": "ViT-B-32/openai",
+    "n": 351,
+    "references": 4007,
+    "headAccuracy": 0.6239,
+    "baselineAccuracy": 0.4615,
+    "majorityAccuracy": 0.3362,
+    "accuracyDelta": 0.1624,
+    "ci95": [
+     0.0997,
+     0.2279
+    ],
+    "l2": 0.1,
+    "ships": true,
+    "clue": "{} climate"
+   }
+  ]
  }
 }

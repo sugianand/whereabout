@@ -1,6 +1,6 @@
 # Atlas v0 results
 
-Generated 2026-10-27T17:13:55+00:00 by `.github/workflows/atlas.yml` on 388 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
+Generated 2026-10-27T21:32:33+00:00 by `.github/workflows/atlas.yml` on 388 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
 
 **Playing in the game:** ViT-L-14/openai, country then city (lowest median error).
 
@@ -112,6 +112,15 @@ Logistic-regression probes on frozen CLIP image embeddings (ViT-B-32/laion2b_s34
 | --- | ---: | ---: | --- | ---: | ---: | ---: | --- |
 | driving side | 387 | 79.8% | the driving side of the country Atlas guessed | 80.6% | 73.1% | -0.8% (-5.9% to +4.4%) | no |
 | climate group | 351 | 63.0% | the zero-shot climate clue | 45.3% | 33.6% | +17.7% (+10.8% to +24.5%) | yes |
+
+## Pocket Atlas: do clue heads read your photo better?
+
+The same probes, fitted on 4,306 reference photos embedded by the browser's model (ViT-B-32/openai), scored the same way against what "Try Atlas on your photo" shows today: its zero-shot climate clue, and the driving side of the country it guessed. A probe that clearly wins ships in the browser's index and writes that clue for players' own photos. The game's Atlas is never changed by these rows.
+
+| Concept | Photos | Probe | Compared with | Their accuracy | Difference (95% CI) | Runs in the browser |
+| --- | ---: | ---: | --- | ---: | ---: | --- |
+| driving side | 387 | 79.3% | the driving side of the country Atlas guessed | 69.8% | +9.6% (+4.7% to +14.7%) | yes |
+| climate group | 351 | 62.4% | the zero-shot climate clue | 46.2% | +16.2% (+10.0% to +22.8%) | yes |
 
 ## Read these numbers carefully
 
