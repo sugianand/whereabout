@@ -63,6 +63,24 @@ describe("LocalBackend", () => {
     expect(reveal.answer.place).toBe("Kyoto, Japan");
   });
 
+  it("reveals what the maps say about the spot, and only after the guess", async () => {
+    const labelled = {
+      ...KYOTO,
+      drivingSide: "left" as const,
+      climateGroup: "Temperate",
+      landCover: "Built-up",
+    };
+    const backend = new LocalBackend([labelled]);
+    const round = await backend.startRound();
+    expect(JSON.stringify(round)).not.toContain("Built-up");
+    const reveal = await backend.guess(round.roundId, { lng: 0, lat: 0 });
+    expect(reveal.answer.clues).toEqual({
+      drivingSide: "left",
+      climateGroup: "Temperate",
+      landCover: "Built-up",
+    });
+  });
+
   it("accepts only one guess per round", async () => {
     const backend = new LocalBackend([KYOTO]);
     const round = await backend.startRound();

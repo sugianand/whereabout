@@ -57,6 +57,11 @@ export class LocalBackend implements GameBackend {
         place: photo.place,
         country: photo.country,
         credit: photo.credit,
+        clues: {
+          ...(photo.drivingSide ? { drivingSide: photo.drivingSide } : {}),
+          ...(photo.climateGroup ? { climateGroup: photo.climateGroup } : {}),
+          ...(photo.landCover ? { landCover: photo.landCover } : {}),
+        },
       },
     };
   }

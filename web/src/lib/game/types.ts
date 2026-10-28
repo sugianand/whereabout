@@ -1,5 +1,6 @@
 import type { LngLat } from "@/lib/geo";
 import type { Clue } from "@/lib/hints";
+import type { PhotoClues } from "@/lib/trueClues";
 
 export interface Credit {
   author: string;
@@ -17,9 +18,14 @@ export interface CatalogPhoto extends LngLat {
   /** Original file size in pixels, when known (from data/curation/quality.csv). */
   width?: number;
   height?: number;
-  /** Concept labels for the hints (data/labels/concept_labels.csv), when the maps gave one. */
+  /**
+   * Concept labels for the hints and the reveal's real clues (data/labels/concept_labels.csv),
+   * when the maps gave one.
+   */
   drivingSide?: "left" | "right";
   climateGroup?: string;
+  /** ESA WorldCover 2021 class around the spot, e.g. "Built-up". */
+  landCover?: string;
 }
 
 /** What the player may see before guessing: the photo, never its location. */
@@ -41,6 +47,8 @@ export interface Reveal {
     place: string;
     country: string | null;
     credit: Credit | null;
+    /** What the maps say about the spot, for the reveal's real clues. Absent from the API. */
+    clues?: PhotoClues;
   };
   /**
    * Atlas's guess, when the backend supplies it (the API does, scored server-side). `null`

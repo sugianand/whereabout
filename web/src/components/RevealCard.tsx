@@ -7,6 +7,7 @@ import type { RoundResult } from "@/lib/game/state";
 import { surenessLine, type SurenessBand } from "@/lib/game/sureness";
 import { formatDistance, formatPoints, maxPoints } from "@/lib/geo";
 import { REVEAL_DRAW_MS } from "@/lib/reveal";
+import { trueClues, type TrueClue } from "@/lib/trueClues";
 import { useCountUp } from "@/lib/useCountUp";
 
 import AtlasEyes from "./AtlasEyes";
@@ -47,6 +48,40 @@ function ScoreLine({
   );
 }
 
+function RealClue({ clue, atlasPlayed }: { clue: TrueClue; atlasPlayed: boolean }) {
+  const mark = clue.right === true ? "✓" : clue.right === false ? "✗" : null;
+  const said =
+    clue.right === true
+      ? "Atlas read it right"
+      : clue.right === false
+        ? "Atlas read it wrong"
+        : null;
+  return (
+    <li
+      className="flex flex-wrap items-baseline gap-x-2"
+      data-testid="real-clue"
+      data-right={String(clue.right)}
+    >
+      <span className="text-gold">{clue.truth}</span>
+      {atlasPlayed && (
+        <span
+          className={
+            clue.right === true
+              ? "text-sonar"
+              : clue.right === false
+                ? "text-flare"
+                : "text-chalk-dim"
+          }
+        >
+          {mark && <span aria-hidden="true">{mark} </span>}
+          {said && <span className="sr-only">{said}: </span>}
+          {clue.atlas ? `Atlas: ${clue.atlas}` : "Atlas didn’t say"}
+        </span>
+      )}
+    </li>
+  );
+}
+
 export function verdict(result: RoundResult): string | null {
   const { reveal, atlas } = result;
   if (!atlas) return null;
@@ -72,9 +107,11 @@ export default function RevealCard({ result, isLast, onNext, sureness }: RevealC
   const truthCountry = reveal.answer.country;
   const truthListed = shortlisted.some((c) => c.country === truthCountry);
   const realityCheck = atlas && sureness ? surenessLine(sureness, atlas.confidence) : null;
+  const realClues = trueClues(reveal.answer.clues, atlas);
   const hasThinking =
-    !!atlas &&
-    (!!atlas.guessedPlace || shortlisted.length > 1 || atlas.clues.length > 0 || !!atlas.looked);
+    realClues.length > 0 ||
+    (!!atlas &&
+      (!!atlas.guessedPlace || shortlisted.length > 1 || atlas.clues.length > 0 || !!atlas.looked));
   // On phones Atlas's reasoning folds away so the globe behind the card stays in view; wider
   // screens have room for it and always show it.
   // The fold remembers which round it was opened for, so a new round starts folded.
@@ -133,7 +170,13 @@ export default function RevealCard({ result, isLast, onNext, sureness }: RevealC
           onClick={() => setOpenFor(thinkingOpen ? null : result)}
           className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-sonar md:hidden"
         >
-          {thinkingOpen ? "Hide how Atlas guessed" : "How Atlas guessed"}
+          {atlas
+            ? thinkingOpen
+              ? "Hide how Atlas guessed"
+              : "How Atlas guessed"
+            : thinkingOpen
+              ? "Hide the real clues"
+              : "The real clues"}
           <svg
             viewBox="0 0 12 12"
             aria-hidden="true"
@@ -217,6 +260,23 @@ export default function RevealCard({ result, isLast, onNext, sureness }: RevealC
                 </ul>
               </div>
             )}
+          </div>
+        )}
+
+        {realClues.length > 0 && (
+          <div className="mt-4 text-sm" data-testid="real-clues">
+            <p className="text-chalk-dim" id={`${thinkingId}-real`}>
+              The real clues{atlas ? ", and what Atlas read" : ""}
+            </p>
+            <ul aria-labelledby={`${thinkingId}-real`} className="mt-1 space-y-1">
+              {realClues.map((clue) => (
+                <RealClue key={clue.kind} clue={clue} atlasPlayed={!!atlas} />
+              ))}
+            </ul>
+            <p className="mt-1 text-xs text-chalk-dim">
+              From maps of the spot: Köppen-Geiger climate (Beck et al. 2023) and ESA WorldCover
+              2021, both CC BY 4.0.
+            </p>
           </div>
         )}
       </div>

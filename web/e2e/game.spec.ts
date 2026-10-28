@@ -470,3 +470,32 @@ test("hints come one at a time, stay on screen with the globe, and cap the round
   const scored = Number(/scored ([\d,]+) points/.exec(announced ?? "")![1].replace(/,/g, ""));
   expect(scored).toBeLessThanOrEqual(Number(max.replace(",", "")));
 });
+
+test("the reveal shows the photo's real clues next to what Atlas read", async ({
+  page,
+  isMobile,
+}) => {
+  const catalog = JSON.parse(readFileSync(resolve(process.cwd(), "src/data/photos.json"), "utf8"));
+  await page.goto("./?daily");
+  const card = await playRoundWithKeyboard(page);
+  const place = await card.getByRole("heading", { level: 2 }).innerText();
+  const photo = catalog.find((p: { place: string }) => p.place === place);
+  expect(photo, `${place} is in the catalog`).toBeTruthy();
+
+  // Phones fold Atlas's reasoning, and the real clues with it, behind one toggle.
+  if (isMobile)
+    await card.getByRole("button", { name: /How Atlas guessed|The real clues/ }).click();
+  const clues = card.getByRole("list", { name: /^The real clues/ });
+  await expect(clues).toBeVisible();
+  const expected = [
+    photo.drivingSide && `Drives on the ${photo.drivingSide}`,
+    photo.climateGroup && `${photo.climateGroup} climate`,
+    photo.landCover && "around it",
+  ].filter(Boolean);
+  const rows = clues.getByRole("listitem");
+  await expect(rows).toHaveCount(expected.length);
+  for (const [i, text] of expected.entries()) await expect(rows.nth(i)).toContainText(text);
+  // Every row says what Atlas read, or that it didn't say.
+  for (let i = 0; i < expected.length; i++) await expect(rows.nth(i)).toContainText("Atlas");
+  await expect(card.getByText(/ESA WorldCover 2021/)).toBeVisible();
+});

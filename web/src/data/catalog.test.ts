@@ -45,15 +45,15 @@ describe("bundled catalog", () => {
     expect(parseQuality(q).get("a")).toEqual({ width: 4000, height: 3000 });
   });
 
-  it("joins hint labels by id and leaves out empty or unknown cells", () => {
+  it("joins concept labels by id and leaves out empty or unknown cells", () => {
     const base = [{ id: "a" }, { id: "b" }, { id: "c" }];
     const l =
       "id,climate,climate_group,land_cover,driving_side\n" +
       "a,Cfb,Temperate,Built-up,left\n" +
       "b,,,,right\n" +
-      "c,X,Sunny,,middle\n";
+      "c,X,Sunny,Lava,middle\n";
     expect(joinLabels(base, l)).toEqual([
-      { id: "a", drivingSide: "left", climateGroup: "Temperate" },
+      { id: "a", drivingSide: "left", climateGroup: "Temperate", landCover: "Built-up" },
       { id: "b", drivingSide: "right" },
       { id: "c" },
     ]);

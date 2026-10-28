@@ -18,19 +18,27 @@ export function parseCsv(text) {
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
     if (quoted) {
-      if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
-      else if (c === '"') quoted = false;
+      if (c === '"' && text[i + 1] === '"') {
+        field += '"';
+        i++;
+      } else if (c === '"') quoted = false;
       else field += c;
     } else if (c === '"') quoted = true;
-    else if (c === ",") { row.push(field); field = ""; }
-    else if (c === "\n" || c === "\r") {
+    else if (c === ",") {
+      row.push(field);
+      field = "";
+    } else if (c === "\n" || c === "\r") {
       if (c === "\r" && text[i + 1] === "\n") i++;
-      row.push(field); field = "";
+      row.push(field);
+      field = "";
       if (row.some((v) => v !== "")) rows.push(row);
       row = [];
     } else field += c;
   }
-  if (field !== "" || row.length) { row.push(field); rows.push(row); }
+  if (field !== "" || row.length) {
+    row.push(field);
+    rows.push(row);
+  }
   return rows;
 }
 
@@ -61,11 +69,25 @@ export function joinQuality(catalog, qualityText) {
 
 const DRIVING_SIDES = new Set(["left", "right"]);
 const CLIMATE_GROUPS = new Set(["Tropical", "Arid", "Temperate", "Continental", "Polar"]);
+// ESA WorldCover 2021 classes, as data/labels/concept_labels.csv writes them.
+const LAND_COVERS = new Set([
+  "Tree cover",
+  "Shrubland",
+  "Grassland",
+  "Cropland",
+  "Built-up",
+  "Bare / sparse vegetation",
+  "Snow and ice",
+  "Permanent water bodies",
+  "Herbaceous wetland",
+  "Mangroves",
+  "Moss and lichen",
+]);
 
 /**
- * Adds the concept labels the in-game hints use (driving side, climate group) from
- * data/labels/concept_labels.csv text. Empty or unknown cells are left out: that photo just
- * offers fewer hints (src/lib/hints.ts).
+ * Adds the concept labels from data/labels/concept_labels.csv text: driving side and climate
+ * group (the in-game hints, src/lib/hints.ts) and land cover (the reveal's real clues,
+ * src/lib/trueClues.ts). Empty or unknown cells are left out: that photo just offers fewer.
  */
 export function joinLabels(catalog, labelsText) {
   if (labelsText == null) return catalog;
@@ -82,6 +104,7 @@ export function joinLabels(catalog, labelsText) {
       ...p,
       ...(DRIVING_SIDES.has(r.driving_side) ? { drivingSide: r.driving_side } : {}),
       ...(CLIMATE_GROUPS.has(r.climate_group) ? { climateGroup: r.climate_group } : {}),
+      ...(LAND_COVERS.has(r.land_cover) ? { landCover: r.land_cover } : {}),
     };
   });
 }

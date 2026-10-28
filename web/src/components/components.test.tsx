@@ -423,3 +423,50 @@ describe("RevealCard reality check", () => {
     expect(screen.queryByTestId("atlas-sureness")).toBeNull();
   });
 });
+
+describe("RevealCard real clues", () => {
+  function withClues(r: RoundResult): RoundResult {
+    return {
+      ...r,
+      reveal: {
+        ...r.reveal,
+        answer: {
+          ...r.reveal.answer,
+          clues: { drivingSide: "left", climateGroup: "Arid", landCover: "Permanent water bodies" },
+        },
+      },
+    };
+  }
+
+  it("shows each real clue next to Atlas's read, marked right or wrong", () => {
+    const r = withClues(result(5, 100, 4900));
+    r.atlas = {
+      ...r.atlas!,
+      topCountries: [{ country: "GB", p: 0.6 }],
+      clues: [{ label: "Temperate climate", p: 0.7 }],
+    };
+    render(<RevealCard result={r} isLast={false} onNext={() => {}} />);
+    const list = screen.getByRole("list", { name: "The real clues, and what Atlas read" });
+    const rows = within(list).getAllByRole("listitem");
+    expect(rows.map((row) => row.textContent)).toEqual([
+      "Drives on the left✓ Atlas read it right: Atlas: drives on the left (its pick, United Kingdom)",
+      "Arid climate✗ Atlas read it wrong: Atlas: temperate climate",
+      "Mostly water around itAtlas didn’t say",
+    ]);
+    expect(rows.map((row) => row.dataset.right)).toEqual(["true", "false", "null"]);
+    // Inside the fold on phones, with Atlas's own reasoning.
+    expect(screen.getByTestId("atlas-thinking")).toContainElement(list);
+  });
+
+  it("shows the real clues alone when Atlas sat the photo out", () => {
+    render(<RevealCard result={withClues(result(5, 100))} isLast={false} onNext={() => {}} />);
+    expect(screen.getByRole("button", { name: "The real clues" })).toBeInTheDocument();
+    const list = screen.getByRole("list", { name: "The real clues" });
+    expect(
+      within(list)
+        .getAllByRole("listitem")
+        .map((row) => row.textContent),
+    ).toEqual(["Drives on the left", "Arid climate", "Mostly water around it"]);
+    expect(screen.queryByText(/Atlas didn’t say/)).toBeNull();
+  });
+});

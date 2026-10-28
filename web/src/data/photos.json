@@ -14,7 +14,8 @@
   "width": 6129,
   "height": 4086,
   "drivingSide": "right",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Tree cover"
  },
  {
   "id": "wm003",
@@ -31,7 +32,8 @@
   "width": 5340,
   "height": 3560,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wm004",
@@ -48,7 +50,8 @@
   "width": 7360,
   "height": 4912,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wm007",
@@ -65,7 +68,8 @@
   "width": 21761,
   "height": 3724,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Grassland"
  },
  {
   "id": "wm011",
@@ -82,7 +86,8 @@
   "width": 3888,
   "height": 2528,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wm012",
@@ -99,7 +104,8 @@
   "width": 3887,
   "height": 2154,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Bare / sparse vegetation"
  },
  {
   "id": "wm015",
@@ -116,7 +122,8 @@
   "width": 4252,
   "height": 2835,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wm016",
@@ -133,7 +140,8 @@
   "width": 8020,
   "height": 5012,
   "drivingSide": "left",
-  "climateGroup": "Polar"
+  "climateGroup": "Polar",
+  "landCover": "Grassland"
  },
  {
   "id": "wm018",
@@ -150,7 +158,8 @@
   "width": 2918,
   "height": 1937,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wm020",
@@ -166,7 +175,8 @@
   },
   "width": 5388,
   "height": 3368,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Tree cover"
  },
  {
   "id": "wm022",
@@ -183,7 +193,8 @@
   "width": 8756,
   "height": 5837,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Tree cover"
  },
  {
   "id": "wm023",
@@ -200,7 +211,8 @@
   "width": 4868,
   "height": 3452,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wm024",
@@ -217,7 +229,8 @@
   "width": 10000,
   "height": 4571,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wm027",
@@ -234,7 +247,8 @@
   "width": 5548,
   "height": 1878,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wm030",
@@ -251,7 +265,8 @@
   "width": 8609,
   "height": 3806,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Grassland"
  },
  {
   "id": "wm031",
@@ -267,7 +282,8 @@
   },
   "width": 4957,
   "height": 2775,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Bare / sparse vegetation"
  },
  {
   "id": "wm032",
@@ -284,7 +300,8 @@
   "width": 3643,
   "height": 2485,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wm036",
@@ -301,7 +318,8 @@
   "width": 3300,
   "height": 2180,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Grassland"
  },
  {
   "id": "wm037",
@@ -318,7 +336,8 @@
   "width": 4650,
   "height": 2773,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Grassland"
  },
  {
   "id": "wm038",
@@ -335,7 +354,8 @@
   "width": 5271,
   "height": 3514,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Tree cover"
  },
  {
   "id": "wm039",
@@ -351,7 +371,8 @@
   },
   "width": 9000,
   "height": 2416,
-  "drivingSide": "left"
+  "drivingSide": "left",
+  "landCover": "Tree cover"
  },
  {
   "id": "wm040",
@@ -368,7 +389,8 @@
   "width": 4912,
   "height": 3264,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Grassland"
  },
  {
   "id": "wm046",
@@ -385,7 +407,8 @@
   "width": 10046,
   "height": 2156,
   "drivingSide": "left",
-  "climateGroup": "Polar"
+  "climateGroup": "Polar",
+  "landCover": "Grassland"
  },
  {
   "id": "wm048",
@@ -402,7 +425,8 @@
   "width": 4000,
   "height": 3000,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wm049",
@@ -419,7 +443,8 @@
   "width": 3840,
   "height": 2400,
   "drivingSide": "left",
-  "climateGroup": "Polar"
+  "climateGroup": "Polar",
+  "landCover": "Grassland"
  },
  {
   "id": "wm050",
@@ -436,7 +461,8 @@
   "width": 5971,
   "height": 1999,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Bare / sparse vegetation"
  },
  {
   "id": "wm051",
@@ -453,7 +479,8 @@
   "width": 5094,
   "height": 3257,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Tree cover"
  },
  {
   "id": "wm055",
@@ -470,7 +497,8 @@
   "width": 8688,
   "height": 5792,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Bare / sparse vegetation"
  },
  {
   "id": "wm057",
@@ -487,7 +515,8 @@
   "width": 5000,
   "height": 3333,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wm058",
@@ -504,7 +533,8 @@
   "width": 11105,
   "height": 7053,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wm062",
@@ -521,7 +551,8 @@
   "width": 5015,
   "height": 3761,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wm063",
@@ -538,7 +569,8 @@
   "width": 5782,
   "height": 3855,
   "drivingSide": "right",
-  "climateGroup": "Polar"
+  "climateGroup": "Polar",
+  "landCover": "Snow and ice"
  },
  {
   "id": "wm066",
@@ -555,7 +587,8 @@
   "width": 6544,
   "height": 4363,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wm067",
@@ -571,7 +604,8 @@
   },
   "width": 7853,
   "height": 6280,
-  "drivingSide": "left"
+  "drivingSide": "left",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wm068",
@@ -588,7 +622,8 @@
   "width": 5648,
   "height": 3770,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Bare / sparse vegetation"
  },
  {
   "id": "wm069",
@@ -605,7 +640,8 @@
   "width": 6000,
   "height": 4000,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wm070",
@@ -622,7 +658,8 @@
   "width": 5583,
   "height": 3255,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wm071",
@@ -639,7 +676,8 @@
   "width": 3024,
   "height": 2016,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Shrubland"
  },
  {
   "id": "wm072",
@@ -655,7 +693,8 @@
   },
   "width": 4597,
   "height": 3448,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Tree cover"
  },
  {
   "id": "wm074",
@@ -672,7 +711,8 @@
   "width": 4463,
   "height": 2510,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Grassland"
  },
  {
   "id": "wm077",
@@ -689,7 +729,8 @@
   "width": 5679,
   "height": 3194,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wm078",
@@ -705,7 +746,8 @@
   },
   "width": 4000,
   "height": 3000,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Bare / sparse vegetation"
  },
  {
   "id": "wm079",
@@ -722,7 +764,8 @@
   "width": 4530,
   "height": 2718,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wm084",
@@ -738,7 +781,8 @@
   },
   "width": 5500,
   "height": 2882,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wm086",
@@ -755,7 +799,8 @@
   "width": 3000,
   "height": 2250,
   "drivingSide": "right",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Grassland"
  },
  {
   "id": "wm087",
@@ -772,7 +817,8 @@
   "width": 8687,
   "height": 4348,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wm088",
@@ -788,7 +834,8 @@
   },
   "width": 8474,
   "height": 3740,
-  "drivingSide": "left"
+  "drivingSide": "left",
+  "landCover": "Grassland"
  },
  {
   "id": "wm089",
@@ -805,7 +852,8 @@
   "width": 16148,
   "height": 4011,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wm091",
@@ -822,7 +870,8 @@
   "width": 15431,
   "height": 4147,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wm092",
@@ -838,7 +887,8 @@
   },
   "width": 4549,
   "height": 2726,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wm093",
@@ -855,7 +905,8 @@
   "width": 4928,
   "height": 3026,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Shrubland"
  },
  {
   "id": "wm094",
@@ -871,7 +922,8 @@
   },
   "width": 4247,
   "height": 2478,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wm097",
@@ -888,7 +940,8 @@
   "width": 6704,
   "height": 4469,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wm101",
@@ -905,7 +958,8 @@
   "width": 4227,
   "height": 2734,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wm102",
@@ -922,7 +976,8 @@
   "width": 7071,
   "height": 2886,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wm104",
@@ -939,7 +994,8 @@
   "width": 7409,
   "height": 3105,
   "drivingSide": "right",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Tree cover"
  },
  {
   "id": "wm106",
@@ -956,7 +1012,8 @@
   "width": 15145,
   "height": 6445,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Grassland"
  },
  {
   "id": "wm107",
@@ -973,7 +1030,8 @@
   "width": 6000,
   "height": 4000,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wm108",
@@ -990,7 +1048,8 @@
   "width": 6000,
   "height": 4000,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Moss and lichen"
  },
  {
   "id": "wm110",
@@ -1007,7 +1066,8 @@
   "width": 4951,
   "height": 3301,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wm111",
@@ -1024,7 +1084,8 @@
   "width": 6000,
   "height": 4000,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wm112",
@@ -1041,7 +1102,8 @@
   "width": 5898,
   "height": 3443,
   "drivingSide": "right",
-  "climateGroup": "Polar"
+  "climateGroup": "Polar",
+  "landCover": "Grassland"
  },
  {
   "id": "wm116",
@@ -1058,7 +1120,8 @@
   "width": 6661,
   "height": 3747,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wm117",
@@ -1075,7 +1138,8 @@
   "width": 8078,
   "height": 5399,
   "drivingSide": "left",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Bare / sparse vegetation"
  },
  {
   "id": "wm119",
@@ -1092,7 +1156,8 @@
   "width": 4608,
   "height": 3456,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wm122",
@@ -1109,7 +1174,8 @@
   "width": 11686,
   "height": 2172,
   "drivingSide": "left",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Tree cover"
  },
  {
   "id": "wm124",
@@ -1126,7 +1192,8 @@
   "width": 5000,
   "height": 1692,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Tree cover"
  },
  {
   "id": "wm126",
@@ -1143,7 +1210,8 @@
   "width": 4288,
   "height": 2848,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wm127",
@@ -1160,7 +1228,8 @@
   "width": 3872,
   "height": 2592,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Bare / sparse vegetation"
  },
  {
   "id": "wm128",
@@ -1176,7 +1245,8 @@
   },
   "width": 3072,
   "height": 2048,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wm131",
@@ -1193,7 +1263,8 @@
   "width": 10782,
   "height": 5391,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Bare / sparse vegetation"
  },
  {
   "id": "wm132",
@@ -1210,7 +1281,8 @@
   "width": 13000,
   "height": 1486,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Grassland"
  },
  {
   "id": "wm133",
@@ -1227,7 +1299,8 @@
   "width": 7893,
   "height": 5461,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Grassland"
  },
  {
   "id": "wm134",
@@ -1244,7 +1317,8 @@
   "width": 4032,
   "height": 2688,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wm136",
@@ -1261,7 +1335,8 @@
   "width": 6720,
   "height": 4480,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Bare / sparse vegetation"
  },
  {
   "id": "wm139",
@@ -1278,7 +1353,8 @@
   "width": 6041,
   "height": 4353,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wm140",
@@ -1295,7 +1371,8 @@
   "width": 4264,
   "height": 2791,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Tree cover"
  },
  {
   "id": "wm141",
@@ -1312,7 +1389,8 @@
   "width": 6262,
   "height": 4473,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wm143",
@@ -1329,7 +1407,8 @@
   "width": 4667,
   "height": 2625,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wm144",
@@ -1346,7 +1425,8 @@
   "width": 6004,
   "height": 3002,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wm145",
@@ -1362,7 +1442,8 @@
   },
   "width": 6438,
   "height": 4292,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Grassland"
  },
  {
   "id": "wm146",
@@ -1379,7 +1460,8 @@
   "width": 5131,
   "height": 3515,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wm147",
@@ -1396,7 +1478,8 @@
   "width": 7993,
   "height": 5329,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wm150",
@@ -1413,7 +1496,8 @@
   "width": 5043,
   "height": 3362,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wm151",
@@ -1430,7 +1514,8 @@
   "width": 7220,
   "height": 1500,
   "drivingSide": "right",
-  "climateGroup": "Polar"
+  "climateGroup": "Polar",
+  "landCover": "Moss and lichen"
  },
  {
   "id": "wm154",
@@ -1446,7 +1531,8 @@
   },
   "width": 4272,
   "height": 2848,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Tree cover"
  },
  {
   "id": "wm157",
@@ -1462,7 +1548,8 @@
   },
   "width": 6612,
   "height": 4408,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wm158",
@@ -1479,7 +1566,8 @@
   "width": 23040,
   "height": 3840,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Bare / sparse vegetation"
  },
  {
   "id": "wh1299437",
@@ -1496,7 +1584,8 @@
   "width": 4592,
   "height": 3056,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh1299447",
@@ -1513,7 +1602,8 @@
   "width": 4470,
   "height": 2980,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh1299460",
@@ -1530,7 +1620,8 @@
   "width": 4500,
   "height": 3000,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh1299479",
@@ -1547,7 +1638,8 @@
   "width": 4592,
   "height": 3056,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh1555889",
@@ -1564,7 +1656,8 @@
   "width": 2014,
   "height": 1079,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Grassland"
  },
  {
   "id": "wh2368717",
@@ -1581,7 +1674,8 @@
   "width": 3008,
   "height": 2000,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wh2680583",
@@ -1598,7 +1692,8 @@
   "width": 3832,
   "height": 2541,
   "drivingSide": "left",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh3677747",
@@ -1615,7 +1710,8 @@
   "width": 15000,
   "height": 2271,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wh3693965",
@@ -1632,7 +1728,8 @@
   "width": 5493,
   "height": 1871,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh4066115",
@@ -1648,7 +1745,8 @@
   },
   "width": 4368,
   "height": 2912,
-  "drivingSide": "left"
+  "drivingSide": "left",
+  "landCover": "Bare / sparse vegetation"
  },
  {
   "id": "wh4261388",
@@ -1665,7 +1763,8 @@
   "width": 3264,
   "height": 2448,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh4271613",
@@ -1682,7 +1781,8 @@
   "width": 2650,
   "height": 1762,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh4272232",
@@ -1699,7 +1799,8 @@
   "width": 3500,
   "height": 1138,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh4277921",
@@ -1716,7 +1817,8 @@
   "width": 3822,
   "height": 2854,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh5411905",
@@ -1733,7 +1835,8 @@
   "width": 3200,
   "height": 2130,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh5592836",
@@ -1750,7 +1853,8 @@
   "width": 4272,
   "height": 2848,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh5653582",
@@ -1766,7 +1870,8 @@
   },
   "width": 4272,
   "height": 2848,
-  "drivingSide": "left"
+  "drivingSide": "left",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh6588040",
@@ -1783,7 +1888,8 @@
   "width": 4288,
   "height": 2848,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh6629434",
@@ -1800,7 +1906,8 @@
   "width": 2288,
   "height": 1712,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh6714189",
@@ -1817,7 +1924,8 @@
   "width": 4592,
   "height": 3056,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh6755162",
@@ -1834,7 +1942,8 @@
   "width": 24260,
   "height": 1494,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh6851999",
@@ -1851,7 +1960,8 @@
   "width": 5460,
   "height": 1461,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh6988057",
@@ -1868,7 +1978,8 @@
   "width": 4500,
   "height": 3000,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh6988105",
@@ -1885,7 +1996,8 @@
   "width": 4592,
   "height": 3056,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh7029225",
@@ -1902,7 +2014,8 @@
   "width": 4368,
   "height": 2912,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh7053341",
@@ -1919,7 +2032,8 @@
   "width": 9235,
   "height": 3708,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh7179854",
@@ -1936,7 +2050,8 @@
   "width": 15160,
   "height": 3695,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh7963128",
@@ -1953,7 +2068,8 @@
   "width": 2764,
   "height": 1752,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh8888551",
@@ -1970,7 +2086,8 @@
   "width": 3000,
   "height": 1993,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh9645741",
@@ -1987,7 +2104,8 @@
   "width": 4000,
   "height": 3000,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh9649676",
@@ -2004,7 +2122,8 @@
   "width": 4416,
   "height": 3308,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh9649696",
@@ -2021,7 +2140,8 @@
   "width": 4389,
   "height": 3289,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh9837506",
@@ -2038,7 +2158,8 @@
   "width": 4500,
   "height": 3000,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh10128352",
@@ -2055,7 +2176,8 @@
   "width": 3623,
   "height": 2000,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh11576552",
@@ -2072,7 +2194,8 @@
   "width": 3351,
   "height": 2399,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh11581901",
@@ -2089,7 +2212,8 @@
   "width": 3338,
   "height": 2548,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh11581913",
@@ -2106,7 +2230,8 @@
   "width": 2927,
   "height": 1998,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh11593822",
@@ -2123,7 +2248,8 @@
   "width": 2916,
   "height": 2138,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Grassland"
  },
  {
   "id": "wh11596930",
@@ -2140,7 +2266,8 @@
   "width": 3456,
   "height": 2400,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh11601539",
@@ -2157,7 +2284,8 @@
   "width": 3117,
   "height": 2308,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh11626898",
@@ -2174,7 +2302,8 @@
   "width": 3456,
   "height": 2592,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh11654128",
@@ -2191,7 +2320,8 @@
   "width": 3138,
   "height": 2085,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Grassland"
  },
  {
   "id": "wh11670418",
@@ -2208,7 +2338,8 @@
   "width": 4350,
   "height": 2900,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wh12184482",
@@ -2224,7 +2355,8 @@
   },
   "width": 4253,
   "height": 2848,
-  "climateGroup": "Polar"
+  "climateGroup": "Polar",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh12189009",
@@ -2241,7 +2373,8 @@
   "width": 2901,
   "height": 2000,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Grassland"
  },
  {
   "id": "wh12189396",
@@ -2258,7 +2391,8 @@
   "width": 2809,
   "height": 1854,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh12223904",
@@ -2275,7 +2409,8 @@
   "width": 3990,
   "height": 2660,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh12905454",
@@ -2291,7 +2426,8 @@
   },
   "width": 4115,
   "height": 2348,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Built-up"
  },
  {
   "id": "wh12915875",
@@ -2307,7 +2443,8 @@
   },
   "width": 4236,
   "height": 2515,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Built-up"
  },
  {
   "id": "wh13214093",
@@ -2324,7 +2461,8 @@
   "width": 3992,
   "height": 2792,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh13214772",
@@ -2341,7 +2479,8 @@
   "width": 3988,
   "height": 2589,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh13266388",
@@ -2358,7 +2497,8 @@
   "width": 3976,
   "height": 2540,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Cropland"
  },
  {
   "id": "wh13266410",
@@ -2375,7 +2515,8 @@
   "width": 3952,
   "height": 2599,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh13799373",
@@ -2392,7 +2533,8 @@
   "width": 4237,
   "height": 2776,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh14236999",
@@ -2409,7 +2551,8 @@
   "width": 4256,
   "height": 2832,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh14518843",
@@ -2426,7 +2569,8 @@
   "width": 2300,
   "height": 1548,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wh14540663",
@@ -2443,7 +2587,8 @@
   "width": 4256,
   "height": 2832,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh14671941",
@@ -2460,7 +2605,8 @@
   "width": 4004,
   "height": 3002,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh14672000",
@@ -2477,7 +2623,8 @@
   "width": 4365,
   "height": 3269,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh14672834",
@@ -2494,7 +2641,8 @@
   "width": 3977,
   "height": 2980,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh14681470",
@@ -2511,7 +2659,8 @@
   "width": 4344,
   "height": 3253,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh15116418",
@@ -2528,7 +2677,8 @@
   "width": 4368,
   "height": 2912,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wh15116588",
@@ -2545,7 +2695,8 @@
   "width": 4368,
   "height": 2912,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wh15116731",
@@ -2562,7 +2713,8 @@
   "width": 4268,
   "height": 2812,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh15294397",
@@ -2579,7 +2731,8 @@
   "width": 2400,
   "height": 1600,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh15370608",
@@ -2596,7 +2749,8 @@
   "width": 4592,
   "height": 3056,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh15815766",
@@ -2613,7 +2767,8 @@
   "width": 4592,
   "height": 3056,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh15916014",
@@ -2630,7 +2785,8 @@
   "width": 4500,
   "height": 3000,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh16380592",
@@ -2647,7 +2803,8 @@
   "width": 2885,
   "height": 2008,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh17397605",
@@ -2663,7 +2820,8 @@
   },
   "width": 2526,
   "height": 1600,
-  "drivingSide": "left"
+  "drivingSide": "left",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh17425300",
@@ -2680,7 +2838,8 @@
   "width": 2867,
   "height": 1900,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh17430494",
@@ -2697,7 +2856,8 @@
   "width": 2656,
   "height": 1900,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh17620825",
@@ -2714,7 +2874,8 @@
   "width": 3244,
   "height": 2300,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh17624100",
@@ -2731,7 +2892,8 @@
   "width": 2544,
   "height": 1875,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh17712534",
@@ -2748,7 +2910,8 @@
   "width": 5997,
   "height": 2229,
   "drivingSide": "right",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh19076470",
@@ -2765,7 +2928,8 @@
   "width": 3098,
   "height": 2065,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh19194913",
@@ -2782,7 +2946,8 @@
   "width": 4601,
   "height": 3155,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh19214691",
@@ -2799,7 +2964,8 @@
   "width": 4377,
   "height": 2899,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh19262252",
@@ -2816,7 +2982,8 @@
   "width": 3876,
   "height": 2431,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh19262571",
@@ -2833,7 +3000,8 @@
   "width": 3772,
   "height": 2524,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh19270876",
@@ -2849,7 +3017,8 @@
   },
   "width": 3008,
   "height": 2000,
-  "drivingSide": "left"
+  "drivingSide": "left",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh19332721",
@@ -2866,7 +3035,8 @@
   "width": 4221,
   "height": 2901,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh19491745",
@@ -2883,7 +3053,8 @@
   "width": 4179,
   "height": 1425,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Bare / sparse vegetation"
  },
  {
   "id": "wh19506754",
@@ -2900,7 +3071,8 @@
   "width": 4124,
   "height": 2757,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh19516429",
@@ -2917,7 +3089,8 @@
   "width": 3741,
   "height": 1533,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Bare / sparse vegetation"
  },
  {
   "id": "wh19517209",
@@ -2934,7 +3107,8 @@
   "width": 4113,
   "height": 2005,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Bare / sparse vegetation"
  },
  {
   "id": "wh19520115",
@@ -2951,7 +3125,8 @@
   "width": 4168,
   "height": 1659,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh19658711",
@@ -2968,7 +3143,8 @@
   "width": 14000,
   "height": 2600,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh19933379",
@@ -2985,7 +3161,8 @@
   "width": 4150,
   "height": 2856,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wh20020319",
@@ -3002,7 +3179,8 @@
   "width": 4256,
   "height": 2484,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Grassland"
  },
  {
   "id": "wh20721594",
@@ -3019,7 +3197,8 @@
   "width": 2626,
   "height": 1725,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh20986071",
@@ -3035,7 +3214,8 @@
   },
   "width": 5184,
   "height": 3456,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh21110630",
@@ -3052,7 +3232,8 @@
   "width": 4130,
   "height": 2691,
   "drivingSide": "right",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh21234664",
@@ -3069,7 +3250,8 @@
   "width": 5834,
   "height": 2566,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh22068720",
@@ -3086,7 +3268,8 @@
   "width": 13206,
   "height": 6676,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wh22627049",
@@ -3103,7 +3286,8 @@
   "width": 4030,
   "height": 2873,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh22627051",
@@ -3119,7 +3303,8 @@
   },
   "width": 4830,
   "height": 3210,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Mangroves"
  },
  {
   "id": "wh22651968",
@@ -3136,7 +3321,8 @@
   "width": 9079,
   "height": 3181,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh22844833",
@@ -3153,7 +3339,8 @@
   "width": 5799,
   "height": 1500,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh23445289",
@@ -3170,7 +3357,8 @@
   "width": 4681,
   "height": 2456,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh24440171",
@@ -3187,7 +3375,8 @@
   "width": 4072,
   "height": 2599,
   "drivingSide": "right",
-  "climateGroup": "Polar"
+  "climateGroup": "Polar",
+  "landCover": "Grassland"
  },
  {
   "id": "wh25397092",
@@ -3204,7 +3393,8 @@
   "width": 3857,
   "height": 2541,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh25760278",
@@ -3221,7 +3411,8 @@
   "width": 4592,
   "height": 2984,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wh26458813",
@@ -3238,7 +3429,8 @@
   "width": 5100,
   "height": 3400,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh27617450",
@@ -3255,7 +3447,8 @@
   "width": 8195,
   "height": 2444,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh27698807",
@@ -3272,7 +3465,8 @@
   "width": 4991,
   "height": 3233,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh27698978",
@@ -3289,7 +3483,8 @@
   "width": 4892,
   "height": 3166,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh27699048",
@@ -3305,7 +3500,8 @@
   },
   "width": 4690,
   "height": 3169,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Built-up"
  },
  {
   "id": "wh27699170",
@@ -3322,7 +3518,8 @@
   "width": 5022,
   "height": 2982,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh27699221",
@@ -3339,7 +3536,8 @@
   "width": 5067,
   "height": 2946,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh27751807",
@@ -3356,7 +3554,8 @@
   "width": 3700,
   "height": 2452,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh27751808",
@@ -3373,7 +3572,8 @@
   "width": 3700,
   "height": 2450,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh27751814",
@@ -3390,7 +3590,8 @@
   "width": 3700,
   "height": 2451,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Grassland"
  },
  {
   "id": "wh27751824",
@@ -3407,7 +3608,8 @@
   "width": 3700,
   "height": 2451,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh27751827",
@@ -3424,7 +3626,8 @@
   "width": 3700,
   "height": 2451,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Grassland"
  },
  {
   "id": "wh27751835",
@@ -3441,7 +3644,8 @@
   "width": 3700,
   "height": 2451,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Grassland"
  },
  {
   "id": "wh27751842",
@@ -3458,7 +3662,8 @@
   "width": 3700,
   "height": 2451,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Grassland"
  },
  {
   "id": "wh27752608",
@@ -3475,7 +3680,8 @@
   "width": 4200,
   "height": 2781,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh27775868",
@@ -3492,7 +3698,8 @@
   "width": 4847,
   "height": 2951,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh27775895",
@@ -3509,7 +3716,8 @@
   "width": 5085,
   "height": 3257,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh27775916",
@@ -3526,7 +3734,8 @@
   "width": 5021,
   "height": 3098,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh28195637",
@@ -3542,7 +3751,8 @@
   },
   "width": 5930,
   "height": 4069,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Built-up"
  },
  {
   "id": "wh28424780",
@@ -3559,7 +3769,8 @@
   "width": 4566,
   "height": 2982,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh28538335",
@@ -3576,7 +3787,8 @@
   "width": 5542,
   "height": 3421,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Bare / sparse vegetation"
  },
  {
   "id": "wh29166167",
@@ -3593,7 +3805,8 @@
   "width": 4912,
   "height": 3264,
   "drivingSide": "left",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh29166195",
@@ -3610,7 +3823,8 @@
   "width": 4912,
   "height": 3264,
   "drivingSide": "left",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh29247887",
@@ -3627,7 +3841,8 @@
   "width": 2915,
   "height": 2210,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh29497529",
@@ -3644,7 +3859,8 @@
   "width": 7136,
   "height": 2393,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Bare / sparse vegetation"
  },
  {
   "id": "wh30350135",
@@ -3660,7 +3876,8 @@
   },
   "width": 5572,
   "height": 3744,
-  "drivingSide": "left"
+  "drivingSide": "left",
+  "landCover": "Bare / sparse vegetation"
  },
  {
   "id": "wh30503941",
@@ -3677,7 +3894,8 @@
   "width": 4232,
   "height": 2811,
   "drivingSide": "right",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh30986414",
@@ -3694,7 +3912,8 @@
   "width": 3899,
   "height": 2633,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh31601262",
@@ -3711,7 +3930,8 @@
   "width": 4367,
   "height": 2597,
   "drivingSide": "right",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Grassland"
  },
  {
   "id": "wh31774366",
@@ -3728,7 +3948,8 @@
   "width": 5090,
   "height": 3286,
   "drivingSide": "right",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Grassland"
  },
  {
   "id": "wh31782095",
@@ -3745,7 +3966,8 @@
   "width": 7132,
   "height": 2748,
   "drivingSide": "right",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh31959291",
@@ -3762,7 +3984,8 @@
   "width": 4832,
   "height": 3792,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh32252228",
@@ -3779,7 +4002,8 @@
   "width": 3767,
   "height": 2521,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh33424138",
@@ -3796,7 +4020,8 @@
   "width": 7668,
   "height": 3745,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Bare / sparse vegetation"
  },
  {
   "id": "wh33506407",
@@ -3812,7 +4037,8 @@
   },
   "width": 4608,
   "height": 3456,
-  "drivingSide": "left"
+  "drivingSide": "left",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh34958877",
@@ -3829,7 +4055,8 @@
   "width": 3332,
   "height": 2222,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh36257241",
@@ -3846,7 +4073,8 @@
   "width": 5513,
   "height": 3676,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Bare / sparse vegetation"
  },
  {
   "id": "wh36738978",
@@ -3863,7 +4091,8 @@
   "width": 4916,
   "height": 2458,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh36809430",
@@ -3880,7 +4109,8 @@
   "width": 3292,
   "height": 2199,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh36809443",
@@ -3897,7 +4127,8 @@
   "width": 3304,
   "height": 2203,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh36809456",
@@ -3914,7 +4145,8 @@
   "width": 3059,
   "height": 2115,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh36809472",
@@ -3931,7 +4163,8 @@
   "width": 3324,
   "height": 2280,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh36822431",
@@ -3948,7 +4181,8 @@
   "width": 3286,
   "height": 2191,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh36822613",
@@ -3965,7 +4199,8 @@
   "width": 2867,
   "height": 2156,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh36839793",
@@ -3982,7 +4217,8 @@
   "width": 3092,
   "height": 2241,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh37819546",
@@ -3998,7 +4234,8 @@
   },
   "width": 7291,
   "height": 3349,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh37819775",
@@ -4014,7 +4251,8 @@
   },
   "width": 6841,
   "height": 2522,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh10353521",
@@ -4031,7 +4269,8 @@
   "width": 3659,
   "height": 2166,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Grassland"
  },
  {
   "id": "wh10503345",
@@ -4048,7 +4287,8 @@
   "width": 28179,
   "height": 3500,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh10533516",
@@ -4065,7 +4305,8 @@
   "width": 25551,
   "height": 3000,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Grassland"
  },
  {
   "id": "wh15078201",
@@ -4082,7 +4323,8 @@
   "width": 11800,
   "height": 2600,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wh21322891",
@@ -4099,7 +4341,8 @@
   "width": 4260,
   "height": 2840,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh21322892",
@@ -4116,7 +4359,8 @@
   "width": 3960,
   "height": 2640,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh36856420",
@@ -4133,7 +4377,8 @@
   "width": 3040,
   "height": 2028,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh38290022",
@@ -4150,7 +4395,8 @@
   "width": 5729,
   "height": 3824,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh38295652",
@@ -4167,7 +4413,8 @@
   "width": 5259,
   "height": 2958,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh38330305",
@@ -4184,7 +4431,8 @@
   "width": 5922,
   "height": 3984,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh38331535",
@@ -4201,7 +4449,8 @@
   "width": 4655,
   "height": 3108,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh38360674",
@@ -4218,7 +4467,8 @@
   "width": 4506,
   "height": 3604,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh39083470",
@@ -4235,7 +4485,8 @@
   "width": 4917,
   "height": 3283,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh39859843",
@@ -4252,7 +4503,8 @@
   "width": 4742,
   "height": 3231,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh41167786",
@@ -4269,7 +4521,8 @@
   "width": 6390,
   "height": 3896,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh41168584",
@@ -4286,7 +4539,8 @@
   "width": 6446,
   "height": 4485,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh41534807",
@@ -4303,7 +4557,8 @@
   "width": 3519,
   "height": 2575,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh42117450",
@@ -4320,7 +4575,8 @@
   "width": 4868,
   "height": 3249,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wh42117463",
@@ -4337,7 +4593,8 @@
   "width": 5184,
   "height": 3456,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wh42117496",
@@ -4354,7 +4611,8 @@
   "width": 5064,
   "height": 3336,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wh42117533",
@@ -4371,7 +4629,8 @@
   "width": 5104,
   "height": 3403,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh42117591",
@@ -4388,7 +4647,8 @@
   "width": 5184,
   "height": 3456,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh42117612",
@@ -4405,7 +4665,8 @@
   "width": 5184,
   "height": 3456,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh42187298",
@@ -4422,7 +4683,8 @@
   "width": 2592,
   "height": 1728,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh42275232",
@@ -4439,7 +4701,8 @@
   "width": 2592,
   "height": 1728,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh42637626",
@@ -4456,7 +4719,8 @@
   "width": 5360,
   "height": 3015,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh44107330",
@@ -4473,7 +4737,8 @@
   "width": 2567,
   "height": 1615,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh44107331",
@@ -4490,7 +4755,8 @@
   "width": 4798,
   "height": 3009,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh44107332",
@@ -4507,7 +4773,8 @@
   "width": 3969,
   "height": 2575,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh44107335",
@@ -4524,7 +4791,8 @@
   "width": 5601,
   "height": 3389,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh45801253",
@@ -4541,7 +4809,8 @@
   "width": 4837,
   "height": 3213,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh45801258",
@@ -4558,7 +4827,8 @@
   "width": 4912,
   "height": 3264,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh46082923",
@@ -4575,7 +4845,8 @@
   "width": 4912,
   "height": 3264,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh46082930",
@@ -4592,7 +4863,8 @@
   "width": 4912,
   "height": 3264,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh46890555",
@@ -4609,7 +4881,8 @@
   "width": 5104,
   "height": 3403,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh46892456",
@@ -4626,7 +4899,8 @@
   "width": 3909,
   "height": 2606,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh46911664",
@@ -4643,7 +4917,8 @@
   "width": 4112,
   "height": 2741,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh46942014",
@@ -4660,7 +4935,8 @@
   "width": 4139,
   "height": 2758,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh46942636",
@@ -4677,7 +4953,8 @@
   "width": 4022,
   "height": 2681,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh46942666",
@@ -4694,7 +4971,8 @@
   "width": 5184,
   "height": 3456,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh47247036",
@@ -4711,7 +4989,8 @@
   "width": 3316,
   "height": 2450,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh47392651",
@@ -4728,7 +5007,8 @@
   "width": 3330,
   "height": 2200,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh47412780",
@@ -4745,7 +5025,8 @@
   "width": 3300,
   "height": 2200,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh47528669",
@@ -4762,7 +5043,8 @@
   "width": 3299,
   "height": 2200,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh47891034",
@@ -4779,7 +5061,8 @@
   "width": 4174,
   "height": 2633,
   "drivingSide": "right",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Grassland"
  },
  {
   "id": "wh48370104",
@@ -4795,7 +5078,8 @@
   },
   "width": 6798,
   "height": 3824,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh48411974",
@@ -4812,7 +5096,8 @@
   "width": 3648,
   "height": 2736,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wh48411977",
@@ -4829,7 +5114,8 @@
   "width": 3648,
   "height": 2736,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wh48510826",
@@ -4846,7 +5132,8 @@
   "width": 3300,
   "height": 2200,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh48559027",
@@ -4863,7 +5150,8 @@
   "width": 3300,
   "height": 2200,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh48604521",
@@ -4880,7 +5168,8 @@
   "width": 3300,
   "height": 2475,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Grassland"
  },
  {
   "id": "wh49235469",
@@ -4897,7 +5186,8 @@
   "width": 3837,
   "height": 2200,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh49284553",
@@ -4914,7 +5204,8 @@
   "width": 4013,
   "height": 2200,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh49985691",
@@ -4931,7 +5222,8 @@
   "width": 4265,
   "height": 2843,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh50297531",
@@ -4948,7 +5240,8 @@
   "width": 2999,
   "height": 1999,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh50324769",
@@ -4965,7 +5258,8 @@
   "width": 5020,
   "height": 3949,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh50324845",
@@ -4982,7 +5276,8 @@
   "width": 5494,
   "height": 4395,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh50756342",
@@ -4999,7 +5294,8 @@
   "width": 7257,
   "height": 3923,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh51542905",
@@ -5016,7 +5312,8 @@
   "width": 5465,
   "height": 3648,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh52336679",
@@ -5033,7 +5330,8 @@
   "width": 5472,
   "height": 3648,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh52336794",
@@ -5050,7 +5348,8 @@
   "width": 5472,
   "height": 3648,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh52336809",
@@ -5067,7 +5366,8 @@
   "width": 5056,
   "height": 3371,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh52336910",
@@ -5084,7 +5384,8 @@
   "width": 5230,
   "height": 3487,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh52336946",
@@ -5101,7 +5402,8 @@
   "width": 5415,
   "height": 3619,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh52336983",
@@ -5118,7 +5420,8 @@
   "width": 4949,
   "height": 3297,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh52337019",
@@ -5135,7 +5438,8 @@
   "width": 5415,
   "height": 3610,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh52337064",
@@ -5152,7 +5456,8 @@
   "width": 5464,
   "height": 3643,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh52337104",
@@ -5169,7 +5474,8 @@
   "width": 5472,
   "height": 3648,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh52337143",
@@ -5186,7 +5492,8 @@
   "width": 5470,
   "height": 3077,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh52375624",
@@ -5203,7 +5510,8 @@
   "width": 4959,
   "height": 3306,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh52375750",
@@ -5220,7 +5528,8 @@
   "width": 5472,
   "height": 3078,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh52375765",
@@ -5237,7 +5546,8 @@
   "width": 5263,
   "height": 3509,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh52551484",
@@ -5254,7 +5564,8 @@
   "width": 5472,
   "height": 3648,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh52843611",
@@ -5271,7 +5582,8 @@
   "width": 3000,
   "height": 1968,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh53773638",
@@ -5288,7 +5600,8 @@
   "width": 3454,
   "height": 2608,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh53923596",
@@ -5305,7 +5618,8 @@
   "width": 13939,
   "height": 3666,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wh56323313",
@@ -5321,7 +5635,8 @@
   },
   "width": 5976,
   "height": 2800,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh56747484",
@@ -5337,7 +5652,8 @@
   },
   "width": 4362,
   "height": 3124,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh58446129",
@@ -5354,7 +5670,8 @@
   "width": 3300,
   "height": 2200,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh59292418",
@@ -5370,7 +5687,8 @@
   },
   "width": 6016,
   "height": 4000,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh59345846",
@@ -5386,7 +5704,8 @@
   },
   "width": 5000,
   "height": 3413,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh62182211",
@@ -5403,7 +5722,8 @@
   "width": 5279,
   "height": 4000,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh62213504",
@@ -5420,7 +5740,8 @@
   "width": 5491,
   "height": 3151,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh62270176",
@@ -5437,7 +5758,8 @@
   "width": 5472,
   "height": 3648,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh62311059",
@@ -5454,7 +5776,8 @@
   "width": 5858,
   "height": 3295,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Grassland"
  },
  {
   "id": "wh62671094",
@@ -5471,7 +5794,8 @@
   "width": 7520,
   "height": 5640,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh62748460",
@@ -5488,7 +5812,8 @@
   "width": 4912,
   "height": 3256,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Grassland"
  },
  {
   "id": "wh62865420",
@@ -5505,7 +5830,8 @@
   "width": 5472,
   "height": 3648,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh62934815",
@@ -5522,7 +5848,8 @@
   "width": 5617,
   "height": 3878,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh62977853",
@@ -5539,7 +5866,8 @@
   "width": 3060,
   "height": 2040,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh63340069",
@@ -5556,7 +5884,8 @@
   "width": 5537,
   "height": 3115,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh63340080",
@@ -5573,7 +5902,8 @@
   "width": 5631,
   "height": 3759,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh63823421",
@@ -5590,7 +5920,8 @@
   "width": 6000,
   "height": 4000,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wh64012952",
@@ -5607,7 +5938,8 @@
   "width": 4288,
   "height": 2848,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh64036228",
@@ -5624,7 +5956,8 @@
   "width": 4288,
   "height": 2848,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh64036229",
@@ -5641,7 +5974,8 @@
   "width": 4288,
   "height": 2848,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh64036231",
@@ -5658,7 +5992,8 @@
   "width": 4262,
   "height": 2832,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh64687720",
@@ -5675,7 +6010,8 @@
   "width": 4608,
   "height": 2711,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wh65837069",
@@ -5692,7 +6028,8 @@
   "width": 5083,
   "height": 3389,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh65837239",
@@ -5709,7 +6046,8 @@
   "width": 3839,
   "height": 2559,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh66017115",
@@ -5726,7 +6064,8 @@
   "width": 4776,
   "height": 3184,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh66172081",
@@ -5742,7 +6081,8 @@
   },
   "width": 5568,
   "height": 3712,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Herbaceous wetland"
  },
  {
   "id": "wh68155257",
@@ -5759,7 +6099,8 @@
   "width": 3590,
   "height": 2403,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh68355654",
@@ -5776,7 +6117,8 @@
   "width": 4080,
   "height": 2720,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh69553418",
@@ -5793,7 +6135,8 @@
   "width": 7729,
   "height": 5160,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh70835677",
@@ -5810,7 +6153,8 @@
   "width": 6002,
   "height": 3080,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh70860934",
@@ -5827,7 +6171,8 @@
   "width": 6016,
   "height": 4016,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Grassland"
  },
  {
   "id": "wh70861049",
@@ -5844,7 +6189,8 @@
   "width": 6016,
   "height": 3711,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Grassland"
  },
  {
   "id": "wh70890029",
@@ -5861,7 +6207,8 @@
   "width": 4800,
   "height": 2736,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Grassland"
  },
  {
   "id": "wh70964185",
@@ -5878,7 +6225,8 @@
   "width": 6016,
   "height": 4016,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Grassland"
  },
  {
   "id": "wh71784080",
@@ -5895,7 +6243,8 @@
   "width": 5645,
   "height": 3400,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh71784227",
@@ -5912,7 +6261,8 @@
   "width": 6016,
   "height": 2090,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh72701628",
@@ -5929,7 +6279,8 @@
   "width": 4793,
   "height": 3175,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh73018828",
@@ -5946,7 +6297,8 @@
   "width": 6804,
   "height": 4537,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh73172303",
@@ -5963,7 +6315,8 @@
   "width": 3301,
   "height": 2200,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh73214779",
@@ -5980,7 +6333,8 @@
   "width": 6000,
   "height": 4000,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Grassland"
  },
  {
   "id": "wh73371891",
@@ -5997,7 +6351,8 @@
   "width": 5472,
   "height": 3648,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh73728879",
@@ -6014,7 +6369,8 @@
   "width": 5160,
   "height": 2621,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh73798028",
@@ -6031,7 +6387,8 @@
   "width": 5160,
   "height": 3155,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh73825184",
@@ -6048,7 +6405,8 @@
   "width": 3926,
   "height": 3087,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh73930830",
@@ -6065,7 +6423,8 @@
   "width": 4306,
   "height": 3197,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh75611917",
@@ -6082,7 +6441,8 @@
   "width": 4969,
   "height": 3313,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh75612340",
@@ -6099,7 +6459,8 @@
   "width": 8237,
   "height": 4338,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Built-up"
  },
  {
   "id": "wh76094133",
@@ -6116,7 +6477,8 @@
   "width": 4035,
   "height": 2690,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh76094140",
@@ -6133,7 +6495,8 @@
   "width": 4988,
   "height": 3325,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh76094141",
@@ -6150,7 +6513,8 @@
   "width": 4905,
   "height": 2851,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh76126959",
@@ -6167,7 +6531,8 @@
   "width": 2800,
   "height": 2000,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Grassland"
  },
  {
   "id": "wh76748488",
@@ -6184,7 +6549,8 @@
   "width": 5772,
   "height": 3838,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh77387737",
@@ -6201,7 +6567,8 @@
   "width": 5175,
   "height": 4140,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh77719953",
@@ -6218,7 +6585,8 @@
   "width": 3556,
   "height": 2545,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh78744082",
@@ -6235,7 +6603,8 @@
   "width": 3776,
   "height": 2520,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh79179308",
@@ -6252,7 +6621,8 @@
   "width": 14345,
   "height": 3341,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Grassland"
  },
  {
   "id": "wh79497670",
@@ -6269,7 +6639,8 @@
   "width": 5602,
   "height": 3735,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh79498008",
@@ -6286,7 +6657,8 @@
   "width": 5513,
   "height": 3675,
   "drivingSide": "left",
-  "climateGroup": "Tropical"
+  "climateGroup": "Tropical",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh79599299",
@@ -6303,7 +6675,8 @@
   "width": 5470,
   "height": 3924,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh79677427",
@@ -6320,7 +6693,8 @@
   "width": 5164,
   "height": 3219,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh79815847",
@@ -6336,7 +6710,8 @@
   },
   "width": 4577,
   "height": 3434,
-  "drivingSide": "left"
+  "drivingSide": "left",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh79906195",
@@ -6353,7 +6728,8 @@
   "width": 5883,
   "height": 3922,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh80015174",
@@ -6370,7 +6746,8 @@
   "width": 4563,
   "height": 3197,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Tree cover"
  },
  {
   "id": "wh80309489",
@@ -6386,7 +6763,8 @@
   },
   "width": 6000,
   "height": 2016,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh80309490",
@@ -6402,7 +6780,8 @@
   },
   "width": 6000,
   "height": 1599,
-  "drivingSide": "right"
+  "drivingSide": "right",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh80760428",
@@ -6419,7 +6798,8 @@
   "width": 4600,
   "height": 3456,
   "drivingSide": "left",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Bare / sparse vegetation"
  },
  {
   "id": "wh80834283",
@@ -6436,7 +6816,8 @@
   "width": 5800,
   "height": 3001,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh80929572",
@@ -6453,7 +6834,8 @@
   "width": 5104,
   "height": 3403,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Cropland"
  },
  {
   "id": "wh81179003",
@@ -6470,7 +6852,8 @@
   "width": 3300,
   "height": 2200,
   "drivingSide": "right",
-  "climateGroup": "Continental"
+  "climateGroup": "Continental",
+  "landCover": "Built-up"
  },
  {
   "id": "wh81495859",
@@ -6487,7 +6870,8 @@
   "width": 5568,
   "height": 3712,
   "drivingSide": "right",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Built-up"
  },
  {
   "id": "wh82566382",
@@ -6504,7 +6888,8 @@
   "width": 5500,
   "height": 3667,
   "drivingSide": "right",
-  "climateGroup": "Arid"
+  "climateGroup": "Arid",
+  "landCover": "Built-up"
  },
  {
   "id": "wh82679251",
@@ -6521,7 +6906,8 @@
   "width": 4800,
   "height": 3200,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh82680527",
@@ -6538,7 +6924,8 @@
   "width": 4674,
   "height": 3116,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Permanent water bodies"
  },
  {
   "id": "wh82708128",
@@ -6555,6 +6942,7 @@
   "width": 3754,
   "height": 2473,
   "drivingSide": "left",
-  "climateGroup": "Temperate"
+  "climateGroup": "Temperate",
+  "landCover": "Permanent water bodies"
  }
 ]
