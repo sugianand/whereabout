@@ -1,6 +1,6 @@
 # Atlas v0 results
 
-Generated 2026-10-28T14:32:37+00:00 by `.github/workflows/atlas.yml` on 388 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
+Generated 2026-10-28T17:48:49+00:00 by `.github/workflows/atlas.yml` on 388 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
 
 **Playing in the game:** ViT-L-14/openai, country then city (lowest median error).
 
@@ -18,6 +18,7 @@ Generated 2026-10-28T14:32:37+00:00 by `.github/workflows/atlas.yml` on 388 phot
 | ViT-B-32/laion2b_s34b_b79k geocell head, alone | 388 | 0.0% | 2.6% | 21.4% | 53.1% | 2,402 (1,911–2,659) | 23.7% | 1,502 |
 | ViT-L-14/openai, country then city, then geocell head | 388 | 2.3% | 18.0% | 46.9% | 69.8% | 857 (670–1,174) | 44.1% | 2,444 |
 | ViT-B-32/openai, country then city, then nearest reference photos (Pocket Atlas) | 388 | 2.6% | 8.2% | 23.2% | 44.6% | 3,237 (2,550–4,301) | 17.0% | 1,440 |
+| ViT-B-32/openai, country then city, distilled country head (Pocket Atlas) | 388 | 5.4% | 10.3% | 25.8% | 48.2% | 2,795 (2,215–3,843) | 19.1% | 1,568 |
 
 Accuracy columns are the share of photos guessed within that distance. Median error has a 95% bootstrap confidence interval. Mean score uses the game's scoring (5,000 for a perfect guess).
 
@@ -38,6 +39,7 @@ Paired bootstrap on the same photos: the winner's median error minus each other 
 | ViT-B-32/laion2b_s34b_b79k geocell head, alone | -1,644 | -1,915 to -1,176 |
 | ViT-L-14/openai, country then city, then geocell head | -98 | -287 to 12 |
 | ViT-B-32/openai, country then city, then nearest reference photos (Pocket Atlas) | -2,479 | -3,522 to -1,844 |
+| ViT-B-32/openai, country then city, distilled country head (Pocket Atlas) | -2,037 | -3,115 to -1,454 |
 
 ## Where Atlas looked: is the map faithful?
 
@@ -121,6 +123,24 @@ The same probes, fitted on 4,306 reference photos embedded by the browser's mode
 | --- | ---: | ---: | --- | ---: | ---: | --- |
 | driving side | 387 | 79.3% | the driving side of the country Atlas guessed | 69.8% | +9.6% (+4.7% to +14.7%) | yes |
 | climate group | 351 | 62.4% | the zero-shot climate clue | 46.2% | +16.2% (+10.0% to +22.8%) | yes |
+
+## Pocket Atlas: does a head taught by the game's Atlas name countries better?
+
+A country head on the browser's model (ViT-B-32/openai), trained on 4,322 reference photos to match the calibrated country probabilities of the game's Atlas (ViT-L-14/openai, country then city, T = 1.1703). It is a correction added to Pocket Atlas's own zero-shot logits, with L2 = 0.01 chosen by 10° geographic cross-validation over the reference photos alone. Each catalog photo is scored by a head that never saw a reference photo from its block, against today's Pocket Atlas (ViT-B-32/openai, country then city); it changed the top country on 204 of 388 photos.
+
+| Country probabilities | Photos | Negative log likelihood | Right country | In the top 5 |
+| --- | ---: | ---: | ---: | ---: |
+| Pocket Atlas today (zero-shot) | 388 | 3.337 | 20.4% | 50.3% |
+| Distilled head (held out) | 388 | 3.294 | 22.7% | 46.7% |
+| The game's Atlas, for context | 388 | 2.032 | 46.9% | |
+
+| Distilled minus today | Difference | 95% CI |
+| --- | ---: | ---: |
+| Negative log likelihood | -0.043 | -0.113 to +0.031 |
+| Right country | +2.3% | -1.0% to +5.9% |
+| Median pin error (km) | -166 | -1,209 to +458 |
+
+It may run in the browser only if the whole likelihood interval is below zero, the right-country rate does not drop and the pin is not clearly further away: **it does not**. The game's own Atlas is never changed by these rows.
 
 ## Read these numbers carefully
 
