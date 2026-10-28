@@ -151,10 +151,20 @@ class ZeroShotGeolocator:
             clues=(),
         )
 
-    def predict(self, image_embedding: np.ndarray) -> Guess:
+    def predict(self, image_embedding: np.ndarray, p_country: np.ndarray | None = None) -> Guess:
+        """Country, then city within the likeliest countries.
+
+        `p_country` (one probability per gazetteer country) replaces the zero-shot country
+        step, so another country model (a distilled head, say) can lead the same city step.
+        """
         image = normalise(np.asarray(image_embedding, dtype=np.float64))
         countries = self.gazetteer.countries
-        p_country = self.country_probabilities(image)
+        if p_country is None:
+            p_country = self.country_probabilities(image)
+        else:
+            p_country = np.asarray(p_country, dtype=np.float64)
+            if p_country.shape != (len(countries),):
+                raise ValueError(f"need one probability per country, got {p_country.shape}")
         order = np.argsort(-p_country)[: self.top_k]
 
         best: tuple[float, City] | None = None

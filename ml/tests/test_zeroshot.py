@@ -115,3 +115,15 @@ def test_reporting_more_countries_never_widens_the_city_search():
         ["a photo taken in Osaka, Japan.", "a photo taken in Kyoto, Japan."]
     ]
     assert len(wide.predict_country_only(image("Peru")).top_countries) == 2
+
+
+def test_given_country_probabilities_lead_the_city_step():
+    locator = ZeroShotGeolocator(KeywordEncoder(), GAZ, top_k_countries=1, concept_groups=GROUPS)
+    # The photo reads as Kyoto, but another country model is sure it is Peru: the city step
+    # then searches Peru only, and the shortlist and confidence are the given ones.
+    guess = locator.predict(image("Japan", "Kyoto"), p_country=np.array([0.2, 0.8]))
+    assert guess.country == "PE"
+    assert guess.confidence == pytest.approx(0.8)
+    assert guess.top_countries[0] == ("PE", pytest.approx(0.8))
+    with pytest.raises(ValueError, match="one probability per country"):
+        locator.predict(image("Japan"), p_country=np.array([1.0]))

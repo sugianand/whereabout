@@ -130,6 +130,13 @@ geocells on frozen CLIP embeddings of the reference photos, with haversine label
 Atlas's country, and places the pin in the game only if the paired bootstrap says it clearly
 beats the playing Atlas. It takes a few minutes on a CPU runner.
 
+With `--pocket-model` as well, a country head for Pocket Atlas is distilled from the playing
+Atlas: trained on the browser model's embeddings of the reference photos to match the playing
+model's calibrated country probabilities, as a correction to Pocket Atlas's own zero-shot logits
+([decision 0008](docs/decisions/0008-distilled-country-head.md)). Its verdict against today's
+Pocket Atlas goes to `eval/results/pocket-calibration.json`; `--distill-budget-minutes` caps how
+long one run spends embedding the reference photos with the playing model.
+
 Concept labels for the clue heads (driving side, climate, land cover) come from open maps by
 coordinates; see [`data/maps/README.md`](data/maps/README.md) for the downloads and
 `python -m pip install -e "ml[maps]"` for the GeoTIFF reader. The catalog's labels are made by

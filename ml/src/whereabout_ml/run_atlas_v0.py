@@ -23,8 +23,9 @@ alone and as the pin within Atlas's country; the latter plays only if it clearly
 playing system.
 
 With `--pocket-model` too, the same reference photos are embedded by the browser's model and
-refine Pocket Atlas's own zero-shot guesses, and (with the labels) clue heads are fitted on them
-against Pocket Atlas's own clues; those paired verdicts are reported and written into
+refine Pocket Atlas's own zero-shot guesses, (with the labels) clue heads are fitted on them
+against Pocket Atlas's own clues, and a country head is distilled from the playing Atlas
+(`whereabout_ml.distill`); those paired verdicts are reported and written into
 `pocket-calibration.json` for `pocket-atlas-index`, and never change the game.
 """
 
@@ -55,7 +56,7 @@ from whereabout_eval.metrics import (
 )
 from whereabout_ml.baselines import constant_guesses, random_city_guesses
 from whereabout_ml.belief import belief_from_probabilities
-from whereabout_ml.calibration import calibrate, softmax_t, sureness_bands
+from whereabout_ml.calibration import calibrate, log_softmax, softmax_t, sureness_bands
 from whereabout_ml.clue_heads import (
     CLIMATE_GROUP,
     CONCEPTS,
@@ -68,6 +69,8 @@ from whereabout_ml.clue_heads import (
     load_labels,
     zero_shot_climate_groups,
 )
+from whereabout_ml.distill import run_distillation, teacher_probabilities
+from whereabout_ml.distill import summary as distill_summary
 from whereabout_ml.embedding_cache import cached_image_embeddings, safe_name
 from whereabout_ml.gazetteer import Gazetteer
 from whereabout_ml.geocell_head import run_head
@@ -622,6 +625,115 @@ def pocket_clue_heads(
     return records
 
 
+def teacher_reference_embeddings(
+    index: ReferenceIndex,
+    images: Path,
+    encoder,
+    embedding_cache: Path,
+    *,
+    budget_s: float | None = None,
+    chunk: int = 256,
+) -> np.ndarray | None:
+    """The reference photos embedded by `encoder` (the teacher), or None if the budget ran out.
+
+    Encoded a chunk at a time through the embedding cache, so a run that stops early keeps
+    what it encoded and the next run carries on; distillation waits until every reference
+    photo has a teacher embedding rather than learning from a geographically lopsided part.
+    """
+    from whereabout_ml.reference_set import thumbnail_path
+
+    refs = index.references
+    started = time.perf_counter()
+    parts: list[np.ndarray] = []
+    encoded = reused = 0
+    for lo in range(0, len(refs), chunk):
+        if budget_s is not None and time.perf_counter() - started > budget_s:
+            print(
+                f"distillation: {lo} of {len(refs)} reference photos embedded by {encoder.name} "
+                f"({encoded} this run); the rest wait for a later run"
+            )
+            return None
+        part = refs[lo : lo + chunk]
+        vectors, cached = cached_image_embeddings(
+            encoder,
+            [r.id for r in part],
+            [thumbnail_path(images, r.id) for r in part],
+            embedding_cache,
+        )
+        parts.append(vectors)
+        encoded, reused = encoded + cached.encoded, reused + cached.reused
+    print(
+        f"references for {encoder.name} (teacher): {len(refs)} ({encoded} encoded, "
+        f"{reused} from the embedding cache)"
+    )
+    return np.concatenate(parts) if parts else np.zeros((0, 1))
+
+
+def pocket_distillation(
+    photos: Sequence[Photo],
+    base: System,
+    embeddings: Sequence[np.ndarray],
+    locator: ZeroShotGeolocator,
+    index: ReferenceIndex,
+    temperature: float,
+    teacher_locator: ZeroShotGeolocator,
+    teacher_reference: np.ndarray,
+    teacher_game: Sequence[np.ndarray],
+    teacher_temperature: float,
+    *,
+    model: str,
+    teacher_model: str,
+) -> tuple[System, dict] | None:
+    """A country head for Pocket Atlas taught by the playing Atlas (`whereabout_ml.distill`).
+
+    `base` is Pocket Atlas's zero-shot system and `index` the reference photos embedded by the
+    browser's model; `teacher_reference` is the same photos embedded by the playing model, whose
+    country distribution divided by `teacher_temperature` is the target. Scored, never played
+    in the game: the system is reported without guesses, and the record carries the verdict
+    (and, if it ships, the head) for `pocket-atlas-index`. None with too few reference photos.
+    """
+    codes = [c.code for c in locator.gazetteer.countries]
+    if [c.code for c in teacher_locator.gazetteer.countries] != codes:
+        raise ValueError("teacher and student must share the gazetteer's countries")
+    targets = teacher_probabilities(
+        country_logits(teacher_locator, teacher_reference), teacher_temperature
+    )
+    run = run_distillation(
+        codes,
+        locator.country_embeddings,
+        temperature,
+        index.embeddings,
+        [LatLon(r.lat, r.lon) for r in index.references],
+        targets,
+        np.asarray(embeddings, dtype=np.float64),
+        [p.location for p in photos],
+    )
+    if run is None:
+        return None
+    guesses = [
+        locator.predict(e, p_country=np.exp(row))
+        for e, row in zip(embeddings, run.held_out, strict=True)
+    ]
+    system = System(
+        f"{base.name}, distilled country head (Pocket Atlas)",
+        predictions_from_guesses(photos, guesses),
+    )
+    position = {c: i for i, c in enumerate(codes)}
+    teacher = log_softmax(country_logits(teacher_locator, teacher_game) / teacher_temperature)
+    record = distill_summary(
+        run,
+        [position.get(p.country or "", -1) for p in photos],
+        system.distances,
+        base.distances,
+        teacher=teacher,
+        model=model,
+        teacher_model=teacher_model,
+        teacher_temperature=teacher_temperature,
+        versus=base.name,
+    )
+    return system, record
+
+
 def fit_geocell_head(
     photos: Sequence[Photo],
     base: System,
@@ -681,6 +793,7 @@ def build_outputs(
     geocell: dict | None = None,
     pocket_retrieval: dict | None = None,
     pocket_clue_heads: list[dict] | None = None,
+    pocket_distillation: dict | None = None,
 ):
     """Atlas's guesses for the game, plus a JSON report and a Markdown results page.
 
@@ -690,7 +803,8 @@ def build_outputs(
     `calibration` the one from `calibrate_guesses`, `clue_heads` the records from
     `fit_clue_heads`, `geocell` the one from `fit_geocell_head`, `pocket_retrieval` the one
     from `pocket_retrieval` and `pocket_clue_heads` the records from `pocket_clue_heads`
-    (both reported only: they decide the browser, not the game).
+    and `pocket_distillation` the one from `pocket_distillation` (all reported only: they
+    decide the browser, not the game).
     """
     saliency = saliency or {}
     beliefs = beliefs or {}
@@ -753,6 +867,13 @@ def build_outputs(
     ] or None
     if pocket_heads:
         atlas["evaluation"]["pocketClueHeads"] = pocket_heads
+    distilled = (
+        {k: v for k, v in pocket_distillation.items() if k != "head"}
+        if pocket_distillation
+        else None
+    )
+    if distilled:
+        atlas["evaluation"]["pocketDistillation"] = distilled
 
     table = markdown_table({s.name: s.report for s in systems if s.report})
     report = {
@@ -771,6 +892,7 @@ def build_outputs(
         "geocell_head": geocell,
         "pocket_retrieval": pocket_retrieval,
         "pocket_clue_heads": pocket_heads,
+        "pocket_distillation": distilled,
         "table": table,
     }
     return atlas, report, results_markdown(report, now)
@@ -972,6 +1094,52 @@ def results_markdown(report: dict, now: str) -> str:
                 for h in pheads
             ),
         ]
+    dist = report.get("pocket_distillation")
+    if dist:
+        lines += [
+            "",
+            "## Pocket Atlas: does a head taught by the game's Atlas name countries better?",
+            "",
+            f"A country head on the browser's model ({dist['model']}), trained on "
+            f"{dist['references']:,} reference photos to match the calibrated country "
+            f"probabilities of the game's Atlas ({dist['teacher']}, T = "
+            f"{dist['teacherTemperature']:g}). It is a correction added to Pocket Atlas's own "
+            f"zero-shot logits, with L2 = {dist['l2']:g} chosen by 10° geographic "
+            "cross-validation over the reference photos alone. Each catalog photo is scored by "
+            "a head that never saw a reference photo from its block, against today's Pocket "
+            f"Atlas ({dist['versus']}); it changed the top country on "
+            f"{dist['changedCountry']} of {dist['pins']} photos.",
+            "",
+            "| Country probabilities | Photos | Negative log likelihood | Right country | "
+            "In the top 5 |",
+            "| --- | ---: | ---: | ---: | ---: |",
+            f"| Pocket Atlas today (zero-shot) | {dist['n']} | {dist['baseNll']:.3f} | "
+            f"{dist['baseAccuracy']:.1%} | {dist['baseTop5Accuracy']:.1%} |",
+            f"| Distilled head (held out) | {dist['n']} | {dist['nll']:.3f} | "
+            f"{dist['accuracy']:.1%} | {dist['top5Accuracy']:.1%} |",
+            *(
+                [
+                    f"| The game's Atlas, for context | {dist['n']} | {dist['teacherNll']:.3f} | "
+                    f"{dist['teacherAccuracy']:.1%} | |"
+                ]
+                if "teacherNll" in dist
+                else []
+            ),
+            "",
+            "| Distilled minus today | Difference | 95% CI |",
+            "| --- | ---: | ---: |",
+            f"| Negative log likelihood | {dist['nllDelta']:+.3f} | "
+            f"{dist['nllCi95'][0]:+.3f} to {dist['nllCi95'][1]:+.3f} |",
+            f"| Right country | {dist['accuracyDelta']:+.1%} | "
+            f"{dist['accuracyCi95'][0]:+.1%} to {dist['accuracyCi95'][1]:+.1%} |",
+            f"| Median pin error (km) | {dist['medianKmDelta']:+,.0f} | "
+            f"{dist['kmCi95'][0]:+,.0f} to {dist['kmCi95'][1]:+,.0f} |",
+            "",
+            "It may run in the browser only if the whole likelihood interval is below zero, the "
+            "right-country rate does not drop and the pin is not clearly further away: "
+            f"**{'it does' if dist['ships'] else 'it does not'}**. The game's own Atlas is never "
+            "changed by these rows.",
+        ]
     lines += [
         "",
         "## Read these numbers carefully",
@@ -991,9 +1159,10 @@ def results_markdown(report: dict, now: str) -> str:
         "Some photos may have been seen in training, which would flatter these scores. Public "
         "benchmarks (Im2GPS3k, YFCC4k) are the next step.",
         "- **The constant baseline is optimistic.** It is fitted on these same photos.",
-        "- **Little training.** Atlas v0 is zero-shot. The clue heads and the geocell head are "
-        "small classifiers fitted on frozen embeddings of the reference photos, and each plays "
-        "only where it clearly beats what it would replace.",
+        "- **Little training.** Atlas v0 is zero-shot. The clue heads, the geocell head and "
+        "Pocket Atlas's distilled country head are small classifiers fitted on frozen "
+        "embeddings of the reference photos, and each plays only where it clearly beats what "
+        "it would replace.",
         "",
     ]
     return "\n".join(lines)
@@ -1073,6 +1242,13 @@ def main(argv: Sequence[str] | None = None) -> None:
         default=None,
         help="MODEL:PRETRAINED Pocket Atlas runs in the browser (one of --model): writes its "
         "temperature and reality-check bands to RESULTS_DIR/pocket-calibration.json",
+    )
+    ap.add_argument(
+        "--distill-budget-minutes",
+        type=float,
+        default=None,
+        help="stop embedding reference photos with the playing model (the distillation "
+        "teacher) after this long; distillation waits for a run that has them all",
     )
     args = ap.parse_args(argv)
     models = args.models or [("ViT-B-32", "laion2b_s34b_b79k")]
@@ -1233,8 +1409,15 @@ def main(argv: Sequence[str] | None = None) -> None:
                 f"{'writes the clue' if h['ships'] else 'does not ship'}"
             )
 
+    pocket: dict | None = None
+    if args.pocket_model:
+        p_encoder, p_embeddings = by_model[args.pocket_model]
+        pocket = pocket_calibration(
+            photos, p_embeddings, locators[args.pocket_model], p_encoder.name
+        )
     pocket_ret: dict | None = None
     pocket_heads: list[dict] | None = None
+    pocket_distilled: dict | None = None
     p_index: ReferenceIndex | None = None
     if args.pocket_model and index is not None and len(index):
         p_encoder, p_embeddings = by_model[args.pocket_model]
@@ -1292,6 +1475,63 @@ def main(argv: Sequence[str] | None = None) -> None:
                     f"(95% CI {h['ci95']}); "
                     f"{'runs in the browser' if h['ships'] else 'stays off'}"
                 )
+        if p_index is not None and pocket is not None:
+            try:
+                teacher_reference = (
+                    index.embeddings
+                    if encoder is r_encoder
+                    else p_index.embeddings
+                    if encoder is p_encoder
+                    else teacher_reference_embeddings(
+                        index,
+                        args.reference_images,
+                        encoder,
+                        args.embedding_cache,
+                        budget_s=(
+                            None
+                            if args.distill_budget_minutes is None
+                            else args.distill_budget_minutes * 60
+                        ),
+                    )
+                )
+                distilled = (
+                    None
+                    if teacher_reference is None
+                    else pocket_distillation(
+                        photos,
+                        p_base,
+                        p_embeddings,
+                        locators[args.pocket_model],
+                        p_index,
+                        pocket["temperature"],
+                        locator,
+                        teacher_reference,
+                        best_embeddings,
+                        calibration["temperature"] if calibration["ships"] else 1.0,
+                        model=p_encoder.name,
+                        teacher_model=best.name,
+                    )
+                )
+            except Exception as err:  # noqa: BLE001 - the browser keeps its zero-shot countries
+                distilled = None
+                print(
+                    f"pocket distillation failed, Pocket Atlas keeps its zero-shot countries: "
+                    f"{err!r}",
+                    file=sys.stderr,
+                )
+            if distilled is not None:
+                d_system, pocket_distilled = distilled
+                d_system.report = evaluate(d_system.predictions)
+                systems.append(d_system)
+                d = pocket_distilled
+                print(
+                    f"pocket distillation ({d['model']} taught by {d['teacher']}): held-out "
+                    f"NLL {d['nll']} vs {d['baseNll']} (change {d['nllDelta']}, "
+                    f"95% CI {d['nllCi95']}); "
+                    f"right country {d['accuracy']:.1%} vs {d['baseAccuracy']:.1%}; median km "
+                    f"change {d['medianKmDelta']} (95% CI {d['kmCi95']}) on {d['n']} photos; "
+                    f"{'runs in the browser' if d['ships'] else 'stays off'}"
+                )
 
     saliency: dict[str, Saliency] = {}
     if args.saliency_grid > 0:
@@ -1332,6 +1572,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         geocell=geocell,
         pocket_retrieval=pocket_ret,
         pocket_clue_heads=pocket_heads,
+        pocket_distillation=pocket_distilled,
     )
     args.atlas_out.write_text(json.dumps(atlas, indent=1, ensure_ascii=False) + "\n")
     args.results_dir.mkdir(parents=True, exist_ok=True)
@@ -1339,11 +1580,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         json.dumps(report, indent=2, ensure_ascii=False) + "\n"
     )
     (args.results_dir / "atlas-v0.md").write_text(markdown)
-    if args.pocket_model:
-        p_encoder, p_embeddings = by_model[args.pocket_model]
-        pocket = pocket_calibration(
-            photos, p_embeddings, locators[args.pocket_model], p_encoder.name
-        )
+    if pocket is not None:
         if pocket_ret is not None:
             # pocket-atlas-index reads this file: the verdict decides whether the index ships
             # the reference photos the browser's retrieval would search.
@@ -1351,6 +1588,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         if pocket_heads is not None:
             # Shipping probes carry their weights, which `pocket-atlas-index` puts in the index.
             pocket["clueHeads"] = pocket_heads
+        if pocket_distilled is not None:
+            # A shipping head carries its weights, for `pocket-atlas-index` to put in the index.
+            pocket["distillation"] = pocket_distilled
         (args.results_dir / "pocket-calibration.json").write_text(
             json.dumps(pocket, indent=2) + "\n"
         )

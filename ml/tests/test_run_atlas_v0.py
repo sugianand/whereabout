@@ -811,3 +811,97 @@ def test_a_pocket_clue_head_that_wins_carries_its_probe_for_the_browser(monkeypa
         run_atlas_v0.pocket_clue_heads(
             [photo], System("x", [], None), [np.ones(3)], None, None, None, None, model="P"
         )
+
+
+def pocket_args(refs, thumbs, retrieval="Fake-1:test"):
+    return (
+        "--model", "Fake-2:pocket",
+        "--pocket-model", "Fake-2:pocket",
+        "--references", str(refs),
+        "--reference-images", str(thumbs),
+        "--retrieval-model", retrieval,
+    )  # fmt: skip
+
+
+def test_main_scores_a_head_for_pocket_atlas_taught_by_the_game_atlas(
+    tmp_path, monkeypatch, capsys
+):
+    fake_phash(monkeypatch)
+    monkeypatch.setattr("whereabout_ml.distill.MIN_REFERENCES", 2)
+    refs, thumbs = write_references(tmp_path)
+    FakeClip.images_encoded = 0
+    atlas_out, results = run_main(tmp_path, monkeypatch, *pocket_args(refs, thumbs))
+    # The teacher (the playing Fake-1) already embedded the references for retrieval: nothing
+    # is encoded twice.
+    assert FakeClip.images_encoded == 2 * 2 + 6 * 2
+    pocket = json.loads((results / "pocket-calibration.json").read_text())
+    record = pocket["distillation"]
+    assert record["model"] == "Fake-2/pocket"
+    assert record["teacher"] == "Fake-1/test, country then city"
+    assert record["versus"] == "Fake-2/pocket, country then city"
+    assert record["references"] == 6 and record["n"] == record["pins"] == 2
+    # The fake's zero-shot guesses are already right, so there is nothing clear to gain.
+    assert record["ships"] is False and "head" not in record
+    atlas = json.loads(atlas_out.read_text())
+    assert atlas["evaluation"]["pocketDistillation"] == record
+    plays = {s["name"]: s["playsInGame"] for s in atlas["evaluation"]["systems"]}
+    assert plays["Fake-2/pocket, country then city, distilled country head (Pocket Atlas)"] is False
+    assert atlas["model"] == "Fake-1/test, country then city"
+    md = (results / "atlas-v0.md").read_text()
+    assert "## Pocket Atlas: does a head taught by the game's Atlas name countries better?" in md
+    out = capsys.readouterr().out
+    assert "pocket distillation (Fake-2/pocket taught by Fake-1/test, country then city)" in out
+
+
+def test_distillation_waits_until_the_teacher_has_embedded_every_reference(
+    tmp_path, monkeypatch, capsys
+):
+    fake_phash(monkeypatch)
+    monkeypatch.setattr("whereabout_ml.distill.MIN_REFERENCES", 2)
+    refs, thumbs = write_references(tmp_path)
+    # Retrieval searches Fake-3's embeddings, so the playing Fake-1 must embed the references
+    # itself; a spent budget leaves distillation for a later run.
+    atlas_out, results = run_main(
+        tmp_path,
+        monkeypatch,
+        *pocket_args(refs, thumbs, retrieval="Fake-3:search"),
+        "--model", "Fake-3:search",
+        "--distill-budget-minutes", "0",
+    )  # fmt: skip
+    pocket = json.loads((results / "pocket-calibration.json").read_text())
+    assert "distillation" not in pocket and "retrieval" in pocket
+    assert "pocketDistillation" not in json.loads(atlas_out.read_text())["evaluation"]
+    out = capsys.readouterr().out
+    assert "distillation: 0 of 6 reference photos embedded by Fake-1/test" in out
+
+
+def test_teacher_embeddings_come_a_chunk_at_a_time_in_reference_order(tmp_path):
+    from whereabout_ml.retrieval import Reference, ReferenceIndex
+
+    thumbs = tmp_path / "thumbs"
+    thumbs.mkdir()
+    words = ["Japan", "Peru", "Kyoto", "Lima", "Osaka"]
+    refs = []
+    for i, w in enumerate(words):
+        (thumbs / f"r{i}.jpg").write_text(w)
+        refs.append(Reference(f"r{i}", 0.0, 0.0, "JP", w, "", ""))
+    index = ReferenceIndex(refs, np.eye(5))
+    clip = FakeClip("Teacher", "t")
+    got = run_atlas_v0.teacher_reference_embeddings(
+        index, thumbs, clip, tmp_path / "cache", chunk=2
+    )
+    assert np.allclose(got, np.stack([clip._embed(w) for w in words]))
+
+
+def test_a_failing_distillation_keeps_pocket_atlas_as_it_is(tmp_path, monkeypatch, capsys):
+    fake_phash(monkeypatch)
+    refs, thumbs = write_references(tmp_path)
+
+    def broken(*args, **kwargs):
+        raise FloatingPointError("diverged")
+
+    monkeypatch.setattr(run_atlas_v0, "pocket_distillation", broken)
+    atlas_out, results = run_main(tmp_path, monkeypatch, *pocket_args(refs, thumbs))
+    pocket = json.loads((results / "pocket-calibration.json").read_text())
+    assert "distillation" not in pocket and pocket["model"] == "Fake-2/pocket"
+    assert "pocket distillation failed" in capsys.readouterr().err

@@ -101,9 +101,12 @@ class Probe:
     bias: np.ndarray  # (classes,)
     l2: float
 
-    def log_probabilities(self, x: np.ndarray) -> np.ndarray:
+    def logits(self, x: np.ndarray) -> np.ndarray:
         z = ((np.asarray(x, dtype=np.float64) - self.mean) / self.scale) @ self.weights
-        return log_softmax(z + self.bias)
+        return z + self.bias
+
+    def log_probabilities(self, x: np.ndarray) -> np.ndarray:
+        return log_softmax(self.logits(x))
 
     def probabilities(self, x: np.ndarray) -> np.ndarray:
         return np.exp(self.log_probabilities(x))
@@ -134,6 +137,7 @@ def fit_soft_probe(
     l2: float,
     *,
     iterations: int = FIT_ITERATIONS,
+    offset: np.ndarray | None = None,
 ) -> Probe:
     """Fit by Nesterov-accelerated gradient descent on mean cross-entropy against `targets`
     (one probability row per embedding) + l2/2·|W|².
@@ -142,6 +146,11 @@ def fit_soft_probe(
     bound on its curvature: the softmax Hessian is at most 1/2 times the feature covariance
     whatever the targets, so L = λmax(X̃ᵀX̃/n)/2 + l2, X̃ the standardised features plus a
     constant column for the bias.
+
+    With `offset` (one logit row per embedding), the probe is fitted as a correction to those
+    logits: the model is softmax(offset + probe logits). The penalty then pulls towards the
+    offset's own predictions rather than towards uniform. The curvature bound is unchanged,
+    since the softmax Hessian does not depend on where the logits start.
     """
     x = np.asarray(x, dtype=np.float64)
     targets = np.asarray(targets, dtype=np.float64)
@@ -152,6 +161,10 @@ def fit_soft_probe(
     k = len(classes)
     if targets.shape[1] != k:
         raise ValueError("one target column per class")
+    if offset is not None:
+        offset = np.asarray(offset, dtype=np.float64)
+        if offset.shape != targets.shape:
+            raise ValueError("offset needs one logit row per embedding, one column per class")
     mean = x.mean(axis=0)
     scale = x.std(axis=0)
     scale[scale < 1e-12] = 1.0
@@ -167,6 +180,8 @@ def fit_soft_probe(
     for _ in range(iterations):
         look = theta + momentum * (theta - previous)
         z = xb @ look
+        if offset is not None:
+            z = z + offset
         p = np.exp(log_softmax(z))
         grad = xb.T @ (p - targets) / n
         grad[:d] += l2 * look[:d]
@@ -216,8 +231,21 @@ def paired_accuracy_ci(
     seed: int = 0,
 ) -> tuple[float, float, float]:
     """Accuracy of a minus accuracy of b on the same photos, with a paired-bootstrap 95% CI."""
-    a = np.asarray(a_correct, dtype=np.float64)
-    b = np.asarray(b_correct, dtype=np.float64)
+    return paired_mean_ci(a_correct, b_correct, samples=samples, seed=seed)
+
+
+def paired_mean_ci(
+    a: Sequence[float],
+    b: Sequence[float],
+    *,
+    samples: int = BOOTSTRAP_SAMPLES,
+    seed: int = 0,
+) -> tuple[float, float, float]:
+    """Mean of a minus mean of b over the same photos (a per-photo score or loss each), with a
+    paired-bootstrap 95% CI: photos are resampled jointly, so the interval reflects how much
+    the difference depends on which photos happened to be in the set."""
+    a = np.asarray(a, dtype=np.float64)
+    b = np.asarray(b, dtype=np.float64)
     if len(a) != len(b) or len(a) == 0:
         raise ValueError("need the same, non-zero number of photos for both")
     diff = a - b

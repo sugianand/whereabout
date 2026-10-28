@@ -132,7 +132,10 @@ jobs:
             # Image similarity from the cheapest model: reference thumbnails are encoded once.
             retrieval=(--references data/reference/references.csv
                        --reference-images .cache/references
-                       --retrieval-model ViT-B-32:laion2b_s34b_b79k)
+                       --retrieval-model ViT-B-32:laion2b_s34b_b79k
+                       # Distillation's teacher (the playing ViT-L/14) embeds the reference
+                       # photos too; a budget spreads the first ~4,000 encodes over runs.
+                       --distill-budget-minutes 60)
             if [ -f data/reference/concept_labels.csv ]; then
               retrieval+=(--labels data/labels/concept_labels.csv
                           --reference-labels data/reference/concept_labels.csv)
@@ -170,6 +173,10 @@ jobs:
           grep "^pocket clue head " atlas-stdout.log | sed 's/^/::notice title=Pocket Atlas clue heads::/' || true
           if grep -q "^pocket clue heads failed" atlas-stderr.log; then
             echo "::warning title=Pocket Atlas clue heads failed::$(grep -A3 '^pocket clue heads failed' atlas-stderr.log | annotate)"
+          fi
+          grep -E "^(pocket distillation \(|distillation: )" atlas-stdout.log | sed 's/^/::notice title=Pocket Atlas distillation::/' || true
+          if grep -q "^pocket distillation failed" atlas-stderr.log; then
+            echo "::warning title=Pocket Atlas distillation failed::$(grep -A3 '^pocket distillation failed' atlas-stderr.log | annotate)"
           fi
           grep "^saliency:" atlas-stdout.log | sed 's/^/::notice title=Saliency::/' || true
           grep "photos in .* from the embedding cache" atlas-stdout.log \

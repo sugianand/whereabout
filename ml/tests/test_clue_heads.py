@@ -205,3 +205,27 @@ def test_an_exported_probe_is_the_same_probe_as_one_affine_map():
     assert w.shape == (3, 32) and b.shape == (3,)
     assert np.abs(log_softmax(x @ w.T + b) - probe.log_probabilities(x)).max() < 1e-4
     assert ((x @ w.T + b).argmax(axis=1) == probe.probabilities(x).argmax(axis=1)).all()
+
+
+def test_paired_mean_ci_brackets_a_constant_difference_of_any_scores():
+    a = np.linspace(1.0, 3.0, 50)
+    delta, lo, hi = ch.paired_mean_ci(a - 0.5, a)
+    # Paired: every photo differs by exactly -0.5, so the interval is that point.
+    assert delta == pytest.approx(-0.5) and lo == pytest.approx(-0.5) and hi == pytest.approx(-0.5)
+    with pytest.raises(ValueError):
+        ch.paired_mean_ci([], [])
+
+
+def test_soft_probe_with_an_offset_learns_only_what_the_offset_misses():
+    rng = np.random.default_rng(3)
+    classes = ("a", "b", "c")
+    x = rng.normal(size=(400, 6))
+    offset = rng.normal(size=(400, 3))
+    # Targets the offset already explains: the best correction is (nearly) nothing.
+    probe = ch.fit_soft_probe(
+        x, np.exp(log_softmax(offset)), classes, 1e-3, iterations=2000, offset=offset
+    )
+    assert np.abs(probe.weights).max() < 1e-2
+    assert np.abs(probe.bias - probe.bias.mean()).max() < 1e-2
+    with pytest.raises(ValueError, match="offset"):
+        ch.fit_soft_probe(x, np.exp(log_softmax(offset)), classes, 1e-3, offset=offset[:, :2])
