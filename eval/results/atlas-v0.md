@@ -1,6 +1,6 @@
 # Atlas v0 results
 
-Generated 2026-10-27T21:32:33+00:00 by `.github/workflows/atlas.yml` on 388 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
+Generated 2026-10-28T14:32:37+00:00 by `.github/workflows/atlas.yml` on 388 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
 
 **Playing in the game:** ViT-L-14/openai, country then city (lowest median error).
 
@@ -127,4 +127,4 @@ The same probes, fitted on 4,306 reference photos embedded by the browser's mode
 - **Small test set.** 388 photos, so intervals are wide.
 - **Possible leakage.** The photos come from Wikimedia Commons, and CLIP models were pre-trained on large web scrapes that probably include Commons images or captions. Some photos may have been seen in training, which would flatter these scores. Public benchmarks (Im2GPS3k, YFCC4k) are the next step.
 - **The constant baseline is optimistic.** It is fitted on these same photos.
-- **Little training.** Atlas v0 is zero-shot. The clue heads and the geocell head are small classifiers fitted on frozen embeddings of the reference photos, and each plays only where it clearly beats what it would replace.
+- **Little training.** Atlas v0 is zero-shot. The clue heads, the geocell head and Pocket Atlas's distilled country head are small classifiers fitted on frozen embeddings of the reference photos, and each plays only where it clearly beats what it would replace.
