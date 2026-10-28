@@ -3,6 +3,8 @@ import { resolve } from "node:path";
 
 import { expect, test, type Page } from "@playwright/test";
 
+import { continentOf } from "../src/lib/continents";
+
 // The real photos are hot-linked from Wikimedia. Serve a local stand-in instead, so the test
 // doesn't depend on the network and never hammers Wikimedia from CI.
 const PHOTO = readFileSync(resolve(process.cwd(), "e2e/fixtures/photo.png"));
@@ -198,7 +200,9 @@ test("a Hard game deals only photos Atlas missed by most, chosen next to the Dai
 
   await page.goto("./");
   await expect(page.getByText("Fresh game", { exact: true })).toBeVisible();
-  const picker = page.getByRole("combobox", { name: "Difficulty: how hard it was for Atlas" });
+  const picker = page.getByRole("combobox", {
+    name: "Which photos: how hard they were for Atlas, or where they were taken",
+  });
   await expect(picker).toBeVisible();
   await expect(page.getByRole("button", { name: "Play the Daily Five" })).toBeVisible();
   // Let the opening fresh game finish fetching its five before counting the Hard game's.
@@ -218,6 +222,40 @@ test("a Hard game deals only photos Atlas missed by most, chosen next to the Dai
   await page.reload();
   await expect(page.getByText("Hard game", { exact: true })).toBeVisible();
   await expect(picker).toHaveValue("hard");
+});
+
+test("a continent game deals only photos taken on that continent, picked from the same menu", async ({
+  page,
+}) => {
+  const photos = JSON.parse(
+    readFileSync(resolve(process.cwd(), "src/data/photos.json"), "utf8"),
+  ) as { id: string; country: string }[];
+  const countryOf = new Map(photos.map((p) => [p.id, p.country]));
+  const dealt: string[] = [];
+  page.on("request", (r) => {
+    const m = r.url().match(/\/game-data\/[0-9a-f]{8}\/([\w-]+)\.json$/);
+    if (m) dealt.push(m[1]);
+  });
+
+  await page.goto("./");
+  await expect(page.getByText("Fresh game", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
+  const picker = page.getByRole("combobox", { name: /^Which photos/ });
+
+  dealt.length = 0;
+  await picker.selectOption("europe");
+  await expect(page.getByText("Europe game", { exact: true })).toBeVisible();
+  await expect(page.getByText(/^All taken in Europe: [\d,]+ photos$/)).toBeVisible();
+  await expect(page).toHaveURL(/\?region=europe$/);
+  await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
+  expect(dealt).toHaveLength(5);
+  for (const id of dealt) expect(continentOf(countryOf.get(id))).toBe("Europe");
+
+  // The round plays as usual, and a reload keeps the continent.
+  await playRoundWithKeyboard(page);
+  await page.reload();
+  await expect(page.getByText("Europe game", { exact: true })).toBeVisible();
+  await expect(picker).toHaveValue("europe");
 });
 
 // The frame mirrors the camera only when a move ends, and an ease ends on the first frame drawn

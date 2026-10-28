@@ -14,6 +14,7 @@ import { tappableCountries } from "@/lib/countryHit";
 
 import { hashSeed } from "./daily";
 import { playablePhotos } from "./playable";
+import { buildRegions, type Regions } from "./regions";
 import { surenessBands, type SurenessBand } from "./sureness";
 import { buildTiers, type Tiers } from "./tiers";
 import type { AtlasData, AtlasGuess, CatalogPhoto } from "./types";
@@ -32,6 +33,8 @@ export interface Deck {
   ids: string[];
   /** Easy, Medium and Hard thirds by Atlas's real error, or null with too few guesses. */
   tiers: Tiers | null;
+  /** Photo ids by continent, for continent games; only continents that can fill a game. */
+  regions: Regions;
   /**
    * The photos Country Streak can deal: those taken in a country the globe draws, so the answer
    * is always something the player can tap (microstates and small islands are left out).
@@ -59,6 +62,7 @@ export function buildDeck(records: readonly GameRecord[]): Deck {
     version: deckVersion(records),
     ids: records.map((r) => r.photo.id),
     tiers: buildTiers(records),
+    regions: buildRegions(records),
     streakIds: streakIds(records),
     sureness: surenessBands(records),
   };
@@ -91,7 +95,8 @@ function isRecord(value: unknown, id: string): value is GameRecord {
   );
 }
 
-export const LOAD_ERROR = "Couldn't load this game's photos. Check your connection and reload the page.";
+export const LOAD_ERROR =
+  "Couldn't load this game's photos. Check your connection and reload the page.";
 
 /** Fetch the records for `ids`, in that order. Rejects with a player-facing message. */
 export async function fetchRecords(

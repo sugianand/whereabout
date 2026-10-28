@@ -14,6 +14,8 @@ import { playablePhotos } from "@/lib/game/playable";
 import { RECORD_KEY } from "@/lib/playerRecord";
 import { ROUNDS_PER_GAME } from "@/lib/game/state";
 import { tierBlurb } from "@/lib/game/tiers";
+import { offeredRegions, regionBlurb, regionSlug } from "@/lib/game/regions";
+import { continentOf } from "@/lib/continents";
 import type { AtlasData, CatalogPhoto, GameBackend } from "@/lib/game/types";
 import { bundledGame } from "@/test/deck";
 import { FakeMap, resetFakes } from "@/test/maplibre-mock";
@@ -358,7 +360,7 @@ describe("Game", { timeout: 20000 }, () => {
     }
   });
 
-  describe("difficulty tiers", () => {
+  describe("picking which photos: difficulty tiers and continents", () => {
     const tiers = bundledGame.deck.tiers!;
     const srcToId = new Map((catalog as CatalogPhoto[]).map((p) => [p.imageUrl, p.id]));
     const shownId = async () =>
@@ -369,7 +371,7 @@ describe("Game", { timeout: 20000 }, () => {
       const map = await mapReady();
       await screen.findByText("Fresh game", {}, WAIT);
       const picker = screen.getByRole("combobox", {
-        name: "Difficulty: how hard it was for Atlas",
+        name: "Which photos: how hard they were for Atlas, or where they were taken",
       });
       expect(picker).toHaveValue("any");
 
@@ -394,14 +396,14 @@ describe("Game", { timeout: 20000 }, () => {
       expect(screen.getByText("Round 1 of 5")).toBeInTheDocument();
     });
 
-    it("opens a tier from ?tier=, and Any level goes back to the whole catalog", async () => {
+    it("opens a tier from ?tier=, and Any photos goes back to the whole catalog", async () => {
       window.history.replaceState(null, "", "/?tier=easy");
       render(<Game {...bundledGame} today={TODAY} />);
       await mapReady();
       expect(await screen.findByText("Easy game", {}, WAIT)).toBeInTheDocument();
       expect(tiers.easy.ids).toContain(await shownId());
 
-      fireEvent.change(screen.getByRole("combobox", { name: /Difficulty/ }), {
+      fireEvent.change(screen.getByRole("combobox", { name: /Which photos/ }), {
         target: { value: "any" },
       });
       expect(await screen.findByText("Fresh game", {}, WAIT)).toBeInTheDocument();
@@ -420,6 +422,54 @@ describe("Game", { timeout: 20000 }, () => {
       await waitFor(() => expect(window.location.search).toBe(""));
     });
 
+    it("picking a continent deals a game of photos all taken there, and keeps it in the URL", async () => {
+      const regions = bundledGame.deck.regions;
+      const region = offeredRegions(regions)[0];
+      const byId = new Map((catalog as CatalogPhoto[]).map((p) => [p.id, p]));
+      render(<Game {...bundledGame} today={TODAY} />);
+      const map = await mapReady();
+      await screen.findByText("Fresh game", {}, WAIT);
+      const picker = screen.getByRole("combobox", { name: /Which photos/ });
+      expect(within(picker).getByRole("group", { name: "Where" })).toHaveTextContent(region);
+
+      fireEvent.change(picker, { target: { value: regionSlug(region) } });
+      expect(await screen.findByText(`${region} game`, {}, WAIT)).toBeInTheDocument();
+      expect(screen.getByText(regionBlurb(region, regions))).toBeInTheDocument();
+      await waitFor(() => expect(window.location.search).toBe(`?region=${regionSlug(region)}`));
+
+      for (let i = 0; i < ROUNDS_PER_GAME; i++) {
+        const id = await shownId();
+        expect(continentOf(byId.get(id!)!.country)).toBe(region);
+        const card = await playRound(map, { lng: 0, lat: 0 });
+        fireEvent.click(
+          within(card).getByRole("button", { name: /^(Next photo|See your results)$/ }),
+        );
+      }
+      fireEvent.click(
+        await screen.findByRole("button", { name: `Play another ${region} game` }, WAIT),
+      );
+      expect(await screen.findByText(`${region} game`, {}, WAIT)).toBeInTheDocument();
+      expect(screen.getByText("Round 1 of 5")).toBeInTheDocument();
+    });
+
+    it("opens a continent from ?region=, and ignores one it can't fill", async () => {
+      const region = offeredRegions(bundledGame.deck.regions).at(-1)!;
+      window.history.replaceState(null, "", `/?region=${regionSlug(region)}`);
+      const first = render(<Game {...bundledGame} today={TODAY} />);
+      await mapReady();
+      expect(await screen.findByText(`${region} game`, {}, WAIT)).toBeInTheDocument();
+      expect(screen.getByRole("combobox", { name: /Which photos/ })).toHaveValue(
+        regionSlug(region),
+      );
+      first.unmount();
+
+      window.history.replaceState(null, "", "/?region=atlantis");
+      render(<Game {...bundledGame} today={TODAY} />);
+      await mapReady();
+      expect(await screen.findAllByText("Fresh game", {}, WAIT)).not.toHaveLength(0);
+      await waitFor(() => expect(window.location.search).toBe(""));
+    });
+
     it("has no picker when the API server deals the photos", async () => {
       const api = new LocalBackend(daily);
       render(
@@ -427,7 +477,7 @@ describe("Game", { timeout: 20000 }, () => {
       );
       await mapReady();
       await screen.findByText("Fresh game", {}, WAIT);
-      expect(screen.queryByRole("combobox", { name: /Difficulty/ })).toBeNull();
+      expect(screen.queryByRole("combobox", { name: /Which photos/ })).toBeNull();
     });
   });
 });

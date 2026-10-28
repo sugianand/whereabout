@@ -8,7 +8,15 @@ import { dayKey, pickDaily } from "@/lib/game/daily";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import { loadRecent, pickFresh, rememberPlayed, saveRecent } from "@/lib/game/fresh";
 import { ROUNDS_PER_GAME, gameReducer, initialState, totals } from "@/lib/game/state";
+import {
+  offeredRegions,
+  regionBlurb,
+  regionFromSlug,
+  regionSlug,
+  type Regions,
+} from "@/lib/game/regions";
 import { TIERS, TIER_NAMES, isTier, tierBlurb, type Tier, type Tiers } from "@/lib/game/tiers";
+import type { Continent } from "@/lib/continents";
 import type { CatalogPhoto, GameBackend } from "@/lib/game/types";
 import { formatPoints, maxPoints, type LngLat } from "@/lib/geo";
 import { hasSeenIntro, INTRO_TEXT, markIntroSeen } from "@/lib/intro";
@@ -22,16 +30,19 @@ import Summary from "./Summary";
 
 /**
  * A fresh game is five photos the player hasn't seen lately; the Daily Five is shared by all; a
- * tier game is a fresh game drawn from one difficulty third (src/lib/game/tiers.ts).
+ * tier game is a fresh game drawn from one difficulty third (src/lib/game/tiers.ts), and a
+ * continent game one drawn from the photos taken on one continent (src/lib/game/regions.ts).
  */
 export type GameMode =
   | { kind: "daily"; day: string }
   | { kind: "fresh"; game: number }
-  | { kind: "tier"; tier: Tier; game: number };
+  | { kind: "tier"; tier: Tier; game: number }
+  | { kind: "region"; region: Continent; game: number };
 
 export function modeTitle(mode: GameMode): string {
   if (mode.kind === "fresh") return "Fresh game";
   if (mode.kind === "tier") return `${TIER_NAMES[mode.tier]} game`;
+  if (mode.kind === "region") return `${mode.region} game`;
   const label = new Date(`${mode.day}T12:00:00Z`).toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
@@ -69,6 +80,11 @@ function urlTier(): Tier | null {
   return isTier(tier) ? tier : null;
 }
 
+/** The continent the page URL asks for (`?region=europe`), if it names one. */
+function urlRegion(): Continent | null {
+  return regionFromSlug(new URLSearchParams(window.location.search).get("region"));
+}
+
 /** Keep the address bar in step with the mode, so a shared link opens the same kind of game. */
 function syncUrl(mode: GameMode) {
   const url = new URL(window.location.href);
@@ -76,43 +92,74 @@ function syncUrl(mode: GameMode) {
   else url.searchParams.delete("daily");
   if (mode.kind === "tier") url.searchParams.set("tier", mode.tier);
   else url.searchParams.delete("tier");
+  if (mode.kind === "region") url.searchParams.set("region", regionSlug(mode.region));
+  else url.searchParams.delete("region");
   const next = `${url.pathname}${url.search.replace(/daily=(?=&|$)/, "daily")}${url.hash}`;
   if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
     window.history.replaceState(window.history.state, "", next);
   }
 }
 
-/** "Any level" or one tier; picking one deals a new game from it. */
-function TierPicker({
+/** What the picker can deal from: a difficulty third, a continent, or the whole catalog. */
+export type PhotoChoice = { tier: Tier } | { region: Continent } | null;
+
+/**
+ * "Any photos", one difficulty tier or one continent; picking one deals a new game from it. One
+ * control for both, so the header stays one row on a phone and the photo stays the hero.
+ */
+function PhotoPicker({
   tiers,
+  regions,
   value,
   onPick,
 }: {
-  tiers: Tiers;
-  value: Tier | null;
-  onPick: (tier: Tier | null) => void;
+  tiers: Tiers | null;
+  regions: Continent[];
+  /** The select's value: "any", a tier ("hard") or a continent's slug ("south-america"). */
+  value: string;
+  onPick: (choice: PhotoChoice) => void;
 }) {
   return (
     <select
-      aria-label="Difficulty: how hard it was for Atlas"
-      title="Difficulty: how hard each photo was for Atlas"
-      value={value ?? "any"}
-      onChange={(e) => onPick(isTier(e.target.value) ? e.target.value : null)}
-      className="pointer-events-auto rounded-full border border-chalk/30 bg-ocean-deep/60 py-1 pl-3 pr-1 text-xs font-semibold text-chalk backdrop-blur transition hover:border-chalk"
+      aria-label="Which photos: how hard they were for Atlas, or where they were taken"
+      title="Which photos: how hard each was for Atlas, or one continent"
+      value={value}
+      onChange={(e) => {
+        const v = e.target.value;
+        const region = regionFromSlug(v);
+        onPick(isTier(v) ? { tier: v } : region ? { region } : null);
+      }}
+      className="pointer-events-auto max-w-32 rounded-full border border-chalk/30 bg-ocean-deep/60 py-1 pl-3 pr-1 text-xs font-semibold text-chalk backdrop-blur transition hover:border-chalk"
     >
-      <option value="any">Any level</option>
-      {TIERS.map((tier) => (
-        <option key={tier} value={tier} title={tierBlurb(tier, tiers)}>
-          {TIER_NAMES[tier]}
-        </option>
-      ))}
+      <option value="any">Any photos</option>
+      {tiers && (
+        <optgroup label="How hard for Atlas">
+          {TIERS.map((tier) => (
+            <option key={tier} value={tier} title={tierBlurb(tier, tiers)}>
+              {TIER_NAMES[tier]}
+            </option>
+          ))}
+        </optgroup>
+      )}
+      {regions.length > 0 && (
+        <optgroup label="Where">
+          {regions.map((region) => (
+            <option key={region} value={regionSlug(region)}>
+              {region}
+            </option>
+          ))}
+        </optgroup>
+      )}
     </select>
   );
 }
 
 export default function Game({ apiUrl, deck, start, today, backendFor, loadRecords }: GameProps) {
-  // Tiers choose which photos a game deals, so they only exist when the browser deals them.
+  // Tiers and continents choose which photos a game deals, so they only exist when the browser
+  // deals them.
   const tiers = apiUrl ? null : deck.tiers;
+  const regions: Regions = useMemo(() => (apiUrl ? {} : (deck.regions ?? {})), [apiUrl, deck]);
+  const regionList = useMemo(() => offeredRegions(regions), [regions]);
   // The mode is decided in the browser after hydration: the URL, today's date and the photos
   // this browser played recently are all unknown when the static page is built.
   const [mode, setMode] = useState<GameMode | null>(null);
@@ -127,36 +174,44 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
     const id = requestAnimationFrame(() => {
       const kind = start ?? (urlWantsDaily() ? "daily" : "fresh");
       const tier = kind === "fresh" && tiers ? urlTier() : null;
+      const wanted = kind === "fresh" && !tier ? urlRegion() : null;
+      const region = wanted && regions[wanted] ? wanted : null;
       setIntroOpen(!hasSeenIntro());
       setMode(
         kind === "daily"
           ? { kind: "daily", day: dayKey(today ?? new Date()) }
           : tier
             ? { kind: "tier", tier, game: 1 }
-            : { kind: "fresh", game: 1 },
+            : region
+              ? { kind: "region", region, game: 1 }
+              : { kind: "fresh", game: 1 },
       );
     });
     return () => cancelAnimationFrame(id);
-  }, [mode, start, today, tiers]);
+  }, [mode, start, today, tiers, regions]);
 
   const pool = useMemo(() => deck.ids.map((id) => ({ id })), [deck.ids]);
 
   // Each fresh game is drawn once per mode change and avoids the photos played lately; a tier
-  // game does the same within its third of the catalog.
+  // or continent game does the same within its part of the catalog.
   const dealt = useMemo(() => {
     if (!mode) return [];
+    const within = (ids: readonly string[]) =>
+      pickFresh(
+        ids.map((id) => ({ id })),
+        loadRecent(),
+        ROUNDS_PER_GAME,
+      );
     const picked =
       mode.kind === "daily"
         ? pickDaily(pool, mode.day, ROUNDS_PER_GAME)
         : mode.kind === "tier" && tiers
-          ? pickFresh(
-              tiers[mode.tier].ids.map((id) => ({ id })),
-              loadRecent(),
-              ROUNDS_PER_GAME,
-            )
-          : pickFresh(pool, loadRecent(), ROUNDS_PER_GAME);
+          ? within(tiers[mode.tier].ids)
+          : mode.kind === "region" && regions[mode.region]
+            ? within(regions[mode.region]!)
+            : pickFresh(pool, loadRecent(), ROUNDS_PER_GAME);
     return picked.map((p) => p.id);
-  }, [mode, pool, tiers]);
+  }, [mode, pool, tiers, regions]);
 
   // Remember what was dealt, so the next visit or fresh game opens on other photos.
   useEffect(() => {
@@ -290,21 +345,26 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
     dispatch({ type: "next" });
   }
 
-  /** Another game of the same kind: a tier game stays in its tier, the Daily Five goes fresh. */
+  /**
+   * Another game of the same kind: a tier or continent game stays where it was, the Daily Five
+   * goes fresh.
+   */
   function playFresh() {
     setMode((m) =>
-      m?.kind === "tier"
+      m?.kind === "tier" || m?.kind === "region"
         ? { ...m, game: m.game + 1 }
         : { kind: "fresh", game: m?.kind === "fresh" ? m.game + 1 : 1 },
     );
     dispatch({ type: "restart" });
   }
 
-  /** A new game from one tier, or from the whole catalog for "Any level". */
-  function playTier(tier: Tier | null) {
+  /** A new game from one tier or continent, or from the whole catalog for "Any photos". */
+  function playFrom(choice: PhotoChoice) {
     setMode((m) => {
       const game = m && m.kind !== "daily" ? m.game + 1 : 1;
-      return tier ? { kind: "tier", tier, game } : { kind: "fresh", game };
+      if (choice && "tier" in choice) return { kind: "tier", tier: choice.tier, game };
+      if (choice) return { kind: "region", region: choice.region, game };
+      return { kind: "fresh", game };
     });
     dispatch({ type: "restart" });
   }
@@ -335,7 +395,11 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
         title={title}
         onPlayAgain={playFresh}
         playAgainLabel={
-          mode?.kind === "tier" ? `Play another ${TIER_NAMES[mode.tier]} game` : undefined
+          mode?.kind === "tier"
+            ? `Play another ${TIER_NAMES[mode.tier]} game`
+            : mode?.kind === "region"
+              ? `Play another ${mode.region} game`
+              : undefined
         }
         onPlayDaily={mode?.kind === "daily" ? undefined : playDaily}
         record={record}
@@ -408,6 +472,11 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
               {tierBlurb(mode.tier, tiers)}
             </p>
           )}
+          {mode?.kind === "region" && (
+            <p className="mt-1 inline-block rounded-full bg-ocean-deep/60 px-2 py-0.5 text-[11px] text-chalk-dim backdrop-blur">
+              {regionBlurb(mode.region, regions)}
+            </p>
+          )}
           {mode && (
             <div className="mt-2 flex items-center gap-1.5">
               <button
@@ -417,11 +486,18 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
               >
                 {mode.kind === "daily" ? "New random game" : "Play the Daily Five"}
               </button>
-              {tiers && (
-                <TierPicker
+              {(tiers || regionList.length > 0) && (
+                <PhotoPicker
                   tiers={tiers}
-                  value={mode.kind === "tier" ? mode.tier : null}
-                  onPick={playTier}
+                  regions={regionList}
+                  value={
+                    mode.kind === "tier"
+                      ? mode.tier
+                      : mode.kind === "region"
+                        ? regionSlug(mode.region)
+                        : "any"
+                  }
+                  onPick={playFrom}
                 />
               )}
               {!apiUrl && deck.streakIds.length > 0 && (
