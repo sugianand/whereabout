@@ -189,6 +189,15 @@ jobs:
           # Maps the budget left for later: another run picks them up once this one has pushed.
           left=$(sed -n 's/^saliency: .*; \([0-9]*\) left for a later run$/\1/p' atlas-stdout.log)
           echo "saliency_left=${left:-0}" >> "$GITHUB_ENV"
+          # Distillation's teacher embeds the reference photos a budget at a time too; its
+          # verdict waits for a run that has them all, so queue one while any are left.
+          done_total=$(sed -n 's/^distillation: \([0-9]*\) of \([0-9]*\) reference photos embedded by .*the rest wait for a later run$/\1 \2/p' atlas-stdout.log)
+          if [ -n "$done_total" ]; then
+            read -r done total <<< "$done_total"
+            echo "distill_left=$((total - done))" >> "$GITHUB_ENV"
+          else
+            echo "distill_left=0" >> "$GITHUB_ENV"
+          fi
 
       - name: Save saliency maps
         if: always()
@@ -316,14 +325,16 @@ jobs:
 
       # Pushes made with GITHUB_TOKEN don't trigger other workflows, so redeploy explicitly, and
       # queue another Atlas run while the saliency budget left photos without a map, or the
-      # reference budget left thumbnails to fetch (each run does a budget's worth, so this ends
-      # once every photo has a map and every reference a thumbnail).
+      # reference budget left thumbnails to fetch, or distillation's teacher left reference photos
+      # to embed (each run does a budget's worth, so this ends once every photo has a map, every
+      # reference a thumbnail and every reference a teacher embedding).
       - name: Redeploy the site
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh workflow run pages.yml --ref main
-          if [ "${saliency_left:-0}" -gt 0 ] || [ "${references_left:-0}" -gt 0 ]; then
-            echo "::notice title=Another run::${saliency_left:-0} photos still need a map, ${references_left:-0} reference thumbnails still to fetch; queued another Atlas run"
+          if [ "${saliency_left:-0}" -gt 0 ] || [ "${references_left:-0}" -gt 0 ] \
+             || [ "${distill_left:-0}" -gt 0 ]; then
+            echo "::notice title=Another run::${saliency_left:-0} photos still need a map, ${references_left:-0} reference thumbnails still to fetch, ${distill_left:-0} reference photos still to embed for distillation; queued another Atlas run"
             gh workflow run atlas.yml --ref main
           fi
