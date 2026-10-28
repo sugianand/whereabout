@@ -15,6 +15,15 @@ vi.mock("maplibre-gl", async () => (await import("@/test/maplibre-mock")).maplib
 const index = decodeIndex(fixture.meta as PocketMeta, Int8Array.from(fixture.vectors.flat()));
 // Fixture case 0 is a "Peru, Cusco" image: the toy index guesses Cusco.
 const CUSCO = fixture.cases[0];
+// Zero-shot Pocket Atlas's bands for the toy (CALIBRATION in ml/tests/test_pocket_index.py),
+// before the distilled head replaced them with its own.
+const CALIBRATION_SURENESS = [
+  { lo: 0.0, hi: 0.2, n: 0, right: 0 },
+  { lo: 0.2, hi: 0.4, n: 0, right: 0 },
+  { lo: 0.4, hi: 0.6, n: 12, right: 5 },
+  { lo: 0.6, hi: 0.8, n: 14, right: 9 },
+  { lo: 0.8, hi: 1.0, n: 30, right: 27 },
+];
 // Photos the toy privacy gate declines: people in Kyoto, a room in Osaka, both in Lima.
 const gated = (reasons: string) => fixture.cases.find((c) => c.gate.reasons.join("+") === reasons)!;
 
@@ -142,9 +151,15 @@ describe("Pocket Atlas", () => {
   it("checks its own '% sure' against the photos it was calibrated on, like the reveal", async () => {
     // The last fixture case leans Japan only a little: the toy index's T = 1.8 makes it 64% sure.
     const unsure = fixture.cases.at(-1)!;
+    const zeroShot: PocketMeta = {
+      ...(fixture.meta as PocketMeta),
+      distillation: undefined,
+      sureness: CALIBRATION_SURENESS,
+    };
     render(
       <PocketAtlas
         deps={deps({
+          loadIndex: async () => decodeIndex(zeroShot, Int8Array.from(fixture.vectors.flat())),
           loadEncoder: async () => encoderFor(unsure.image),
         })}
       />,
@@ -154,6 +169,31 @@ describe("Pocket Atlas", () => {
     expect(await within(result).findByText(/64% sure of the country\./)).toBeInTheDocument();
     expect(within(result).getByTestId("pocket-sureness")).toHaveTextContent(
       "When Atlas is 60–80% sure, it names the right country in 9 of 14 photos.",
+    );
+    expect(within(result).queryByTestId("pocket-taught")).toBeNull();
+  });
+
+  it("lets a head taught by the game's Atlas name the countries, and checks it on its own bands", async () => {
+    // A snow scene with no country in it: zero-shot can't tell, the taught head says Peru.
+    const snow = fixture.cases.find((c) => c.expected.country === "PE" && c.image[6] > 0.5)!;
+    render(<PocketAtlas deps={deps({ loadEncoder: async () => encoderFor(snow.image) })} />);
+    choosePhoto();
+    const result = screen.getByRole("region", { name: "Atlas's guess" });
+    expect(await within(result).findByRole("heading", { name: snow.expected.city })).toBeVisible();
+    const countries = within(result).getByRole("list", { name: "Atlas's most likely countries" });
+    expect(within(countries).getAllByRole("listitem")[0]).toHaveTextContent("Peru");
+    expect(within(result).getByTestId("pocket-taught")).toHaveTextContent("keyword/big");
+  });
+
+  it("checks a taught head's '% sure' against the head's own held-out bands", async () => {
+    const unsure = fixture.cases.at(-1)!;
+    render(<PocketAtlas deps={deps({ loadEncoder: async () => encoderFor(unsure.image) })} />);
+    choosePhoto();
+    const result = screen.getByRole("region", { name: "Atlas's guess" });
+    expect(await within(result).findByText(/64% sure of the country\./)).toBeInTheDocument();
+    // 12 of 16 is the head's band; zero-shot's was 9 of 14.
+    expect(within(result).getByTestId("pocket-sureness")).toHaveTextContent(
+      "When Atlas is 60–80% sure, it names the right country in 12 of 16 photos.",
     );
   });
 

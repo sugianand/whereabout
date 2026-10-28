@@ -135,7 +135,11 @@ Atlas: trained on the browser model's embeddings of the reference photos to matc
 model's calibrated country probabilities, as a correction to Pocket Atlas's own zero-shot logits
 ([decision 0008](docs/decisions/0008-distilled-country-head.md)). Its verdict against today's
 Pocket Atlas goes to `eval/results/pocket-calibration.json`; `--distill-budget-minutes` caps how
-long one run spends embedding the reference photos with the playing model.
+long one run spends embedding the reference photos with the playing model (the Atlas workflow
+queues itself again until they are all embedded). Only if the head ships does
+`pocket-atlas-index --calibration` put it in the browser's index (one 512-wide int8 row per
+country); "Try Atlas on your photo" then takes its countries, pin, "% sure", heatmap and reality
+check from it.
 
 Concept labels for the clue heads (driving side, climate, land cover) come from open maps by
 coordinates; see [`data/maps/README.md`](data/maps/README.md) for the downloads and

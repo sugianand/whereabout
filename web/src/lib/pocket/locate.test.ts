@@ -6,6 +6,7 @@ import {
   cosine,
   countryProbabilities,
   decodeIndex,
+  distilledLogits,
   headProbabilities,
   locate,
   normalise,
@@ -16,6 +17,8 @@ import {
 
 const meta = fixture.meta as PocketMeta;
 const int8 = Int8Array.from(fixture.vectors.flat());
+/** The same index before a distilled head won: today's zero-shot Pocket Atlas. */
+const zeroShotMeta: PocketMeta = { ...meta, distillation: undefined };
 
 describe("Pocket Atlas locate (pinned to Python by data/fixtures/pocket_cases.json)", () => {
   const index = decodeIndex(meta, int8);
@@ -48,8 +51,8 @@ describe("Pocket Atlas locate (pinned to Python by data/fixtures/pocket_cases.js
   it("softens '% sure' by the index's temperature without moving the pin", () => {
     expect(meta.temperature).toBe(1.8);
     const unsure = fixture.cases.at(-1)!.image;
-    const raw = locate(decodeIndex({ ...meta, temperature: undefined }, int8), unsure);
-    const tempered = locate(index, unsure);
+    const raw = locate(decodeIndex({ ...zeroShotMeta, temperature: undefined }, int8), unsure);
+    const tempered = locate(decodeIndex(zeroShotMeta, int8), unsure);
     expect([tempered.city, tempered.lat, tempered.lng]).toEqual([raw.city, raw.lat, raw.lng]);
     expect(tempered.topCountries.map((t) => t.country)).toEqual(["JP", "PE"]);
     expect(tempered.confidence).toBeLessThan(raw.confidence);
@@ -93,6 +96,39 @@ describe("Pocket Atlas locate (pinned to Python by data/fixtures/pocket_cases.js
     expect(p.reduce((a, b) => a + b, 0)).toBeCloseTo(1, 12);
   });
 
+  it("lets the distilled head lead the pin, '% sure', shortlist and heatmap", () => {
+    expect(meta.distillation?.teacher).toBe("keyword/big");
+    // A snow scene with no country in it: zero-shot can't tell (ties go to index order, Japan);
+    // the teacher's lesson, snow means the Andes, moves the whole guess to Peru.
+    const snow = fixture.cases.find((c) => c.expected.country === "PE" && c.image[6] > 0.5);
+    expect(snow).toBeDefined();
+    const before = locate(decodeIndex(zeroShotMeta, int8), snow!.image);
+    const after = locate(index, snow!.image);
+    expect(before.country).toBe("JP");
+    expect(before.confidence).toBeCloseTo(0.5, 1);
+    expect(after.country).toBe("PE");
+    expect(after.topCountries.map((t) => t.country)).toEqual(["PE", "JP"]);
+    expect(Object.keys(after.belief)[0]).toBe("PE");
+    // Clues are not the head's business.
+    expect(after.clues).toEqual(before.clues);
+    // The reveal's reality check counts the head's own held-out bands.
+    expect(meta.sureness).toEqual(meta.distillation!.sureness);
+  });
+
+  it("refuses a distilled head that doesn't fit the index", () => {
+    const d = meta.distillation!;
+    const short = { ...d, weights: d.weights.map((row) => row.slice(1)) };
+    expect(() =>
+      locate(decodeIndex({ ...meta, distillation: short }, int8), fixture.cases[0].image),
+    ).toThrow(/dims/);
+    const fewer = { ...d, weights: d.weights.slice(1), scales: d.scales.slice(1) };
+    expect(() =>
+      locate(decodeIndex({ ...meta, distillation: fewer }, int8), fixture.cases[0].image),
+    ).toThrow(/countries/);
+    const img = normalise(Float64Array.from(fixture.cases[0].image));
+    expect(distilledLogits(d, img)).toHaveLength(meta.countries.length);
+  });
+
   it("decodes rows to unit vectors", () => {
     for (let r = 0; r < meta.rows; r++) {
       const row = index.vectors.subarray(r * meta.dim, (r + 1) * meta.dim);
@@ -120,13 +156,23 @@ describe("countryProbabilities", () => {
   const index = decodeIndex(meta, int8);
   it("is the untempered distribution the pin comes from", () => {
     const unsure = fixture.cases.at(-1)!.image;
-    const p = countryProbabilities(index, unsure);
+    const p = countryProbabilities(decodeIndex(zeroShotMeta, int8), unsure);
     expect(p.reduce((a, b) => a + b, 0)).toBeCloseTo(1, 12);
-    const raw = locate(decodeIndex({ ...meta, temperature: undefined }, int8), unsure);
+    const raw = locate(decodeIndex({ ...zeroShotMeta, temperature: undefined }, int8), unsure);
     const jp = meta.countries.findIndex((c) => c.code === "JP");
     expect(p[jp]).toBeCloseTo(raw.confidence, 4);
     // Not the tempered "% sure": the temperature is for display, not for saliency.
-    expect(p[jp]).toBeGreaterThan(locate(index, unsure).confidence);
+    expect(p[jp]).toBeGreaterThan(locate(decodeIndex(zeroShotMeta, int8), unsure).confidence);
     expect(() => countryProbabilities(index, [1])).toThrow(/dims/);
+  });
+
+  it("is the distilled head's distribution when one ships, so the map explains the guess shown", () => {
+    const snow = fixture.cases.find((c) => c.expected.country === "PE" && c.image[6] > 0.5)!;
+    const pe = meta.countries.findIndex((c) => c.code === "PE");
+    const taught = countryProbabilities(index, snow.image);
+    expect(taught[pe]).toBeCloseTo(locate(index, snow.image).confidence, 4);
+    expect(taught[pe]).toBeGreaterThan(
+      countryProbabilities(decodeIndex(zeroShotMeta, int8), snow.image)[pe],
+    );
   });
 });

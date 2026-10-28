@@ -11,13 +11,14 @@ from whereabout_ml.pocket_index import (
     PRIVACY_REASONS,
     build_index,
     dequantize,
+    distilled_logits,
     locate,
     quantize,
     screen,
     write_index,
 )
 from whereabout_ml.scene_gate import ACCEPT_PROMPTS, REJECT_PROMPTS, SceneGate
-from whereabout_ml.zeroshot import ZeroShotGeolocator
+from whereabout_ml.zeroshot import LOGIT_SCALE, ZeroShotGeolocator
 
 FIXTURE = Path(__file__).resolve().parents[2] / "data" / "fixtures" / "pocket_cases.json"
 IMAGES = [("Peru", "Cusco"), ("Japan", "Kyoto"), ("Japan", "Osaka", "snow"), ("Peru", "desert")]
@@ -71,6 +72,33 @@ def toy_heads(dim: int, *, climate_ships: bool = True) -> list[dict]:
         },
         {"concept": "land_cover", **record, "ships": False},
     ]
+
+
+# The distilled head's held-out bands (`distill.summary`), unlike the zero-shot ones above.
+DISTILLED_SURENESS = [
+    {"lo": 0.0, "hi": 0.2, "n": 0, "right": 0},
+    {"lo": 0.2, "hi": 0.4, "n": 0, "right": 0},
+    {"lo": 0.4, "hi": 0.6, "n": 10, "right": 6},
+    {"lo": 0.6, "hi": 0.8, "n": 16, "right": 12},
+    {"lo": 0.8, "hi": 1.0, "n": 30, "right": 28},
+]
+
+
+def toy_distillation(dim: int, *, ships: bool = True, snow_to_peru: float = 25.0) -> dict:
+    """A `pocket_distillation` record for the toy: the teacher has learned that snow scenes are
+    the Andes, so the head adds to Peru's logit along the snow axis. A head that lost its
+    comparison carries no weights."""
+    weights = [[0.0] * dim, [0.0] * dim]
+    weights[1][VOCAB.index("snow")] = snow_to_peru
+    record = {
+        "model": "keyword/toy",
+        "teacher": "keyword/big",
+        "sureness": DISTILLED_SURENESS,
+        "ships": ships,
+    }
+    if ships:
+        record["head"] = {"classes": ["JP", "PE"], "weights": weights, "bias": [0.0, 0.0]}
+    return record
 
 
 # The privacy gate's toy: three more axes, for photos of people, of rooms and of the outdoors.
@@ -324,13 +352,102 @@ def test_a_shipping_clue_head_must_fit_the_index():
         toy({**CALIBRATION, "clueHeads": [{**heads[1], "clue": "Drives"}]})
 
 
+def distilled_toy(**kwargs):
+    locator, plain, q = toy(CALIBRATION)
+    _, meta, q2 = toy({**CALIBRATION, "distillation": toy_distillation(8, **kwargs)})
+    assert np.array_equal(q, q2)  # the head rides in index.json; vectors.bin is unchanged
+    return locator, plain, meta, dequantize(q, np.array(meta["scales"]))
+
+
+def test_only_a_shipping_distilled_head_goes_into_the_index():
+    _, plain, meta, _ = distilled_toy()
+    d = meta["distillation"]
+    assert d["teacher"] == "keyword/big"
+    assert np.array(d["weights"]).shape == (2, 8) and np.abs(d["weights"]).max() == 127
+    assert d["bias"] == [0.0, 0.0]
+    # "% sure" comes from the head, so the reveal counts the head's held-out bands.
+    assert meta["sureness"] == d["sureness"] == DISTILLED_SURENESS
+    assert plain["sureness"] == CALIBRATION["sureness"]
+    _, _, lost, _ = distilled_toy(ships=False)
+    assert "distillation" not in lost and lost["sureness"] == CALIBRATION["sureness"]
+
+
+def test_the_int8_head_gives_the_logits_it_was_scored_with():
+    rng = np.random.default_rng(1)
+    w = rng.normal(scale=3.0, size=(2, 8))
+    record = toy_distillation(8)
+    record["head"]["weights"] = w.tolist()
+    record["head"]["bias"] = [0.05, -0.2]
+    _, meta, _ = toy({**CALIBRATION, "distillation": record})
+    for _ in range(20):
+        img = normalise_(rng.normal(size=8))
+        exact = w @ img + np.array([0.05, -0.2])
+        assert distilled_logits(meta["distillation"], img) == pytest.approx(exact, abs=0.03)
+
+
+def normalise_(v):
+    return v / np.linalg.norm(v)
+
+
+def test_the_distilled_head_leads_the_pin_and_the_sureness_as_it_was_scored():
+    locator, plain, meta, vectors = distilled_toy()
+    # A snow scene with no country in it: zero-shot can't tell, and ties go to index order.
+    snowy = image("snow")
+    before, after = locate(plain, vectors, snowy), locate(meta, vectors, snowy)
+    assert before["country"] == "JP" and before["confidence"] == pytest.approx(0.5, abs=1e-2)
+    # The teacher's lesson moves the guess to Peru: the pin, the shortlist and the heatmap.
+    assert after["country"] == "PE" and after["city"] in {"Lima", "Cusco"}
+    assert [c["country"] for c in after["topCountries"]] == ["PE", "JP"]
+    assert max(after["belief"], key=after["belief"].get) == "PE"
+    # Exactly the student `pocket_distillation` scored: softmax(zero-shot / T + head) leads
+    # the same city step (`ZeroShotGeolocator.predict` with `p_country`).
+    img = normalise_(snowy)
+    zs = LOGIT_SCALE * locator.country_embeddings @ img
+    p = np.exp(zs / 1.8 + distilled_logits(meta["distillation"], img))
+    p /= p.sum()
+    full = locator.predict(snowy, p_country=p)
+    assert (after["city"], after["country"]) == (full.city, full.country)
+    assert after["confidence"] == pytest.approx(full.confidence, abs=2e-3)
+    # Clues are not the head's business.
+    assert after["clues"] == before["clues"]
+    # Where the head has nothing to say (no snow), Pocket Atlas guesses as it does today.
+    cusco = image("Peru", "Cusco")
+    assert locate(meta, vectors, cusco)["city"] == locate(plain, vectors, cusco)["city"]
+
+
+def test_a_shipping_distilled_head_must_fit_the_index():
+    good = toy_distillation(8)
+    with pytest.raises(ValueError, match="weights"):
+        toy({**CALIBRATION, "distillation": toy_distillation(11)})
+    with pytest.raises(ValueError, match="without its head"):
+        toy({**CALIBRATION, "distillation": {**good, "head": None}})
+    with pytest.raises(ValueError, match="countries"):
+        swapped = {**good["head"], "classes": ["PE", "JP"]}
+        toy({**CALIBRATION, "distillation": {**good, "head": swapped}})
+    with pytest.raises(ValueError, match="broken"):
+        broken = {**good["head"], "bias": [float("nan"), 0.0]}
+        toy({**CALIBRATION, "distillation": {**good, "head": broken}})
+    with pytest.raises(ValueError, match="sureness"):
+        toy({**CALIBRATION, "distillation": {**good, "sureness": []}})
+    with pytest.raises(ValueError, match="distillation is for"):
+        toy({**CALIBRATION, "distillation": {**good, "model": "ViT-L-14/openai"}})
+
+
 def fixture_from_toy() -> dict:
-    # The toy's index with every part the browser runs: temperature, privacy gate, clue heads.
-    _, meta, q = gated_toy({**CALIBRATION, "clueHeads": toy_heads(len(GATE_VOCAB))})
+    # The toy's index with every part the browser runs: temperature, privacy gate, clue heads
+    # and the distilled country head.
+    _, meta, q = gated_toy(
+        {
+            **CALIBRATION,
+            "clueHeads": toy_heads(len(GATE_VOCAB)),
+            "distillation": toy_distillation(len(GATE_VOCAB)),
+        }
+    )
     vectors = dequantize(q, np.array(meta["scales"]))
     images = (
         [gate_image(*w) for w in IMAGES + GATE_IMAGES]
         + [gate_image("Peru", "desert", "outdoors")]
+        + [gate_image("snow", "outdoors")]
         + [np.array(UNSURE + [0.001] * 3)]
     )
     return {

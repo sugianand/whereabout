@@ -32,6 +32,13 @@ When `pocket-calibration.json` holds clue heads that won their paired comparison
 on the image embedding, as one affine map each (`clue_heads.export_probe`). `locate()` then takes
 that concept's clue from the probe instead of the zero-shot scene descriptions ("Temperate
 climate" in place of "Mediterranean"), or adds one no description reads ("Drives on the left").
+
+When `pocket-calibration.json`'s `distillation` ships (a country head taught by the game's
+ViT-L/14 Atlas won its paired comparison, `pocket_distillation` in `run_atlas_v0.py`), the index
+carries that head as `distillation`: one int8 weight row per country with its scale, and a bias.
+`locate()` then adds it to the tempered zero-shot country logits, exactly as the head was scored
+(`whereabout_ml.distill.Student`), and the pin, "% sure", shortlist and heatmap all come from
+that one distribution; the reality-check bands become the head's own held-out ones.
 """
 
 from __future__ import annotations
@@ -135,6 +142,55 @@ def shipping_clue_heads(calibration: dict, dim: int) -> list[dict]:
     return heads
 
 
+def shipping_distillation(calibration: dict, codes: Sequence[str], dim: int) -> dict | None:
+    """The index's `distillation`, if the head in `calibration` ships, checked for shape.
+
+    The weights go in as per-row int8 (`quantize`, about 0.5 bytes of JSON per weight once
+    gzipped instead of ~10 as text floats); the bias stays in full precision. Its classes must
+    be the index's countries in the index's order, because each row is added to that country's
+    zero-shot logit.
+    """
+    d = calibration.get("distillation")
+    if not d or not d.get("ships"):
+        return None
+    if d.get("model") != calibration.get("model"):
+        raise ValueError(
+            f"distillation is for {d.get('model')!r}, "
+            f"but this index is {calibration.get('model')!r}"
+        )
+    head = d.get("head")
+    if head is None:
+        raise ValueError("distillation ships without its head")
+    if list(head["classes"]) != list(codes):
+        raise ValueError("the distilled head's countries are not the index's countries")
+    weights = np.asarray(head["weights"], dtype=np.float64)
+    bias = np.asarray(head["bias"], dtype=np.float64)
+    if weights.shape != (len(codes), dim) or bias.shape != (len(codes),):
+        raise ValueError(
+            f"the distilled head has {weights.shape} weights, expected {(len(codes), dim)}"
+        )
+    if not (np.isfinite(weights).all() and np.isfinite(bias).all()):
+        raise ValueError("the distilled head has a broken bias or weights")
+    if not d.get("sureness"):
+        raise ValueError("distillation ships without its held-out sureness bands")
+    q, scale = quantize(weights)
+    return {
+        "teacher": d["teacher"],
+        "weights": q.astype(int).tolist(),
+        "scales": [float(f"{v:.6g}") for v in scale],
+        "bias": [float(f"{v:.7g}") for v in bias],
+        "sureness": d["sureness"],
+    }
+
+
+def distilled_logits(distillation: dict, image: np.ndarray) -> np.ndarray:
+    """The head's correction to the tempered zero-shot logits, on the unit-length embedding:
+    (int8 rows × scales) @ image + bias, one per country."""
+    w = np.asarray(distillation["weights"], dtype=np.float64)
+    w *= np.asarray(distillation["scales"], dtype=np.float64)[:, None]
+    return w @ image + np.asarray(distillation["bias"], dtype=np.float64)
+
+
 def build_index(
     locator: ZeroShotGeolocator,
     model: str,
@@ -196,6 +252,13 @@ def build_index(
         heads = shipping_clue_heads(calibration, int(q.shape[1]))
         if heads:
             meta["clueHeads"] = heads
+        distilled = shipping_distillation(
+            calibration, [c["code"] for c in countries], int(q.shape[1])
+        )
+        if distilled is not None:
+            meta["distillation"] = distilled
+            # "% sure" now comes from the head, so the reveal's reality check counts its bands.
+            meta["sureness"] = distilled["sureness"]
     if gate is not None:
         meta["gate"] = privacy_gate(locator.encoder, model, gate)
     return meta, q
@@ -229,14 +292,22 @@ def locate(meta: dict, vectors: np.ndarray, image: np.ndarray) -> dict:
     The pin comes from the raw probabilities, exactly as the scored pipeline picks it; the
     reported "% sure", shortlist and heatmap (`belief`) are divided by the index's temperature,
     as in the game (`calibrate_guesses`), which never reorders countries.
+
+    With a distilled head, the countries are the head's: softmax(logits / T + head), which both
+    leads the city step (as `pocket_distillation` scored it) and is what "% sure" shows.
     """
     img = normalise(np.asarray(image, dtype=np.float64))
     scale = float(meta["logitScale"])
     temperature = float(meta.get("temperature", 1.0))
     nc = len(meta["countries"])
     country_logits = scale * vectors[:nc] @ img
-    p_raw = softmax(country_logits)
-    p_country = softmax(country_logits / temperature)
+    if meta.get("distillation"):
+        head = distilled_logits(meta["distillation"], img)
+        p_country = softmax(country_logits / temperature + head)
+        p_raw = p_country
+    else:
+        p_raw = softmax(country_logits)
+        p_country = softmax(country_logits / temperature)
     order = [int(i) for i in np.argsort(-p_raw, kind="stable")[: meta["topKCountries"]]]
 
     best: tuple[float, int] | None = None
@@ -333,6 +404,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     print(
         f"pocket index: {meta['rows']} rows × {meta['dim']} ({q.nbytes / 1e6:.1f} MB), "
         f"T = {meta.get('temperature', 1.0)}, "
+        f"{'distilled country head on' if 'distillation' in meta else 'zero-shot countries'}, "
         f"{'privacy gate on' if gate is not None else 'no privacy gate'} → {args.out}"
     )
 

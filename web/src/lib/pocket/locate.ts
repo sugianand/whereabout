@@ -38,6 +38,13 @@ export interface PocketMeta {
    * weight row per class. A head replaces the zero-shot clue of its `group`. Missing when none won.
    */
   clueHeads?: PocketClueHead[];
+  /**
+   * A country head taught by the game's ViT-L/14 Atlas that beat zero-shot Pocket Atlas on the
+   * catalog photos (`pocket_distillation` in ml/src/whereabout_ml/run_atlas_v0.py). Added to the
+   * tempered zero-shot country logits, it leads the pin, "% sure", shortlist and heatmap; `sureness`
+   * above is then its own held-out bands. Missing when it did not win.
+   */
+  distillation?: PocketDistillation;
   /** The privacy gate (people and indoor), see gate.ts. Missing in indexes built before it. */
   gate?: PocketGate;
   /** Python's guess for the parity photo; indexes built before the heatmap have no `belief`. */
@@ -58,6 +65,16 @@ export interface PocketClueHead {
   /** classes × dim */
   weights: number[][];
   bias: number[];
+}
+
+export interface PocketDistillation {
+  /** The model that taught it, e.g. "ViT-L-14/openai". */
+  teacher: string;
+  /** countries × dim int8, one row per country in index order; row × scales[row] is the weight. */
+  weights: number[][];
+  scales: number[];
+  bias: number[];
+  sureness: SurenessBand[];
 }
 
 export interface PocketIndex {
@@ -140,6 +157,21 @@ export function headProbabilities(head: PocketClueHead, img: ArrayLike<number>):
   );
 }
 
+/**
+ * The distilled head's correction to the tempered zero-shot country logits, on the unit-length
+ * image embedding: (int8 rows × scales) · image + bias, as Python's `distilled_logits`.
+ */
+export function distilledLogits(d: PocketDistillation, img: ArrayLike<number>): number[] {
+  return d.weights.map((row, c) => {
+    if (row.length !== img.length) {
+      throw new Error(`distilled head has ${row.length} dims, not ${img.length}`);
+    }
+    let dot = 0;
+    for (let k = 0; k < row.length; k++) dot += row[k] * img[k];
+    return d.scales[c] * dot + d.bias[c];
+  });
+}
+
 /** The index's temperature, or 1 (the raw model) when it has none or a broken one. */
 export function temperatureOf(meta: PocketMeta): number {
   const t = meta.temperature;
@@ -148,20 +180,29 @@ export function temperatureOf(meta: PocketMeta): number {
 
 /**
  * p(country | image), untempered: what "Where Atlas looked" measures, as the game's maps do
- * (`country_log_prob` in ml/src/whereabout_ml/run_atlas_v0.py). In index order.
+ * (`country_log_prob` in ml/src/whereabout_ml/run_atlas_v0.py). In index order. With a distilled
+ * head it is the head's distribution, the one that chose the country being explained (the head
+ * was trained on the tempered logits, so it has no untempered form).
  */
 export function countryProbabilities(index: PocketIndex, image: ArrayLike<number>): number[] {
-  if (image.length !== index.meta.dim)
-    throw new Error(`embedding has ${image.length} dims, not ${index.meta.dim}`);
-  return softmax(
-    scores(index, normalise(Float64Array.from(image)), 0, index.meta.countries.length),
-  );
+  const { meta } = index;
+  if (image.length !== meta.dim)
+    throw new Error(`embedding has ${image.length} dims, not ${meta.dim}`);
+  const img = normalise(Float64Array.from(image));
+  const logits = scores(index, img, 0, meta.countries.length);
+  if (!meta.distillation) return softmax(logits);
+  const t = temperatureOf(meta);
+  const head = distilledLogits(meta.distillation, img);
+  return softmax(logits.map((x, i) => x / t + head[i]));
 }
 
 /**
  * Atlas's guess for one image embedding. The pin comes from the raw probabilities, as the scored
  * pipeline picks it; "% sure" and the shortlist are divided by the index's temperature, as in
  * the game, which never reorders countries, and so is the heatmap (`belief`).
+ *
+ * With a distilled head, the countries are the head's, softmax(logits / T + head): one
+ * distribution leads the city step (as it was scored) and is what "% sure" shows.
  */
 export function locate(index: PocketIndex, image: ArrayLike<number>): PocketGuess {
   const { meta } = index;
@@ -171,9 +212,22 @@ export function locate(index: PocketIndex, image: ArrayLike<number>): PocketGues
   const nc = meta.countries.length;
 
   const countryLogits = scores(index, img, 0, nc);
-  const pRaw = softmax(countryLogits);
   const t = temperatureOf(meta);
-  const pCountry = softmax(countryLogits.map((x) => x / t));
+  let pRaw: number[];
+  let pCountry: number[];
+  if (meta.distillation) {
+    if (meta.distillation.weights.length !== nc) {
+      throw new Error(
+        `distilled head has ${meta.distillation.weights.length} countries, not ${nc}`,
+      );
+    }
+    const head = distilledLogits(meta.distillation, img);
+    pCountry = softmax(countryLogits.map((x, i) => x / t + head[i]));
+    pRaw = pCountry;
+  } else {
+    pRaw = softmax(countryLogits);
+    pCountry = softmax(countryLogits.map((x) => x / t));
+  }
   // Stable: ties keep index order, like numpy's argsort(kind="stable").
   const order = pRaw
     .map((p, i) => [p, i] as const)

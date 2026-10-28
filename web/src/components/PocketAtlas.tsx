@@ -115,6 +115,8 @@ export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps
   }> | null>(null);
   const [names, setNames] = useState<ReadonlyMap<string, string>>(new Map());
   const [sureness, setSureness] = useState<readonly SurenessBand[] | null>(null);
+  // The game's Atlas, when a country head it taught beat zero-shot Pocket Atlas and ships.
+  const [teacher, setTeacher] = useState<string | null>(null);
   const [looking, setLooking] = useState<Looking>({ kind: "idle" });
   // The photo being guessed, and a counter that retires a "Where Atlas looked" run when it changes.
   const photoFile = useRef<File | null>(null);
@@ -133,6 +135,7 @@ export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps
         if (!gate) throw new IndexUnavailable("Pocket Atlas's privacy gate isn't published yet.");
         setNames(new Map(index.meta.countries.map((c) => [c.code, c.name])));
         setSureness(index.meta.sureness ?? null);
+        setTeacher(index.meta.distillation?.teacher ?? null);
         const encoder = await deps.loadEncoder(index.meta.hfModel, (progress) =>
           setPhase((p) => (p.kind === "loading" ? { kind: "loading", progress } : p)),
         );
@@ -394,6 +397,13 @@ export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps
                 </li>
               ))}
             </ol>
+            {teacher && (
+              <p data-testid="pocket-taught" className="mt-2 text-sm text-chalk-dim">
+                These countries come from a small head taught by the game&rsquo;s bigger Atlas (
+                {teacher}), which beat Pocket Atlas&rsquo;s own text matching on the game&rsquo;s
+                photos.
+              </p>
+            )}
 
             {guess.clues.length > 0 && (
               <ul aria-label="What Atlas noticed" className="mt-4 flex flex-wrap gap-2">

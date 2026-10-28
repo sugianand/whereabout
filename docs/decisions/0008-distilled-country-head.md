@@ -45,4 +45,8 @@ ViT-B/32 embeddings, so it fits the CPU runner like the clue and geocell heads.
 - A student taught by the teacher can at best inherit its mistakes; the results page reports
   the teacher's own NLL and accuracy on the same photos for context.
 - About 125,000 weights (one 512-wide row per country) would ship if it wins: roughly 1.5 MB as
-  JSON in the index, or less as int8 in the browser step.
+  JSON floats, so `pocket-atlas-index` stores them as per-row int8 with a scale (`quantize`,
+  the same scheme as the text vectors) and the bias in full precision. On a yes, the head's
+  distribution leads the browser's city step and "% sure" alike, as it was scored, and the
+  reality check counts the head's held-out bands (`locate()` in `pocket_index.py` and
+  `locate.ts`, pinned by `data/fixtures/pocket_cases.json`).
