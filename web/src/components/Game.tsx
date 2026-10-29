@@ -14,8 +14,10 @@ import {
 import { ApiBackend, LocalBackend } from "@/lib/game/backends";
 import {
   BLITZ_SECONDS,
+  clockWithTimeLeft,
   fractionLeft,
   pauseClock,
+  remainingMs,
   rememberBlitz,
   resumeClock,
   secondsShown,
@@ -24,16 +26,12 @@ import {
   type BlitzBest,
   type BlitzClock,
 } from "@/lib/game/blitz";
-import {
-  CHALLENGE_PARAM,
-  encodeChallenge,
-  parseChallenge,
-  sumScores,
-  type Challenge,
-} from "@/lib/game/challenge";
+import { CHALLENGE_PARAM, encodeChallenge, parseChallenge, sumScores } from "@/lib/game/challenge";
 import { dayKey, pickDaily } from "@/lib/game/daily";
 import { fetchRecords, recordUrl, type Deck, type GameRecord } from "@/lib/game/deck";
 import { loadRecent, pickFresh, rememberPlayed, saveRecent } from "@/lib/game/fresh";
+import type { GameMode } from "@/lib/game/mode";
+import { gameToResume, loadSaved, snapshot, storeSaved, type SavedGame } from "@/lib/game/saved";
 import { ROUNDS_PER_GAME, gameReducer, initialState, totals } from "@/lib/game/state";
 import {
   offeredRegions,
@@ -46,6 +44,7 @@ import { TIERS, TIER_NAMES, isTier, tierBlurb, type Tier, type Tiers } from "@/l
 import type { Continent } from "@/lib/continents";
 import type { CatalogPhoto, GameBackend } from "@/lib/game/types";
 import { formatPoints, maxPoints, type LngLat } from "@/lib/geo";
+import type { Clue } from "@/lib/hints";
 import { hasSeenIntro, INTRO_TEXT, markIntroSeen } from "@/lib/intro";
 import { keepForOffline, photoUrlsToKeep } from "@/lib/offline/register";
 import { recordGame, resetRecord, tallyContinents, type PlayerRecord } from "@/lib/playerRecord";
@@ -57,20 +56,7 @@ import PhotoViewer from "./PhotoViewer";
 import RevealCard from "./RevealCard";
 import Summary from "./Summary";
 
-/**
- * A fresh game is five photos the player hasn't seen lately; the Daily Five is shared by all; a
- * tier game is a fresh game drawn from one difficulty third (src/lib/game/tiers.ts), and a
- * continent game one drawn from the photos taken on one continent (src/lib/game/regions.ts). A
- * challenge replays the five photos a friend's link names (src/lib/game/challenge.ts). Blitz is
- * a fresh game against a 30-second clock on each photo (src/lib/game/blitz.ts).
- */
-export type GameMode =
-  | { kind: "daily"; day: string }
-  | { kind: "fresh"; game: number }
-  | { kind: "tier"; tier: Tier; game: number }
-  | { kind: "region"; region: Continent; game: number }
-  | { kind: "challenge"; challenge: Challenge }
-  | { kind: "blitz"; game: number };
+export type { GameMode } from "@/lib/game/mode";
 
 export function modeTitle(mode: GameMode): string {
   if (mode.kind === "fresh") return "Fresh game";
@@ -239,39 +225,52 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   const [challengeNotice, setChallengeNotice] = useState<string | null>(null);
   // A finished Blitz game against the best kept in this browser, shown on the summary.
   const [blitzBest, setBlitzBest] = useState<BlitzBest | null>(null);
+  // The kept game this visit reopened (src/lib/game/saved.ts). It applies only while its own
+  // mode is playing: any new game is a new mode value, so it lets go by itself.
+  const [resumed, setResumed] = useState<SavedGame | null>(null);
+  const resumedFor = resumed && resumed.mode === mode ? resumed : null;
 
   useEffect(() => {
     if (mode) return;
     const id = requestAnimationFrame(() => {
       // Challenges are dealt by the browser, so the API backend leaves them alone.
       const linked = start || apiUrl ? null : urlChallenge(deck.ids);
-      if (linked?.ok) {
-        setIntroOpen(!hasSeenIntro());
-        setMode({ kind: "challenge", challenge: linked.challenge });
-        return;
-      }
-      if (linked) setChallengeNotice(CHALLENGE_NOTICE[linked.reason]);
+      if (linked && !linked.ok) setChallengeNotice(CHALLENGE_NOTICE[linked.reason]);
       // Blitz deals in the browser like tiers and continents; the API backend plays untimed.
       const blitz = !start && !apiUrl && !urlWantsDaily() && urlWantsBlitz();
       const kind = start ?? (urlWantsDaily() ? "daily" : "fresh");
-      if (blitz) {
-        setIntroOpen(!hasSeenIntro());
-        setMode({ kind: "blitz", game: 1 });
-        return;
-      }
       const tier = kind === "fresh" && tiers ? urlTier() : null;
       const wanted = kind === "fresh" && !tier ? urlRegion() : null;
       const region = wanted && regions[wanted] ? wanted : null;
+      const day = dayKey(today ?? new Date());
+      const requested: GameMode = linked?.ok
+        ? { kind: "challenge", challenge: linked.challenge }
+        : blitz
+          ? { kind: "blitz", game: 1 }
+          : kind === "daily"
+            ? { kind: "daily", day }
+            : tier
+              ? { kind: "tier", tier, game: 1 }
+              : region
+                ? { kind: "region", region, game: 1 }
+                : { kind: "fresh", game: 1 };
+      // The plain address reopens whatever game was left unfinished; an address asking for a
+      // particular game reopens it only if that is the one kept.
+      const explicit =
+        !!start || linked !== null || blitz || kind === "daily" || !!tier || !!wanted;
+      const saved = apiUrl
+        ? null
+        : gameToResume(loadSaved(deck.ids, Date.now()), requested, explicit, day);
       setIntroOpen(!hasSeenIntro());
-      setMode(
-        kind === "daily"
-          ? { kind: "daily", day: dayKey(today ?? new Date()) }
-          : tier
-            ? { kind: "tier", tier, game: 1 }
-            : region
-              ? { kind: "region", region, game: 1 }
-              : { kind: "fresh", game: 1 },
-      );
+      if (saved) {
+        setResumed(saved);
+        dispatch({ type: "resumed", results: saved.results });
+        setMode(saved.mode);
+        return;
+      }
+      // Starting another game lets the kept one go.
+      if (!apiUrl) storeSaved(null);
+      setMode(requested);
     });
     return () => cancelAnimationFrame(id);
   }, [mode, start, today, tiers, regions, apiUrl, deck.ids]);
@@ -282,6 +281,8 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   // or continent game does the same within its part of the catalog.
   const dealt = useMemo(() => {
     if (!mode) return [];
+    // A game picked up after a reload keeps the photos it was dealt.
+    if (resumedFor) return resumedFor.dealt;
     const within = (ids: readonly string[]) =>
       pickFresh(
         ids.map((id) => ({ id })),
@@ -299,7 +300,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
               ? within(regions[mode.region]!)
               : pickFresh(pool, loadRecent(), ROUNDS_PER_GAME);
     return picked.map((p) => p.id);
-  }, [mode, pool, tiers, regions]);
+  }, [mode, pool, tiers, regions, resumedFor]);
 
   // Remember what was dealt, so the next visit or fresh game opens on other photos.
   useEffect(() => {
@@ -357,21 +358,41 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
     if (!mode) return null;
     if (apiUrl && !backendFor) return new ApiBackend(apiUrl);
     if (!gamePhotos) return null;
-    return backendFor ? backendFor(gamePhotos) : new LocalBackend(gamePhotos);
-  }, [mode, gamePhotos, apiUrl, backendFor]);
+    // A resumed game's backend starts on the first round not yet played.
+    const played = resumedFor?.results.length ?? 0;
+    return backendFor ? backendFor(gamePhotos) : new LocalBackend(gamePhotos, played);
+  }, [mode, gamePhotos, apiUrl, backendFor, resumedFor]);
+
+  // The round that was on screen when a kept game was left: its pin, hints and Blitz clock come
+  // back with it. Only for the first round after a resume.
+  const restoring =
+    resumedFor?.round && state.phase === "loading" && state.index === resumedFor.results.length
+      ? resumedFor.round
+      : null;
+  // A resumed Blitz round's clock picks up with the time it had left, not a fresh 30 seconds.
+  const restoredClock = useRef<{ roundId: string; msLeft: number } | null>(null);
 
   // Start each round as soon as the game enters the loading phase.
   useEffect(() => {
     if (!backend || state.phase !== "loading" || state.error) return;
     let cancelled = false;
-    backend
-      .startRound()
-      .then((round) => !cancelled && dispatch({ type: "started", round }))
-      .catch((err: Error) => !cancelled && dispatch({ type: "failed", message: err.message }));
+    (async () => {
+      const round = await backend.startRound();
+      const restore = restoring?.photoId === round.photo.id ? restoring : null;
+      // Hints taken before the reload are taken again, so the round's cap stays where it was.
+      let clues: Clue[] = [];
+      const hints = Math.min(restore?.hintsUsed ?? 0, round.hintsAvailable);
+      for (let i = 0; i < hints; i++) clues = await backend.hint(round.roundId);
+      if (cancelled) return;
+      if (restore?.blitzMsLeft !== undefined) {
+        restoredClock.current = { roundId: round.roundId, msLeft: restore.blitzMsLeft };
+      }
+      dispatch({ type: "started", round, pin: restore?.pin ?? null, clues });
+    })().catch((err: Error) => !cancelled && dispatch({ type: "failed", message: err.message }));
     return () => {
       cancelled = true;
     };
-  }, [backend, state]);
+  }, [backend, state, restoring]);
 
   // Warm the cache with the next photo while the player reads the reveal.
   useEffect(() => {
@@ -421,7 +442,8 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   const onPhotoShown = useCallback(() => {
     if (!blitz || !guessingId) return;
     const t = performance.now();
-    const fresh = startClock(t);
+    const kept = restoredClock.current;
+    const fresh = kept?.roundId === guessingId ? clockWithTimeLeft(t, kept.msLeft) : startClock(t);
     lockedFor.current = null;
     setNow(t);
     setClock({ roundId: guessingId, clock: document.hidden ? pauseClock(fresh, t) : fresh });
@@ -460,6 +482,33 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   useEffect(() => {
     if (expired) onTimeUp();
   }, [expired]);
+
+  // Keep the game after every move, so a reload or a killed tab reopens it where it was. A
+  // finished game is let go; the API backend's rounds live on its server, so they aren't kept.
+  const persist = useEffectEvent(() => {
+    if (!mode || apiUrl) return;
+    if (state.phase === "finished") {
+      storeSaved(null);
+      return;
+    }
+    const left = roundClock ? remainingMs(roundClock, performance.now()) : null;
+    const kept = snapshot(mode, dealt, state, Date.now(), left);
+    if (kept) storeSaved(kept);
+  });
+  useEffect(() => {
+    persist();
+  }, [state, mode, dealt, roundClock]);
+  // Leaving the page (a reload, switching apps, the phone closing the tab) keeps the latest,
+  // including how long a Blitz round's clock has left.
+  useEffect(() => {
+    const onLeave = () => persist();
+    document.addEventListener("visibilitychange", onLeave);
+    window.addEventListener("pagehide", onLeave);
+    return () => {
+      document.removeEventListener("visibilitychange", onLeave);
+      window.removeEventListener("pagehide", onLeave);
+    };
+  }, []);
 
   async function send(roundId: string, pin: LngLat | null) {
     if (!backend) return;
@@ -514,6 +563,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
 
   /** Every new game starts from round one, with no replay open. */
   function restart() {
+    if (!apiUrl) storeSaved(null);
     setChallengeNotice(null);
     setBlitzBest(null);
     setReplay(null);
@@ -695,6 +745,14 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
               <span className="tabular font-semibold">
                 {formatPoints(sumScores(mode.challenge.scores))}
               </span>
+            </p>
+          )}
+          {resumedFor && !shown && state.results.length === resumedFor.results.length && (
+            <p
+              role="status"
+              className="mt-1 inline-block max-w-72 rounded-2xl bg-ocean-deep/60 px-2 py-0.5 text-[11px] text-chalk-dim backdrop-blur"
+            >
+              Picked up where you left off
             </p>
           )}
           {challengeNotice && !shown && (

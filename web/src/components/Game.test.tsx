@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import atlasData from "@/data/atlas.json";
@@ -8,6 +8,7 @@ import { pickDaily } from "@/lib/game/daily";
 import { encodeChallenge } from "@/lib/game/challenge";
 import { LOAD_ERROR } from "@/lib/game/deck";
 import { RECENT_KEY } from "@/lib/game/fresh";
+import { SAVED_GAME_KEY } from "@/lib/game/saved";
 import { maxPoints } from "@/lib/geo";
 import { cluesFor } from "@/lib/hints";
 import { INTRO_KEY, INTRO_TEXT } from "@/lib/intro";
@@ -759,5 +760,158 @@ describe("Blitz", { timeout: 20000 }, () => {
     expect(await screen.findByTestId("blitz-best", {}, WAIT)).toHaveTextContent("Your first Blitz");
     expect(localStorage.getItem("whereabout:blitz-best")).toBe("0");
     expect(screen.getByRole("button", { name: "Play another Blitz" })).toBeInTheDocument();
+  });
+
+  it("picks a Blitz round up after a reload with the time it had left, not a fresh 30 seconds", async () => {
+    const { map } = await startBlitz();
+    now = 12_000;
+    const photo = await screen.findByRole("img", { name: /photo to locate/ });
+    const first = playable.find((p) => photo.getAttribute("src") === p.imageUrl)!;
+    act(() => map.click(first.lng, first.lat));
+    // The tab goes away (a reload, or the phone closing it) 12 seconds into the round.
+    Object.defineProperty(document, "hidden", { configurable: true, value: true });
+    act(() => void window.dispatchEvent(new Event("pagehide")));
+    cleanup();
+    Object.defineProperty(document, "hidden", { configurable: true, value: false });
+
+    now = 900_000;
+    render(<Game {...bundledGame} today={TODAY} />);
+    await mapReady();
+    const again = await screen.findByRole("img", { name: /photo to locate/ }, WAIT);
+    expect(again).toHaveAttribute("src", first.imageUrl);
+    fireEvent.load(again);
+    const clock = await screen.findByTestId("blitz-clock", {}, WAIT);
+    await waitFor(() => expect(clock).toHaveAttribute("data-paused", "false"));
+    expect(clock).toHaveAttribute("data-seconds", "18");
+    // The pin came back too, so running out the clock scores it.
+    now = 900_000 + 18_500;
+    const card = await screen.findByRole("region", { name: /./ }, WAIT);
+    expect(within(card).getByTestId("time-up")).toHaveTextContent("Your pin went in");
+  });
+});
+
+describe("Pick up where you left off", { timeout: 30000 }, () => {
+  const saved = () => JSON.parse(localStorage.getItem(SAVED_GAME_KEY) ?? "null");
+
+  it("reopens the game on the same round, with its photos, score, pin and hints", async () => {
+    window.history.replaceState(null, "", "/?daily");
+    render(<Game {...bundledGame} today={TODAY} />);
+    let map = await mapReady();
+    const card = await playRound(map, daily[0]);
+    fireEvent.click(within(card).getByRole("button", { name: "Next photo" }));
+    // Round 2: a hint and a pin, then the tab is lost.
+    await screen.findByRole("button", { name: "Zoom in on the photo" }, WAIT);
+    fireEvent.click(screen.getByRole("button", { name: /^Take a hint/ }));
+    await screen.findByRole("list", { name: "Hints" }, WAIT);
+    act(() => map.click(daily[1].lng, daily[1].lat));
+    await waitFor(() =>
+      expect(saved()?.round).toMatchObject({ photoId: daily[1].id, hintsUsed: 1 }),
+    );
+    cleanup();
+
+    // The plain address reopens it, back on the Daily Five.
+    window.history.replaceState(null, "", "/");
+    render(<Game {...bundledGame} today={TODAY} />);
+    map = await mapReady();
+    expect(await screen.findByText("Picked up where you left off", {}, WAIT)).toBeInTheDocument();
+    expect(screen.getByText("Daily Five, October 9")).toBeInTheDocument();
+    expect(window.location.search).toBe("?daily");
+    expect(await screen.findByText("Round 2 of 5", {}, WAIT)).toBeInTheDocument();
+    expect(await screen.findByRole("img", { name: /photo to locate/ }, WAIT)).toHaveAttribute(
+      "src",
+      daily[1].imageUrl,
+    );
+    expect(
+      screen.getByText((_, el) => el?.tagName === "P" && el.textContent === "5,000 points"),
+    ).toBeInTheDocument();
+    const hints = await screen.findByRole("list", { name: "Hints" }, WAIT);
+    expect(within(hints).getAllByRole("listitem")).toHaveLength(1);
+    // The pin is back where it was: the guess goes straight in, worth the hinted maximum.
+    fireEvent.click(await screen.findByRole("button", { name: "Guess here" }, WAIT));
+    const reveal = await screen.findByRole("region", { name: /./ }, WAIT);
+    const top = maxPoints(1).toLocaleString("en-US");
+    expect(
+      within(reveal).getByText(new RegExp(`^You were 0 m away and scored ${top} points\\.`)),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Picked up where you left off")).toBeNull();
+  });
+
+  it("keeps nothing until the player does something, and lets a finished game go", async () => {
+    render(<Game {...bundledGame} start="daily" today={TODAY} />);
+    const map = await mapReady();
+    await screen.findByRole("button", { name: "Zoom in on the photo" }, WAIT);
+    expect(saved()).toBeNull();
+    for (let i = 0; i < ROUNDS_PER_GAME; i++) {
+      const card = await playRound(map, daily[i]);
+      expect(saved()?.results).toHaveLength(i + 1);
+      const last = i === ROUNDS_PER_GAME - 1;
+      fireEvent.click(
+        within(card).getByRole("button", { name: last ? "See your results" : "Next photo" }),
+      );
+    }
+    await screen.findByRole("region", { name: "Your record against Atlas" }, WAIT);
+    expect(saved()).toBeNull();
+  });
+
+  it("after all five rounds, reopens on the last reveal so the game still counts", async () => {
+    render(<Game {...bundledGame} start="daily" today={TODAY} />);
+    let map = await mapReady();
+    for (let i = 0; i < ROUNDS_PER_GAME; i++) {
+      const card = await playRound(map, daily[i]);
+      if (i < ROUNDS_PER_GAME - 1) {
+        fireEvent.click(within(card).getByRole("button", { name: "Next photo" }));
+      }
+    }
+    cleanup();
+    render(<Game {...bundledGame} start="daily" today={TODAY} />);
+    map = await mapReady();
+    const card = await screen.findByRole("region", { name: /./ }, WAIT);
+    expect(within(card).getByRole("heading", { name: daily[4].place })).toBeInTheDocument();
+    fireEvent.click(within(card).getByRole("button", { name: "See your results" }));
+    const panel = await screen.findByRole("region", { name: "Your record against Atlas" }, WAIT);
+    expect(within(panel).getByText("Games played").nextElementSibling).toHaveTextContent("1");
+    expect(saved()).toBeNull();
+  });
+
+  it("starts the game an address asks for, letting a different kept game go", async () => {
+    render(<Game {...bundledGame} today={TODAY} />);
+    const map = await mapReady();
+    await screen.findByText("Fresh game", {}, WAIT);
+    const photo = await screen.findByRole("img");
+    const first = playable.find((p) => photo.getAttribute("src") === p.imageUrl)!;
+    await playRound(map, first);
+    expect(saved()?.mode).toMatchObject({ kind: "fresh" });
+    cleanup();
+
+    window.history.replaceState(null, "", "/?daily");
+    render(<Game {...bundledGame} today={TODAY} />);
+    await mapReady();
+    // The title only appears once the visit has chosen its game.
+    expect(await screen.findByText("Daily Five, October 9", {}, WAIT)).toBeInTheDocument();
+    expect(screen.getByText("Round 1 of 5")).toBeInTheDocument();
+    expect(screen.queryByText("Picked up where you left off")).toBeNull();
+    expect(saved()).toBeNull();
+  });
+
+  it("lets the kept game go when the player starts another from the header", async () => {
+    render(<Game {...bundledGame} start="daily" today={TODAY} />);
+    const map = await mapReady();
+    await playRound(map, daily[0]);
+    expect(saved()).not.toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "New random game" }));
+    await screen.findByText("Fresh game", {}, WAIT);
+    expect(saved()).toBeNull();
+  });
+
+  it("never reopens yesterday's Daily Five", async () => {
+    render(<Game {...bundledGame} start="daily" today={TODAY} />);
+    const map = await mapReady();
+    await playRound(map, daily[0]);
+    cleanup();
+    window.history.replaceState(null, "", "/");
+    render(<Game {...bundledGame} today={new Date("2026-10-10T15:00:00Z")} />);
+    await mapReady();
+    expect(await screen.findByText("Fresh game", {}, WAIT)).toBeInTheDocument();
+    expect(screen.queryByText("Picked up where you left off")).toBeNull();
   });
 });

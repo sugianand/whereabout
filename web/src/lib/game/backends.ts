@@ -12,11 +12,16 @@ import type { AtlasGuess, CatalogPhoto, GameBackend, Reveal, RoundStart } from "
  */
 export class LocalBackend implements GameBackend {
   readonly kind = "local" as const;
-  private next = 0;
+  private next: number;
   private readonly open = new Map<string, { photo: CatalogPhoto; clues: Clue[]; used: number }>();
 
-  constructor(private readonly photos: readonly CatalogPhoto[]) {
+  /** `firstRound` skips rounds already played, for a game picked up after a reload. */
+  constructor(
+    private readonly photos: readonly CatalogPhoto[],
+    firstRound = 0,
+  ) {
     if (photos.length === 0) throw new Error("LocalBackend needs at least one photo");
+    this.next = firstRound;
   }
 
   async startRound(): Promise<RoundStart> {

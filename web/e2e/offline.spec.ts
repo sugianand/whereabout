@@ -91,12 +91,13 @@ test("a started game keeps going without a connection, even through a reload", a
 
   await playRound(page, 1);
 
-  // The connection drops; the player reloads. The page, the globe and the same five photos
-  // all come from the device.
+  // The connection drops; the player reloads. The page, the globe and the rest of the five
+  // photos all come from the device, and the game picks up on round 2 where it was left.
   await goOffline(context);
   await page.reload();
   await expect(page.getByText(/^Daily Five, /)).toBeVisible();
-  for (let round = 1; round <= 5; round++) await playRound(page, round);
+  await expect(page.getByText("Picked up where you left off")).toBeVisible();
+  for (let round = 2; round <= 5; round++) await playRound(page, round);
   await expect(page.getByText("out of 25,000 points")).toBeVisible();
 
   // Really offline: anything the worker has not kept fails.

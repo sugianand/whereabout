@@ -30,6 +30,19 @@ export function startClock(now: number, limitMs: number = BLITZ_MS): BlitzClock 
   return { limitMs, spentMs: 0, runningSince: now };
 }
 
+/**
+ * A round's clock picked up again after a reload, running from `now` with `msLeft` of the round's
+ * allowance still to go, so the ring shows how much was already used.
+ */
+export function clockWithTimeLeft(
+  now: number,
+  msLeft: number,
+  limitMs: number = BLITZ_MS,
+): BlitzClock {
+  const left = Math.min(limitMs, Math.max(0, msLeft));
+  return { limitMs, spentMs: limitMs - left, runningSince: now };
+}
+
 function spent(clock: BlitzClock, now: number): number {
   const running = clock.runningSince === null ? 0 : Math.max(0, now - clock.runningSince);
   return clock.spentMs + running;

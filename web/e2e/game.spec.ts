@@ -168,6 +168,52 @@ test("each visit opens a fresh game that avoids recently played photos", async (
   expect(new Set(await recent()).size).toBe(10);
 });
 
+test("a reload mid-game reopens the same round with the same photos, score and pin", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const photo = page.getByRole("img", { name: /photo to locate/ });
+  const score = page.locator("header p.tabular");
+
+  await page.goto("./?tier=easy");
+  await expect(page.getByText("Easy game", { exact: true })).toBeVisible();
+  const card = await playRoundWithKeyboard(page);
+  await card.getByRole("button", { name: "Next photo" }).click();
+  await expect(page.getByText("Round 2 of 5", { exact: true })).toBeVisible();
+  const second = await photo.getAttribute("src");
+  const points = await score.textContent();
+  // A pin on round 2, then the tab is lost (a reload, or a phone closing it).
+  const globe = page.getByRole("application", { name: /Globe/ });
+  await globe.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByText(/^Your pin: /)).toBeVisible();
+  const pin = await page.getByText(/^Your pin: /).textContent();
+
+  await page.reload();
+  await expect(page.getByText("Picked up where you left off")).toBeVisible();
+  await expect(page.getByText("Easy game", { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\?tier=easy/);
+  await expect(page.getByText("Round 2 of 5", { exact: true })).toBeVisible();
+  await expect(photo).toHaveAttribute("src", second!);
+  await expect(score).toHaveText(points!);
+  await expect(page.getByText(/^Your pin: /)).toHaveText(pin!);
+  await page.getByRole("button", { name: "Guess here" }).click();
+  const reveal = page.getByRole("region").filter({ hasText: "It was taken in" });
+  await expect(reveal).toBeVisible();
+  await expect(page.getByText("Picked up where you left off")).toHaveCount(0);
+  await reveal.getByRole("button", { name: "Next photo" }).click();
+  await expect(page.getByText("Round 3 of 5", { exact: true })).toBeVisible();
+
+  // A new game lets the old one go: the next reload starts afresh.
+  await page.getByRole("button", { name: /Daily Five/ }).click();
+  await expect(page.getByText(/^Daily Five, /)).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("Round 1 of 5", { exact: true })).toBeVisible();
+  await expect(page.getByText("Picked up where you left off")).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
 test("the Daily Five is one button away from a fresh game", async ({ page }) => {
   await page.goto("./");
   await page.getByRole("button", { name: "Play the Daily Five" }).click();

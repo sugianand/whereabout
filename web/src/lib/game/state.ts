@@ -8,6 +8,8 @@
  *                       guessing (submitting) ──revealed──▶ revealed ──next──▶ loading
  *                          ▲                                       └─ after the last round ─▶ finished
  *                          └─ timeUp (Blitz): the clock locks the guess in, with or without a pin
+ *
+ *   loading (new game) ──resumed──▶ loading at the next unplayed round, or revealed on the last
  */
 import { haversineKm, scoreDistance, type LngLat } from "@/lib/geo";
 import type { Clue } from "@/lib/hints";
@@ -60,7 +62,10 @@ export type GameState =
   | { phase: "finished"; results: RoundResult[] };
 
 export type GameAction =
-  | { type: "started"; round: RoundStart }
+  /** A round is on screen. A resumed round comes back with its pin and the hints taken. */
+  | { type: "started"; round: RoundStart; pin?: LngLat | null; clues?: Clue[] }
+  /** A kept game reopens after the rounds already played (src/lib/game/saved.ts). */
+  | { type: "resumed"; results: RoundResult[] }
   | { type: "pinned"; pin: LngLat }
   | { type: "hintRequested" }
   | { type: "hinted"; clues: Clue[] }
@@ -90,13 +95,30 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         index: state.index,
         results: state.results,
         round: action.round,
-        pin: null,
-        clues: [],
+        pin: action.pin ?? null,
+        clues: action.clues ?? [],
         hinting: false,
         submitting: false,
         timedOut: false,
         error: null,
       };
+
+    case "resumed": {
+      // Only onto a game that has not begun: it picks up after the last round played, or on
+      // that round's reveal when all five were played and the results weren't opened yet.
+      if (state.phase !== "loading" || state.index !== 0 || state.results.length > 0) return state;
+      const results = action.results.slice(0, ROUNDS_PER_GAME);
+      if (results.length === 0) return state;
+      if (results.length === ROUNDS_PER_GAME) {
+        return {
+          phase: "revealed",
+          index: ROUNDS_PER_GAME - 1,
+          results,
+          current: results[ROUNDS_PER_GAME - 1],
+        };
+      }
+      return { phase: "loading", index: results.length, results, error: null };
+    }
 
     case "pinned":
       if (state.phase !== "guessing" || state.submitting) return state;
