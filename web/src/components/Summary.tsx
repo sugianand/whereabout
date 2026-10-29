@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import type { BlitzBest } from "@/lib/game/blitz";
 import { challengeOutcome, challengeText, sumScores, type Challenge } from "@/lib/game/challenge";
 import { ROUNDS_PER_GAME, totals, type RoundResult } from "@/lib/game/state";
 import { MAX_POINTS, formatDistance, formatPoints } from "@/lib/geo";
@@ -52,7 +53,17 @@ type SummaryProps = {
   canChallenge?: boolean;
   /** Set when this game was a friend's challenge: their score on each photo, to compare. */
   challenge?: Challenge;
+  /** Set after a Blitz game: how it compares with the best Blitz kept in this browser. */
+  blitz?: BlitzBest;
 };
+
+/** "A new Blitz best!" or "Your Blitz best is 14,200 points.", after a Blitz game. */
+export function blitzLine(blitz: BlitzBest): string {
+  if (!blitz.isNew) return `Your Blitz best is ${formatPoints(blitz.best)} points.`;
+  return blitz.previous === null
+    ? "Your first Blitz: that's the score to beat."
+    : `A new Blitz best! Up from ${formatPoints(blitz.previous)} points.`;
+}
 
 const plural = (n: number, one: string, many = `${one}s`) =>
   `${n.toLocaleString("en-US")} ${n === 1 ? one : many}`;
@@ -279,6 +290,7 @@ export default function Summary({
   returnedFrom = null,
   canChallenge = false,
   challenge,
+  blitz,
 }: SummaryProps) {
   const t = totals(results);
   const counted = useCountUp(t.player, 1400);
@@ -322,6 +334,14 @@ export default function Summary({
       <p className="mt-2 text-chalk-dim">
         out of {formatPoints(MAX_POINTS * ROUNDS_PER_GAME)} points
       </p>
+      {blitz && (
+        <p
+          className={`mt-3 text-xl ${blitz.isNew ? "font-semibold text-gold" : "text-chalk-dim"}`}
+          data-testid="blitz-best"
+        >
+          {blitzLine(blitz)}
+        </p>
+      )}
 
       {t.atlasRounds > 0 ? (
         <p className="mt-6 text-xl">
@@ -377,7 +397,7 @@ export default function Summary({
               </span>
               <span className="text-right">
                 <span className="block font-sign tabular text-2xl font-bold text-flare">
-                  {formatDistance(r.reveal.distanceKm)}
+                  {r.reveal.distanceKm === null ? "No pin" : formatDistance(r.reveal.distanceKm)}
                 </span>
                 <span className="tabular text-sm text-chalk-dim">
                   {formatPoints(r.reveal.score)} points
@@ -395,7 +415,7 @@ export default function Summary({
                   }}
                   type="button"
                   onClick={() => onReplay(i)}
-                  aria-label={`Look again at round ${i + 1}: ${r.reveal.answer.place}, you were ${formatDistance(r.reveal.distanceKm)} away`}
+                  aria-label={`Look again at round ${i + 1}: ${r.reveal.answer.place}, ${r.reveal.distanceKm === null ? "no pin before time ran out" : `you were ${formatDistance(r.reveal.distanceKm)} away`}`}
                   className={`${grid} group w-full grid-cols-[2rem_1fr_auto_1rem] rounded-lg px-1 text-left transition hover:bg-chalk/5 focus-visible:bg-chalk/5`}
                 >
                   {row}

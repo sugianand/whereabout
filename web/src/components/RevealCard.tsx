@@ -48,11 +48,12 @@ function ScoreLine({
 }: {
   who: string;
   tone: "flare" | "sonar";
-  distanceKm: number;
+  /** Null when a Blitz clock ran out before any pin. */
+  distanceKm: number | null;
   score: number;
 }) {
   // Numbers start counting as the arcs land on the truth.
-  const km = useCountUp(distanceKm, 900, REVEAL_DRAW_MS - 200);
+  const km = useCountUp(distanceKm ?? 0, 900, REVEAL_DRAW_MS - 200);
   const pts = useCountUp(score, 900, REVEAL_DRAW_MS - 200);
   const color = tone === "flare" ? "text-flare" : "text-sonar";
   return (
@@ -62,7 +63,9 @@ function ScoreLine({
         className={`size-2.5 shrink-0 -translate-y-0.5 rounded-full ${tone === "flare" ? "bg-flare" : "bg-sonar"}`}
       />
       <span className="w-14 text-chalk-dim">{who}</span>
-      <span className={`font-sign tabular text-3xl font-bold ${color}`}>{formatDistance(km)}</span>
+      <span className={`font-sign tabular text-3xl font-bold ${color}`}>
+        {distanceKm === null ? "No pin" : formatDistance(km)}
+      </span>
       <span className="ml-auto tabular text-chalk-dim">{formatPoints(pts)} points</span>
     </div>
   );
@@ -124,6 +127,17 @@ export function hintNote(result: RoundResult): string | null {
   return `You took ${used} hint${used === 1 ? "" : "s"}, so this round was worth up to ${formatPoints(maxPoints(used))} points.`;
 }
 
+/**
+ * What a Blitz clock did to the round, or null when the player guessed in time (and in every
+ * other mode).
+ */
+export function timeUpNote(result: RoundResult): string | null {
+  if (!result.timedOut) return null;
+  return result.pin
+    ? "Time's up! Your pin went in where it stood."
+    : "Time's up, and no pin on the globe: 0 points this round.";
+}
+
 const outline =
   "shrink-0 rounded-full border border-chalk/40 px-3.5 py-3 text-sm font-semibold transition hover:border-chalk";
 const primary =
@@ -142,6 +156,7 @@ export default function RevealCard({
   const nextRef = useRef<HTMLButtonElement>(null);
   const said = verdict(result);
   const hinted = hintNote(result);
+  const timedOut = timeUpNote(result);
   const shortlisted = atlas ? shortlist(atlas.topCountries ?? []) : [];
   const truthCountry = reveal.answer.country;
   const truthListed = shortlisted.some((c) => c.country === truthCountry);
@@ -173,6 +188,15 @@ export default function RevealCard({
           Round {replay.round} of {replay.of} again · no new score
         </p>
       )}
+      {timedOut && (
+        <p
+          className="mb-1 text-sm font-semibold text-flare"
+          aria-hidden="true"
+          data-testid="time-up"
+        >
+          {timedOut}
+        </p>
+      )}
       <p className="text-sm text-gold">It was taken in</p>
       <h2
         id="reveal-place"
@@ -183,7 +207,10 @@ export default function RevealCard({
 
       {/* Announced once, in full, for screen readers; the animated numbers are hidden from them. */}
       <p className="sr-only" aria-live="polite">
-        {`You were ${formatDistance(reveal.distanceKm)} away and scored ${formatPoints(reveal.score)} points.`}
+        {timedOut ? `${timedOut} ` : ""}
+        {reveal.distanceKm === null
+          ? `You scored ${formatPoints(reveal.score)} points.`
+          : `You were ${formatDistance(reveal.distanceKm)} away and scored ${formatPoints(reveal.score)} points.`}
         {atlas
           ? ` Atlas was ${formatDistance(atlas.distanceKm)} away and scored ${formatPoints(atlas.score)}.`
           : ""}

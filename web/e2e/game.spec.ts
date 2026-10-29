@@ -231,6 +231,49 @@ test("a Hard game deals only photos Atlas missed by most, chosen next to the Dai
   await expect(picker).toHaveValue("hard");
 });
 
+test("a Blitz game gives each photo 30 seconds, then locks the round in for 0 with no pin", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await page.goto("./");
+  await page.getByRole("button", { name: "Blitz", exact: true }).click();
+  await expect(page).toHaveURL(/\?blitz$/);
+  await expect(page.getByText("Blitz", { exact: true })).toBeVisible();
+
+  // The ring sits beside the guess button, on screen, and runs down once the photo shows.
+  const clock = page.getByTestId("blitz-clock");
+  await expect(clock).toBeVisible();
+  await expect(clock).toHaveAttribute("data-paused", "false");
+  const box = (await clock.boundingBox())!;
+  const viewport = page.viewportSize()!;
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+  expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+  const guess = (await page
+    .getByRole("button", { name: "Place your pin on the globe" })
+    .boundingBox())!;
+  expect(Math.abs(box.y + box.height / 2 - (guess.y + guess.height / 2))).toBeLessThan(
+    guess.height,
+  );
+  const start = Number(await clock.getAttribute("data-seconds"));
+  expect(start).toBeLessThanOrEqual(30);
+  await expect
+    .poll(async () => Number(await clock.getAttribute("data-seconds")), { timeout: 5_000 })
+    .toBeLessThan(start);
+
+  // No pin when time runs out: the answer shows, and the round scores nothing.
+  const card = page.getByRole("region").filter({ hasText: "It was taken in" });
+  await expect(card).toBeVisible({ timeout: 45_000 });
+  await expect(card.getByTestId("time-up")).toHaveText(/no pin on the globe/);
+  await expect(card.getByText("No pin", { exact: true })).toBeVisible();
+  await expect(page.locator("header").getByText(/^0\s*points$/)).toBeVisible();
+
+  // A reload keeps the mode, with a fresh photo and a full clock.
+  await page.reload();
+  await expect(page.getByText("Blitz", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("blitz-clock")).toHaveAttribute("data-paused", "false");
+});
+
 test("a continent game deals only photos taken on that continent, picked from the same menu", async ({
   page,
 }) => {
@@ -398,7 +441,7 @@ test("on the narrowest phones every header control stays on screen", async ({ pa
   // 360px is the commonest Android width; 320px is the smallest phone still in use.
   for (const width of [320, 360]) {
     await page.setViewportSize({ width, height: 740 });
-    for (const address of ["./", "./?daily", "./?region=europe", "./?tier=hard"]) {
+    for (const address of ["./", "./?daily", "./?region=europe", "./?tier=hard", "./?blitz"]) {
       await page.goto(address);
       const header = page.locator("header").first();
       const controls = header.locator("button:visible, a:visible, select:visible");

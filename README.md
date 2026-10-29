@@ -15,6 +15,9 @@ Atlas actually missed each photo (or open `?tier=hard`), or one continent, so ev
 in, say, South America (`?region=south-america`). The share text gives no spoilers.
 **Challenge a friend** from the results: the link deals your friend the same five photos with
 your score on each to beat, and they can send theirs straight back.
+**Blitz** (`?blitz`) gives each photo 30 seconds on a countdown ring: when time runs out your
+guess goes in wherever the pin is, and with no pin the round scores 0. The clock waits for the
+photo to load and pauses while the tab is hidden; your best Blitz is kept in your browser.
 **Country Streak** (at `/streak`) asks only for the country: tap it on the globe, one photo after
 another, until your first miss. Pick a continent to deal only photos taken there
 (`/streak?region=europe`, or straight from a continent game); each continent keeps its own best

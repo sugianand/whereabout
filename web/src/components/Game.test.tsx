@@ -667,3 +667,97 @@ describe("Game", { timeout: 20000 }, () => {
     });
   });
 });
+
+describe("Blitz", { timeout: 20000 }, () => {
+  // The clock reads performance.now(); the tests move it by hand.
+  let now = 0;
+  beforeEach(() => {
+    now = 0;
+    vi.spyOn(performance, "now").mockImplementation(() => now);
+    window.history.replaceState(null, "", "/?blitz");
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    Object.defineProperty(document, "hidden", { configurable: true, value: false });
+  });
+
+  /** Start a Blitz game and show its first photo, which starts the clock. */
+  async function startBlitz() {
+    render(<Game {...bundledGame} today={TODAY} />);
+    const map = await mapReady();
+    expect(await screen.findByText("Blitz", { selector: "p" }, WAIT)).toBeInTheDocument();
+    const clock = await screen.findByTestId("blitz-clock", {}, WAIT);
+    // Waiting for the photo: the full 30 seconds, not running yet.
+    expect(clock).toHaveAttribute("data-paused", "true");
+    fireEvent.load(await screen.findByRole("img", { name: /photo to locate/ }, WAIT));
+    await waitFor(() => expect(clock).toHaveAttribute("data-paused", "false"));
+    expect(clock).toHaveAttribute("data-seconds", "30");
+    return { map, clock };
+  }
+
+  it("opens from ?blitz with a 30-second ring that runs down once the photo shows", async () => {
+    const { clock } = await startBlitz();
+    expect(window.location.search).toBe("?blitz");
+    now = 11_000;
+    await waitFor(() => expect(clock).toHaveAttribute("data-seconds", "19"), WAIT);
+    expect(screen.queryByRole("region", { name: /./ })).toBeNull();
+  });
+
+  it("scores 0 and shows the answer when time runs out before any pin", async () => {
+    await startBlitz();
+    now = 30_000;
+    const card = await screen.findByRole("region", { name: /./ }, WAIT);
+    expect(within(card).getByTestId("time-up")).toHaveTextContent("no pin on the globe");
+    expect(within(card).getByText("No pin")).toBeInTheDocument();
+    expect(screen.getByText(/You scored 0 points\./)).toBeInTheDocument();
+  });
+
+  it("locks the guess in wherever the pin is when time runs out", async () => {
+    const { map } = await startBlitz();
+    const photo = await screen.findByRole("img", { name: /photo to locate/ });
+    const first = playable.find((p) => photo.getAttribute("src") === p.imageUrl)!;
+    act(() => map.click(first.lng, first.lat));
+    now = 31_000;
+    const card = await screen.findByRole("region", { name: /./ }, WAIT);
+    expect(within(card).getByTestId("time-up")).toHaveTextContent("Your pin went in");
+    expect(within(card).queryByText("No pin")).toBeNull();
+    expect(screen.getByText(/You were .* away and scored 5,000 points\./)).toBeInTheDocument();
+  });
+
+  it("pauses the clock while the tab is hidden", async () => {
+    const { clock } = await startBlitz();
+    now = 5_000;
+    Object.defineProperty(document, "hidden", { configurable: true, value: true });
+    act(() => void document.dispatchEvent(new Event("visibilitychange")));
+    await waitFor(() => expect(clock).toHaveAttribute("data-paused", "true"));
+    now = 600_000; // ten minutes away
+    await new Promise((r) => setTimeout(r, 450));
+    expect(clock).toHaveAttribute("data-seconds", "25");
+    expect(screen.queryByRole("region", { name: /./ })).toBeNull();
+    Object.defineProperty(document, "hidden", { configurable: true, value: false });
+    act(() => void document.dispatchEvent(new Event("visibilitychange")));
+    now = 610_000;
+    await waitFor(() => expect(clock).toHaveAttribute("data-seconds", "15"), WAIT);
+  });
+
+  it("is one tap away from any other game, and the summary keeps the best Blitz", async () => {
+    window.history.replaceState(null, "", "/");
+    render(<Game {...bundledGame} today={TODAY} />);
+    await mapReady();
+    fireEvent.click(await screen.findByRole("button", { name: "Blitz" }, WAIT));
+    await waitFor(() => expect(window.location.search).toBe("?blitz"));
+    for (let i = 0; i < ROUNDS_PER_GAME; i++) {
+      fireEvent.load(await screen.findByRole("img", { name: /photo to locate/ }, WAIT));
+      await screen.findByTestId("blitz-clock", {}, WAIT);
+      // Run out the clock on every photo, no pin: a Blitz of 0 points.
+      now += 31_000;
+      const card = await screen.findByRole("region", { name: /./ }, WAIT);
+      fireEvent.click(
+        within(card).getByRole("button", { name: i + 1 < ROUNDS_PER_GAME ? /Next/ : /results/i }),
+      );
+    }
+    expect(await screen.findByTestId("blitz-best", {}, WAIT)).toHaveTextContent("Your first Blitz");
+    expect(localStorage.getItem("whereabout:blitz-best")).toBe("0");
+    expect(screen.getByRole("button", { name: "Play another Blitz" })).toBeInTheDocument();
+  });
+});

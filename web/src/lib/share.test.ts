@@ -82,6 +82,10 @@ describe("distanceBand", () => {
     expect(distanceBand(20_000).square).toBe("🟥");
     expect(DISTANCE_BANDS).toHaveLength(4);
   });
+
+  it("puts a Blitz round with no pin in the farthest band", () => {
+    expect(distanceBand(null).square).toBe("🟥");
+  });
 });
 
 describe("versus", () => {

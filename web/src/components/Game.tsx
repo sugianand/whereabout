@@ -1,9 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 
 import { ApiBackend, LocalBackend } from "@/lib/game/backends";
+import {
+  BLITZ_SECONDS,
+  fractionLeft,
+  pauseClock,
+  rememberBlitz,
+  resumeClock,
+  secondsShown,
+  startClock,
+  timeUp,
+  type BlitzBest,
+  type BlitzClock,
+} from "@/lib/game/blitz";
 import {
   CHALLENGE_PARAM,
   encodeChallenge,
@@ -30,6 +50,7 @@ import { hasSeenIntro, INTRO_TEXT, markIntroSeen } from "@/lib/intro";
 import { recordGame, resetRecord, tallyContinents, type PlayerRecord } from "@/lib/playerRecord";
 import type { RevealView } from "@/lib/reveal";
 
+import BlitzRing from "./BlitzRing";
 import Globe from "./Globe";
 import PhotoViewer from "./PhotoViewer";
 import RevealCard from "./RevealCard";
@@ -39,20 +60,23 @@ import Summary from "./Summary";
  * A fresh game is five photos the player hasn't seen lately; the Daily Five is shared by all; a
  * tier game is a fresh game drawn from one difficulty third (src/lib/game/tiers.ts), and a
  * continent game one drawn from the photos taken on one continent (src/lib/game/regions.ts). A
- * challenge replays the five photos a friend's link names (src/lib/game/challenge.ts).
+ * challenge replays the five photos a friend's link names (src/lib/game/challenge.ts). Blitz is
+ * a fresh game against a 30-second clock on each photo (src/lib/game/blitz.ts).
  */
 export type GameMode =
   | { kind: "daily"; day: string }
   | { kind: "fresh"; game: number }
   | { kind: "tier"; tier: Tier; game: number }
   | { kind: "region"; region: Continent; game: number }
-  | { kind: "challenge"; challenge: Challenge };
+  | { kind: "challenge"; challenge: Challenge }
+  | { kind: "blitz"; game: number };
 
 export function modeTitle(mode: GameMode): string {
   if (mode.kind === "fresh") return "Fresh game";
   if (mode.kind === "tier") return `${TIER_NAMES[mode.tier]} game`;
   if (mode.kind === "region") return `${mode.region} game`;
   if (mode.kind === "challenge") return "A friend's challenge";
+  if (mode.kind === "blitz") return "Blitz";
   const label = new Date(`${mode.day}T12:00:00Z`).toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
@@ -82,6 +106,11 @@ type GameProps = {
 /** True when the page URL asks for the Daily Five (`?daily`). */
 function urlWantsDaily(): boolean {
   return new URLSearchParams(window.location.search).has("daily");
+}
+
+/** True when the page URL asks for a Blitz game (`?blitz`). */
+function urlWantsBlitz(): boolean {
+  return new URLSearchParams(window.location.search).has("blitz");
 }
 
 /** The tier the page URL asks for (`?tier=hard`), if it names one. */
@@ -118,7 +147,10 @@ function syncUrl(mode: GameMode) {
   if (mode.kind === "challenge")
     url.searchParams.set(CHALLENGE_PARAM, encodeChallenge(mode.challenge));
   else url.searchParams.delete(CHALLENGE_PARAM);
-  const next = `${url.pathname}${url.search.replace(/daily=(?=&|$)/, "daily")}${url.hash}`;
+  if (mode.kind === "blitz") url.searchParams.set("blitz", "");
+  else url.searchParams.delete("blitz");
+  const search = url.search.replace(/(daily|blitz)=(?=&|$)/g, "$1");
+  const next = `${url.pathname}${search}${url.hash}`;
   if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
     window.history.replaceState(window.history.state, "", next);
   }
@@ -204,6 +236,8 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   const [lookedAt, setLookedAt] = useState<number | null>(null);
   // Why a challenge link in the address couldn't be played, until the next game starts.
   const [challengeNotice, setChallengeNotice] = useState<string | null>(null);
+  // A finished Blitz game against the best kept in this browser, shown on the summary.
+  const [blitzBest, setBlitzBest] = useState<BlitzBest | null>(null);
 
   useEffect(() => {
     if (mode) return;
@@ -216,7 +250,14 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
         return;
       }
       if (linked) setChallengeNotice(CHALLENGE_NOTICE[linked.reason]);
+      // Blitz deals in the browser like tiers and continents; the API backend plays untimed.
+      const blitz = !start && !apiUrl && !urlWantsDaily() && urlWantsBlitz();
       const kind = start ?? (urlWantsDaily() ? "daily" : "fresh");
+      if (blitz) {
+        setIntroOpen(!hasSeenIntro());
+        setMode({ kind: "blitz", game: 1 });
+        return;
+      }
       const tier = kind === "fresh" && tiers ? urlTier() : null;
       const wanted = kind === "fresh" && !tier ? urlRegion() : null;
       const region = wanted && regions[wanted] ? wanted : null;
@@ -357,20 +398,78 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
 
   const onPinChange = useCallback((pin: LngLat) => dispatch({ type: "pinned", pin }), []);
 
-  async function submit() {
-    if (state.phase !== "guessing" || !state.pin || state.submitting || !backend) return;
-    dispatch({ type: "submitted" });
+  // Blitz: each photo's clock starts once the photo is on screen and runs only while the page
+  // is visible. `now` ticks a few times a second to redraw the ring and to notice time is up.
+  const blitz = mode?.kind === "blitz";
+  const guessingId = state.phase === "guessing" ? state.round.roundId : null;
+  const [clock, setClock] = useState<{ roundId: string; clock: BlitzClock } | null>(null);
+  const [now, setNow] = useState(0);
+  const roundClock = blitz && clock && clock.roundId === guessingId ? clock.clock : null;
+  // The round whose clock already locked its guess in, so time up fires once.
+  const lockedFor = useRef<string | null>(null);
+  const onPhotoShown = useCallback(() => {
+    if (!blitz || !guessingId) return;
+    const t = performance.now();
+    const fresh = startClock(t);
+    lockedFor.current = null;
+    setNow(t);
+    setClock({ roundId: guessingId, clock: document.hidden ? pauseClock(fresh, t) : fresh });
+  }, [blitz, guessingId]);
+
+  useEffect(() => {
+    if (!roundClock) return;
+    const onVisibility = () => {
+      const t = performance.now();
+      setNow(t);
+      setClock(
+        (c) =>
+          c && { ...c, clock: document.hidden ? pauseClock(c.clock, t) : resumeClock(c.clock, t) },
+      );
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [roundClock]);
+
+  const ticking = roundClock !== null && state.phase === "guessing" && !state.submitting;
+  useEffect(() => {
+    if (!ticking) return;
+    const id = window.setInterval(() => setNow(performance.now()), 200);
+    return () => window.clearInterval(id);
+  }, [ticking]);
+
+  // Time up locks the guess in once per round, wherever the pin is, or with no pin at all.
+  const onTimeUp = useEffectEvent(() => {
+    if (state.phase !== "guessing" || state.submitting || !backend) return;
+    if (lockedFor.current === state.round.roundId) return;
+    lockedFor.current = state.round.roundId;
+    dispatch({ type: "timeUp" });
+    void send(state.round.roundId, state.pin);
+  });
+  const expired = ticking && roundClock !== null && timeUp(roundClock, now);
+  useEffect(() => {
+    if (expired) onTimeUp();
+  }, [expired]);
+
+  async function send(roundId: string, pin: LngLat | null) {
+    if (!backend) return;
     try {
-      const reveal = await backend.guess(state.round.roundId, state.pin);
+      const reveal = await backend.guess(roundId, pin);
       // The server's word on Atlas wins; otherwise use the guesses bundled with the site.
+      const photoId = state.phase === "guessing" ? state.round.photo.id : null;
       const atlasGuess =
         reveal.atlas !== undefined
           ? reveal.atlas
-          : (records.get(state.round.photo.id)?.atlas ?? null);
+          : ((photoId ? records.get(photoId)?.atlas : null) ?? null);
       dispatch({ type: "revealed", reveal, atlas: atlasGuess });
     } catch (err) {
       dispatch({ type: "failed", message: (err as Error).message });
     }
+  }
+
+  async function submit() {
+    if (state.phase !== "guessing" || !state.pin || state.submitting || !backend) return;
+    dispatch({ type: "submitted" });
+    await send(state.round.roundId, state.pin);
   }
 
   async function takeHint() {
@@ -397,6 +496,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
           continents: tallyContinents(state.results),
         }),
       );
+      setBlitzBest(mode.kind === "blitz" ? rememberBlitz(t.player) : null);
     }
     dispatch({ type: "next" });
   }
@@ -404,6 +504,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   /** Every new game starts from round one, with no replay open. */
   function restart() {
     setChallengeNotice(null);
+    setBlitzBest(null);
     setReplay(null);
     setLookedAt(null);
     dispatch({ type: "restart" });
@@ -431,7 +532,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
    */
   function playFresh() {
     setMode((m) =>
-      m?.kind === "tier" || m?.kind === "region"
+      m?.kind === "tier" || m?.kind === "region" || m?.kind === "blitz"
         ? { ...m, game: m.game + 1 }
         : { kind: "fresh", game: m?.kind === "fresh" ? m.game + 1 : 1 },
     );
@@ -446,6 +547,11 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
       if (choice) return { kind: "region", region: choice.region, game };
       return { kind: "fresh", game };
     });
+    restart();
+  }
+
+  function playBlitz() {
+    setMode((m) => ({ kind: "blitz", game: m && "game" in m ? m.game + 1 : 1 }));
     restart();
   }
 
@@ -464,7 +570,9 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   const revealView = useMemo<RevealView | null>(() => {
     if (!shown) return null;
     const current = shown;
-    const guesses: RevealView["guesses"] = [{ actor: "player", at: current.pin }];
+    const guesses: RevealView["guesses"] = current.pin
+      ? [{ actor: "player", at: current.pin }]
+      : [];
     if (current.atlas) guesses.push({ actor: "atlas", at: current.atlas });
     return {
       truth: current.reveal.answer,
@@ -484,7 +592,9 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
             ? `Play another ${TIER_NAMES[mode.tier]} game`
             : mode?.kind === "region"
               ? `Play another ${mode.region} game`
-              : undefined
+              : mode?.kind === "blitz"
+                ? "Play another Blitz"
+                : undefined
         }
         onPlayDaily={mode?.kind === "daily" ? undefined : playDaily}
         record={record}
@@ -494,6 +604,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
         returnedFrom={lookedAt}
         canChallenge={!apiUrl}
         challenge={mode?.kind === "challenge" ? mode.challenge : undefined}
+        blitz={blitzBest ?? undefined}
       />
     );
   }
@@ -527,6 +638,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
             roundKey={round.roundId}
             width={roundSize?.width}
             height={roundSize?.height}
+            onShown={blitz ? onPhotoShown : undefined}
           />
         ) : (
           <div
@@ -644,6 +756,16 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
                   onPick={playFrom}
                 />
               )}
+              {!apiUrl && mode.kind !== "blitz" && (
+                <button
+                  type="button"
+                  onClick={playBlitz}
+                  title="30 seconds a photo: your pin goes in when time runs out"
+                  className="pointer-events-auto shrink-0 rounded-full border border-flare/50 bg-ocean-deep/60 px-3 py-1 text-xs font-semibold text-flare backdrop-blur transition hover:border-flare"
+                >
+                  Blitz
+                </button>
+              )}
               {!apiUrl && deck.streakIds.length > 0 && (
                 <Link
                   // From a continent game, the streak deals from the same continent.
@@ -724,7 +846,14 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
                 </p>
               </div>
             )}
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
+              {blitz && state.phase === "guessing" && (
+                <BlitzRing
+                  seconds={roundClock ? secondsShown(roundClock, now) : BLITZ_SECONDS}
+                  fraction={roundClock ? fractionLeft(roundClock, now) : 1}
+                  paused={!roundClock || roundClock.runningSince === null}
+                />
+              )}
               {hintsLeft > 0 && state.phase === "guessing" && (
                 <button
                   type="button"
@@ -747,11 +876,13 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
                 }
                 className="min-w-0 flex-1 rounded-full bg-flare px-4 py-3 font-semibold text-ocean-deep transition enabled:hover:brightness-110 disabled:cursor-not-allowed disabled:bg-chalk/15 disabled:text-chalk-dim"
               >
-                {state.phase === "guessing" && state.submitting
-                  ? "Checking…"
-                  : state.phase === "guessing" && state.pin
-                    ? "Guess here"
-                    : "Place your pin on the globe"}
+                {state.phase === "guessing" && state.timedOut
+                  ? "Time's up!"
+                  : state.phase === "guessing" && state.submitting
+                    ? "Checking…"
+                    : state.phase === "guessing" && state.pin
+                      ? "Guess here"
+                      : "Place your pin on the globe"}
               </button>
             </div>
             {error && (

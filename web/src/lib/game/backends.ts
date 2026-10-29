@@ -40,16 +40,17 @@ export class LocalBackend implements GameBackend {
     return round.clues.slice(0, round.used);
   }
 
-  async guess(roundId: string, at: LngLat): Promise<Reveal> {
+  async guess(roundId: string, at: LngLat | null): Promise<Reveal> {
     const round = this.open.get(roundId);
     if (!round) throw new Error("This round has already been guessed or does not exist.");
     this.open.delete(roundId);
     const { photo, used } = round;
-    const distanceKm = haversineKm(at, photo);
+    // No pin when a Blitz clock ran out: the answer is shown, the round scores nothing.
+    const distanceKm = at ? haversineKm(at, photo) : null;
     return {
       roundId,
       distanceKm,
-      score: scoreDistance(distanceKm, used),
+      score: distanceKm === null ? 0 : scoreDistance(distanceKm, used),
       hintsUsed: used,
       answer: {
         lng: photo.lng,
@@ -165,7 +166,9 @@ export class ApiBackend implements GameBackend {
     return h.hints.map(({ kind, text }) => ({ kind, text }));
   }
 
-  async guess(roundId: string, at: LngLat): Promise<Reveal> {
+  async guess(roundId: string, at: LngLat | null): Promise<Reveal> {
+    // The server scores a pin; Blitz, the one way to reach here without one, is browser-only.
+    if (!at) throw new Error("Place your pin on the globe first.");
     const g = await this.post<ApiGuess>(`/api/v1/rounds/${encodeURIComponent(roundId)}/guess`, {
       lat: at.lat,
       lon: at.lng,

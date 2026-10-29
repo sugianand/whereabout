@@ -6,8 +6,8 @@ import { EMPTY_RECORD, type PlayerRecord } from "@/lib/playerRecord";
 
 import PhotoViewer, { ZOOM } from "./PhotoViewer";
 import AtlasEyes from "./AtlasEyes";
-import RevealCard, { hintNote, verdict } from "./RevealCard";
-import Summary, { challengeResultLine } from "./Summary";
+import RevealCard, { hintNote, timeUpNote, verdict } from "./RevealCard";
+import Summary, { blitzLine, challengeResultLine } from "./Summary";
 
 function result(playerKm: number, playerScore: number, atlasScore?: number): RoundResult {
   return {
@@ -49,6 +49,52 @@ describe("hintNote", () => {
     );
     expect(hintNote({ ...r, reveal: { ...r.reveal, hintsUsed: 3 } })).toBe(
       "You took 3 hints, so this round was worth up to 2,000 points.",
+    );
+  });
+});
+
+describe("Blitz on the reveal and the summary", () => {
+  const noPin: RoundResult = {
+    ...result(0, 0, 3000),
+    pin: null,
+    timedOut: true,
+    reveal: { ...result(0, 0).reveal, distanceKm: null, score: 0 },
+  };
+
+  it("says when the clock, not the player, put the guess in", () => {
+    expect(timeUpNote(result(5, 4900))).toBeNull();
+    expect(timeUpNote({ ...result(5, 4900), timedOut: true })).toBe(
+      "Time's up! Your pin went in where it stood.",
+    );
+    expect(timeUpNote(noPin)).toBe("Time's up, and no pin on the globe: 0 points this round.");
+  });
+
+  it("shows a round with no pin as 'No pin', not a distance", () => {
+    render(<RevealCard result={noPin} isLast={false} onNext={() => {}} />);
+    expect(screen.getByTestId("time-up")).toHaveTextContent("no pin on the globe");
+    expect(screen.getByText("No pin")).toBeInTheDocument();
+    expect(screen.getByText(/You scored 0 points\./)).toBeInTheDocument();
+  });
+
+  it("lists a no-pin round on the summary, and the Blitz best under the score", () => {
+    render(
+      <Summary
+        results={[noPin]}
+        title="Blitz"
+        onPlayAgain={() => {}}
+        blitz={{ best: 9000, previous: 9000, isNew: false }}
+      />,
+    );
+    expect(screen.getByText("No pin")).toBeInTheDocument();
+    expect(screen.getByTestId("blitz-best")).toHaveTextContent("Your Blitz best is 9,000 points.");
+  });
+
+  it("celebrates a first Blitz and a new best", () => {
+    expect(blitzLine({ best: 100, previous: null, isNew: true })).toBe(
+      "Your first Blitz: that's the score to beat.",
+    );
+    expect(blitzLine({ best: 12000, previous: 9000, isNew: true })).toBe(
+      "A new Blitz best! Up from 9,000 points.",
     );
   });
 });

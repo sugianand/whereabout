@@ -39,7 +39,8 @@ export interface RoundStart {
 /** Everything revealed after a guess. */
 export interface Reveal {
   roundId: string;
-  distanceKm: number;
+  /** How far the pin was from the answer, or null when a Blitz clock ran out with no pin. */
+  distanceKm: number | null;
   /** Already lowered for the hints taken: the backend scores them. */
   score: number;
   hintsUsed: number;
@@ -253,5 +254,9 @@ export interface GameBackend {
   startRound(): Promise<RoundStart>;
   /** Take the round's next hint; resolves to every hint taken so far, newest last. */
   hint(roundId: string): Promise<Clue[]>;
-  guess(roundId: string, at: LngLat): Promise<Reveal>;
+  /**
+   * Score the round. `null` is a Blitz round whose clock ran out before any pin: it reveals the
+   * answer for 0 points. Only the browser backend deals Blitz games.
+   */
+  guess(roundId: string, at: LngLat | null): Promise<Reveal>;
 }

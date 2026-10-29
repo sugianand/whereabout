@@ -22,7 +22,9 @@ export const DISTANCE_BANDS: readonly DistanceBand[] = [
   { maxKm: Infinity, square: "🟥", label: "over 2,500 km" },
 ];
 
-export function distanceBand(km: number): DistanceBand {
+/** The band a guess falls in; no pin at all (a Blitz clock ran out) is the farthest band. */
+export function distanceBand(km: number | null): DistanceBand {
+  if (km === null) return DISTANCE_BANDS[DISTANCE_BANDS.length - 1];
   return DISTANCE_BANDS.find((b) => km <= b.maxKm) ?? DISTANCE_BANDS[DISTANCE_BANDS.length - 1];
 }
 

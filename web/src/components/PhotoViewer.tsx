@@ -30,6 +30,8 @@ type PhotoViewerProps = {
   /** Original file size in pixels, when known; enables sharper sources on big screens. */
   width?: number;
   height?: number;
+  /** Called once per photo when it is on screen, or has failed to load (Blitz starts its clock). */
+  onShown?: () => void;
 };
 
 /** Kept so older callers can still read how far a tap zooms. */
@@ -49,11 +51,17 @@ export default function PhotoViewer(props: PhotoViewerProps) {
   return <PhotoViewerInner key={props.roundKey} {...props} />;
 }
 
-function PhotoViewerInner({ src, width }: PhotoViewerProps) {
+function PhotoViewerInner({ src, width, onShown }: PhotoViewerProps) {
   const photoSources = sources({ imageUrl: src, width });
   const blurSrc = placeholderUrl(src);
   const [fullLoaded, setFullLoaded] = useState(false);
   const [status, setStatus] = useState<"loading" | "loaded" | "failed">("loading");
+  const shownCalled = useRef(false);
+  useEffect(() => {
+    if (status === "loading" || shownCalled.current) return;
+    shownCalled.current = true;
+    onShown?.();
+  }, [status, onShown]);
   const [view, setViewState] = useState<View>(RESET);
   const [interacting, setInteracting] = useState(false);
 

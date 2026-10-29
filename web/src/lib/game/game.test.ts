@@ -87,6 +87,15 @@ describe("LocalBackend", () => {
     await backend.guess(round.roundId, { lng: 0, lat: 0 });
     await expect(backend.guess(round.roundId, { lng: 0, lat: 0 })).rejects.toThrow();
   });
+
+  it("reveals the answer for 0 points when a Blitz clock ran out with no pin", async () => {
+    const backend = new LocalBackend([KYOTO]);
+    const round = await backend.startRound();
+    const reveal = await backend.guess(round.roundId, null);
+    expect(reveal.distanceKm).toBeNull();
+    expect(reveal.score).toBe(0);
+    expect(reveal.answer.place).toBe("Kyoto, Japan");
+  });
 });
 
 describe("ApiBackend", () => {
@@ -189,6 +198,13 @@ describe("ApiBackend", () => {
       vi.fn().mockResolvedValue(new Response("", { status: 503 })),
     );
     await expect(backend.startRound()).rejects.toThrow("503");
+  });
+
+  it("never sends a guess without a pin (Blitz is played in the browser)", async () => {
+    const fetchImpl = vi.fn();
+    const backend = new ApiBackend("http://api.test", fetchImpl);
+    await expect(backend.guess("r", null)).rejects.toThrow("Place your pin");
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 });
 
@@ -299,6 +315,52 @@ describe("gameReducer", () => {
 
   it("restarts from scratch", () => {
     expect(gameReducer(playRound(initialState), { type: "restart" })).toBe(initialState);
+  });
+
+  it("locks the guess in where the pin stands when the Blitz clock runs out", () => {
+    let s = gameReducer(initialState, { type: "started", round });
+    s = gameReducer(s, { type: "pinned", pin: { lng: 135, lat: 34 } });
+    s = gameReducer(s, { type: "timeUp" });
+    expect(s.phase === "guessing" && [s.submitting, s.timedOut]).toEqual([true, true]);
+    // The pin can't move once time is up.
+    s = gameReducer(s, { type: "pinned", pin: { lng: 0, lat: 0 } });
+    s = gameReducer(s, { type: "revealed", reveal, atlas });
+    expect(s.phase === "revealed" && s.current.pin).toEqual({ lng: 135, lat: 34 });
+    expect(s.phase === "revealed" && s.current.timedOut).toBe(true);
+  });
+
+  it("reveals a Blitz round with no pin at all when time ran out first", () => {
+    let s = gameReducer(initialState, { type: "started", round });
+    // Without the clock, no pin means no guess.
+    expect(gameReducer(s, { type: "revealed", reveal, atlas })).toBe(s);
+    s = gameReducer(s, { type: "timeUp" });
+    s = gameReducer(s, {
+      type: "revealed",
+      reveal: { ...reveal, distanceKm: null, score: 0 },
+      atlas,
+    });
+    expect(s.phase).toBe("revealed");
+    expect(s.phase === "revealed" && s.current.pin).toBeNull();
+    expect(totals(s.phase === "revealed" ? s.results : []).player).toBe(0);
+  });
+
+  it("lets a guess the player already sent stand when time runs out", () => {
+    let s = gameReducer(initialState, { type: "started", round });
+    s = gameReducer(s, { type: "pinned", pin: { lng: 135, lat: 34 } });
+    s = gameReducer(s, { type: "submitted" });
+    expect(gameReducer(s, { type: "timeUp" })).toBe(s);
+  });
+
+  it("drops a hint still on its way when time runs out", () => {
+    let s = gameReducer(initialState, { type: "started", round });
+    s = gameReducer(s, { type: "hintRequested" });
+    s = gameReducer(s, { type: "timeUp" });
+    expect(s.phase === "guessing" && s.hinting).toBe(false);
+    const after = gameReducer(s, {
+      type: "hinted",
+      clues: [{ kind: "continent", text: "It's in Asia" }],
+    });
+    expect(after.phase === "guessing" && after.clues).toEqual([]);
   });
 
   it("works without Atlas data", () => {

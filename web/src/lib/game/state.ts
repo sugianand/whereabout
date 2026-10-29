@@ -6,7 +6,8 @@
  *                          │ submitted
  *                          ▼
  *                       guessing (submitting) ──revealed──▶ revealed ──next──▶ loading
- *                                                                  └─ after the last round ─▶ finished
+ *                          ▲                                       └─ after the last round ─▶ finished
+ *                          └─ timeUp (Blitz): the clock locks the guess in, with or without a pin
  */
 import { haversineKm, scoreDistance, type LngLat } from "@/lib/geo";
 import type { Clue } from "@/lib/hints";
@@ -17,12 +18,15 @@ export const ROUNDS_PER_GAME = 5;
 
 export interface RoundResult {
   round: RoundStart;
-  pin: LngLat;
+  /** Where the player guessed, or null when a Blitz clock ran out before any pin (score 0). */
+  pin: LngLat | null;
   reveal: Reveal;
   /** The hints taken this round, in order (the score already counts them). */
   clues: Clue[];
   /** Atlas's guess for this photo, scored against the same answer, or null if it has none. */
   atlas: (AtlasGuess & { distanceKm: number; score: number }) | null;
+  /** Set when a Blitz clock, not the player, locked this guess in. */
+  timedOut?: true;
 }
 
 export type GameState =
@@ -43,6 +47,8 @@ export type GameState =
       /** A hint is on its way. */
       hinting: boolean;
       submitting: boolean;
+      /** The Blitz clock ran out: the guess is going in as it stands, pin or no pin. */
+      timedOut: boolean;
       error: string | null;
     }
   | {
@@ -59,6 +65,7 @@ export type GameAction =
   | { type: "hintRequested" }
   | { type: "hinted"; clues: Clue[] }
   | { type: "submitted" }
+  | { type: "timeUp" }
   | { type: "revealed"; reveal: Reveal; atlas: AtlasGuess | null }
   | { type: "failed"; message: string }
   | { type: "next" }
@@ -87,6 +94,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         clues: [],
         hinting: false,
         submitting: false,
+        timedOut: false,
         error: null,
       };
 
@@ -109,8 +117,14 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       }
       return { ...state, submitting: true };
 
+    case "timeUp":
+      // A guess the player already sent stands; otherwise the pin (or its absence) goes in now.
+      // A hint still on its way is dropped: the round is over.
+      if (state.phase !== "guessing" || state.submitting) return state;
+      return { ...state, submitting: true, hinting: false, timedOut: true, error: null };
+
     case "revealed": {
-      if (state.phase !== "guessing" || !state.pin) return state;
+      if (state.phase !== "guessing" || (!state.pin && !state.timedOut)) return state;
       const { atlas, reveal } = action;
       let scoredAtlas: RoundResult["atlas"] = null;
       if (atlas) {
@@ -127,6 +141,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         reveal,
         clues: state.clues,
         atlas: scoredAtlas,
+        ...(state.timedOut ? { timedOut: true as const } : {}),
       };
       return {
         phase: "revealed",
@@ -138,7 +153,14 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case "failed":
       if (state.phase === "guessing") {
-        return { ...state, submitting: false, hinting: false, error: action.message };
+        // A Blitz guess that failed to send can be sent again by hand, so the clock lets go.
+        return {
+          ...state,
+          submitting: false,
+          hinting: false,
+          timedOut: false,
+          error: action.message,
+        };
       }
       if (state.phase === "loading") return { ...state, error: action.message };
       return state;
