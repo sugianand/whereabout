@@ -45,6 +45,7 @@ import type { Continent } from "@/lib/continents";
 import type { CatalogPhoto, GameBackend } from "@/lib/game/types";
 import { formatPoints, maxPoints, type LngLat } from "@/lib/geo";
 import type { Clue } from "@/lib/hints";
+import { feelRevealInBrowser } from "@/lib/feel";
 import { hasSeenIntro, INTRO_TEXT, markIntroSeen } from "@/lib/intro";
 import { keepForOffline, photoUrlsToKeep } from "@/lib/offline/register";
 import { gameFeats, newBadges, type BadgeId } from "@/lib/badges";
@@ -58,6 +59,7 @@ import {
 import type { RevealView } from "@/lib/reveal";
 
 import BlitzRing from "./BlitzRing";
+import FeelToggle from "./FeelToggle";
 import Globe from "./Globe";
 import PhotoViewer from "./PhotoViewer";
 import RevealCard from "./RevealCard";
@@ -530,6 +532,8 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
           ? reveal.atlas
           : ((photoId ? records.get(photoId)?.atlas : null) ?? null);
       dispatch({ type: "revealed", reveal, atlas: atlasGuess });
+      // A buzz and a chime scaled to how close the pin landed (unless muted or reduced motion).
+      feelRevealInBrowser(reveal.distanceKm);
     } catch (err) {
       dispatch({ type: "failed", message: (err as Error).message });
     }
@@ -861,6 +865,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
                   <span className={NARROW_HIDDEN}>Country</span> Streak
                 </Link>
               )}
+              <FeelToggle />
             </div>
           )}
           {!shown && (

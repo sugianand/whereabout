@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 import { continentOf } from "../src/lib/continents";
+import { BUZZ, CHIME, type Closeness } from "../src/lib/feel";
 import { dayKey } from "../src/lib/game/daily";
 
 // The real photos are hot-linked from Wikimedia. Serve a local stand-in instead, so the test
@@ -123,6 +124,71 @@ test("a fifth Daily Five in a row earns the Five-day streak badge on the summary
   const saved = JSON.parse((await page.evaluate(() => localStorage.getItem("whereabout:record")))!);
   expect(saved.streak).toBe(5);
   expect(saved.badges).toContain("daily-five");
+});
+
+/** Records every buzz and every chime note the page plays, in place of the phone and speakers. */
+async function listenForFeel(page: Page) {
+  await page.addInitScript(() => {
+    const w = window as unknown as { buzzes: number[][]; notes: number };
+    w.buzzes = [];
+    w.notes = 0;
+    Object.defineProperty(navigator, "vibrate", {
+      value: (pattern: number[]) => (w.buzzes.push([...pattern]), true),
+      configurable: true,
+    });
+    const create = AudioContext.prototype.createOscillator;
+    AudioContext.prototype.createOscillator = function (this: AudioContext) {
+      w.notes += 1;
+      return create.call(this);
+    };
+  });
+  return () =>
+    page.evaluate(() => {
+      const w = window as unknown as { buzzes: number[][]; notes: number };
+      return { buzzes: w.buzzes, notes: w.notes };
+    });
+}
+
+test("the reveal buzzes and chimes for how close the pin landed, until muted", async ({ page }) => {
+  const felt = await listenForFeel(page);
+  await page.goto("./?daily");
+  const toggle = page.getByRole("button", { name: "Sound and vibration at the reveal" });
+  await expect(toggle).toHaveAttribute("aria-pressed", "true");
+
+  let card = await playRoundWithKeyboard(page);
+  await expect.poll(async () => (await felt()).buzzes.length).toBe(1);
+  const { buzzes, notes } = await felt();
+  const closeness = (Object.keys(BUZZ) as Closeness[]).find(
+    (c) => JSON.stringify(BUZZ[c]) === JSON.stringify(buzzes[0]),
+  );
+  expect(closeness, `a known buzz: ${JSON.stringify(buzzes[0])}`).toBeDefined();
+  // The chime belongs to the same closeness as the buzz.
+  expect(notes).toBe(CHIME[closeness!].notes.length);
+
+  // Muted: the next reveal is silent and still, and the choice outlasts a reload.
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-pressed", "false");
+  await card.getByRole("button", { name: "Next photo" }).click();
+  card = await playRoundWithKeyboard(page);
+  await expect(card.getByText(/points$/).first()).toBeVisible();
+  expect(await felt()).toEqual({ buzzes, notes });
+  await page.reload();
+  await expect(toggle).toHaveAttribute("aria-pressed", "false");
+});
+
+test("under reduced motion the reveal neither buzzes nor chimes, and offers no toggle", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const felt = await listenForFeel(page);
+  await page.goto("./?daily");
+  await expect(page.getByRole("button", { name: /Daily Five|New/ }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sound and vibration at the reveal" })).toHaveCount(
+    0,
+  );
+  const card = await playRoundWithKeyboard(page);
+  await expect(card.getByText(/points$/).first()).toBeVisible();
+  expect(await felt()).toEqual({ buzzes: [], notes: 0 });
 });
 
 test("the globe renders with WebGL and accepts a click", async ({ page }) => {
