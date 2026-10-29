@@ -390,6 +390,36 @@ test("on a phone the answer stays in view above the result card", async ({ page 
   await expect(page.getByText("out of 25,000 points")).toBeVisible();
 });
 
+test("on the narrowest phones every header control stays on screen", async ({ page }) => {
+  test.skip(
+    (page.viewportSize()?.width ?? 1000) >= 768,
+    "a phone layout check; desktop has room to spare",
+  );
+  // 360px is the commonest Android width; 320px is the smallest phone still in use.
+  for (const width of [320, 360]) {
+    await page.setViewportSize({ width, height: 740 });
+    for (const address of ["./", "./?daily", "./?region=europe", "./?tier=hard"]) {
+      await page.goto(address);
+      const header = page.locator("header").first();
+      const controls = header.locator("button:visible, a:visible, select:visible");
+      await expect(controls.first()).toBeVisible();
+      const score = (await header.getByText(/^Round 1 of 5$/).boundingBox())!;
+      for (const control of await controls.all()) {
+        const box = (await control.boundingBox())!;
+        const what = `${width}px ${address}: "${(await control.textContent())?.trim()}"`;
+        expect(box.x, `${what} starts on screen`).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width, `${what} ends on screen`).toBeLessThanOrEqual(width);
+        // Nothing slides under the round counter and score in the top corner.
+        const clear = box.y >= score.y + score.height || box.x + box.width <= score.x;
+        expect(clear, `${what} clear of the score`).toBe(true);
+      }
+    }
+  }
+  // The shortened labels still name what they do, and still work.
+  await page.getByRole("link", { name: /Streak$/ }).click();
+  await expect(page).toHaveURL(/\/streak\/?$/);
+});
+
 test("any round of a finished game opens again from the summary, and back returns to it", async ({
   page,
 }) => {

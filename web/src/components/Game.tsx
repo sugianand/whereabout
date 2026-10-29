@@ -124,6 +124,12 @@ function syncUrl(mode: GameMode) {
   }
 }
 
+/**
+ * Words dropped from the header's buttons on phones narrower than 400px (a 360px Android has
+ * room for about 330px of controls), leaving labels that still say what each one does.
+ */
+const NARROW_HIDDEN = "max-[399px]:hidden";
+
 /** What the picker can deal from: a difficulty third, a continent, or the whole catalog. */
 export type PhotoChoice = { tier: Tier } | { region: Continent } | null;
 
@@ -538,10 +544,14 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
         )}
       </div>
 
-      <header className="wb-header pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-4 px-4 pt-4 md:px-6">
+      {/* Two lines: the title and the score side by side, then the controls across the whole
+          width. Kept under the title column, the controls only had what the score left over,
+          and on a 360px phone they ran off the screen. */}
+      <header className="wb-header pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-wrap items-start justify-between gap-x-4 px-4 pt-4 md:px-6">
         {/* Only the controls take taps: on a phone this column spans the photo, and its empty
-            space must not swallow taps meant for the photo's own buttons underneath. */}
-        <div className="min-w-0">
+            space must not swallow taps meant for the photo's own buttons underneath. A zero
+            basis keeps a long notice from pushing the score onto a line of its own. */}
+        <div className="min-w-0 flex-1 basis-0">
           <p className="font-sign text-3xl font-extrabold leading-none tracking-tight md:text-4xl">
             Whereabout
           </p>
@@ -572,14 +582,53 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
               {challengeNotice}
             </p>
           )}
+        </div>
+        <div className="pointer-events-auto text-right">
+          <ol className="flex justify-end gap-1.5" aria-hidden="true">
+            {Array.from({ length: ROUNDS_PER_GAME }, (_, i) => (
+              <li
+                key={i}
+                className={`h-1.5 w-6 rounded-full ${
+                  replayed
+                    ? i === index
+                      ? "bg-chalk"
+                      : "bg-flare"
+                    : i < state.results.length
+                      ? "bg-flare"
+                      : i === index
+                        ? "bg-chalk"
+                        : "bg-chalk/25"
+                }`}
+              />
+            ))}
+          </ol>
+          <p className="mt-2 text-sm text-chalk-dim">
+            {replayed ? "Looking again at round" : "Round"} {roundNumber} of {ROUNDS_PER_GAME}
+          </p>
+          <p className="font-sign tabular text-2xl font-bold">
+            {formatPoints(score)}{" "}
+            <span className="text-base font-normal text-chalk-dim">points</span>
+          </p>
+        </div>
+        <div className="basis-full">
           {mode && !replayed && (
-            <div className="mt-2 flex items-center gap-1.5">
+            // Labels shorten below 400px and the row wraps as a last resort, so on the
+            // narrowest phones every control stays on screen instead of running off the edge.
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <button
                 type="button"
                 onClick={mode.kind === "daily" ? playFresh : playDaily}
                 className="pointer-events-auto shrink-0 rounded-full border border-chalk/30 bg-ocean-deep/60 px-3 py-1 text-xs font-semibold backdrop-blur transition hover:border-chalk"
               >
-                {mode.kind === "daily" ? "New random game" : "Play the Daily Five"}
+                {mode.kind === "daily" ? (
+                  <>
+                    New <span className={NARROW_HIDDEN}>random</span> game
+                  </>
+                ) : (
+                  <>
+                    <span className={NARROW_HIDDEN}>Play the</span> Daily Five
+                  </>
+                )}
               </button>
               {(tiers || regionList.length > 0) && (
                 <PhotoPicker
@@ -603,7 +652,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
                   }
                   className="pointer-events-auto shrink-0 rounded-full border border-chalk/30 bg-ocean-deep/60 px-3 py-1 text-xs font-semibold backdrop-blur transition hover:border-chalk"
                 >
-                  Country Streak
+                  <span className={NARROW_HIDDEN}>Country</span> Streak
                 </Link>
               )}
             </div>
@@ -638,33 +687,6 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
               </span>
             </Link>
           )}
-        </div>
-        <div className="pointer-events-auto text-right">
-          <ol className="flex justify-end gap-1.5" aria-hidden="true">
-            {Array.from({ length: ROUNDS_PER_GAME }, (_, i) => (
-              <li
-                key={i}
-                className={`h-1.5 w-6 rounded-full ${
-                  replayed
-                    ? i === index
-                      ? "bg-chalk"
-                      : "bg-flare"
-                    : i < state.results.length
-                      ? "bg-flare"
-                      : i === index
-                        ? "bg-chalk"
-                        : "bg-chalk/25"
-                }`}
-              />
-            ))}
-          </ol>
-          <p className="mt-2 text-sm text-chalk-dim">
-            {replayed ? "Looking again at round" : "Round"} {roundNumber} of {ROUNDS_PER_GAME}
-          </p>
-          <p className="font-sign tabular text-2xl font-bold">
-            {formatPoints(score)}{" "}
-            <span className="text-base font-normal text-chalk-dim">points</span>
-          </p>
         </div>
       </header>
 
