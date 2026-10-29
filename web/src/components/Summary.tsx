@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { BADGES, type BadgeId } from "@/lib/badges";
 import type { BlitzBest } from "@/lib/game/blitz";
 import { challengeOutcome, challengeText, sumScores, type Challenge } from "@/lib/game/challenge";
 import { ROUNDS_PER_GAME, totals, type RoundResult } from "@/lib/game/state";
@@ -38,6 +39,8 @@ type SummaryProps = {
   onPlayDaily?: () => void;
   /** The player's record including this game, or null if it couldn't be built. */
   record?: PlayerRecord | null;
+  /** Badges this game earned, marked as new among the record's badges. */
+  newBadges?: readonly BadgeId[];
   /** Decides whether the Daily Five streak is still alive. */
   today?: Date;
   /** Forget the record in this browser. */
@@ -71,10 +74,12 @@ const plural = (n: number, one: string, many = `${one}s`) =>
 /** Games, rounds won against Atlas, best game and Daily Five streak, kept in this browser. */
 function RecordPanel({
   record,
+  newBadges,
   today,
   onReset,
 }: {
   record: PlayerRecord;
+  newBadges: readonly BadgeId[];
   today: Date;
   onReset?: () => void;
 }) {
@@ -109,6 +114,7 @@ function RecordPanel({
           </div>
         ))}
       </dl>
+      <BadgeList earned={record.badges} fresh={newBadges} />
       <ContinentRecordTable record={record} />
       <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-chalk-dim">
         <p>
@@ -147,6 +153,72 @@ function RecordPanel({
           ))}
       </div>
     </section>
+  );
+}
+
+/**
+ * Every badge, earned or not: the earned ones lit, the ones this game earned marked "New", and
+ * the rest showing how to earn them.
+ */
+function BadgeList({ earned, fresh }: { earned: readonly BadgeId[]; fresh: readonly BadgeId[] }) {
+  const have = new Set(earned);
+  const isNew = new Set(fresh);
+  const gained = BADGES.filter((b) => isNew.has(b.id) && have.has(b.id));
+  return (
+    <div className="mt-6">
+      <h3 id="badges-heading" className="font-semibold">
+        Badges{" "}
+        <span className="tabular text-sm font-normal text-chalk-dim">
+          {have.size} of {BADGES.length}
+        </span>
+      </h3>
+      {gained.length > 0 && (
+        <p role="status" className="mt-1 text-sm text-flare">
+          New this game: {gained.map((b) => b.name).join(", ")}
+        </p>
+      )}
+      <ul
+        aria-labelledby="badges-heading"
+        className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3"
+      >
+        {BADGES.map((b) => {
+          const on = have.has(b.id);
+          return (
+            <li
+              key={b.id}
+              aria-label={`${b.name}: ${on ? (isNew.has(b.id) ? "earned this game" : "earned") : "not yet"}`}
+              className={`flex items-start gap-3 rounded-lg border px-3 py-2 ${
+                on
+                  ? isNew.has(b.id)
+                    ? "border-flare bg-flare/10"
+                    : "border-graticule"
+                  : "border-dashed border-graticule/60 text-chalk-dim"
+              }`}
+            >
+              <span
+                aria-hidden="true"
+                className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-full text-xs font-bold ${
+                  on ? "bg-flare text-ocean-deep" : "border border-graticule/80"
+                }`}
+              >
+                {on ? "★" : ""}
+              </span>
+              <span className="min-w-0">
+                <span className={`block font-semibold ${on ? "text-chalk" : ""}`}>
+                  {b.name}
+                  {on && isNew.has(b.id) && (
+                    <span className="ml-2 rounded-full bg-flare px-1.5 py-0.5 text-xs font-bold text-ocean-deep">
+                      New
+                    </span>
+                  )}
+                </span>
+                <span className="block text-sm text-chalk-dim">{b.how}</span>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 
@@ -284,6 +356,7 @@ export default function Summary({
   playAgainLabel = "Play a fresh game",
   onPlayDaily,
   record,
+  newBadges = [],
   today = new Date(),
   onResetRecord,
   onReplay,
@@ -376,6 +449,7 @@ export default function Summary({
         </p>
       )}
       <ol
+        aria-label="Your rounds"
         className={`${onReplay ? "mt-2" : "mt-10"} divide-y divide-graticule/60 border-y border-graticule/60`}
       >
         {results.map((r, i) => {
@@ -434,7 +508,9 @@ export default function Summary({
         })}
       </ol>
 
-      {record && <RecordPanel record={record} today={today} onReset={onResetRecord} />}
+      {record && (
+        <RecordPanel record={record} newBadges={newBadges} today={today} onReset={onResetRecord} />
+      )}
 
       <ShareCardPreview card={card} />
 

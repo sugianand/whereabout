@@ -47,7 +47,14 @@ import { formatPoints, maxPoints, type LngLat } from "@/lib/geo";
 import type { Clue } from "@/lib/hints";
 import { hasSeenIntro, INTRO_TEXT, markIntroSeen } from "@/lib/intro";
 import { keepForOffline, photoUrlsToKeep } from "@/lib/offline/register";
-import { recordGame, resetRecord, tallyContinents, type PlayerRecord } from "@/lib/playerRecord";
+import { gameFeats, newBadges, type BadgeId } from "@/lib/badges";
+import {
+  loadRecord,
+  recordGame,
+  resetRecord,
+  tallyContinents,
+  type PlayerRecord,
+} from "@/lib/playerRecord";
 import type { RevealView } from "@/lib/reveal";
 
 import BlitzRing from "./BlitzRing";
@@ -217,6 +224,8 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   const [introOpen, setIntroOpen] = useState(false);
   // The player's record against Atlas, updated once as each game ends (see `next` below).
   const [record, setRecord] = useState<PlayerRecord | null>(null);
+  // The badges the game just finished earned, marked "New" on the summary.
+  const [earned, setEarned] = useState<BadgeId[]>([]);
   // A finished game's round shown again from the summary (index from 0), or null for the
   // summary itself; `lookedAt` is the last one shown, so the summary can return focus to it.
   const [replay, setReplay] = useState<number | null>(null);
@@ -547,15 +556,17 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   function next() {
     if (state.phase === "revealed" && state.index + 1 >= ROUNDS_PER_GAME && mode) {
       const t = totals(state.results);
-      setRecord(
-        recordGame({
-          score: t.player,
-          roundsVsAtlas: t.atlasRounds,
-          roundsWon: t.playerWins,
-          daily: mode.kind === "daily" ? mode.day : null,
-          continents: tallyContinents(state.results),
-        }),
-      );
+      const before = loadRecord().badges;
+      const after = recordGame({
+        score: t.player,
+        roundsVsAtlas: t.atlasRounds,
+        roundsWon: t.playerWins,
+        daily: mode.kind === "daily" ? mode.day : null,
+        continents: tallyContinents(state.results),
+        ...gameFeats(state.results, mode.kind === "tier" && mode.tier === "hard"),
+      });
+      setRecord(after);
+      setEarned(newBadges(before, after.badges));
       setBlitzBest(mode.kind === "blitz" ? rememberBlitz(t.player) : null);
     }
     dispatch({ type: "next" });
@@ -659,8 +670,12 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
         }
         onPlayDaily={mode?.kind === "daily" ? undefined : playDaily}
         record={record}
+        newBadges={earned}
         today={today ?? new Date()}
-        onResetRecord={() => setRecord(resetRecord())}
+        onResetRecord={() => {
+          setEarned([]);
+          setRecord(resetRecord());
+        }}
         onReplay={openReplay}
         returnedFrom={lookedAt}
         canChallenge={!apiUrl}

@@ -10,6 +10,7 @@
  * wherever and whenever they were played, and replaying the same day's puzzle leaves it alone.
  */
 
+import { earnedBadges, isBadgeId, mergeBadges, type BadgeId } from "@/lib/badges";
 import { CONTINENTS, continentOf, type Continent } from "@/lib/continents";
 import { dayKey } from "@/lib/game/daily";
 import type { RoundResult } from "@/lib/game/state";
@@ -40,6 +41,8 @@ export interface PlayerRecord {
   bestStreak: number;
   /** Rounds played and won against Atlas, by the continent of each photo. */
   continents: ContinentRecord;
+  /** Badges earned so far (`lib/badges.ts`), in `BADGE_IDS` order. */
+  badges: BadgeId[];
 }
 
 /** What one finished game adds to the record. */
@@ -51,6 +54,10 @@ export interface FinishedGame {
   daily: string | null;
   /** This game's rounds by continent (`tallyContinents`); absent adds none. */
   continents?: ContinentRecord;
+  /** The closest pin of the game in km, or null with no pin; absent counts as none. */
+  closestKm?: number | null;
+  /** A Hard game in which the player outscored Atlas (`gameFeats` in `lib/badges.ts`). */
+  hardWon?: boolean;
 }
 
 export const EMPTY_RECORD: PlayerRecord = {
@@ -62,6 +69,7 @@ export const EMPTY_RECORD: PlayerRecord = {
   streak: 0,
   bestStreak: 0,
   continents: {},
+  badges: [],
 };
 
 /**
@@ -153,6 +161,7 @@ export function addGame(record: PlayerRecord, game: FinishedGame): PlayerRecord 
     roundsWon: record.roundsWon + game.roundsWon,
     best: record.best === null ? game.score : Math.max(record.best, game.score),
     continents: addContinents(record.continents, game.continents ?? {}),
+    badges: record.badges,
   };
   if (game.daily && DAY.test(game.daily)) {
     const gap = record.lastDaily ? daysBetween(record.lastDaily, game.daily) : Infinity;
@@ -163,6 +172,7 @@ export function addGame(record: PlayerRecord, game: FinishedGame): PlayerRecord 
     if (gap > 0) next.lastDaily = game.daily;
     next.bestStreak = Math.max(record.bestStreak, next.streak);
   }
+  next.badges = mergeBadges(record.badges, earnedBadges(next, game));
   return next;
 }
 
@@ -220,7 +230,7 @@ export function parseRecord(raw: string | null): PlayerRecord {
     count(r.bestStreak) &&
     r.streak <= r.bestStreak;
   if (!ok) return EMPTY_RECORD;
-  return {
+  const record: PlayerRecord = {
     games: r.games as number,
     roundsVsAtlas: r.roundsVsAtlas as number,
     roundsWon: r.roundsWon as number,
@@ -229,7 +239,14 @@ export function parseRecord(raw: string | null): PlayerRecord {
     streak: r.streak as number,
     bestStreak: r.bestStreak as number,
     continents: parseContinents(r.continents),
+    badges: [],
   };
+  // Badges the totals prove are restored, so records kept before badges existed lose nothing;
+  // the rest must be known badge ids, or the stored list is dropped (the totals still count).
+  const stored =
+    Array.isArray(r.badges) && r.badges.every(isBadgeId) ? (r.badges as BadgeId[]) : [];
+  record.badges = mergeBadges(stored, earnedBadges(record));
+  return record;
 }
 
 /** Minimal storage surface, so tests can pass a fake (including one that throws). */

@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 import { continentOf } from "../src/lib/continents";
+import { dayKey } from "../src/lib/game/daily";
 
 // The real photos are hot-linked from Wikimedia. Serve a local stand-in instead, so the test
 // doesn't depend on the network and never hammers Wikimedia from CI.
@@ -49,7 +50,9 @@ test("a whole Daily Five can be played with the keyboard", async ({ page }) => {
   }
 
   await expect(page.getByText("out of 25,000 points")).toBeVisible();
-  await expect(page.getByRole("listitem")).toHaveCount(5);
+  await expect(page.getByRole("list", { name: "Your rounds" }).getByRole("listitem")).toHaveCount(
+    5,
+  );
 
   // The game joins the player's record, kept in this browser.
   const record = page.getByRole("region", { name: "Your record against Atlas" });
@@ -88,6 +91,38 @@ test("a whole Daily Five can be played with the keyboard", async ({ page }) => {
     await expect(card).not.toContainText(place);
   }
   expect(errors).toEqual([]);
+});
+
+test("a fifth Daily Five in a row earns the Five-day streak badge on the summary", async ({
+  page,
+}) => {
+  // Four Daily Fives in a row already, the last one yesterday, kept in this browser.
+  const yesterday = dayKey(new Date(Date.now() - 86_400_000));
+  await page.goto("./");
+  await page.evaluate((lastDaily) => {
+    const record = { games: 4, roundsVsAtlas: 20, roundsWon: 0, best: 9_000, lastDaily };
+    localStorage.setItem(
+      "whereabout:record",
+      JSON.stringify({ ...record, streak: 4, bestStreak: 4, continents: {}, badges: [] }),
+    );
+  }, yesterday);
+
+  await page.goto("./?daily");
+  for (let round = 1; round <= 5; round++) {
+    const card = await playRoundWithKeyboard(page);
+    await card.getByRole("button", { name: round < 5 ? "Next photo" : "See your results" }).click();
+  }
+
+  const badges = page.getByRole("list", { name: /^Badges \d of 5$/ });
+  await expect(badges.getByRole("listitem")).toHaveCount(5);
+  await expect(
+    badges.getByRole("listitem", { name: "Five-day streak: earned this game" }),
+  ).toContainText("New");
+  await expect(page.getByText(/^New this game: .*Five-day streak/)).toBeVisible();
+  await expect(badges.getByRole("listitem", { name: "Hard won: not yet" })).toBeVisible();
+  const saved = JSON.parse((await page.evaluate(() => localStorage.getItem("whereabout:record")))!);
+  expect(saved.streak).toBe(5);
+  expect(saved.badges).toContain("daily-five");
 });
 
 test("the globe renders with WebGL and accepts a click", async ({ page }) => {

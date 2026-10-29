@@ -175,6 +175,7 @@ describe("Summary", () => {
       streak: 4,
       bestStreak: 6,
       continents: {},
+      badges: [],
     };
     const props = { results: [result(1, 5000, 10)], title: "Fresh game", onPlayAgain: () => {} };
     const { rerender } = render(
@@ -191,6 +192,29 @@ describe("Summary", () => {
 
     rerender(<Summary {...props} record={record} today={new Date("2026-10-25T08:00:00Z")} />);
     expect(value("Daily Five streak")).toHaveTextContent("0 days");
+  });
+
+  it("shows every badge, lights the earned ones and marks the ones this game earned", () => {
+    const record: PlayerRecord = { ...EMPTY_RECORD, games: 3, badges: ["first-win", "bullseye"] };
+    render(
+      <Summary
+        results={[result(1, 5000, 10)]}
+        title="Fresh game"
+        onPlayAgain={() => {}}
+        record={record}
+        newBadges={["bullseye"]}
+      />,
+    );
+    const list = screen.getByRole("list", { name: "Badges 2 of 5" });
+    expect(within(list).getAllByRole("listitem")).toHaveLength(5);
+    expect(within(list).getByRole("listitem", { name: "First win: earned" })).toBeVisible();
+    expect(
+      within(list).getByRole("listitem", { name: "Bullseye: earned this game" }),
+    ).toHaveTextContent("New");
+    expect(within(list).getByRole("listitem", { name: "Hard won: not yet" })).toHaveTextContent(
+      "Outscore Atlas over a whole Hard game",
+    );
+    expect(screen.getByText("New this game: Bullseye")).toHaveAttribute("role", "status");
   });
 
   it("shows rounds by continent and where the player beat Atlas most and least", () => {
