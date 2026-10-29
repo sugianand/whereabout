@@ -138,6 +138,12 @@ describe("parseSaved", () => {
     expect(tamper((g) => (g.mode = { kind: "tier", tier: "impossible", game: 1 }))).toBeNull();
     expect(tamper((g) => (g.mode = { kind: "region", region: "Atlantis", game: 1 }))).toBeNull();
     expect(
+      tamper((g) => (g.mode = { kind: "daily", day: "2026-10-20", archive: true })),
+    ).not.toBeNull();
+    expect(
+      tamper((g) => (g.mode = { kind: "daily", day: "2026-10-20", archive: "yes" })),
+    ).toBeNull();
+    expect(
       tamper((g) => ((g.results as { reveal: { score: number } }[])[0].reveal.score = 9999)),
     ).toBeNull();
     expect(tamper((g) => ((g.dealt as string[])[0] = "b2"))).toBeNull();
@@ -195,6 +201,13 @@ describe("gameToResume", () => {
   it("reopens a Daily Five only on its own day", () => {
     expect(gameToResume(kept(DAILY), DAILY, true, "2026-10-30")).toBeNull();
     expect(gameToResume(kept(DAILY), FRESH, false, "2026-10-30")).toBeNull();
+  });
+
+  it("reopens a past day's Daily Five from the archive on a later day", () => {
+    const past: GameMode = { kind: "daily", day: "2026-10-20", archive: true };
+    expect(gameToResume(kept(past), FRESH, false, "2026-10-30")).not.toBeNull();
+    expect(gameToResume(kept(past), past, true, "2026-10-30")).not.toBeNull();
+    expect(gameToResume(kept(past), DAILY, true, "2026-10-30")).toBeNull();
   });
 });
 

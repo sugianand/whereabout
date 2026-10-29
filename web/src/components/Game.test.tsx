@@ -5,6 +5,7 @@ import atlasData from "@/data/atlas.json";
 import catalog from "@/data/photos.json";
 import { LocalBackend } from "@/lib/game/backends";
 import { pickDaily } from "@/lib/game/daily";
+import { ARCHIVE_NOTICE } from "@/lib/game/dailyArchive";
 import { encodeChallenge } from "@/lib/game/challenge";
 import { LOAD_ERROR } from "@/lib/game/deck";
 import { RECENT_KEY } from "@/lib/game/fresh";
@@ -916,5 +917,110 @@ describe("Pick up where you left off", { timeout: 30000 }, () => {
     await mapReady();
     expect(await screen.findByText("Fresh game", {}, WAIT)).toBeInTheDocument();
     expect(screen.queryByText("Picked up where you left off")).toBeNull();
+  });
+});
+
+describe("Daily Five archive", { timeout: 30000 }, () => {
+  const PAST = "2026-10-02";
+  const past = pickDaily(playable, PAST, ROUNDS_PER_GAME);
+
+  async function finish(map: FakeMap) {
+    for (let i = 0; i < ROUNDS_PER_GAME; i++) {
+      const card = await playRound(map, { lng: 0, lat: 0 });
+      fireEvent.click(
+        within(card).getByRole("button", { name: /^(Next photo|See your results)$/ }),
+      );
+    }
+    return screen.findByRole("region", { name: "Daily Five archive" }, WAIT);
+  }
+
+  it("plays a past day from ?daily=, joining the record but never the streak", async () => {
+    window.history.replaceState(null, "", `/?daily=${PAST}`);
+    render(<Game {...bundledGame} today={TODAY} />);
+    const map = await mapReady();
+    expect(await screen.findByText("Daily Five, October 2", {}, WAIT)).toBeInTheDocument();
+    expect(await screen.findByRole("img")).toHaveAttribute("src", past[0].imageUrl);
+    await waitFor(() => expect(window.location.search).toBe(`?daily=${PAST}`));
+
+    const archive = await finish(map);
+    for (const photo of past) expect(screen.getByText(photo.place)).toBeInTheDocument();
+    const stored = JSON.parse(localStorage.getItem(RECORD_KEY)!);
+    expect(stored).toMatchObject({ games: 1, lastDaily: null, streak: 0 });
+
+    // Its day on the calendar carries the score kept for it, and is the one just played.
+    const cell = within(archive).getByRole("button", {
+      name: /^October 2: .* points\. Play it again$/,
+    });
+    expect(cell).toHaveAttribute("aria-current", "date");
+    expect(within(archive).getAllByRole("button")).toHaveLength(30);
+    expect(
+      within(archive).getByRole("button", { name: "Today: not played yet. Play it" }),
+    ).toBeInTheDocument();
+    expect(within(archive).getByText(/You've played 1 of the last 30 days\./)).toBeInTheDocument();
+  });
+
+  it("opens any day from the calendar; today's counts toward the streak", async () => {
+    render(<Game {...bundledGame} start="daily" today={TODAY} />);
+    const map = await mapReady();
+    const archive = await finish(map);
+    expect(JSON.parse(localStorage.getItem(RECORD_KEY)!)).toMatchObject({ streak: 1 });
+    expect(
+      within(archive).getByRole("button", { name: /^Today: .* points\. Play it again$/ }),
+    ).toHaveAttribute("aria-current", "date");
+
+    fireEvent.click(
+      within(archive).getByRole("button", { name: "October 2: not played yet. Play it" }),
+    );
+    expect(await screen.findByText("Daily Five, October 2", {}, WAIT)).toBeInTheDocument();
+    await waitFor(() => expect(window.location.search).toBe(`?daily=${PAST}`));
+    const second = await mapReady();
+    await finish(second);
+    expect(JSON.parse(localStorage.getItem(RECORD_KEY)!)).toMatchObject({
+      games: 2,
+      lastDaily: "2026-10-09",
+      streak: 1,
+    });
+    expect(screen.getByText(/You've played 2 of the last 30 days\./)).toBeInTheDocument();
+  });
+
+  it("plays today's, saying why, for a day that isn't out yet or has left the archive", async () => {
+    window.history.replaceState(null, "", "/?daily=2026-10-10");
+    render(<Game {...bundledGame} today={TODAY} />);
+    await mapReady();
+    expect(await screen.findByText(ARCHIVE_NOTICE.ahead, {}, WAIT)).toBeInTheDocument();
+    expect(screen.getByText("Daily Five, October 9")).toBeInTheDocument();
+    await waitFor(() => expect(window.location.search).toBe("?daily"));
+    cleanup();
+
+    window.history.replaceState(null, "", "/?daily=2026-09-09");
+    render(<Game {...bundledGame} today={TODAY} />);
+    await mapReady();
+    expect(await screen.findByText(ARCHIVE_NOTICE.old, {}, WAIT)).toBeInTheDocument();
+    expect(screen.getByText("Daily Five, October 9")).toBeInTheDocument();
+  });
+
+  it("picks a past day's game up on a later day, unlike today's", async () => {
+    window.history.replaceState(null, "", `/?daily=${PAST}`);
+    render(<Game {...bundledGame} today={TODAY} />);
+    const map = await mapReady();
+    await playRound(map, past[0]);
+    await waitFor(() =>
+      expect(JSON.parse(localStorage.getItem(SAVED_GAME_KEY)!).results).toHaveLength(1),
+    );
+    cleanup();
+    window.history.replaceState(null, "", "/");
+    render(<Game {...bundledGame} today={new Date("2026-10-10T15:00:00Z")} />);
+    await mapReady();
+    expect(await screen.findByText("Daily Five, October 2", {}, WAIT)).toBeInTheDocument();
+    expect(screen.getByText("Picked up where you left off")).toBeInTheDocument();
+  });
+
+  it("plays only today's when the API server deals the photos", async () => {
+    window.history.replaceState(null, "", `/?daily=${PAST}`);
+    const api = new LocalBackend(daily);
+    render(<Game {...bundledGame} apiUrl="http://api.test" backendFor={() => api} today={TODAY} />);
+    await mapReady();
+    expect(await screen.findByText("Daily Five, October 9", {}, WAIT)).toBeInTheDocument();
+    expect(screen.queryByText(ARCHIVE_NOTICE.old)).toBeNull();
   });
 });

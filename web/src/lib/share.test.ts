@@ -109,6 +109,15 @@ describe("shareUrl", () => {
       "https://example.org/whereabout/",
     );
   });
+
+  it("keeps a past Daily Five's day, and nothing but a real day", () => {
+    expect(shareUrl("https://example.org/whereabout/?daily=2026-10-20&lat=1")).toBe(
+      "https://example.org/whereabout/?daily=2026-10-20",
+    );
+    expect(shareUrl("https://example.org/whereabout/?daily=Paris")).toBe(
+      "https://example.org/whereabout/?daily",
+    );
+  });
 });
 
 describe("shareText", () => {

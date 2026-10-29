@@ -126,6 +126,50 @@ test("a fifth Daily Five in a row earns the Five-day streak badge on the summary
   expect(saved.badges).toContain("daily-five");
 });
 
+test("a past Daily Five plays from the archive, and the summary's calendar opens any day", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const past = dayKey(new Date(Date.now() - 3 * 86_400_000));
+  const pastName = new Date(`${past}T12:00:00Z`).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+
+  await page.goto(`./?daily=${past}`);
+  await expect(page.getByText(`Daily Five, ${pastName}`).first()).toBeVisible();
+  for (let round = 1; round <= 5; round++) {
+    const card = await playRoundWithKeyboard(page);
+    await card.getByRole("button", { name: round < 5 ? "Next photo" : "See your results" }).click();
+  }
+
+  // A past day joins the record but not the streak.
+  const saved = JSON.parse((await page.evaluate(() => localStorage.getItem("whereabout:record")))!);
+  expect(saved).toMatchObject({ games: 1, streak: 0, lastDaily: null });
+
+  const archive = page.getByRole("region", { name: "Daily Five archive" });
+  await expect(archive.getByRole("button")).toHaveCount(30);
+  const played = archive.getByRole("button", {
+    name: new RegExp(`^${pastName}: [\\d,]+ points\\. Play it again$`),
+  });
+  await expect(played).toHaveAttribute("aria-current", "date");
+  await expect(archive.getByText(/You've played 1 of the last 30 days\./)).toBeVisible();
+  // The calendar fits a phone's width with no sideways scrolling.
+  await archive.scrollIntoViewIfNeeded();
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
+
+  // Today's cell opens today's Daily Five, the one that counts toward the streak.
+  await archive.getByRole("button", { name: "Today: not played yet. Play it" }).click();
+  await expect(page.getByText("Round 1 of 5", { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\?daily$/);
+  expect(errors).toEqual([]);
+});
+
 /** Records every buzz and every chime note the page plays, in place of the phone and speakers. */
 async function listenForFeel(page: Page) {
   await page.addInitScript(() => {

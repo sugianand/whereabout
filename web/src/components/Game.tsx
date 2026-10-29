@@ -28,6 +28,12 @@ import {
 } from "@/lib/game/blitz";
 import { CHALLENGE_PARAM, encodeChallenge, parseChallenge, sumScores } from "@/lib/game/challenge";
 import { dayKey, pickDaily } from "@/lib/game/daily";
+import {
+  loadDailyScores,
+  parseDailyParam,
+  rememberDailyScore,
+  type DailyScores,
+} from "@/lib/game/dailyArchive";
 import { fetchRecords, recordUrl, type Deck, type GameRecord } from "@/lib/game/deck";
 import { loadRecent, pickFresh, rememberPlayed, saveRecent } from "@/lib/game/fresh";
 import type { GameMode } from "@/lib/game/mode";
@@ -99,9 +105,14 @@ type GameProps = {
   loadRecords?: (ids: string[]) => Promise<GameRecord[]>;
 };
 
-/** True when the page URL asks for the Daily Five (`?daily`). */
+/** True when the page URL asks for a Daily Five (`?daily`, or `?daily=2026-10-20` for a past one). */
 function urlWantsDaily(): boolean {
   return new URLSearchParams(window.location.search).has("daily");
+}
+
+/** The `?daily=` value in the page URL ("" for a bare `?daily`). */
+function urlDailyValue(): string {
+  return new URLSearchParams(window.location.search).get("daily") ?? "";
 }
 
 /** True when the page URL asks for a Blitz game (`?blitz`). */
@@ -134,7 +145,8 @@ export const CHALLENGE_NOTICE = {
 /** Keep the address bar in step with the mode, so a shared link opens the same kind of game. */
 function syncUrl(mode: GameMode) {
   const url = new URL(window.location.href);
-  if (mode.kind === "daily") url.searchParams.set("daily", "");
+  // Today's Daily Five is a bare `?daily`; a past day's names its day.
+  if (mode.kind === "daily") url.searchParams.set("daily", mode.archive ? mode.day : "");
   else url.searchParams.delete("daily");
   if (mode.kind === "tier") url.searchParams.set("tier", mode.tier);
   else url.searchParams.delete("tier");
@@ -232,7 +244,8 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   // summary itself; `lookedAt` is the last one shown, so the summary can return focus to it.
   const [replay, setReplay] = useState<number | null>(null);
   const [lookedAt, setLookedAt] = useState<number | null>(null);
-  // Why a challenge link in the address couldn't be played, until the next game starts.
+  // Why the game the address asked for (a challenge link, a Daily Five out of the archive)
+  // couldn't be played, until the next game starts.
   const [challengeNotice, setChallengeNotice] = useState<string | null>(null);
   // A finished Blitz game against the best kept in this browser, shown on the summary.
   const [blitzBest, setBlitzBest] = useState<BlitzBest | null>(null);
@@ -240,6 +253,9 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   // mode is playing: any new game is a new mode value, so it lets go by itself.
   const [resumed, setResumed] = useState<SavedGame | null>(null);
   const resumedFor = resumed && resumed.mode === mode ? resumed : null;
+  // The first score of each Daily Five finished in this browser, for the summary's calendar.
+  // Read as each game ends (see `next`), so a Daily Five finished in another tab shows up too.
+  const [dailyScores, setDailyScores] = useState<DailyScores>({});
 
   useEffect(() => {
     if (mode) return;
@@ -254,12 +270,18 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
       const wanted = kind === "fresh" && !tier ? urlRegion() : null;
       const region = wanted && regions[wanted] ? wanted : null;
       const day = dayKey(today ?? new Date());
+      // The archive deals in the browser too; the API backend only plays today's.
+      const daily =
+        kind === "daily" && !start && !apiUrl ? parseDailyParam(urlDailyValue(), day) : null;
+      if (daily?.notice) setChallengeNotice(daily.notice);
       const requested: GameMode = linked?.ok
         ? { kind: "challenge", challenge: linked.challenge }
         : blitz
           ? { kind: "blitz", game: 1 }
           : kind === "daily"
-            ? { kind: "daily", day }
+            ? daily?.archive
+              ? { kind: "daily", day: daily.day, archive: true }
+              : { kind: "daily", day }
             : tier
               ? { kind: "tier", tier, game: 1 }
               : region
@@ -565,13 +587,20 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
         score: t.player,
         roundsVsAtlas: t.atlasRounds,
         roundsWon: t.playerWins,
-        daily: mode.kind === "daily" ? mode.day : null,
+        // A past day's Daily Five joins the record but never the streak.
+        daily: mode.kind === "daily" && !mode.archive ? mode.day : null,
         continents: tallyContinents(state.results),
         ...gameFeats(state.results, mode.kind === "tier" && mode.tier === "hard"),
       });
       setRecord(after);
       setEarned(newBadges(before, after.badges));
       setBlitzBest(mode.kind === "blitz" ? rememberBlitz(t.player) : null);
+      const todayKey = dayKey(today ?? new Date());
+      setDailyScores(
+        mode.kind === "daily"
+          ? rememberDailyScore(mode.day, t.player, todayKey)
+          : loadDailyScores(todayKey),
+      );
     }
     dispatch({ type: "next" });
   }
@@ -636,6 +665,13 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
     restart();
   }
 
+  /** A Daily Five from the archive: today's counts toward the streak, a past day's doesn't. */
+  function playDailyOn(day: string) {
+    const todayKey = dayKey(today ?? new Date());
+    setMode(day === todayKey ? { kind: "daily", day } : { kind: "daily", day, archive: true });
+    restart();
+  }
+
   const title = mode ? modeTitle(mode) : "";
 
   // The round on the reveal card: this game's latest guess, or a finished one looked at again.
@@ -673,6 +709,9 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
                 : undefined
         }
         onPlayDaily={mode?.kind === "daily" ? undefined : playDaily}
+        dailyScores={apiUrl ? undefined : dailyScores}
+        playedDay={mode?.kind === "daily" ? mode.day : undefined}
+        onPlayDailyOn={apiUrl ? undefined : playDailyOn}
         record={record}
         newBadges={earned}
         today={today ?? new Date()}

@@ -88,7 +88,9 @@ export function gameToResume(
   today: string,
 ): SavedGame | null {
   if (!saved) return null;
-  if (saved.mode.kind === "daily" && saved.mode.day !== today) return null;
+  // Today's Daily Five is kept only for today; a past day's from the archive keeps for as long
+  // as any other game.
+  if (saved.mode.kind === "daily" && !saved.mode.archive && saved.mode.day !== today) return null;
   if (explicit && !sameKindOfGame(saved.mode, requested)) return null;
   return saved;
 }
@@ -122,7 +124,11 @@ function isMode(v: unknown, deckIds: readonly string[]): v is GameMode {
   const game = isInt(v.game, 1, Number.MAX_SAFE_INTEGER);
   switch (v.kind) {
     case "daily":
-      return isStr(v.day) && /^\d{4}-\d{2}-\d{2}$/.test(v.day);
+      return (
+        isStr(v.day) &&
+        /^\d{4}-\d{2}-\d{2}$/.test(v.day) &&
+        (v.archive === undefined || typeof v.archive === "boolean")
+      );
     case "fresh":
     case "blitz":
       return game;

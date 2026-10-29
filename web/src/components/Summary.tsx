@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from "react";
 import { BADGES, type BadgeId } from "@/lib/badges";
 import type { BlitzBest } from "@/lib/game/blitz";
 import { challengeOutcome, challengeText, sumScores, type Challenge } from "@/lib/game/challenge";
+import { dayKey } from "@/lib/game/daily";
+import type { DailyScores } from "@/lib/game/dailyArchive";
 import { ROUNDS_PER_GAME, totals, type RoundResult } from "@/lib/game/state";
 import { MAX_POINTS, formatDistance, formatPoints } from "@/lib/geo";
 import { CONTINENTS } from "@/lib/continents";
@@ -27,6 +29,8 @@ import {
 } from "@/lib/share";
 import { useCountUp } from "@/lib/useCountUp";
 
+import DailyArchive from "./DailyArchive";
+
 type SummaryProps = {
   results: RoundResult[];
   /** "Daily Five, October 9" or "Fresh game". */
@@ -37,6 +41,12 @@ type SummaryProps = {
   playAgainLabel?: string;
   /** Switch to today's Daily Five; omitted when the finished game was the Daily Five. */
   onPlayDaily?: () => void;
+  /** Scores of the Daily Fives finished in this browser; the archive calendar needs them. */
+  dailyScores?: DailyScores;
+  /** The Daily Five this game was, marked on the archive calendar. */
+  playedDay?: string;
+  /** Play the Daily Five of a day in the archive; omitted, the archive isn't shown. */
+  onPlayDailyOn?: (day: string) => void;
   /** The player's record including this game, or null if it couldn't be built. */
   record?: PlayerRecord | null;
   /** Badges this game earned, marked as new among the record's badges. */
@@ -355,6 +365,9 @@ export default function Summary({
   onPlayAgain,
   playAgainLabel = "Play a fresh game",
   onPlayDaily,
+  dailyScores,
+  playedDay,
+  onPlayDailyOn,
   record,
   newBadges = [],
   today = new Date(),
@@ -552,6 +565,15 @@ export default function Summary({
         </p>
       </div>
 
+      {dailyScores && onPlayDailyOn && (
+        <DailyArchive
+          today={dayKey(today)}
+          scores={dailyScores}
+          playedDay={playedDay}
+          onPlay={onPlayDailyOn}
+        />
+      )}
+
       <Link
         href="/you"
         className="mt-10 block rounded-2xl border border-sonar/40 p-5 transition hover:border-sonar hover:bg-sonar/5"
@@ -567,8 +589,8 @@ export default function Summary({
 
       <p className="mt-12 text-sm text-chalk-dim">
         Every game deals photos you haven&apos;t played lately. The Daily Five is the same for
-        everyone and changes at midnight UTC. Photos from Wikimedia Commons, credited after each
-        round.
+        everyone and changes at midnight UTC; a past day is dealt from the photos the game has
+        today. Photos from Wikimedia Commons, credited after each round.
       </p>
     </main>
   );

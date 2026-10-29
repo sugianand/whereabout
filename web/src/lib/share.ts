@@ -4,6 +4,7 @@
  * carry a place, a country, a photo or a coordinate. The tests in share.test.ts hold it to that
  * against every photo in the catalog.
  */
+import { isDayKey } from "@/lib/game/dailyArchive";
 import { ROUNDS_PER_GAME, totals, type RoundResult } from "@/lib/game/state";
 import { MAX_POINTS, formatPoints } from "@/lib/geo";
 
@@ -72,12 +73,14 @@ export interface ShareCard {
 
 /**
  * The address to share: the game page itself, keeping only `?daily` so a friend lands on the
- * same Daily Five. Anything else in the query or hash is dropped, whatever ends up there later.
+ * same Daily Five, with its day when it was a past one from the archive (`?daily=2026-10-20`).
+ * Anything else in the query or hash is dropped, whatever ends up there later.
  */
 export function shareUrl(href: string): string {
   const url = new URL(href);
-  const daily = url.searchParams.has("daily");
-  return `${url.origin}${url.pathname}${daily ? "?daily" : ""}`;
+  const daily = url.searchParams.get("daily");
+  const query = daily === null ? "" : isDayKey(daily) ? `?daily=${daily}` : "?daily";
+  return `${url.origin}${url.pathname}${query}`;
 }
 
 export function shareCard(title: string, results: readonly RoundResult[], href: string): ShareCard {

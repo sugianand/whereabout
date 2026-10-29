@@ -8,11 +8,12 @@ import type { Tier } from "./tiers";
  * tier game is a fresh game drawn from one difficulty third (./tiers.ts), and a continent game
  * one drawn from the photos taken on one continent (./regions.ts). A challenge replays the five
  * photos a friend's link names (./challenge.ts). Blitz is a fresh game against a 30-second clock
- * on each photo (./blitz.ts). `game` counts games of that kind in one visit, so each new one is
+ * on each photo (./blitz.ts). A Daily Five with `archive` is a past day's, played from the
+ * archive (./dailyArchive.ts): it never counts toward the streak. `game` counts games of that kind in one visit, so each new one is
  * a new value even when nothing else changes.
  */
 export type GameMode =
-  | { kind: "daily"; day: string }
+  | { kind: "daily"; day: string; archive?: boolean }
   | { kind: "fresh"; game: number }
   | { kind: "tier"; tier: Tier; game: number }
   | { kind: "region"; region: Continent; game: number }
