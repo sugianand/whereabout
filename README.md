@@ -22,6 +22,9 @@ photo to load and pauses while the tab is hidden; your best Blitz is kept in you
 another, until your first miss. Pick a continent to deal only photos taken there
 (`/streak?region=europe`, or straight from a continent game); each continent keeps its own best
 streak in your browser beside the one from anywhere.
+**Install it** from your browser's menu ("Add to Home screen" or "Install app") to play it like
+an app. A game keeps all five photos on your device as soon as it deals them, so it plays on if
+your connection drops, even if you reload the page.
 
 ## What's interesting about it
 
@@ -44,6 +47,7 @@ streak in your browser beside the one from anywhere.
 | **Difficulty from the model's own errors** | Easy, Medium and Hard are the thirds of the catalog by how far Atlas v0's guess landed from each photo, recomputed at every build, so tiers follow each Atlas run and harvest with no hand labelling. The header states each tier's real cut points ("Atlas missed these by … km or more", from the current data); photos Atlas sat out join no tier, and tiers only appear when every third can fill a game. A browser test measures Atlas's errors independently and checks a Hard game deals only Hard photos. | [`web/src/lib/game/tiers.ts`](web/src/lib/game/tiers.ts) |
 | **Hints for points** | Up to three clues per round, broadest first: the continent, the side of the road traffic drives on, then the climate group, from concept labels read off real climate and land-cover maps. Each one lowers the round's maximum by 1,000 points. On the API the server hands out the hints and counts them, so a guess can't claim fewer; the static game builds the same clues in the same words, and a shared fixture pins both scorers together. | [`api/src/whereabout_api/hints.py`](api/src/whereabout_api/hints.py), [`web/src/lib/hints.ts`](web/src/lib/hints.ts), [`data/fixtures/hint_cases.json`](data/fixtures/hint_cases.json) |
 | **Game engine** | A pure reducer drives the game, with two interchangeable backends: the FastAPI server (answers stay server-side until you guess, and it scores Atlas's guess too) or the static catalog (a free static site that fetches only the five photos each game deals, so the page stays small as the catalog grows). | [`web/src/lib/game/`](web/src/lib/game/) |
+| **Plays offline** | A web app manifest (with a maskable icon) makes the site installable, and a service worker built by esbuild after `next build` precaches the app shell: every page and script chunk the static export emits, the fonts and MapLibre's worker, under a cache named after a hash of those files. Once a game deals its five photos, the page hands their records and Wikimedia photos to the worker, so the rest of the game needs no connection; offline, a photo asked for at a width the device never kept is answered with the widest copy of the same file. The rules are pure functions with unit tests; a Playwright test plays a round, cuts the connection for the page *and* the worker, reloads, and finishes the game. | [`web/src/lib/offline/`](web/src/lib/offline/), [`web/src/sw/sw.ts`](web/src/sw/sw.ts) |
 | **Accessibility** | The whole game can be played with the keyboard, and an end-to-end test does exactly that. Type is Atkinson Hyperlegible; results are announced to screen readers. | [`web/e2e/`](web/e2e/) |
 | **Open data** | 88 photos from 54 countries, all openly licensed from Wikimedia Commons, reviewed by eye, credited after every round. | [`data/curation/`](data/curation/) |
 

@@ -32,7 +32,7 @@ import {
   type Challenge,
 } from "@/lib/game/challenge";
 import { dayKey, pickDaily } from "@/lib/game/daily";
-import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
+import { fetchRecords, recordUrl, type Deck, type GameRecord } from "@/lib/game/deck";
 import { loadRecent, pickFresh, rememberPlayed, saveRecent } from "@/lib/game/fresh";
 import { ROUNDS_PER_GAME, gameReducer, initialState, totals } from "@/lib/game/state";
 import {
@@ -47,6 +47,7 @@ import type { Continent } from "@/lib/continents";
 import type { CatalogPhoto, GameBackend } from "@/lib/game/types";
 import { formatPoints, maxPoints, type LngLat } from "@/lib/geo";
 import { hasSeenIntro, INTRO_TEXT, markIntroSeen } from "@/lib/intro";
+import { keepForOffline, photoUrlsToKeep } from "@/lib/offline/register";
 import { recordGame, resetRecord, tallyContinents, type PlayerRecord } from "@/lib/playerRecord";
 import type { RevealView } from "@/lib/reveal";
 
@@ -337,6 +338,16 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
     if (dealt.length === 0 || dealt.some((id) => !records.has(id))) return null;
     return dealt.map((id) => records.get(id)!.photo);
   }, [dealt, records]);
+
+  // Keep all five photos and records on the device as soon as they are dealt, so a game that has
+  // started keeps going if the connection drops (the service worker, src/sw/sw.ts, stores them).
+  useEffect(() => {
+    if (!gamePhotos || apiUrl) return;
+    keepForOffline([
+      ...dealt.map((id) => recordUrl(deck.version, id)),
+      ...photoUrlsToKeep(gamePhotos),
+    ]);
+  }, [gamePhotos, apiUrl, dealt, deck.version]);
 
   useEffect(() => {
     if (mode) syncUrl(mode);

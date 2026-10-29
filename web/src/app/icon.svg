@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Whereabout's icon: the game's globe with the player's flare pin. Full-bleed, so it also
+       works as a maskable icon (everything that matters sits inside the central safe circle). -->
+  <rect width="512" height="512" fill="#082331"/>
+  <circle cx="256" cy="268" r="150" fill="#16495e" stroke="#4fe3c1" stroke-width="8"/>
+  <g fill="none" stroke="#2a5b6e" stroke-width="7">
+    <ellipse cx="256" cy="268" rx="62" ry="150"/>
+    <path d="M106 268h300M124 193h264M124 343h264"/>
+  </g>
+  <path d="M300 286c-22-30-50-52-50-88a50 50 0 0 1 100 0c0 36-28 58-50 88z" fill="#ff5d8f" stroke="#082331" stroke-width="10" stroke-linejoin="round"/>
+  <circle cx="300" cy="198" r="17" fill="#082331"/>
+</svg>
