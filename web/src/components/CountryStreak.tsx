@@ -8,12 +8,20 @@ import { countryName, shortlist } from "@/lib/countries";
 import { seededShuffle } from "@/lib/game/daily";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import {
+  offeredRegions,
+  regionFromSlug,
+  regionSlug,
+  streakRegions,
+  type Regions,
+} from "@/lib/game/regions";
+import {
   initialStreak,
   loadBestStreak,
   rememberStreak,
   runOver,
   streakReducer,
 } from "@/lib/game/streak";
+import type { Continent } from "@/lib/continents";
 import type { LngLat } from "@/lib/geo";
 import type { RevealView } from "@/lib/reveal";
 
@@ -33,12 +41,38 @@ function photos(n: number): string {
   return `${n} photo${n === 1 ? "" : "s"}`;
 }
 
+/** The continent the page URL asks for (`/streak?region=europe`), if a run can be dealt there. */
+function urlRegion(regions: Regions): Continent | null {
+  const region = regionFromSlug(new URLSearchParams(window.location.search).get("region"));
+  return region && regions[region] ? region : null;
+}
+
+/** Keep the address bar on the continent being played, so a shared link deals from it too. */
+function syncUrl(region: Continent | null) {
+  const url = new URL(window.location.href);
+  if (region) url.searchParams.set("region", regionSlug(region));
+  else url.searchParams.delete("region");
+  const next = `${url.pathname}${url.search}${url.hash}`;
+  if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
+    window.history.replaceState(window.history.state, "", next);
+  }
+}
+
 /**
  * Country Streak (src/lib/game/streak.ts): a photo, a globe, and one question, which country?
  * The player taps a country to pick it, confirms, and plays on until the first miss.
  */
 export default function CountryStreak({ deck, loadRecords, random }: CountryStreakProps) {
   const [state, dispatch] = useReducer(streakReducer, initialStreak);
+  // The continents a run can be dealt from, and the one being played: null deals from every
+  // continent, undefined until the page URL has been read after hydration.
+  const regions = useMemo(
+    () => streakRegions(deck.regions ?? {}, deck.streakIds),
+    [deck.regions, deck.streakIds],
+  );
+  const regionList = useMemo(() => offeredRegions(regions), [regions]);
+  const [region, setRegion] = useState<Continent | null | undefined>(undefined);
+  const slug = region ? regionSlug(region) : null;
   const [best, setBest] = useState(0);
   const [records, setRecords] = useState<ReadonlyMap<string, GameRecord>>(() => new Map());
   const [error, setError] = useState<string | null>(null);
@@ -46,18 +80,35 @@ export default function CountryStreak({ deck, loadRecords, random }: CountryStre
   const [bestBeforeRun, setBestBeforeRun] = useState(0);
 
   const start = useCallback(() => {
+    if (region === undefined) return;
     const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
-    const stored = loadBestStreak();
+    const stored = loadBestStreak(region ? regionSlug(region) : null);
     setBestBeforeRun(stored);
     setBest(stored);
-    dispatch({ type: "start", order: seededShuffle(deck.streakIds, seed) });
-  }, [deck.streakIds, random]);
+    const pool = region ? regions[region]! : deck.streakIds;
+    dispatch({ type: "start", order: seededShuffle(pool, seed) });
+  }, [deck.streakIds, random, region, regions]);
 
-  // The order is shuffled in the browser after hydration, never at build time.
+  // The URL is read after hydration, so the static page is the same for every continent.
   useEffect(() => {
+    const id = requestAnimationFrame(() => setRegion(urlRegion(regions)));
+    return () => cancelAnimationFrame(id);
+  }, [regions]);
+
+  // The order is shuffled in the browser after hydration, never at build time. Picking another
+  // continent changes `start`, which deals a new run from there.
+  useEffect(() => {
+    if (region === undefined) return;
+    syncUrl(region);
     const id = requestAnimationFrame(start);
     return () => cancelAnimationFrame(id);
-  }, [start]);
+  }, [start, region]);
+
+  // Show the new continent's best with its name at once, not a frame later when the run deals.
+  const pickRegion = useCallback((next: Continent | null) => {
+    setRegion(next);
+    setBest(loadBestStreak(next ? regionSlug(next) : null));
+  }, []);
 
   const load = useCallback(
     (ids: string[]) => (loadRecords ? loadRecords(ids) : fetchRecords(deck, ids)),
@@ -110,7 +161,7 @@ export default function CountryStreak({ deck, loadRecords, random }: CountryStre
     if (state.phase !== "guessing" || !current || !state.pick?.country) return;
     const correct = state.pick.country === current.photo.country;
     dispatch({ type: "answered", truth: current.photo.country });
-    if (correct) setBest((b) => Math.max(b, rememberStreak(state.streak + 1)));
+    if (correct) setBest((b) => Math.max(b, rememberStreak(state.streak + 1, slug)));
   }
 
   const pick = state.phase === "guessing" || state.phase === "answered" ? state.pick : null;
@@ -138,7 +189,9 @@ export default function CountryStreak({ deck, loadRecords, random }: CountryStre
         <p className="mt-4 text-lg text-chalk-dim">
           {state.order.length === 0
             ? "Country Streak needs photos taken in countries the globe draws."
-            : `You named the country of all ${photos(state.streak)} in the game.`}
+            : region
+              ? `You named the country of all ${photos(state.streak)} taken in ${region}.`
+              : `You named the country of all ${photos(state.streak)} in the game.`}
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-4">
           {state.order.length > 0 && (
@@ -197,7 +250,30 @@ export default function CountryStreak({ deck, loadRecords, random }: CountryStre
           >
             Whereabout
           </Link>
-          <p className="mt-1 text-sm text-chalk-dim">Country Streak: name the country</p>
+          <p className="mt-1 text-sm text-chalk-dim">
+            {region
+              ? `Country Streak in ${region}: ${photos(regions[region]!.length)}`
+              : "Country Streak: name the country"}
+          </p>
+          {regionList.length > 0 && (
+            <div className="mt-2">
+              <select
+                aria-label="Which photos: from anywhere, or taken on one continent"
+                value={slug ?? "any"}
+                onChange={(e) => pickRegion(regionFromSlug(e.target.value))}
+                className="pointer-events-auto max-w-40 rounded-full border border-chalk/30 bg-ocean-deep/60 py-1 pl-3 pr-1 text-xs font-semibold text-chalk backdrop-blur transition hover:border-chalk"
+              >
+                <option value="any">Anywhere</option>
+                <optgroup label="One continent">
+                  {regionList.map((c) => (
+                    <option key={c} value={regionSlug(c)}>
+                      {c}
+                    </option>
+                  ))}
+                </optgroup>
+              </select>
+            </div>
+          )}
         </div>
         <dl className="pointer-events-auto text-right">
           <div>
@@ -207,7 +283,7 @@ export default function CountryStreak({ deck, loadRecords, random }: CountryStre
             </dd>
           </div>
           <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
-            <dt>Best</dt>
+            <dt>{region ? `Best in ${region}` : "Best"}</dt>
             <dd className="tabular">{best}</dd>
           </div>
         </dl>
@@ -259,6 +335,7 @@ export default function CountryStreak({ deck, loadRecords, random }: CountryStre
             streak={streak}
             best={best}
             newBest={newBest}
+            region={region ?? null}
             onNext={over ? start : () => dispatch({ type: "next" })}
           />
         </div>
@@ -276,6 +353,7 @@ function StreakCard({
   streak,
   best,
   newBest,
+  region,
   onNext,
 }: {
   correct: boolean;
@@ -286,6 +364,8 @@ function StreakCard({
   streak: number;
   best: number;
   newBest: boolean;
+  /** The continent the run is dealt from, whose own best this run counts towards. */
+  region: Continent | null;
   onNext: () => void;
 }) {
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -320,7 +400,13 @@ function StreakCard({
       ) : (
         <p className="mt-3 text-chalk">
           {`Your streak ends at ${photos(streak)}. `}
-          {newBest ? "That's your new best!" : `Your best is ${best}.`}
+          {newBest
+            ? region
+              ? `That's your new best in ${region}!`
+              : "That's your new best!"
+            : region
+              ? `Your best in ${region} is ${best}.`
+              : `Your best is ${best}.`}
         </p>
       )}
       <div className="mt-4 flex items-center gap-4 md:mt-5">

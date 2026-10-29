@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 import { expect, test, type Page } from "@playwright/test";
 
+import { continentOf } from "../src/lib/continents";
 import { countryAt } from "../src/lib/countryHit";
 import { nudge, type LngLat } from "../src/lib/geo";
 
@@ -127,4 +128,43 @@ test("a tap on the sea is not a guess", async ({ page }) => {
   await currentCountry(page);
   await pickWithKeyboard(page, (c) => c === null);
   await expect(page.getByRole("button", { name: "That's the sea. Tap a country" })).toBeDisabled();
+});
+
+test("a streak can be dealt from one continent, with its own best", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+
+  // From a Europe game, Country Streak opens on Europe too.
+  await page.goto("./?region=europe");
+  await expect(page.getByText("Europe game", { exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Country Streak" }).click();
+  await expect(page).toHaveURL(/\/streak\/?\?region=europe$/);
+  await expect(page.getByText(/^Country Streak in Europe: [\d,]+ photos$/)).toBeVisible();
+  await expect(page.getByRole("combobox", { name: /^Which photos/ })).toHaveValue("europe");
+
+  const truth = await currentCountry(page);
+  expect(continentOf(truth)).toBe("Europe");
+  await pickWithKeyboard(page, (c) => c === truth);
+  await page.getByRole("button", { name: /^It's / }).click();
+  await expect(page.getByRole("region").filter({ hasText: "Right!" })).toBeVisible();
+  await page.keyboard.press("Enter");
+
+  const next = await currentCountry(page);
+  expect(continentOf(next)).toBe("Europe");
+  await pickWithKeyboard(page, (c) => c !== null && c !== next);
+  await page.getByRole("button", { name: /^It's / }).click();
+  const card = page.getByRole("region").filter({ hasText: "Your streak ends at 1 photo." });
+  await expect(card).toContainText("That's your new best in Europe!");
+  const stored = await page.evaluate(() => ({
+    europe: localStorage.getItem("whereabout:country-streak-best:europe"),
+    anywhere: localStorage.getItem("whereabout:country-streak-best"),
+  }));
+  expect(stored).toEqual({ europe: "1", anywhere: null });
+
+  // Back to photos from anywhere: that best is separate, and the address follows.
+  await page.getByRole("combobox", { name: /^Which photos/ }).selectOption("any");
+  await expect(page.getByText("Country Streak: name the country")).toBeVisible();
+  await expect(page).toHaveURL(/\/streak\/?$/);
+  await expect(page.getByText("Best", { exact: true }).locator("+ dd")).toHaveText("0");
+  expect(errors).toEqual([]);
 });

@@ -5,12 +5,22 @@
  * The rules live here as a pure reducer so they can be tested without a globe. Which country a
  * tap lands in comes from `countryAt` (src/lib/countryHit.ts), and only photos whose country
  * the globe draws are dealt (`streakIds`), so every photo has a country the player can tap.
- * The best streak is kept in this browser only, best effort.
+ * The best streak is kept in this browser only, best effort: one for runs dealt from every
+ * continent, and one for each continent a run can be dealt from (`streakRegions`).
  */
 
 import type { LngLat } from "@/lib/geo";
 
 export const BEST_STREAK_KEY = "whereabout:country-streak-best";
+
+/**
+ * Where the best streak of runs dealt from `region` (a continent's slug, `regionSlug`) is kept;
+ * null for runs dealt from every continent, under the key that predates continent runs, so a
+ * best set before them still counts.
+ */
+export function bestStreakKey(region: string | null = null): string {
+  return region ? `${BEST_STREAK_KEY}:${region}` : BEST_STREAK_KEY;
+}
 
 /** The player's current choice: where they tapped and the country there (null over the sea). */
 export interface StreakPick {
@@ -107,10 +117,13 @@ function storage(): Storage | null {
   }
 }
 
-/** The best streak this browser has seen, 0 when none is stored or storage is unavailable. */
-export function loadBestStreak(): number {
+/**
+ * The best streak this browser has seen for runs dealt from `region` (null: every continent),
+ * 0 when none is stored or storage is unavailable.
+ */
+export function loadBestStreak(region: string | null = null): number {
   try {
-    const value = Number(storage()?.getItem(BEST_STREAK_KEY));
+    const value = Number(storage()?.getItem(bestStreakKey(region)));
     return Number.isInteger(value) && value > 0 ? value : 0;
   } catch {
     return 0;
@@ -118,14 +131,16 @@ export function loadBestStreak(): number {
 }
 
 /**
- * Keep `streak` if it beats the stored best, and return the best after that. Called after
- * every hit, so a player who leaves mid-run keeps their streak.
+ * Keep `streak` if it beats the stored best for runs dealt from `region`, and return the best
+ * after that. Called after every hit, so a player who leaves mid-run keeps their streak. A
+ * continent run counts only towards that continent's best: naming five European countries is
+ * not the same feat as naming five from anywhere.
  */
-export function rememberStreak(streak: number): number {
-  const best = loadBestStreak();
+export function rememberStreak(streak: number, region: string | null = null): number {
+  const best = loadBestStreak(region);
   if (streak <= best) return best;
   try {
-    storage()?.setItem(BEST_STREAK_KEY, String(streak));
+    storage()?.setItem(bestStreakKey(region), String(streak));
   } catch {
     // Private mode or full storage: the streak still counts for this visit.
   }

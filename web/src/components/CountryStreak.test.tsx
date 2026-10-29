@@ -5,7 +5,7 @@ import { PICK_LAYER } from "@/lib/basemap";
 import { countryName } from "@/lib/countries";
 import { seededShuffle } from "@/lib/game/daily";
 import type { GameRecord } from "@/lib/game/deck";
-import { BEST_STREAK_KEY } from "@/lib/game/streak";
+import { BEST_STREAK_KEY, bestStreakKey } from "@/lib/game/streak";
 import type { CatalogPhoto } from "@/lib/game/types";
 import { gameFor } from "@/test/deck";
 import { FakeMap, resetFakes } from "@/test/maplibre-mock";
@@ -43,13 +43,14 @@ const ORDER = seededShuffle(["p1", "p2", "p3"], 0).map((id) => byId.get(id)!);
 const WRONG = { lng: -100, lat: 40 }; // the United States, never one of the answers
 
 beforeEach(() => {
+  window.history.replaceState(null, "", "/streak");
   resetFakes();
   localStorage.clear();
   window.matchMedia = vi.fn().mockReturnValue({ matches: true }) as typeof window.matchMedia;
 });
 
-async function setup() {
-  const game = gameFor(RECORDS);
+async function setup(records: GameRecord[] = RECORDS) {
+  const game = gameFor(records);
   const loadRecords = vi.fn(game.loadRecords);
   render(<CountryStreak deck={game.deck} loadRecords={loadRecords} random={() => 0} />);
   await waitFor(() => expect(FakeMap.instances.length).toBeGreaterThan(0));
@@ -128,5 +129,78 @@ describe("CountryStreak", () => {
     const { loadRecords } = await setup();
     const asked = loadRecords.mock.calls.flatMap(([ids]) => ids);
     expect(asked).toEqual(ORDER.slice(0, 2).map((p) => p.id));
+  });
+
+  describe("on one continent", () => {
+    // Six European photos (with p1, in France), enough for a continent run, and three from
+    // elsewhere.
+    const EUROPE = [
+      RECORDS[0],
+      record("e1", "FR", 2.35, 48.86),
+      record("e2", "DE", 13.4, 52.52),
+      record("e3", "ES", -3.7, 40.42),
+      record("e4", "PL", 21.01, 52.23),
+      record("e5", "IT", 12.5, 41.9),
+    ];
+    const MIXED = [...EUROPE, ...RECORDS.slice(1)];
+    const europeIds = new Set(EUROPE.map((r) => r.photo.id));
+    const shown = () => document.querySelector("main")!.getAttribute("data-photo");
+    const picker = () =>
+      screen.getByRole("combobox", { name: /^Which photos/ }) as HTMLSelectElement;
+
+    it("offers only continents with enough tappable photos to deal a run", async () => {
+      await setup(MIXED);
+      const options = Array.from(picker().options).map((o) => o.textContent);
+      // Asia and South America have one photo each here; Singapore can't be tapped at all.
+      expect(options).toEqual(["Anywhere", "Europe"]);
+    });
+
+    it("deals only that continent's photos and keeps a best of its own", async () => {
+      localStorage.setItem(BEST_STREAK_KEY, "7");
+      const { map } = await setup(MIXED);
+      expect(picker().value).toBe("any");
+      expect(screen.getByText("Best").nextElementSibling).toHaveTextContent("7");
+
+      fireEvent.change(picker(), { target: { value: "europe" } });
+      await waitFor(() => expect(window.location.search).toBe("?region=europe"));
+      expect(screen.getByText("Country Streak in Europe: 6 photos")).toBeInTheDocument();
+      // The run's best is Europe's own, not the one from every continent.
+      expect(screen.getByText("Best in Europe").nextElementSibling).toHaveTextContent("0");
+
+      const order = seededShuffle([...europeIds], 0);
+      for (let i = 0; i < 2; i++) {
+        await waitFor(() => expect(shown()).toBe(order[i]));
+        await screen.findByRole("button", { name: "Zoom in on the photo" });
+        const photo = EUROPE.find((r) => r.photo.id === order[i])!.photo;
+        act(() => map.click(photo.lng, photo.lat));
+        fireEvent.click(screen.getByRole("button", { name: /^It's / }));
+        const card = await screen.findByRole("region");
+        fireEvent.click(within(card).getByRole("button", { name: "Next photo" }));
+      }
+      await waitFor(() => expect(europeIds.has(shown()!)).toBe(true));
+      await screen.findByRole("button", { name: "Zoom in on the photo" });
+      act(() => map.click(WRONG.lng, WRONG.lat));
+      fireEvent.click(screen.getByRole("button", { name: "It's United States" }));
+      const card = await screen.findByRole("region");
+      expect(
+        within(card).getByText(/Your streak ends at 2 photos\. That's your new best in Europe!/),
+      ).toBeInTheDocument();
+      expect(localStorage.getItem(bestStreakKey("europe"))).toBe("2");
+      expect(localStorage.getItem(BEST_STREAK_KEY)).toBe("7");
+    });
+
+    it("opens on the continent a link names, and ignores one it can't deal from", async () => {
+      window.history.replaceState(null, "", "/streak?region=europe");
+      await setup(MIXED);
+      expect(picker().value).toBe("europe");
+      expect(europeIds.has(shown()!)).toBe(true);
+
+      resetFakes();
+      document.body.innerHTML = "";
+      window.history.replaceState(null, "", "/streak?region=asia");
+      await setup(MIXED);
+      expect(picker().value).toBe("any");
+      await waitFor(() => expect(window.location.search).toBe(""));
+    });
   });
 });

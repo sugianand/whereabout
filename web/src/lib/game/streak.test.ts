@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   BEST_STREAK_KEY,
+  bestStreakKey,
   initialStreak,
   loadBestStreak,
   rememberStreak,
@@ -105,6 +106,19 @@ describe("best streak", () => {
     expect(localStorage.getItem(BEST_STREAK_KEY)).toBe("3");
     expect(rememberStreak(5)).toBe(5);
     expect(loadBestStreak()).toBe(5);
+  });
+
+  it("keeps one best for runs from anywhere and one for each continent", () => {
+    localStorage.setItem(BEST_STREAK_KEY, "6");
+    expect(bestStreakKey(null)).toBe(BEST_STREAK_KEY);
+    expect(loadBestStreak("europe")).toBe(0);
+    expect(rememberStreak(3, "europe")).toBe(3);
+    expect(rememberStreak(2, "asia")).toBe(2);
+    expect(localStorage.getItem(bestStreakKey("europe"))).toBe("3");
+    // A continent run never moves the best from anywhere, and the reverse.
+    expect(loadBestStreak()).toBe(6);
+    expect(rememberStreak(9)).toBe(9);
+    expect(loadBestStreak("europe")).toBe(3);
   });
 
   it("ignores junk in storage", () => {

@@ -12,6 +12,7 @@ import {
   regionBlurb,
   regionFromSlug,
   regionSlug,
+  streakRegions,
 } from "./regions";
 import type { AtlasData, CatalogPhoto } from "./types";
 
@@ -67,5 +68,33 @@ describe("continent games", () => {
   it("says where a continent game's photos come from, with the real count", () => {
     const regions = buildRegions(["FR", "DE", "IT", "ES", "GB"].map((c, i) => record(`eu${i}`, c)));
     expect(regionBlurb("Europe", regions)).toBe("All taken in Europe: 5 photos");
+  });
+});
+
+describe("Country Streak by continent", () => {
+  it("keeps each continent's tappable photos, and only continents with a game's worth", () => {
+    const regions = {
+      Europe: ["eu0", "eu1", "eu2", "eu3", "eu4", "eu5"],
+      Asia: ["as0", "as1", "as2", "as3", "as4"],
+    };
+    // One European photo is in a country the globe doesn't draw; Asia then has too few left.
+    const tappable = ["eu0", "eu2", "eu3", "eu4", "eu5", "as0", "as1", "as2", "as3", "zz0"];
+    expect(streakRegions(regions, tappable)).toEqual({
+      Europe: ["eu0", "eu2", "eu3", "eu4", "eu5"],
+    });
+  });
+
+  it("deals every continent of the real catalog only photos the globe can name", () => {
+    const deck = buildDeck(records);
+    const regions = streakRegions(deck.regions, deck.streakIds);
+    const tappable = new Set(deck.streakIds);
+    expect(offeredRegions(regions).length).toBeGreaterThan(0);
+    for (const c of offeredRegions(regions)) {
+      expect(regions[c]!.length).toBeGreaterThanOrEqual(MIN_PER_REGION);
+      for (const id of regions[c]!) {
+        expect(tappable.has(id)).toBe(true);
+        expect(deck.regions[c]).toContain(id);
+      }
+    }
   });
 });

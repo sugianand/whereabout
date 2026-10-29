@@ -72,3 +72,23 @@ export function regionBlurb(region: Continent, regions: Regions): string {
   const n = regions[region]?.length ?? 0;
   return `All taken in ${region}: ${n.toLocaleString("en-US")} photos`;
 }
+
+/**
+ * The continents Country Streak can deal from: each continent's photos that Country Streak can
+ * deal at all (`streakIds`, a country the globe draws), kept in the continent's catalog order.
+ * A continent needs as many as a game deals before it is offered, so a run there is never over
+ * after one or two photos just because the pool ran out.
+ */
+export function streakRegions(
+  regions: Regions,
+  streakIds: readonly string[],
+  min = MIN_PER_REGION,
+): Regions {
+  const tappable = new Set(streakIds);
+  const out: Regions = {};
+  for (const c of CONTINENTS) {
+    const list = regions[c]?.filter((id) => tappable.has(id));
+    if (list && list.length >= min) out[c] = list;
+  }
+  return out;
+}

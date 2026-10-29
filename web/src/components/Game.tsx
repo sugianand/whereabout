@@ -542,7 +542,12 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
               )}
               {!apiUrl && deck.streakIds.length > 0 && (
                 <Link
-                  href="/streak"
+                  // From a continent game, the streak deals from the same continent.
+                  href={
+                    mode.kind === "region"
+                      ? `/streak?region=${regionSlug(mode.region)}`
+                      : "/streak"
+                  }
                   className="pointer-events-auto shrink-0 rounded-full border border-chalk/30 bg-ocean-deep/60 px-3 py-1 text-xs font-semibold backdrop-blur transition hover:border-chalk"
                 >
                   Country Streak
