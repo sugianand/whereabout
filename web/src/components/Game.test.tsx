@@ -843,14 +843,15 @@ describe("Pick up where you left off", { timeout: 30000 }, () => {
     expect(saved()).toBeNull();
     for (let i = 0; i < ROUNDS_PER_GAME; i++) {
       const card = await playRound(map, daily[i]);
-      expect(saved()?.results).toHaveLength(i + 1);
+      // Kept in an effect just after the reveal renders.
+      await waitFor(() => expect(saved()?.results).toHaveLength(i + 1));
       const last = i === ROUNDS_PER_GAME - 1;
       fireEvent.click(
         within(card).getByRole("button", { name: last ? "See your results" : "Next photo" }),
       );
     }
     await screen.findByRole("region", { name: "Your record against Atlas" }, WAIT);
-    expect(saved()).toBeNull();
+    await waitFor(() => expect(saved()).toBeNull());
   });
 
   it("after all five rounds, reopens on the last reveal so the game still counts", async () => {
@@ -862,6 +863,7 @@ describe("Pick up where you left off", { timeout: 30000 }, () => {
         fireEvent.click(within(card).getByRole("button", { name: "Next photo" }));
       }
     }
+    await waitFor(() => expect(saved()?.results).toHaveLength(ROUNDS_PER_GAME));
     cleanup();
     render(<Game {...bundledGame} start="daily" today={TODAY} />);
     map = await mapReady();
@@ -870,7 +872,7 @@ describe("Pick up where you left off", { timeout: 30000 }, () => {
     fireEvent.click(within(card).getByRole("button", { name: "See your results" }));
     const panel = await screen.findByRole("region", { name: "Your record against Atlas" }, WAIT);
     expect(within(panel).getByText("Games played").nextElementSibling).toHaveTextContent("1");
-    expect(saved()).toBeNull();
+    await waitFor(() => expect(saved()).toBeNull());
   });
 
   it("starts the game an address asks for, letting a different kept game go", async () => {
@@ -880,7 +882,7 @@ describe("Pick up where you left off", { timeout: 30000 }, () => {
     const photo = await screen.findByRole("img");
     const first = playable.find((p) => photo.getAttribute("src") === p.imageUrl)!;
     await playRound(map, first);
-    expect(saved()?.mode).toMatchObject({ kind: "fresh" });
+    await waitFor(() => expect(saved()?.mode).toMatchObject({ kind: "fresh" }));
     cleanup();
 
     window.history.replaceState(null, "", "/?daily");
@@ -897,16 +899,17 @@ describe("Pick up where you left off", { timeout: 30000 }, () => {
     render(<Game {...bundledGame} start="daily" today={TODAY} />);
     const map = await mapReady();
     await playRound(map, daily[0]);
-    expect(saved()).not.toBeNull();
+    await waitFor(() => expect(saved()).not.toBeNull());
     fireEvent.click(screen.getByRole("button", { name: "New random game" }));
     await screen.findByText("Fresh game", {}, WAIT);
-    expect(saved()).toBeNull();
+    await waitFor(() => expect(saved()).toBeNull());
   });
 
   it("never reopens yesterday's Daily Five", async () => {
     render(<Game {...bundledGame} start="daily" today={TODAY} />);
     const map = await mapReady();
     await playRound(map, daily[0]);
+    await waitFor(() => expect(saved()?.results).toHaveLength(1));
     cleanup();
     window.history.replaceState(null, "", "/");
     render(<Game {...bundledGame} today={new Date("2026-10-10T15:00:00Z")} />);
