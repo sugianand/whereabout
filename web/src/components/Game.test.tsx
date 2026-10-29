@@ -173,6 +173,71 @@ describe("Game", { timeout: 20000 }, () => {
     expect(within(panel).getByText("Games played").nextElementSibling).toHaveTextContent("0");
   });
 
+  it("opens any finished round again from the summary, for no new score", async () => {
+    render(<Game {...bundledGame} start="daily" today={TODAY} />);
+    const map = await mapReady();
+    for (let i = 0; i < ROUNDS_PER_GAME; i++) {
+      const card = await playRound(map, { lng: 10 * i, lat: 0 });
+      const last = i === ROUNDS_PER_GAME - 1;
+      fireEvent.click(
+        within(card).getByRole("button", { name: last ? "See your results" : "Next photo" }),
+      );
+    }
+    const heading = await screen.findByRole("heading", { level: 1 }, WAIT);
+    const total = heading.querySelector(".sr-only")!.textContent!.replace(" points", "");
+    window.scrollTo = vi.fn();
+    const entries = window.history.length;
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: new RegExp(`^Look again at round 2: ${escapeRegExp(daily[1].place)}`),
+      }),
+    );
+    const card = await screen.findByRole("region", { name: daily[1].place }, WAIT);
+    expect(within(card).getByText("Round 2 of 5 again · no new score")).toBeInTheDocument();
+    // The player's own pin for that round is back, and the globe takes no new one.
+    const replayMap = FakeMap.instances.at(-1)!;
+    act(() => replayMap.emit("load"));
+    expect(screen.getByText("Looking again at round 2 of 5")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Guess here" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "New random game" })).toBeNull();
+    // One history entry, so the browser's back returns to the results.
+    expect(window.history.length).toBe(entries + 1);
+
+    fireEvent.click(within(card).getByRole("button", { name: "Round 3 again" }));
+    expect(await screen.findByRole("region", { name: daily[2].place }, WAIT)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Round 2 again" }));
+    fireEvent.click(screen.getByRole("button", { name: "Round 1 again" }));
+    const first = await screen.findByRole("region", { name: daily[0].place }, WAIT);
+    expect(within(first).queryByRole("button", { name: /^Round 0/ })).toBeNull();
+    // Stepping between rounds never stacks history entries.
+    expect(window.history.length).toBe(entries + 1);
+
+    fireEvent.click(within(first).getByRole("button", { name: "Back to your results" }));
+    const row = await screen.findByRole(
+      "button",
+      { name: new RegExp(`^Look again at round 1: `) },
+      WAIT,
+    );
+    await waitFor(() => expect(row).toHaveFocus(), WAIT);
+    // The same total, and the game joined the record once.
+    // The total shows at once, without counting up from zero again.
+    expect(
+      screen.getByRole("heading", { level: 1 }).querySelector("[aria-hidden]"),
+    ).toHaveTextContent(total);
+    expect(JSON.parse(localStorage.getItem(RECORD_KEY)!)).toMatchObject({ games: 1 });
+
+    // The browser's back closes the replay too.
+    fireEvent.click(screen.getByRole("button", { name: /^Look again at round 5: / }));
+    await screen.findByRole("region", { name: daily[4].place }, WAIT);
+    act(() => {
+      window.history.back();
+    });
+    expect(
+      await screen.findByRole("button", { name: /^Look again at round 5: / }, WAIT),
+    ).toHaveFocus();
+  });
+
   it("keeps the pin and explains the problem when a guess fails", async () => {
     const failing = (photos: CatalogPhoto[]): GameBackend => {
       const local = new LocalBackend(photos);

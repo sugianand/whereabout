@@ -12,10 +12,28 @@ import { useCountUp } from "@/lib/useCountUp";
 
 import AtlasEyes from "./AtlasEyes";
 
+/**
+ * Looking at a finished game's round again from the summary: the same card with no new score,
+ * stepping between rounds and back to the results instead of on to the next photo.
+ */
+export type ReplayControls = {
+  /** This round's number, from 1. */
+  round: number;
+  /** Rounds in the game. */
+  of: number;
+  onBack: () => void;
+  /** The round before, if this isn't the first. */
+  onPrevious?: () => void;
+  /** The round after, if this isn't the last. */
+  onNext?: () => void;
+};
+
 type RevealCardProps = {
   result: RoundResult;
   isLast: boolean;
   onNext: () => void;
+  /** Set when the round is replayed from the summary: no new score, and its own buttons. */
+  replay?: ReplayControls;
   /** How often Atlas is right at each confidence, from the shipped photos (`sureness.ts`). */
   sureness?: readonly SurenessBand[];
 };
@@ -97,7 +115,12 @@ export function hintNote(result: RoundResult): string | null {
   return `You took ${used} hint${used === 1 ? "" : "s"}, so this round was worth up to ${formatPoints(maxPoints(used))} points.`;
 }
 
-export default function RevealCard({ result, isLast, onNext, sureness }: RevealCardProps) {
+const outline =
+  "shrink-0 rounded-full border border-chalk/40 px-3.5 py-3 text-sm font-semibold transition hover:border-chalk";
+const primary =
+  "shrink-0 rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110";
+
+export default function RevealCard({ result, isLast, onNext, sureness, replay }: RevealCardProps) {
   const { reveal, atlas } = result;
   const credit = reveal.answer.credit;
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -129,6 +152,11 @@ export default function RevealCard({ result, isLast, onNext, sureness }: RevealC
       aria-labelledby="reveal-place"
       className="wb-card pointer-events-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-graticule/70 bg-ocean-deep/95 p-4 shadow-2xl md:p-6"
     >
+      {replay && (
+        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-chalk-dim">
+          Round {replay.round} of {replay.of} again · no new score
+        </p>
+      )}
       <p className="text-sm text-gold">It was taken in</p>
       <h2
         id="reveal-place"
@@ -281,26 +309,68 @@ export default function RevealCard({ result, isLast, onNext, sureness }: RevealC
         )}
       </div>
 
-      <div className="mt-4 flex items-center gap-4 md:mt-5">
-        <button
-          ref={nextRef}
-          type="button"
-          onClick={onNext}
-          className="shrink-0 rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
-        >
-          {isLast ? "See your results" : "Next photo"}
-        </button>
-        {credit && (
-          <a
-            href={credit.sourceUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="min-w-0 truncate text-xs text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk"
-          >
-            Photo: {credit.author}, {credit.license}
-          </a>
-        )}
-      </div>
+      {replay ? (
+        <>
+          <div className="mt-4 flex flex-wrap items-center gap-2 md:mt-5">
+            {replay.onPrevious && (
+              <button
+                type="button"
+                onClick={replay.onPrevious}
+                aria-label={`Round ${replay.round - 1} again`}
+                className={outline}
+              >
+                ‹ Round {replay.round - 1}
+              </button>
+            )}
+            {replay.onNext && (
+              <button
+                ref={nextRef}
+                type="button"
+                onClick={replay.onNext}
+                aria-label={`Round ${replay.round + 1} again`}
+                className={primary}
+              >
+                Round {replay.round + 1} ›
+              </button>
+            )}
+            <button
+              ref={replay.onNext ? undefined : nextRef}
+              type="button"
+              onClick={replay.onBack}
+              aria-label="Back to your results"
+              className={replay.onNext ? outline : primary}
+            >
+              {replay.onNext ? "Results" : "Back to your results"}
+            </button>
+          </div>
+          {credit && (
+            <a
+              href={credit.sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 block truncate text-xs text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk"
+            >
+              Photo: {credit.author}, {credit.license}
+            </a>
+          )}
+        </>
+      ) : (
+        <div className="mt-4 flex items-center gap-4 md:mt-5">
+          <button ref={nextRef} type="button" onClick={onNext} className={primary}>
+            {isLast ? "See your results" : "Next photo"}
+          </button>
+          {credit && (
+            <a
+              href={credit.sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="min-w-0 truncate text-xs text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk"
+            >
+              Photo: {credit.author}, {credit.license}
+            </a>
+          )}
+        </div>
+      )}
     </section>
   );
 }

@@ -168,6 +168,10 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   const [introOpen, setIntroOpen] = useState(false);
   // The player's record against Atlas, updated once as each game ends (see `next` below).
   const [record, setRecord] = useState<PlayerRecord | null>(null);
+  // A finished game's round shown again from the summary (index from 0), or null for the
+  // summary itself; `lookedAt` is the last one shown, so the summary can return focus to it.
+  const [replay, setReplay] = useState<number | null>(null);
+  const [lookedAt, setLookedAt] = useState<number | null>(null);
 
   useEffect(() => {
     if (mode) return;
@@ -300,6 +304,15 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
     setIntroOpen(false);
   }, []);
 
+  // Back (the button, or the browser's) closes the replay: the summary is the entry below it.
+  const replaying = replay !== null;
+  useEffect(() => {
+    if (!replaying) return;
+    const onPop = () => setReplay(null);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [replaying]);
+
   const onPinChange = useCallback((pin: LngLat) => dispatch({ type: "pinned", pin }), []);
 
   async function submit() {
@@ -346,6 +359,29 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
     dispatch({ type: "next" });
   }
 
+  /** Every new game starts from round one, with no replay open. */
+  function restart() {
+    setReplay(null);
+    setLookedAt(null);
+    dispatch({ type: "restart" });
+  }
+
+  /**
+   * Opens a finished round again. The summary gets a history entry of its own, so a phone's
+   * back gesture returns to the results instead of leaving the game.
+   */
+  function openReplay(index: number) {
+    if (replay === null) window.history.pushState({ ...window.history.state, wbReplay: true }, "");
+    window.scrollTo(0, 0);
+    setReplay(index);
+    setLookedAt(index);
+  }
+
+  function closeReplay() {
+    if (window.history.state?.wbReplay) window.history.back();
+    else setReplay(null);
+  }
+
   /**
    * Another game of the same kind: a tier or continent game stays where it was, the Daily Five
    * goes fresh.
@@ -356,7 +392,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
         ? { ...m, game: m.game + 1 }
         : { kind: "fresh", game: m?.kind === "fresh" ? m.game + 1 : 1 },
     );
-    dispatch({ type: "restart" });
+    restart();
   }
 
   /** A new game from one tier or continent, or from the whole catalog for "Any photos". */
@@ -367,19 +403,24 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
       if (choice) return { kind: "region", region: choice.region, game };
       return { kind: "fresh", game };
     });
-    dispatch({ type: "restart" });
+    restart();
   }
 
   function playDaily() {
     setMode({ kind: "daily", day: dayKey(today ?? new Date()) });
-    dispatch({ type: "restart" });
+    restart();
   }
 
   const title = mode ? modeTitle(mode) : "";
 
+  // The round on the reveal card: this game's latest guess, or a finished one looked at again.
+  const replayed =
+    state.phase === "finished" && replay !== null ? (state.results[replay] ?? null) : null;
+  const shown = state.phase === "revealed" ? state.current : replayed;
+
   const revealView = useMemo<RevealView | null>(() => {
-    if (state.phase !== "revealed") return null;
-    const { current } = state;
+    if (!shown) return null;
+    const current = shown;
     const guesses: RevealView["guesses"] = [{ actor: "player", at: current.pin }];
     if (current.atlas) guesses.push({ actor: "atlas", at: current.atlas });
     return {
@@ -387,9 +428,9 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
       guesses,
       ...(current.atlas?.belief ? { belief: current.atlas.belief } : {}),
     };
-  }, [state]);
+  }, [shown]);
 
-  if (state.phase === "finished") {
+  if (state.phase === "finished" && !replayed) {
     return (
       <Summary
         results={state.results}
@@ -406,21 +447,18 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
         record={record}
         today={today ?? new Date()}
         onResetRecord={() => setRecord(resetRecord())}
+        onReplay={openReplay}
+        returnedFrom={lookedAt}
       />
     );
   }
 
-  const round =
-    state.phase === "guessing"
-      ? state.round
-      : state.phase === "revealed"
-        ? state.current.round
-        : null;
-  const pin =
-    state.phase === "guessing" ? state.pin : state.phase === "revealed" ? state.current.pin : null;
+  const round = state.phase === "guessing" ? state.round : (shown?.round ?? null);
+  const pin = state.phase === "guessing" ? state.pin : (shown?.pin ?? null);
   const score = totals(state.results).player;
   const error = state.phase === "guessing" || state.phase === "loading" ? state.error : null;
-  const roundNumber = state.index + 1;
+  const index = state.phase === "finished" ? (replay ?? 0) : state.index;
+  const roundNumber = index + 1;
   const roundSize = round ? records.get(round.photo.id)?.photo : undefined;
   const clues = state.phase === "guessing" ? state.clues : [];
   const hintsLeft = state.phase === "guessing" ? state.round.hintsAvailable - clues.length : 0;
@@ -428,9 +466,10 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   return (
     <main
       className="wb-stage relative h-dvh w-full overflow-hidden bg-ocean-deep"
-      data-phase={state.phase}
+      data-phase={shown ? "revealed" : state.phase}
+      data-replay={replayed ? "true" : undefined}
     >
-      <h1 className="sr-only">{`Whereabout: ${title}, round ${roundNumber} of ${ROUNDS_PER_GAME}`}</h1>
+      <h1 className="sr-only">{`Whereabout: ${title}, ${replayed ? "looking again at " : ""}round ${roundNumber} of ${ROUNDS_PER_GAME}`}</h1>
 
       <div
         className="wb-photo"
@@ -451,7 +490,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
             aria-hidden="true"
           />
         )}
-        {introOpen && state.phase !== "revealed" && (
+        {introOpen && !shown && (
           // Taps pass straight through the card to the photo underneath.
           <div className="wb-intro pointer-events-none absolute inset-x-4 top-1/2 z-10 mx-auto max-w-xs -translate-y-1/2 rounded-2xl border border-chalk/20 bg-ocean-deep/80 px-4 py-3 text-center shadow-lg backdrop-blur md:top-[55%]">
             <p className="font-sign text-xl font-bold leading-tight">{INTRO_TEXT.title}</p>
@@ -478,7 +517,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
               {regionBlurb(mode.region, regions)}
             </p>
           )}
-          {mode && (
+          {mode && !replayed && (
             <div className="mt-2 flex items-center gap-1.5">
               <button
                 type="button"
@@ -511,7 +550,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
               )}
             </div>
           )}
-          {state.phase !== "revealed" && (
+          {!shown && (
             <Link
               href="/you"
               className="wb-try-atlas pointer-events-auto mt-2 flex max-w-60 items-center gap-2 rounded-full md:mt-3 md:gap-2.5 md:rounded-2xl border border-sonar/40 bg-ocean-deep/70 py-1 pl-1 pr-3 backdrop-blur transition hover:border-sonar md:px-3 md:py-2"
@@ -548,17 +587,21 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
               <li
                 key={i}
                 className={`h-1.5 w-6 rounded-full ${
-                  i < state.results.length
-                    ? "bg-flare"
-                    : i === state.index
+                  replayed
+                    ? i === index
                       ? "bg-chalk"
-                      : "bg-chalk/25"
+                      : "bg-flare"
+                    : i < state.results.length
+                      ? "bg-flare"
+                      : i === index
+                        ? "bg-chalk"
+                        : "bg-chalk/25"
                 }`}
               />
             ))}
           </ol>
           <p className="mt-2 text-sm text-chalk-dim">
-            Round {roundNumber} of {ROUNDS_PER_GAME}
+            {replayed ? "Looking again at round" : "Round"} {roundNumber} of {ROUNDS_PER_GAME}
           </p>
           <p className="font-sign tabular text-2xl font-bold">
             {formatPoints(score)}{" "}
@@ -582,7 +625,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
             className="h-full"
           />
         </div>
-        {state.phase !== "revealed" && (
+        {!shown && (
           <div className="wb-guess-bar">
             {clues.length > 0 && (
               <div className="mb-2" aria-live="polite">
@@ -640,13 +683,25 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
         )}
       </div>
 
-      {state.phase === "revealed" && (
+      {shown && (
         <div className="wb-reveal pointer-events-none absolute z-30">
           <RevealCard
-            result={state.current}
-            isLast={state.index + 1 >= ROUNDS_PER_GAME}
+            result={shown}
+            isLast={index + 1 >= ROUNDS_PER_GAME}
             onNext={next}
             sureness={deck.sureness}
+            replay={
+              replayed
+                ? {
+                    round: roundNumber,
+                    of: state.results.length,
+                    onBack: closeReplay,
+                    onPrevious: index > 0 ? () => openReplay(index - 1) : undefined,
+                    onNext:
+                      index + 1 < state.results.length ? () => openReplay(index + 1) : undefined,
+                  }
+                : undefined
+            }
           />
         </div>
       )}

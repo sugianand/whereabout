@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ROUNDS_PER_GAME, totals, type RoundResult } from "@/lib/game/state";
 import { MAX_POINTS, formatDistance, formatPoints } from "@/lib/geo";
@@ -40,6 +40,13 @@ type SummaryProps = {
   today?: Date;
   /** Forget the record in this browser. */
   onResetRecord?: () => void;
+  /** Look at a round again (index from 0): its photo, both pins and the arcs, for no score. */
+  onReplay?: (index: number) => void;
+  /**
+   * The round the player just came back from looking at, if any: its row takes focus and the
+   * total shows at once instead of counting up again.
+   */
+  returnedFrom?: number | null;
 };
 
 const plural = (n: number, one: string, many = `${one}s`) =>
@@ -239,9 +246,19 @@ export default function Summary({
   record,
   today = new Date(),
   onResetRecord,
+  onReplay,
+  returnedFrom = null,
 }: SummaryProps) {
   const t = totals(results);
-  const shown = useCountUp(t.player, 1400);
+  const counted = useCountUp(t.player, 1400);
+  const shown = returnedFrom === null ? counted : t.player;
+  const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  useEffect(() => {
+    if (returnedFrom === null) return;
+    const row = rowRefs.current[returnedFrom];
+    row?.focus({ preventScroll: true });
+    row?.scrollIntoView?.({ block: "center" });
+  }, [returnedFrom]);
   const [shared, setShared] = useState<ShareOutcome | "idle">("idle");
   // The address only matters once shared; on the server there is no window yet.
   const card = shareCard(
@@ -286,31 +303,63 @@ export default function Summary({
         </p>
       )}
 
-      <ol className="mt-10 divide-y divide-graticule/60 border-y border-graticule/60">
-        {results.map((r, i) => (
-          <li
-            key={r.round.roundId}
-            className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-3 py-4"
-          >
-            <span className="font-sign text-2xl text-chalk-dim">{i + 1}</span>
-            <span className="min-w-0">
-              <span className="block truncate text-lg">{r.reveal.answer.place}</span>
-              {r.atlas && (
-                <span className="text-sm text-sonar">
-                  Atlas: {formatDistance(r.atlas.distanceKm)}
+      {onReplay && (
+        <p className="mt-10 text-sm text-chalk-dim">
+          Tap a round to see it again on the globe, with both pins.
+        </p>
+      )}
+      <ol
+        className={`${onReplay ? "mt-2" : "mt-10"} divide-y divide-graticule/60 border-y border-graticule/60`}
+      >
+        {results.map((r, i) => {
+          const row = (
+            <>
+              <span className="font-sign text-2xl text-chalk-dim">{i + 1}</span>
+              <span className="min-w-0">
+                <span className="block truncate text-lg">{r.reveal.answer.place}</span>
+                {r.atlas && (
+                  <span className="text-sm text-sonar">
+                    Atlas: {formatDistance(r.atlas.distanceKm)}
+                  </span>
+                )}
+              </span>
+              <span className="text-right">
+                <span className="block font-sign tabular text-2xl font-bold text-flare">
+                  {formatDistance(r.reveal.distanceKm)}
                 </span>
+                <span className="tabular text-sm text-chalk-dim">
+                  {formatPoints(r.reveal.score)} points
+                </span>
+              </span>
+            </>
+          );
+          const grid = "grid items-baseline gap-x-3 py-4";
+          return (
+            <li key={r.round.roundId}>
+              {onReplay ? (
+                <button
+                  ref={(el) => {
+                    rowRefs.current[i] = el;
+                  }}
+                  type="button"
+                  onClick={() => onReplay(i)}
+                  aria-label={`Look again at round ${i + 1}: ${r.reveal.answer.place}, you were ${formatDistance(r.reveal.distanceKm)} away`}
+                  className={`${grid} group w-full grid-cols-[2rem_1fr_auto_1rem] rounded-lg px-1 text-left transition hover:bg-chalk/5 focus-visible:bg-chalk/5`}
+                >
+                  {row}
+                  <span
+                    aria-hidden="true"
+                    className="self-center text-xl text-chalk-dim transition group-hover:translate-x-0.5 group-hover:text-chalk"
+                  >
+                    ›
+                  </span>
+                </button>
+              ) : (
+                <div className={`${grid} grid-cols-[2rem_1fr_auto]`}>{row}</div>
               )}
-            </span>
-            <span className="text-right">
-              <span className="block font-sign tabular text-2xl font-bold text-flare">
-                {formatDistance(r.reveal.distanceKm)}
-              </span>
-              <span className="tabular text-sm text-chalk-dim">
-                {formatPoints(r.reveal.score)} points
-              </span>
-            </span>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ol>
 
       {record && <RecordPanel record={record} today={today} onReset={onResetRecord} />}

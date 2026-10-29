@@ -390,6 +390,54 @@ test("on a phone the answer stays in view above the result card", async ({ page 
   await expect(page.getByText("out of 25,000 points")).toBeVisible();
 });
 
+test("any round of a finished game opens again from the summary, and back returns to it", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("./?daily");
+  for (let round = 1; round <= 5; round++) {
+    const card = await playRoundWithKeyboard(page);
+    await card.getByRole("button", { name: round < 5 ? "Next photo" : "See your results" }).click();
+  }
+  await expect(page.getByText("out of 25,000 points")).toBeVisible();
+  const places = await page.getByRole("listitem").locator("span.truncate").allInnerTexts();
+  const total = await page.getByRole("heading", { level: 1 }).locator(".sr-only").innerText();
+
+  await page.getByRole("button", { name: /^Look again at round 3: / }).click();
+  const card = page.getByRole("region", { name: places[2] });
+  await expect(card.getByText("Round 3 of 5 again · no new score")).toBeVisible();
+  // Both pins and the answer are back on the globe, which takes no new pin.
+  await expect(page.locator(".globe-pin--truth")).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByRole("button", { name: "Guess here" })).toHaveCount(0);
+  await expect(card.getByRole("button", { name: "Round 4 again" })).toBeFocused();
+  if ((page.viewportSize()?.width ?? 1000) < 768) {
+    await page.waitForTimeout(800);
+    const cardBox = (await card.boundingBox())!;
+    const pinBox = (await page.locator(".globe-pin--truth").boundingBox())!;
+    expect(pinBox.y + pinBox.height, "gold pin above the card").toBeLessThan(cardBox.y);
+    expect(cardBox.height, "card leaves most of the screen to the globe").toBeLessThan(
+      page.viewportSize()!.height / 2,
+    );
+  }
+
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("region", { name: places[3] })).toBeVisible();
+  await page.getByRole("button", { name: "Back to your results" }).click();
+  await expect(page.getByRole("button", { name: /^Look again at round 4: / })).toBeFocused();
+  await expect(page.getByRole("heading", { level: 1 }).locator(".sr-only")).toHaveText(total);
+
+  // A phone's back gesture closes a replay instead of leaving the game.
+  await page.getByRole("button", { name: /^Look again at round 1: / }).click();
+  await expect(page.getByRole("region", { name: places[0] })).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole("button", { name: /^Look again at round 1: / })).toBeFocused();
+  expect(new URL(page.url()).search).toBe("?daily");
+  const saved = JSON.parse((await page.evaluate(() => localStorage.getItem("whereabout:record")))!);
+  expect(saved).toMatchObject({ games: 1 });
+  expect(errors).toEqual([]);
+});
+
 test("a game fetches only the five photos it deals, not the whole catalog", async ({ page }) => {
   const records: string[] = [];
   page.on("request", (r) => {
