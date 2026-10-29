@@ -296,8 +296,10 @@ test("the globe can be spun, zoomed and recentred", async ({ page }) => {
   const frame = page.locator(".globe[data-ready]");
   await expect(frame).toBeVisible({ timeout: 20_000 });
 
+  // data-zoom updates on moveend, after the zoom animation's last frame: on a loaded CI
+  // runner with software WebGL that can take well over the default 5 s.
   await page.getByRole("button", { name: "Zoom in on the globe" }).click();
-  await expect(frame).not.toHaveAttribute("data-zoom", "1.40");
+  await expect(frame).not.toHaveAttribute("data-zoom", "1.40", CAMERA_SETTLES);
 
   // Drag to spin the globe somewhere else.
   const box = (await frame.boundingBox())!;
@@ -309,10 +311,45 @@ test("the globe can be spun, zoomed and recentred", async ({ page }) => {
   await page.mouse.up();
 
   await page.getByRole("button", { name: "Recenter the globe" }).click();
-  await expect(frame).toHaveAttribute("data-zoom", "1.40");
-  await expect(frame).toHaveAttribute("data-padding", "0,0,0,0");
+  await expect(frame).toHaveAttribute("data-zoom", "1.40", CAMERA_SETTLES);
+  await expect(frame).toHaveAttribute("data-padding", "0,0,0,0", CAMERA_SETTLES);
   // Spinning is not a pin drop.
   await expect(page.getByText("Place your pin", { exact: true })).toBeVisible();
+});
+
+test("a spin stays a spin when the globe changes size mid-drag", async ({ page }) => {
+  // The photo finishing loading, a phone's address bar sliding away or a rotation can all
+  // resize the globe under a finger. MapLibre then forgets where the press began and reports
+  // the release as a click; the globe must not drop a pin there.
+  await page.goto("./");
+  const frame = page.locator(".globe[data-ready]");
+  await expect(frame).toBeVisible({ timeout: 20_000 });
+  const box = (await frame.boundingBox())!;
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  await page.mouse.move(cx - 40, cy, { steps: 4 });
+  const resized = await page.evaluate(async () => {
+    const globe = document.querySelector<HTMLElement>(".globe")!;
+    const canvas = globe.querySelector("canvas")!;
+    const before = canvas.clientHeight;
+    globe.style.minHeight = `${globe.clientHeight + 60}px`;
+    // MapLibre resizes from its own ResizeObserver; wait for its canvas to follow.
+    for (let i = 0; i < 100 && canvas.clientHeight === before; i++) {
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    return canvas.clientHeight !== before;
+  });
+  expect(resized).toBe(true);
+  await page.mouse.move(cx - box.width / 4, cy + 20, { steps: 4 });
+  await page.mouse.up();
+
+  await expect(page.getByText("Place your pin", { exact: true })).toBeVisible();
+  // A plain tap afterwards still places the pin.
+  await page.mouse.click(cx, cy);
+  await expect(page.getByText(/^Your pin: /)).toBeVisible();
 });
 
 test("on a phone the answer stays in view above the result card", async ({ page }) => {

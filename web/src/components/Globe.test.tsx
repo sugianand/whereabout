@@ -6,7 +6,7 @@ import { FakeMap, FakeMarker, resetFakes, workerUrls } from "@/test/maplibre-moc
 import type { LngLat } from "@/lib/geo";
 import type { RevealLines, RevealView } from "@/lib/reveal";
 
-import Globe, { INITIAL_VIEW, NO_PADDING } from "./Globe";
+import Globe, { CLICK_TOLERANCE_PX, INITIAL_VIEW, NO_PADDING, movedTooFarForClick } from "./Globe";
 
 vi.mock("maplibre-gl", async () => (await import("@/test/maplibre-mock")).maplibreMock);
 
@@ -86,6 +86,33 @@ describe("Globe", () => {
     act(() => map.click(2, 48));
     expect(screen.getByText("Place your pin")).toBeInTheDocument();
     expect(FakeMarker.instances).toHaveLength(0);
+  });
+
+  it("treats a press that travelled as a spin, even if MapLibre reports a click", async () => {
+    const { map, globe } = await renderGlobe();
+    fireEvent.pointerDown(globe, { isPrimary: true, button: 0, clientX: 300, clientY: 200 });
+    act(() => map.click(10, 20, { x: 140, y: 220 }));
+    expect(screen.getByText("Place your pin")).toBeInTheDocument();
+    expect(FakeMarker.instances).toHaveLength(0);
+  });
+
+  it("still places a pin for a tap that wobbles less than the click tolerance", async () => {
+    const { map, globe } = await renderGlobe();
+    fireEvent.pointerDown(globe, { isPrimary: true, button: 0, clientX: 300, clientY: 200 });
+    act(() => map.click(10, 20, { x: 302, y: 201 }));
+    expect(screen.getByText("Your pin: 20.00° N, 10.00° E")).toBeInTheDocument();
+  });
+
+  it("judges each click by its own press", async () => {
+    const { map, globe } = await renderGlobe();
+    fireEvent.pointerDown(globe, { isPrimary: true, button: 0, clientX: 300, clientY: 200 });
+    act(() => map.click(10, 20, { x: 100, y: 200 }));
+    // A second finger or a right-button press never starts a tap of its own.
+    fireEvent.pointerDown(globe, { isPrimary: false, button: 0, clientX: 100, clientY: 200 });
+    fireEvent.pointerDown(globe, { isPrimary: true, button: 2, clientX: 100, clientY: 200 });
+    fireEvent.pointerDown(globe, { isPrimary: true, button: 0, clientX: 50, clientY: 50 });
+    act(() => map.click(-5, 5, { x: 50, y: 51 }));
+    expect(screen.getByText("Your pin: 5.00° N, 5.00° W")).toBeInTheDocument();
   });
 
   it("can be played without a mouse", async () => {
@@ -312,5 +339,20 @@ describe("Globe", () => {
         expect(heat(map)).toBeUndefined();
       });
     });
+  });
+});
+
+describe("movedTooFarForClick", () => {
+  it("lets taps through and stops drags at MapLibre's tolerance", () => {
+    const down = { x: 10, y: 10 };
+    expect(movedTooFarForClick(down, { x: 10, y: 10 })).toBe(false);
+    expect(movedTooFarForClick(down, { x: 10 + CLICK_TOLERANCE_PX - 0.5, y: 10 })).toBe(false);
+    expect(movedTooFarForClick(down, { x: 10 + CLICK_TOLERANCE_PX, y: 10 })).toBe(true);
+    expect(movedTooFarForClick(down, { x: 13, y: 14 })).toBe(true);
+  });
+
+  it("trusts MapLibre when either end of the press is unknown", () => {
+    expect(movedTooFarForClick(null, { x: 0, y: 0 })).toBe(false);
+    expect(movedTooFarForClick({ x: 0, y: 0 }, null)).toBe(false);
   });
 });

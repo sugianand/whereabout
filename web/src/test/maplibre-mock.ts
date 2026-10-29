@@ -51,8 +51,10 @@ export class FakeMap {
     for (const handler of this.handlers[type] ?? []) handler(event);
   }
 
-  click(lng: number, lat: number) {
-    this.emit("click", { lngLat: { lng, lat } });
+  /** A click as MapLibre reports it; `at` is where the press came up, in client pixels. */
+  click(lng: number, lat: number, at?: { x: number; y: number }) {
+    const originalEvent = at ? { clientX: at.x, clientY: at.y } : undefined;
+    this.emit("click", { lngLat: { lng, lat }, originalEvent });
   }
 
   getCenter() {

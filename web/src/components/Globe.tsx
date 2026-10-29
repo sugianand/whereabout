@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
   type KeyboardEvent,
+  type PointerEvent,
   type ReactNode,
 } from "react";
 
@@ -133,6 +134,25 @@ function showWholeWorld(map: MapLibreMap, animate: boolean) {
   else map.jumpTo(camera);
 }
 
+/** How far, in CSS pixels, a press may travel and still count as a tap (MapLibre's default). */
+export const CLICK_TOLERANCE_PX = 3;
+
+/**
+ * Whether a press that went down at `down` and clicked at `up` was a drag, not a tap.
+ *
+ * MapLibre drops its own record of where a press began whenever the map is stopped, and
+ * resizing the map stops it. So when the globe changes size mid-drag (the photo above it
+ * finishing loading, a phone's address bar sliding away, a rotation), MapLibre reports the
+ * end of a spin as a click, and a pin would land wherever the player let go.
+ */
+export function movedTooFarForClick(
+  down: { x: number; y: number } | null,
+  up: { x: number; y: number } | null,
+): boolean {
+  if (!down || !up) return false;
+  return Math.hypot(up.x - down.x, up.y - down.y) >= CLICK_TOLERANCE_PX;
+}
+
 /** Mirrors the live camera onto the frame, so tests and debugging can see what MapLibre did. */
 function recordCamera(map: MapLibreMap, el: HTMLElement | null) {
   if (!el) return;
@@ -178,6 +198,8 @@ export default function Globe({
   // The reveal's camera, so "Recenter" can reframe the answer; null while guessing.
   const revealCameraRef = useRef<Parameters<MapLibreMap["easeTo"]>[0] | null>(null);
   const hadRevealRef = useRef(false);
+  // Where the current press went down, kept by the globe itself (see movedTooFarForClick).
+  const pressRef = useRef<{ x: number; y: number } | null>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -217,7 +239,13 @@ export default function Globe({
           attributionControl: { compact: true },
         });
         map.on("click", (event) => {
+          const press = pressRef.current;
+          pressRef.current = null;
           if (disabledRef.current) return;
+          const up = event.originalEvent
+            ? { x: event.originalEvent.clientX, y: event.originalEvent.clientY }
+            : null;
+          if (movedTooFarForClick(press, up)) return;
           onPinChangeRef.current(normalize({ lng: event.lngLat.lng, lat: event.lngLat.lat }));
         });
         map.touchZoomRotate.disableRotation();
@@ -376,6 +404,12 @@ export default function Globe({
     }
   }
 
+  function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
+    // Only the first finger or the main button starts a press that can end as a tap.
+    if (!event.isPrimary || event.button !== 0) return;
+    pressRef.current = { x: event.clientX, y: event.clientY };
+  }
+
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     const map = mapRef.current;
     const direction = ARROW_KEYS[event.key];
@@ -422,6 +456,7 @@ export default function Globe({
         aria-disabled={disabled || undefined}
         tabIndex={0}
         onKeyDown={handleKeyDown}
+        onPointerDown={handlePointerDown}
         data-ready={ready || undefined}
         className="globe relative min-h-72 w-full flex-1 overflow-hidden rounded-lg bg-ocean-deep"
       />
