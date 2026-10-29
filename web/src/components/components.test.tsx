@@ -106,6 +106,7 @@ describe("Summary", () => {
       lastDaily: "2026-10-23",
       streak: 4,
       bestStreak: 6,
+      continents: {},
     };
     const props = { results: [result(1, 5000, 10)], title: "Fresh game", onPlayAgain: () => {} };
     const { rerender } = render(
@@ -122,6 +123,87 @@ describe("Summary", () => {
 
     rerender(<Summary {...props} record={record} today={new Date("2026-10-25T08:00:00Z")} />);
     expect(value("Daily Five streak")).toHaveTextContent("0 days");
+  });
+
+  it("shows rounds by continent and where the player beat Atlas most and least", () => {
+    const record: PlayerRecord = {
+      ...EMPTY_RECORD,
+      games: 4,
+      roundsVsAtlas: 15,
+      roundsWon: 6,
+      continents: {
+        Asia: { rounds: 5, vsAtlas: 5, won: 1 },
+        Europe: { rounds: 6, vsAtlas: 6, won: 4 },
+        Oceania: { rounds: 4, vsAtlas: 4, won: 1 },
+        Africa: { rounds: 2, vsAtlas: 0, won: 0 },
+      },
+    };
+    render(
+      <Summary
+        results={[result(1, 5000, 10)]}
+        title="Fresh game"
+        onPlayAgain={() => {}}
+        record={record}
+      />,
+    );
+    const table = screen.getByRole("table", { name: "By continent" });
+    const rows = within(table).getAllByRole("row").slice(1);
+    // Continents in the site's usual order, unplayed ones left out.
+    expect(rows.map((r) => r.textContent)).toEqual([
+      "Africa2–",
+      "Asia51 of 5",
+      "Europe64 of 6",
+      "Oceania41 of 4",
+    ]);
+    const line = screen.getByText(/^You beat Atlas most often in/);
+    // Asia and Oceania tie at 1 in 5 vs 1 in 4: Oceania's 25% is higher, so Asia is least.
+    expect(line).toHaveTextContent(
+      "You beat Atlas most often in Europe (4 of 6 rounds) and least often in Asia (1 of 5 rounds).",
+    );
+  });
+
+  it("waits for enough rounds on two continents before naming most and least", () => {
+    const one: PlayerRecord = {
+      ...EMPTY_RECORD,
+      games: 1,
+      continents: { Europe: { rounds: 5, vsAtlas: 5, won: 3 } },
+    };
+    const { rerender } = render(
+      <Summary
+        results={[result(1, 5000, 10)]}
+        title="Fresh game"
+        onPlayAgain={() => {}}
+        record={one}
+      />,
+    );
+    expect(
+      screen.getByText(/^Play 3 rounds against Atlas on each of two continents/),
+    ).toBeInTheDocument();
+    const even: PlayerRecord = {
+      ...one,
+      continents: {
+        Asia: { rounds: 3, vsAtlas: 3, won: 1 },
+        Europe: { rounds: 6, vsAtlas: 6, won: 2 },
+      },
+    };
+    rerender(
+      <Summary
+        results={[result(1, 5000, 10)]}
+        title="Fresh game"
+        onPlayAgain={() => {}}
+        record={even}
+      />,
+    );
+    expect(screen.getByText(/just as often on every continent/)).toBeInTheDocument();
+    rerender(
+      <Summary
+        results={[result(1, 5000, 10)]}
+        title="Fresh game"
+        onPlayAgain={() => {}}
+        record={{ ...one, continents: {} }}
+      />,
+    );
+    expect(screen.queryByRole("table", { name: "By continent" })).toBeNull();
   });
 
   it("resets the record only after the player confirms", () => {

@@ -5,7 +5,14 @@ import { useState } from "react";
 
 import { ROUNDS_PER_GAME, totals, type RoundResult } from "@/lib/game/state";
 import { MAX_POINTS, formatDistance, formatPoints } from "@/lib/geo";
-import { currentStreak, type PlayerRecord } from "@/lib/playerRecord";
+import { CONTINENTS } from "@/lib/continents";
+import {
+  MIN_RANKED_ROUNDS,
+  continentStandings,
+  currentStreak,
+  type ContinentStanding,
+  type PlayerRecord,
+} from "@/lib/playerRecord";
 import {
   VERSUS_LABEL,
   VERSUS_MARK,
@@ -79,6 +86,7 @@ function RecordPanel({
           </div>
         ))}
       </dl>
+      <ContinentRecordTable record={record} />
       <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-chalk-dim">
         <p>
           Kept only in this browser. Streaks follow the Daily Five, which changes at midnight UTC.
@@ -116,6 +124,69 @@ function RecordPanel({
           ))}
       </div>
     </section>
+  );
+}
+
+const wonOf = (s: ContinentStanding) =>
+  `${s.won.toLocaleString("en-US")} of ${plural(s.vsAtlas, "round")}`;
+
+/** Rounds played and won against Atlas on each continent, with where you beat it most and least. */
+function ContinentRecordTable({ record }: { record: PlayerRecord }) {
+  const rows = CONTINENTS.flatMap((c) => {
+    const t = record.continents[c];
+    return t ? [{ continent: c, ...t }] : [];
+  });
+  if (rows.length === 0) return null;
+  const standing = continentStandings(record.continents);
+  const ranked = rows.filter((r) => r.vsAtlas >= MIN_RANKED_ROUNDS).length;
+
+  return (
+    <div className="mt-6">
+      <table className="w-full max-w-md text-left">
+        <caption className="mb-2 text-left font-semibold">By continent</caption>
+        <thead className="text-sm text-chalk-dim">
+          <tr>
+            <th scope="col" className="py-1 font-normal">
+              Continent
+            </th>
+            <th scope="col" className="py-1 text-right font-normal">
+              Rounds
+            </th>
+            <th scope="col" className="py-1 text-right font-normal">
+              Won against Atlas
+            </th>
+          </tr>
+        </thead>
+        <tbody className="tabular">
+          {rows.map((r) => (
+            <tr key={r.continent} className="border-t border-graticule/60">
+              <th scope="row" className="py-1.5 font-normal">
+                {r.continent}
+              </th>
+              <td className="py-1.5 text-right">{r.rounds.toLocaleString("en-US")}</td>
+              <td className="py-1.5 text-right">
+                {r.vsAtlas > 0 ? `${r.won.toLocaleString("en-US")} of ${r.vsAtlas}` : "–"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-3 text-sm text-chalk-dim">
+        {standing ? (
+          <>
+            You beat Atlas most often in{" "}
+            <strong className="text-chalk">{standing.most.continent}</strong> (
+            {wonOf(standing.most)}) and least often in{" "}
+            <strong className="text-chalk">{standing.least.continent}</strong> (
+            {wonOf(standing.least)}).
+          </>
+        ) : ranked >= 2 ? (
+          "You beat Atlas just as often on every continent you've played it on."
+        ) : (
+          `Play ${MIN_RANKED_ROUNDS} rounds against Atlas on each of two continents to see where you beat it most and least.`
+        )}
+      </p>
+    </div>
   );
 }
 

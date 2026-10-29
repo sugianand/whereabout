@@ -37,6 +37,11 @@ describe("bundled catalog", () => {
     }
   });
 
+  it("credits each photo to its own source page, so the reveal's credit link names one photo", () => {
+    const sources = photos.map((p) => p.credit.sourceUrl);
+    expect(new Set(sources).size).toBe(sources.length);
+  });
+
   it("joins original sizes from quality.csv by id and omits them otherwise", () => {
     const base = [{ id: "a" }, { id: "b" }];
     const q = "id,width,height,sharpness,sharpness_global\na,4000,3000,1,2\n";

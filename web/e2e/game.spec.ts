@@ -55,7 +55,14 @@ test("a whole Daily Five can be played with the keyboard", async ({ page }) => {
   const record = page.getByRole("region", { name: "Your record against Atlas" });
   await expect(record.getByText("Daily Five streak").locator("+ dd")).toHaveText("1 day");
   const stored = await page.evaluate(() => localStorage.getItem("whereabout:record"));
-  expect(JSON.parse(stored ?? "{}")).toMatchObject({ games: 1, streak: 1 });
+  const saved = JSON.parse(stored ?? "{}");
+  expect(saved).toMatchObject({ games: 1, streak: 1 });
+  // Every round joins the continent its photo was taken on.
+  const tallies = Object.values(saved.continents ?? {}) as { rounds: number; won: number }[];
+  expect(tallies.reduce((n, t) => n + t.rounds, 0)).toBe(5);
+  expect(tallies.reduce((n, t) => n + t.won, 0)).toBe(saved.roundsWon);
+  const byContinent = record.getByRole("table", { name: "By continent" });
+  await expect(byContinent.getByRole("row")).toHaveCount(1 + tallies.length);
 
   // The share card: five rounds, and none of the places just revealed in the results list.
   const places = await page.getByRole("listitem").locator("span.truncate").allInnerTexts();
@@ -478,9 +485,13 @@ test("the reveal shows the photo's real clues next to what Atlas read", async ({
   const catalog = JSON.parse(readFileSync(resolve(process.cwd(), "src/data/photos.json"), "utf8"));
   await page.goto("./?daily");
   const card = await playRoundWithKeyboard(page);
-  const place = await card.getByRole("heading", { level: 2 }).innerText();
-  const photo = catalog.find((p: { place: string }) => p.place === place);
-  expect(photo, `${place} is in the catalog`).toBeTruthy();
+  // Several photos share a place name (five are "Kourou, French Guiana"), so find this one by
+  // its credit link, which is unique to each photo.
+  const source = await card.getByRole("link", { name: /^Photo: / }).getAttribute("href");
+  const photo = catalog.find(
+    (p: { credit: { sourceUrl: string } }) => p.credit.sourceUrl === source,
+  );
+  expect(photo, `${source} is in the catalog`).toBeTruthy();
 
   // Phones fold Atlas's reasoning, and the real clues with it, behind one toggle.
   if (isMobile)

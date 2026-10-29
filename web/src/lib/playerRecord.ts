@@ -10,9 +10,21 @@
  * wherever and whenever they were played, and replaying the same day's puzzle leaves it alone.
  */
 
+import { CONTINENTS, continentOf, type Continent } from "@/lib/continents";
 import { dayKey } from "@/lib/game/daily";
+import type { RoundResult } from "@/lib/game/state";
 
 export const RECORD_KEY = "whereabout:record";
+
+/** One continent's rounds: all of them, the ones Atlas also guessed, and the ones you won. */
+export interface ContinentTally {
+  rounds: number;
+  vsAtlas: number;
+  won: number;
+}
+
+/** Tallies by the continent each photo was taken on; continents never played are absent. */
+export type ContinentRecord = Partial<Record<Continent, ContinentTally>>;
 
 export interface PlayerRecord {
   /** Finished games of any kind. */
@@ -26,6 +38,8 @@ export interface PlayerRecord {
   lastDaily: string | null;
   streak: number;
   bestStreak: number;
+  /** Rounds played and won against Atlas, by the continent of each photo. */
+  continents: ContinentRecord;
 }
 
 /** What one finished game adds to the record. */
@@ -35,6 +49,8 @@ export interface FinishedGame {
   roundsWon: number;
   /** The Daily Five's puzzle day, or null for a fresh game. */
   daily: string | null;
+  /** This game's rounds by continent (`tallyContinents`); absent adds none. */
+  continents?: ContinentRecord;
 }
 
 export const EMPTY_RECORD: PlayerRecord = {
@@ -45,7 +61,80 @@ export const EMPTY_RECORD: PlayerRecord = {
   lastDaily: null,
   streak: 0,
   bestStreak: 0,
+  continents: {},
 };
+
+/**
+ * One game's rounds by continent, from each answer's country. A round counts as won exactly as
+ * the summary counts it (`totals`): Atlas guessed and you scored more. Answers with no country
+ * (or one the continent table doesn't know) join no continent.
+ */
+export function tallyContinents(
+  results: readonly Pick<RoundResult, "reveal" | "atlas">[],
+): ContinentRecord {
+  const out: ContinentRecord = {};
+  for (const r of results) {
+    const c = continentOf(r.reveal.answer.country);
+    if (!c) continue;
+    const t = out[c] ?? { rounds: 0, vsAtlas: 0, won: 0 };
+    t.rounds += 1;
+    if (r.atlas) {
+      t.vsAtlas += 1;
+      if (r.reveal.score > r.atlas.score) t.won += 1;
+    }
+    out[c] = t;
+  }
+  return out;
+}
+
+/** Add two continent records together. Pure; keys follow `CONTINENTS` order. */
+export function addContinents(a: ContinentRecord, b: ContinentRecord): ContinentRecord {
+  const out: ContinentRecord = {};
+  for (const c of CONTINENTS) {
+    const x = a[c];
+    const y = b[c];
+    if (!x && !y) continue;
+    out[c] = {
+      rounds: (x?.rounds ?? 0) + (y?.rounds ?? 0),
+      vsAtlas: (x?.vsAtlas ?? 0) + (y?.vsAtlas ?? 0),
+      won: (x?.won ?? 0) + (y?.won ?? 0),
+    };
+  }
+  return out;
+}
+
+/** Rounds against Atlas a continent needs before it is ranked; fewer says little. */
+export const MIN_RANKED_ROUNDS = 3;
+
+export interface ContinentStanding {
+  continent: Continent;
+  won: number;
+  vsAtlas: number;
+}
+
+/**
+ * The continents you beat Atlas on most and least often, by share of rounds won against it.
+ * Only continents with at least `minRounds` rounds against Atlas are ranked, and there is no
+ * answer until two of them differ: one continent, or all at the same share, ranks nothing.
+ * Ties go to the continent with more rounds (the steadier figure), then `CONTINENTS` order.
+ */
+export function continentStandings(
+  record: ContinentRecord,
+  minRounds = MIN_RANKED_ROUNDS,
+): { most: ContinentStanding; least: ContinentStanding } | null {
+  const ranked: ContinentStanding[] = [];
+  for (const c of CONTINENTS) {
+    const t = record[c];
+    if (t && t.vsAtlas >= minRounds) ranked.push({ continent: c, won: t.won, vsAtlas: t.vsAtlas });
+  }
+  if (ranked.length < 2) return null;
+  // Compare shares by cross-multiplying, so 2 of 3 and 4 of 6 are exactly equal.
+  const cmp = (a: ContinentStanding, b: ContinentStanding) => a.won * b.vsAtlas - b.won * a.vsAtlas;
+  const steadier = (a: ContinentStanding, b: ContinentStanding) => b.vsAtlas - a.vsAtlas;
+  const most = [...ranked].sort((a, b) => -cmp(a, b) || steadier(a, b))[0];
+  const least = [...ranked].sort((a, b) => cmp(a, b) || steadier(a, b))[0];
+  return cmp(most, least) === 0 ? null : { most, least };
+}
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const DAY_MS = 86_400_000;
@@ -63,6 +152,7 @@ export function addGame(record: PlayerRecord, game: FinishedGame): PlayerRecord 
     roundsVsAtlas: record.roundsVsAtlas + game.roundsVsAtlas,
     roundsWon: record.roundsWon + game.roundsWon,
     best: record.best === null ? game.score : Math.max(record.best, game.score),
+    continents: addContinents(record.continents, game.continents ?? {}),
   };
   if (game.daily && DAY.test(game.daily)) {
     const gap = record.lastDaily ? daysBetween(record.lastDaily, game.daily) : Infinity;
@@ -87,6 +177,26 @@ export function currentStreak(record: PlayerRecord, today: Date): number {
 }
 
 const count = (v: unknown): v is number => Number.isInteger(v) && (v as number) >= 0;
+
+const KNOWN_CONTINENTS: ReadonlySet<string> = new Set(CONTINENTS);
+
+/**
+ * Read the stored continent tallies. Records saved before continents were kept have none, and
+ * a malformed entry drops only the continents, never the games, best score or streak.
+ */
+function parseContinents(v: unknown): ContinentRecord {
+  if (typeof v !== "object" || v === null || Array.isArray(v)) return {};
+  const out: ContinentRecord = {};
+  for (const [k, t] of Object.entries(v as Record<string, unknown>)) {
+    if (!KNOWN_CONTINENTS.has(k) || typeof t !== "object" || t === null) return {};
+    const { rounds, vsAtlas, won } = t as Record<string, unknown>;
+    if (!count(rounds) || !count(vsAtlas) || !count(won) || won > vsAtlas || vsAtlas > rounds) {
+      return {};
+    }
+    out[k as Continent] = { rounds, vsAtlas, won };
+  }
+  return addContinents(out, {});
+}
 
 /** Read a stored record back, rejecting anything malformed rather than trusting it. */
 export function parseRecord(raw: string | null): PlayerRecord {
@@ -118,6 +228,7 @@ export function parseRecord(raw: string | null): PlayerRecord {
     lastDaily: r.lastDaily as string | null,
     streak: r.streak as number,
     bestStreak: r.bestStreak as number,
+    continents: parseContinents(r.continents),
   };
 }
 

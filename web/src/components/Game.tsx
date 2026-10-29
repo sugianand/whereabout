@@ -20,7 +20,7 @@ import type { Continent } from "@/lib/continents";
 import type { CatalogPhoto, GameBackend } from "@/lib/game/types";
 import { formatPoints, maxPoints, type LngLat } from "@/lib/geo";
 import { hasSeenIntro, INTRO_TEXT, markIntroSeen } from "@/lib/intro";
-import { recordGame, resetRecord, type PlayerRecord } from "@/lib/playerRecord";
+import { recordGame, resetRecord, tallyContinents, type PlayerRecord } from "@/lib/playerRecord";
 import type { RevealView } from "@/lib/reveal";
 
 import Globe from "./Globe";
@@ -339,6 +339,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
           roundsVsAtlas: t.atlasRounds,
           roundsWon: t.playerWins,
           daily: mode.kind === "daily" ? mode.day : null,
+          continents: tallyContinents(state.results),
         }),
       );
     }

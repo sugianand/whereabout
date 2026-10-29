@@ -1,17 +1,21 @@
 import { describe, expect, it } from "vitest";
 
 import { dayKey } from "@/lib/game/daily";
+import type { RoundResult } from "@/lib/game/state";
 
 import {
   EMPTY_RECORD,
   RECORD_KEY,
+  addContinents,
   addGame,
+  continentStandings,
   currentStreak,
   daysBetween,
   loadRecord,
   parseRecord,
   recordGame,
   resetRecord,
+  tallyContinents,
   type FinishedGame,
   type RecordStore,
 } from "./playerRecord";
@@ -151,6 +155,85 @@ describe("Daily Five streaks", () => {
   });
 });
 
+/** A round on a photo from `country`: your score, and Atlas's (undefined if it sat out). */
+function round(country: string | null, you: number, atlas?: number) {
+  return {
+    reveal: { score: you, answer: { country } },
+    atlas: atlas === undefined ? null : { score: atlas },
+  } as unknown as Pick<RoundResult, "reveal" | "atlas">;
+}
+
+describe("record by continent", () => {
+  it("tallies a game's rounds by the continent of each photo, won as the summary counts it", () => {
+    expect(
+      tallyContinents([
+        round("FR", 4000, 3000), // won
+        round("de", 2000, 2000), // a tie is not a win
+        round("JP", 1000, 4500), // lost
+        round("PE", 3000), // Atlas sat out: played, not against Atlas
+        round(null, 5000, 0), // no country from the backend: no continent
+      ]),
+    ).toEqual({
+      Europe: { rounds: 2, vsAtlas: 2, won: 1 },
+      Asia: { rounds: 1, vsAtlas: 1, won: 0 },
+      "South America": { rounds: 1, vsAtlas: 0, won: 0 },
+    });
+  });
+
+  it("adds each game's continents to the record, and old games add none", () => {
+    const r = play(
+      { ...fresh(10_000), continents: { Europe: { rounds: 5, vsAtlas: 5, won: 2 } } },
+      fresh(8_000),
+      {
+        ...fresh(9_000),
+        continents: {
+          Europe: { rounds: 3, vsAtlas: 2, won: 1 },
+          Asia: { rounds: 2, vsAtlas: 2, won: 2 },
+        },
+      },
+    );
+    expect(r.continents).toEqual({
+      Asia: { rounds: 2, vsAtlas: 2, won: 2 },
+      Europe: { rounds: 8, vsAtlas: 7, won: 3 },
+    });
+    expect(Object.keys(addContinents({ Oceania: r.continents.Asia! }, r.continents))).toEqual([
+      "Asia",
+      "Europe",
+      "Oceania",
+    ]);
+  });
+
+  it("names the continents beaten most and least only once two ranked ones differ", () => {
+    expect(continentStandings({})).toBeNull();
+    // Below the minimum of rounds against Atlas, a continent is not ranked.
+    expect(
+      continentStandings({
+        Europe: { rounds: 5, vsAtlas: 5, won: 5 },
+        Asia: { rounds: 9, vsAtlas: 2, won: 0 },
+      }),
+    ).toBeNull();
+    // 2 of 3 and 4 of 6 are the same share: nothing to tell apart.
+    expect(
+      continentStandings({
+        Europe: { rounds: 3, vsAtlas: 3, won: 2 },
+        Asia: { rounds: 6, vsAtlas: 6, won: 4 },
+      }),
+    ).toBeNull();
+    expect(
+      continentStandings({
+        Africa: { rounds: 3, vsAtlas: 3, won: 0 },
+        Europe: { rounds: 3, vsAtlas: 3, won: 3 },
+        Asia: { rounds: 6, vsAtlas: 6, won: 6 },
+        Oceania: { rounds: 4, vsAtlas: 4, won: 0 },
+      }),
+    ).toEqual({
+      // Equal shares go to the continent with more rounds.
+      most: { continent: "Asia", won: 6, vsAtlas: 6 },
+      least: { continent: "Oceania", won: 0, vsAtlas: 4 },
+    });
+  });
+});
+
 describe("record storage", () => {
   it("adds each finished game to the stored record and reads it back", () => {
     const store = memoryStore();
@@ -174,6 +257,37 @@ describe("record storage", () => {
     expect(recordGame(fresh(7_000), null).games).toBe(1);
     expect(loadRecord(throwing)).toEqual(EMPTY_RECORD);
     expect(resetRecord(throwing)).toEqual(EMPTY_RECORD);
+  });
+
+  it("keeps continents through storage and reads records saved before them", () => {
+    const store = memoryStore();
+    const game = { ...fresh(10_000, 2), continents: { Europe: { rounds: 5, vsAtlas: 5, won: 2 } } };
+    expect(recordGame(game, store).continents).toEqual(game.continents);
+    expect(loadRecord(store).continents).toEqual(game.continents);
+
+    const old = { ...play(fresh(10_000, 2)) } as Partial<typeof EMPTY_RECORD>;
+    delete old.continents;
+    expect(parseRecord(JSON.stringify(old))).toMatchObject({
+      games: 1,
+      roundsWon: 2,
+      continents: {},
+    });
+  });
+
+  it("drops tampered continents but keeps the rest of the record", () => {
+    const good = play(fresh(10_000, 2));
+    for (const continents of [
+      [],
+      "Europe",
+      { Atlantis: { rounds: 1, vsAtlas: 1, won: 1 } },
+      { Europe: { rounds: 1, vsAtlas: 1, won: 2 } },
+      { Europe: { rounds: 1, vsAtlas: 2, won: 0 } },
+      { Europe: { rounds: -1, vsAtlas: 0, won: 0 } },
+      { Europe: null },
+    ]) {
+      const r = parseRecord(JSON.stringify({ ...good, continents }));
+      expect(r).toEqual({ ...good, continents: {} });
+    }
   });
 
   it("starts over rather than trusting a corrupt or tampered record", () => {
