@@ -438,6 +438,61 @@ test("any round of a finished game opens again from the summary, and back return
   expect(errors).toEqual([]);
 });
 
+test("a finished game becomes a challenge link a friend plays on the same five photos", async ({
+  page,
+  browser,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("./?daily");
+  for (let round = 1; round <= 5; round++) {
+    const card = await playRoundWithKeyboard(page);
+    await card.getByRole("button", { name: round < 5 ? "Next photo" : "See your results" }).click();
+  }
+  await expect(page.getByText("out of 25,000 points")).toBeVisible();
+  const places = await page.getByRole("listitem").locator("span.truncate").allInnerTexts();
+  const total = (
+    await page.getByRole("heading", { level: 1 }).locator(".sr-only").innerText()
+  ).replace(" points", "");
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  await page.getByRole("button", { name: "Challenge a friend" }).click();
+  await expect(page.getByText("Challenge link copied.", { exact: false })).toBeVisible();
+  const sent = await page.evaluate(() => (window as unknown as { sent: string }).sent);
+  for (const place of places) expect(sent).not.toContain(place);
+  const link = sent.split("\n").at(-1)!;
+  expect(link).toMatch(/\/whereabout\/\?challenge=[\w.-]+_[\d.]+$/);
+
+  // The friend opens the link in their own browser, with nothing stored.
+  const friend = await browser.newPage({ viewport: page.viewportSize()! });
+  await friend.route(/wikimedia\.org/, (route) =>
+    route.fulfill({ body: PHOTO, contentType: "image/png" }),
+  );
+  friend.on("pageerror", (e) => errors.push(e.message));
+  await friend.goto(link);
+  await expect(friend.getByText("A friend's challenge", { exact: true })).toBeVisible();
+  await expect(friend.getByText(`Score to beat: ${total}`)).toBeVisible();
+  const card = await playRoundWithKeyboard(friend);
+  // The same first photo as the sender's game, with the sender's score on it.
+  await expect(card.getByRole("heading", { name: places[0] })).toBeVisible();
+  await expect(card.getByTestId("friend-line")).toHaveText(/^Your friend scored [\d,]+ here\. /);
+  if ((friend.viewportSize()?.width ?? 1000) < 768) {
+    const box = (await card.boundingBox())!;
+    expect(box.height, "the friend line keeps the card short").toBeLessThan(
+      friend.viewportSize()!.height / 2,
+    );
+  }
+  await friend.close();
+  expect(errors).toEqual([]);
+});
+
 test("a game fetches only the five photos it deals, not the whole catalog", async ({ page }) => {
   const records: string[] = [];
   page.on("request", (r) => {

@@ -36,6 +36,8 @@ type RevealCardProps = {
   replay?: ReplayControls;
   /** How often Atlas is right at each confidence, from the shipped photos (`sureness.ts`). */
   sureness?: readonly SurenessBand[];
+  /** In a friend's challenge, the points the friend scored on this photo. */
+  friend?: number;
 };
 
 function ScoreLine({
@@ -108,6 +110,13 @@ export function verdict(result: RoundResult): string | null {
   return "Atlas got closer this time.";
 }
 
+/** "Your friend scored 3,100 here. You beat them.", comparing this round's points. */
+export function friendLine(score: number, friend: number): string {
+  const verdict =
+    score > friend ? "You beat them." : score < friend ? "They got closer." : "Level with them.";
+  return `Your friend scored ${formatPoints(friend)} here. ${verdict}`;
+}
+
 /** "You took 2 hints, so this round was worth up to 3,000 points.", or null without hints. */
 export function hintNote(result: RoundResult): string | null {
   const used = result.reveal.hintsUsed;
@@ -120,7 +129,14 @@ const outline =
 const primary =
   "shrink-0 rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110";
 
-export default function RevealCard({ result, isLast, onNext, sureness, replay }: RevealCardProps) {
+export default function RevealCard({
+  result,
+  isLast,
+  onNext,
+  sureness,
+  replay,
+  friend,
+}: RevealCardProps) {
   const { reveal, atlas } = result;
   const credit = reveal.answer.credit;
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -189,6 +205,11 @@ export default function RevealCard({ result, isLast, onNext, sureness, replay }:
       )}
 
       {said && <p className="mt-3 text-chalk">{said}</p>}
+      {friend !== undefined && (
+        <p className="mt-1 text-sm text-gold" data-testid="friend-line">
+          {friendLine(reveal.score, friend)}
+        </p>
+      )}
 
       {hasThinking && (
         <button

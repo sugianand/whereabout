@@ -126,6 +126,17 @@ Game layers that help players learn the world's places, not just score on them. 
 - [x] Web: replay a finished game: from the summary, open any round again to see its photo, both pins, the arcs and the distances (no new score) (each summary row is a button that reopens the game stage on that round: the photo, your pin, Atlas's pin and the arcs, with the reveal card marked "Round 2 of 5 again · no new score", stepping to the round before or after and back to the results; the game state stays `finished`, so nothing is re-scored or re-recorded; opening a replay pushes one history entry, so a phone's back gesture returns to the results, and the summary refocuses the row you came from without counting its total up again; `ReplayControls` in `RevealCard.tsx`; e2e on desktop and phone)
 - [x] Web: Country Streak by continent: the streak deals from one continent's tappable photos, with its own best streak per continent (a "Which photos" menu on the streak, Anywhere or each continent with at least five tappable photos, from `streakRegions` in `web/src/lib/game/regions.ts`; `?region=europe` in the address, and the Country Streak link in a continent game opens on that continent; each continent's best is kept under `whereabout:country-streak-best:<slug>`, separate from the best from anywhere, which keeps its old key; the header, the miss card and the cleared screen name the continent; e2e on desktop and phone)
 
+## Milestone 7 — Play together, anywhere
+
+Reasons to bring friends in and to keep the game on a phone's home screen. Still the static site
+with no accounts: anything shared travels in a link, anything kept stays in the browser.
+
+- [x] Web: challenge a friend: the summary sends a link carrying the game's five photos and your score on each; whoever opens it plays exactly those photos, sees your score for each photo at the reveal and who won at the summary, and can send their own score back (`web/src/lib/game/challenge.ts`: `?challenge=<ids>_<scores>`, ids and points only; a link plays only with five different photos this deck can deal and five whole scores from 0 to 5,000, otherwise a fresh game with a one-line reason; no challenges on the API backend, which deals its own photos; e2e on desktop and phone opens the link in a second browser with nothing stored)
+- [ ] Web: Blitz: a timed game, a countdown ring on each photo (30 seconds), a guess locked in wherever the pin is when time runs out (no pin scores 0), with its own best kept in the browser; the timer pauses while the tab is hidden, with tests for the clock rules
+- [ ] Web: installable on phones: a web app manifest with icons, a service worker that caches the app shell and the photos a game has dealt so a started game survives a lost connection, and an e2e test that reloads the page offline mid-game
+- [ ] Web: badges: milestones earned from the record already kept (first round won against Atlas, a pin within 25 km, a 5-day Daily Five streak, a round on every continent, a Hard game beaten), shown on the summary as they are earned, with tests that each comes from real play
+- [ ] Web: feel: a short vibration on phones and a soft sound at the reveal, scaled to how close the pin landed, with a mute toggle remembered in the browser and nothing at all under reduced motion
+
 ## Beyond
 
 Rooms, distillation, deployment and a research write-up (`docs/architecture.md`). New

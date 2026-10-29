@@ -5,6 +5,7 @@ import atlasData from "@/data/atlas.json";
 import catalog from "@/data/photos.json";
 import { LocalBackend } from "@/lib/game/backends";
 import { pickDaily } from "@/lib/game/daily";
+import { encodeChallenge } from "@/lib/game/challenge";
 import { LOAD_ERROR } from "@/lib/game/deck";
 import { RECENT_KEY } from "@/lib/game/fresh";
 import { maxPoints } from "@/lib/geo";
@@ -20,7 +21,7 @@ import type { AtlasData, CatalogPhoto, GameBackend } from "@/lib/game/types";
 import { bundledGame } from "@/test/deck";
 import { FakeMap, resetFakes } from "@/test/maplibre-mock";
 
-import Game, { modeTitle } from "./Game";
+import Game, { CHALLENGE_NOTICE, modeTitle } from "./Game";
 
 vi.mock("maplibre-gl", async () => (await import("@/test/maplibre-mock")).maplibreMock);
 
@@ -543,6 +544,126 @@ describe("Game", { timeout: 20000 }, () => {
       await mapReady();
       await screen.findByText("Fresh game", {}, WAIT);
       expect(screen.queryByRole("combobox", { name: /Which photos/ })).toBeNull();
+    });
+  });
+
+  describe("challenges", () => {
+    const five = playable.slice(20, 25);
+    const scores = [5000, 0, 1200, 4800, 3000];
+    const link = `/?challenge=${encodeChallenge({ ids: five.map((p) => p.id), scores })}`;
+
+    function stubClipboard() {
+      const sent: string[] = [];
+      Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+      Object.defineProperty(navigator, "clipboard", {
+        value: { writeText: async (t: string) => void sent.push(t) },
+        configurable: true,
+      });
+      return sent;
+    }
+
+    async function finish(map: FakeMap, at: (i: number) => { lng: number; lat: number }) {
+      for (let i = 0; i < ROUNDS_PER_GAME; i++) {
+        const card = await playRound(map, at(i));
+        const last = i === ROUNDS_PER_GAME - 1;
+        fireEvent.click(
+          within(card).getByRole("button", { name: last ? "See your results" : "Next photo" }),
+        );
+      }
+    }
+
+    it("sends a link to this game's five photos and scores from the summary", async () => {
+      const sent = stubClipboard();
+      render(<Game {...bundledGame} start="daily" today={TODAY} />);
+      const map = await mapReady();
+      await finish(map, (i) => daily[i]);
+      fireEvent.click(await screen.findByRole("button", { name: "Challenge a friend" }, WAIT));
+      expect(
+        await screen.findByText("Challenge link copied. Whoever opens it plays these five photos."),
+      ).toBeInTheDocument();
+      expect(sent).toHaveLength(1);
+      const url = new URL(sent[0].split("\n").at(-1)!);
+      expect(url.searchParams.get("challenge")).toBe(
+        encodeChallenge({ ids: daily.map((p) => p.id), scores: [5000, 5000, 5000, 5000, 5000] }),
+      );
+      expect(sent[0]).toMatch(/^Whereabout: I scored 25,000 on these five photos\./);
+      for (const p of daily) expect(sent[0]).not.toContain(p.place);
+    });
+
+    it("deals the linked photos with the friend's score on each, and answers with who won", async () => {
+      window.history.replaceState(null, "", link);
+      const sent = stubClipboard();
+      render(<Game {...bundledGame} today={TODAY} />);
+      const map = await mapReady();
+      expect(await screen.findByText("A friend's challenge", {}, WAIT)).toBeInTheDocument();
+      expect(screen.getByText(/Score to beat/)).toHaveTextContent("Score to beat: 14,000");
+      const img = await screen.findByRole("img", {}, WAIT);
+      expect(img).toHaveAttribute("src", five[0].imageUrl);
+
+      // Exact on every photo but the first, which is guessed on the far side of the world.
+      const card = await playRound(map, { lng: five[0].lng + 180, lat: -five[0].lat });
+      expect(within(card).getByTestId("friend-line")).toHaveTextContent(
+        "Your friend scored 5,000 here. They got closer.",
+      );
+      fireEvent.click(within(card).getByRole("button", { name: "Next photo" }));
+      const second = await playRound(map, five[1]);
+      expect(within(second).getByTestId("friend-line")).toHaveTextContent(
+        "Your friend scored 0 here. You beat them.",
+      );
+      fireEvent.click(within(second).getByRole("button", { name: "Next photo" }));
+      for (let i = 2; i < ROUNDS_PER_GAME; i++) {
+        const c = await playRound(map, five[i]);
+        const last = i === ROUNDS_PER_GAME - 1;
+        fireEvent.click(
+          within(c).getByRole("button", { name: last ? "See your results" : "Next photo" }),
+        );
+      }
+
+      expect(await screen.findByTestId("challenge-result", {}, WAIT)).toHaveTextContent(
+        "Your friend scored 14,000. You won the challenge by 6,000 points.",
+      );
+      expect(screen.getAllByText(/^Friend: [\d,]+ points$/)).toHaveLength(5);
+      expect(window.location.search).toBe(link.slice(1));
+      fireEvent.click(screen.getByRole("button", { name: "Send your score back" }));
+      await waitFor(() => expect(sent).toHaveLength(1));
+      expect(sent[0]).toContain("I beat your score.");
+      expect(sent[0]).toMatch(/_0\.5000\.5000\.5000\.5000$/);
+
+      // A fresh game leaves the challenge behind, address included.
+      fireEvent.click(screen.getByRole("button", { name: "Play a fresh game" }));
+      expect(await screen.findAllByText("Fresh game", {}, WAIT)).not.toHaveLength(0);
+      await waitFor(() => expect(window.location.search).toBe(""));
+    });
+
+    it("explains a broken or outdated link and deals a fresh game", async () => {
+      window.history.replaceState(null, "", "/?challenge=wm1.wm2_3");
+      const first = render(<Game {...bundledGame} today={TODAY} />);
+      await mapReady();
+      expect(await screen.findByText(CHALLENGE_NOTICE.malformed, {}, WAIT)).toBeInTheDocument();
+      expect(screen.getAllByText("Fresh game")).not.toHaveLength(0);
+      await waitFor(() => expect(window.location.search).toBe(""));
+      first.unmount();
+
+      const gone = [...five.slice(0, 4).map((p) => p.id), "nope0"];
+      window.history.replaceState(
+        null,
+        "",
+        `/?challenge=${encodeChallenge({ ids: gone, scores })}`,
+      );
+      render(<Game {...bundledGame} today={TODAY} />);
+      await mapReady();
+      expect(await screen.findByText(CHALLENGE_NOTICE.missing, {}, WAIT)).toBeInTheDocument();
+    });
+
+    it("leaves challenges out when the API server deals the photos", async () => {
+      window.history.replaceState(null, "", link);
+      const api = new LocalBackend(daily);
+      render(
+        <Game {...bundledGame} apiUrl="http://api.test" backendFor={() => api} today={TODAY} />,
+      );
+      await mapReady();
+      expect(await screen.findByText("Fresh game", {}, WAIT)).toBeInTheDocument();
+      expect(screen.queryByText(/Score to beat/)).toBeNull();
     });
   });
 });

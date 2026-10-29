@@ -7,7 +7,7 @@ import { EMPTY_RECORD, type PlayerRecord } from "@/lib/playerRecord";
 import PhotoViewer, { ZOOM } from "./PhotoViewer";
 import AtlasEyes from "./AtlasEyes";
 import RevealCard, { hintNote, verdict } from "./RevealCard";
-import Summary from "./Summary";
+import Summary, { challengeResultLine } from "./Summary";
 
 function result(playerKm: number, playerScore: number, atlasScore?: number): RoundResult {
   return {
@@ -63,6 +63,28 @@ describe("verdict", () => {
 });
 
 describe("Summary", () => {
+  it("offers a challenge link only when the browser deals the photos", () => {
+    const { rerender } = render(
+      <Summary results={[result(1, 5000, 10)]} title="Fresh game" onPlayAgain={() => {}} />,
+    );
+    expect(screen.queryByRole("button", { name: "Challenge a friend" })).toBeNull();
+    rerender(
+      <Summary
+        results={[result(1, 5000, 10)]}
+        title="Fresh game"
+        onPlayAgain={() => {}}
+        canChallenge
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Challenge a friend" })).toBeInTheDocument();
+  });
+
+  it("says who won a friend's challenge, and by how much", () => {
+    expect(challengeResultLine(15000, 14210)).toBe("You won the challenge by 790 points.");
+    expect(challengeResultLine(9000, 21000)).toBe("Your friend won by 12,000 points.");
+    expect(challengeResultLine(100, 100)).toBe("A dead heat with your friend.");
+  });
+
   it("points to how Atlas works once Atlas has played", () => {
     render(<Summary results={[result(1, 5000, 10)]} title="Fresh game" onPlayAgain={() => {}} />);
     expect(screen.getByRole("link", { name: "How does Atlas guess?" })).toHaveAttribute(

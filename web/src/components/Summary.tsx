@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { challengeOutcome, challengeText, sumScores, type Challenge } from "@/lib/game/challenge";
 import { ROUNDS_PER_GAME, totals, type RoundResult } from "@/lib/game/state";
 import { MAX_POINTS, formatDistance, formatPoints } from "@/lib/geo";
 import { CONTINENTS } from "@/lib/continents";
@@ -47,6 +48,10 @@ type SummaryProps = {
    * total shows at once instead of counting up again.
    */
   returnedFrom?: number | null;
+  /** Offer a link that challenges a friend to these five photos (browser-dealt games only). */
+  canChallenge?: boolean;
+  /** Set when this game was a friend's challenge: their score on each photo, to compare. */
+  challenge?: Challenge;
 };
 
 const plural = (n: number, one: string, many = `${one}s`) =>
@@ -197,6 +202,30 @@ function ContinentRecordTable({ record }: { record: PlayerRecord }) {
   );
 }
 
+const SENT_NOTE: Record<"result" | "challenge", Record<ShareOutcome, string>> = {
+  result: {
+    shared: "Result shared.",
+    copied: "Result copied. Paste it anywhere.",
+    cancelled: "",
+    failed: "Couldn't copy. Your browser blocked the clipboard.",
+  },
+  challenge: {
+    shared: "Challenge sent.",
+    copied: "Challenge link copied. Whoever opens it plays these five photos.",
+    cancelled: "",
+    failed: "Couldn't copy the link. Your browser blocked the clipboard.",
+  },
+};
+
+/** "You won the challenge by 790 points.", from the player's and the friend's totals. */
+export function challengeResultLine(player: number, friend: number): string {
+  const outcome = challengeOutcome(player, friend);
+  const by = formatPoints(Math.abs(player - friend));
+  if (outcome === "won") return `You won the challenge by ${by} points.`;
+  if (outcome === "lost") return `Your friend won by ${by} points.`;
+  return "A dead heat with your friend.";
+}
+
 /** What the player is about to send, round by round, so nothing in it is a surprise. */
 function ShareCardPreview({ card }: { card: ShareCard }) {
   return (
@@ -248,6 +277,8 @@ export default function Summary({
   onResetRecord,
   onReplay,
   returnedFrom = null,
+  canChallenge = false,
+  challenge,
 }: SummaryProps) {
   const t = totals(results);
   const counted = useCountUp(t.player, 1400);
@@ -259,7 +290,10 @@ export default function Summary({
     row?.focus({ preventScroll: true });
     row?.scrollIntoView?.({ block: "center" });
   }, [returnedFrom]);
-  const [shared, setShared] = useState<ShareOutcome | "idle">("idle");
+  // The last thing sent from this screen, the result card or a challenge link, and how it went.
+  const [sent, setSent] = useState<{ what: "result" | "challenge"; outcome: ShareOutcome } | null>(
+    null,
+  );
   // The address only matters once shared; on the server there is no window yet.
   const card = shareCard(
     title,
@@ -268,8 +302,14 @@ export default function Summary({
   );
 
   async function share() {
-    setShared(await sendShare(shareText(card), navigator));
+    setSent({ what: "result", outcome: await sendShare(shareText(card), navigator) });
   }
+
+  async function sendChallenge() {
+    const text = challengeText(results, window.location.href, challenge);
+    setSent({ what: "challenge", outcome: await sendShare(text, navigator) });
+  }
+  const friendTotal = challenge ? sumScores(challenge.scores) : null;
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col px-6 pb-16 pt-16 md:pt-24">
@@ -303,6 +343,13 @@ export default function Summary({
         </p>
       )}
 
+      {friendTotal !== null && (
+        <p className="mt-3 text-xl" data-testid="challenge-result">
+          Your friend scored <span className="tabular text-gold">{formatPoints(friendTotal)}</span>.{" "}
+          <strong className="text-gold">{challengeResultLine(t.player, friendTotal)}</strong>
+        </p>
+      )}
+
       {onReplay && (
         <p className="mt-10 text-sm text-chalk-dim">
           Tap a round to see it again on the globe, with both pins.
@@ -320,6 +367,11 @@ export default function Summary({
                 {r.atlas && (
                   <span className="text-sm text-sonar">
                     Atlas: {formatDistance(r.atlas.distanceKm)}
+                  </span>
+                )}
+                {challenge && challenge.scores[i] !== undefined && (
+                  <span className="ml-3 text-sm text-gold">
+                    Friend: {formatPoints(challenge.scores[i])} points
                   </span>
                 )}
               </span>
@@ -374,6 +426,15 @@ export default function Summary({
         >
           Share result
         </button>
+        {canChallenge && (
+          <button
+            type="button"
+            onClick={sendChallenge}
+            className="rounded-full border border-gold/60 px-6 py-3 font-semibold text-gold transition hover:border-gold"
+          >
+            {challenge ? "Send your score back" : "Challenge a friend"}
+          </button>
+        )}
         <button
           type="button"
           onClick={onPlayAgain}
@@ -391,9 +452,7 @@ export default function Summary({
           </button>
         )}
         <p role="status" className="text-sm text-chalk-dim">
-          {shared === "shared" && "Result shared."}
-          {shared === "copied" && "Result copied. Paste it anywhere."}
-          {shared === "failed" && "Couldn't copy. Your browser blocked the clipboard."}
+          {sent && SENT_NOTE[sent.what][sent.outcome]}
         </p>
       </div>
 

@@ -4,6 +4,13 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 
 import { ApiBackend, LocalBackend } from "@/lib/game/backends";
+import {
+  CHALLENGE_PARAM,
+  encodeChallenge,
+  parseChallenge,
+  sumScores,
+  type Challenge,
+} from "@/lib/game/challenge";
 import { dayKey, pickDaily } from "@/lib/game/daily";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import { loadRecent, pickFresh, rememberPlayed, saveRecent } from "@/lib/game/fresh";
@@ -31,18 +38,21 @@ import Summary from "./Summary";
 /**
  * A fresh game is five photos the player hasn't seen lately; the Daily Five is shared by all; a
  * tier game is a fresh game drawn from one difficulty third (src/lib/game/tiers.ts), and a
- * continent game one drawn from the photos taken on one continent (src/lib/game/regions.ts).
+ * continent game one drawn from the photos taken on one continent (src/lib/game/regions.ts). A
+ * challenge replays the five photos a friend's link names (src/lib/game/challenge.ts).
  */
 export type GameMode =
   | { kind: "daily"; day: string }
   | { kind: "fresh"; game: number }
   | { kind: "tier"; tier: Tier; game: number }
-  | { kind: "region"; region: Continent; game: number };
+  | { kind: "region"; region: Continent; game: number }
+  | { kind: "challenge"; challenge: Challenge };
 
 export function modeTitle(mode: GameMode): string {
   if (mode.kind === "fresh") return "Fresh game";
   if (mode.kind === "tier") return `${TIER_NAMES[mode.tier]} game`;
   if (mode.kind === "region") return `${mode.region} game`;
+  if (mode.kind === "challenge") return "A friend's challenge";
   const label = new Date(`${mode.day}T12:00:00Z`).toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
@@ -85,6 +95,17 @@ function urlRegion(): Continent | null {
   return regionFromSlug(new URLSearchParams(window.location.search).get("region"));
 }
 
+/** The friend's challenge the page URL carries (`?challenge=`), or null without one. */
+function urlChallenge(deckIds: readonly string[]): ReturnType<typeof parseChallenge> | null {
+  const value = new URLSearchParams(window.location.search).get(CHALLENGE_PARAM);
+  return value === null ? null : parseChallenge(value, deckIds);
+}
+
+export const CHALLENGE_NOTICE = {
+  malformed: "That challenge link was cut short, so here's a fresh game instead.",
+  missing: "That challenge's photos aren't in the game any more, so here's a fresh game instead.",
+} as const;
+
 /** Keep the address bar in step with the mode, so a shared link opens the same kind of game. */
 function syncUrl(mode: GameMode) {
   const url = new URL(window.location.href);
@@ -94,6 +115,9 @@ function syncUrl(mode: GameMode) {
   else url.searchParams.delete("tier");
   if (mode.kind === "region") url.searchParams.set("region", regionSlug(mode.region));
   else url.searchParams.delete("region");
+  if (mode.kind === "challenge")
+    url.searchParams.set(CHALLENGE_PARAM, encodeChallenge(mode.challenge));
+  else url.searchParams.delete(CHALLENGE_PARAM);
   const next = `${url.pathname}${url.search.replace(/daily=(?=&|$)/, "daily")}${url.hash}`;
   if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
     window.history.replaceState(window.history.state, "", next);
@@ -172,10 +196,20 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   // summary itself; `lookedAt` is the last one shown, so the summary can return focus to it.
   const [replay, setReplay] = useState<number | null>(null);
   const [lookedAt, setLookedAt] = useState<number | null>(null);
+  // Why a challenge link in the address couldn't be played, until the next game starts.
+  const [challengeNotice, setChallengeNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (mode) return;
     const id = requestAnimationFrame(() => {
+      // Challenges are dealt by the browser, so the API backend leaves them alone.
+      const linked = start || apiUrl ? null : urlChallenge(deck.ids);
+      if (linked?.ok) {
+        setIntroOpen(!hasSeenIntro());
+        setMode({ kind: "challenge", challenge: linked.challenge });
+        return;
+      }
+      if (linked) setChallengeNotice(CHALLENGE_NOTICE[linked.reason]);
       const kind = start ?? (urlWantsDaily() ? "daily" : "fresh");
       const tier = kind === "fresh" && tiers ? urlTier() : null;
       const wanted = kind === "fresh" && !tier ? urlRegion() : null;
@@ -192,7 +226,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
       );
     });
     return () => cancelAnimationFrame(id);
-  }, [mode, start, today, tiers, regions]);
+  }, [mode, start, today, tiers, regions, apiUrl, deck.ids]);
 
   const pool = useMemo(() => deck.ids.map((id) => ({ id })), [deck.ids]);
 
@@ -207,13 +241,15 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
         ROUNDS_PER_GAME,
       );
     const picked =
-      mode.kind === "daily"
-        ? pickDaily(pool, mode.day, ROUNDS_PER_GAME)
-        : mode.kind === "tier" && tiers
-          ? within(tiers[mode.tier].ids)
-          : mode.kind === "region" && regions[mode.region]
-            ? within(regions[mode.region]!)
-            : pickFresh(pool, loadRecent(), ROUNDS_PER_GAME);
+      mode.kind === "challenge"
+        ? mode.challenge.ids.map((id) => ({ id }))
+        : mode.kind === "daily"
+          ? pickDaily(pool, mode.day, ROUNDS_PER_GAME)
+          : mode.kind === "tier" && tiers
+            ? within(tiers[mode.tier].ids)
+            : mode.kind === "region" && regions[mode.region]
+              ? within(regions[mode.region]!)
+              : pickFresh(pool, loadRecent(), ROUNDS_PER_GAME);
     return picked.map((p) => p.id);
   }, [mode, pool, tiers, regions]);
 
@@ -361,6 +397,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
 
   /** Every new game starts from round one, with no replay open. */
   function restart() {
+    setChallengeNotice(null);
     setReplay(null);
     setLookedAt(null);
     dispatch({ type: "restart" });
@@ -398,7 +435,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   /** A new game from one tier or continent, or from the whole catalog for "Any photos". */
   function playFrom(choice: PhotoChoice) {
     setMode((m) => {
-      const game = m && m.kind !== "daily" ? m.game + 1 : 1;
+      const game = m && "game" in m ? m.game + 1 : 1;
       if (choice && "tier" in choice) return { kind: "tier", tier: choice.tier, game };
       if (choice) return { kind: "region", region: choice.region, game };
       return { kind: "fresh", game };
@@ -449,6 +486,8 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
         onResetRecord={() => setRecord(resetRecord())}
         onReplay={openReplay}
         returnedFrom={lookedAt}
+        canChallenge={!apiUrl}
+        challenge={mode?.kind === "challenge" ? mode.challenge : undefined}
       />
     );
   }
@@ -517,6 +556,22 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
               {regionBlurb(mode.region, regions)}
             </p>
           )}
+          {mode?.kind === "challenge" && !replayed && (
+            <p className="mt-1 inline-block rounded-full bg-ocean-deep/60 px-2 py-0.5 text-[11px] text-gold backdrop-blur">
+              Score to beat:{" "}
+              <span className="tabular font-semibold">
+                {formatPoints(sumScores(mode.challenge.scores))}
+              </span>
+            </p>
+          )}
+          {challengeNotice && !shown && (
+            <p
+              role="status"
+              className="mt-1 inline-block max-w-72 rounded-2xl bg-ocean-deep/60 px-2 py-0.5 text-[11px] text-chalk-dim backdrop-blur"
+            >
+              {challengeNotice}
+            </p>
+          )}
           {mode && !replayed && (
             <div className="mt-2 flex items-center gap-1.5">
               <button
@@ -544,9 +599,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
                 <Link
                   // From a continent game, the streak deals from the same continent.
                   href={
-                    mode.kind === "region"
-                      ? `/streak?region=${regionSlug(mode.region)}`
-                      : "/streak"
+                    mode.kind === "region" ? `/streak?region=${regionSlug(mode.region)}` : "/streak"
                   }
                   className="pointer-events-auto shrink-0 rounded-full border border-chalk/30 bg-ocean-deep/60 px-3 py-1 text-xs font-semibold backdrop-blur transition hover:border-chalk"
                 >
@@ -695,6 +748,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
             isLast={index + 1 >= ROUNDS_PER_GAME}
             onNext={next}
             sureness={deck.sureness}
+            friend={mode?.kind === "challenge" ? mode.challenge.scores[index] : undefined}
             replay={
               replayed
                 ? {
