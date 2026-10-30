@@ -878,6 +878,9 @@ test("a finished game becomes a challenge link a friend plays on the same five p
   for (const place of places) expect(sent).not.toContain(place);
   const link = sent.split("\n").at(-1)!;
   expect(link).toMatch(/\/whereabout\/\?challenge=[\w.-]+_[\d.]+$/);
+  // The friend plays on their own device: close the sender's page, whose summary globe is
+  // still flying through the game, so the two don't share one CI runner's software-rendered GL.
+  await page.close();
 
   // The friend opens the link in their own browser, with nothing stored.
   const friend = await browser.newPage({ viewport: page.viewportSize()! });
