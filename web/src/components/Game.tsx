@@ -62,6 +62,7 @@ import {
   tallyContinents,
   type PlayerRecord,
 } from "@/lib/playerRecord";
+import { keepOnMap } from "@/lib/playedMap";
 import type { RevealView } from "@/lib/reveal";
 
 import BlitzRing from "./BlitzRing";
@@ -554,6 +555,19 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
           ? reveal.atlas
           : ((photoId ? records.get(photoId)?.atlas : null) ?? null);
       dispatch({ type: "revealed", reveal, atlas: atlasGuess });
+      // Every revealed round joins your map (/map), kept only in this browser.
+      if (photoId) {
+        keepOnMap({
+          id: photoId,
+          lng: reveal.answer.lng,
+          lat: reveal.answer.lat,
+          place: reveal.answer.place,
+          country: reveal.answer.country,
+          km: reveal.distanceKm,
+          score: reveal.score,
+          day: dayKey(new Date()),
+        });
+      }
       // A buzz and a chime scaled to how close the pin landed (unless muted or reduced motion).
       feelRevealInBrowser(reveal.distanceKm);
     } catch (err) {

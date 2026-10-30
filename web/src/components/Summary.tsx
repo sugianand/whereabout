@@ -575,8 +575,19 @@ export default function Summary({
       )}
 
       <Link
+        href="/map"
+        className="mt-10 block rounded-2xl border border-gold/40 p-5 transition hover:border-gold hover:bg-gold/5"
+      >
+        <span className="block font-sign text-2xl font-bold text-gold">Your map</span>
+        <span className="mt-1 block text-chalk-dim">
+          Every photo you&apos;ve played on one globe, coloured by how close your pin landed,
+          with the countries you&apos;ve seen.
+        </span>
+      </Link>
+
+      <Link
         href="/you"
-        className="mt-10 block rounded-2xl border border-sonar/40 p-5 transition hover:border-sonar hover:bg-sonar/5"
+        className="mt-4 block rounded-2xl border border-sonar/40 p-5 transition hover:border-sonar hover:bg-sonar/5"
       >
         <span className="block font-sign text-2xl font-bold text-sonar">
           Test Atlas on your own photo
