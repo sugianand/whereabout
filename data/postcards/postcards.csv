@@ -13,7 +13,7 @@ wm022,"Anraz village and olive groves in the foothills of the Western High Atlas
 wm023,"Porto city Hall, Portugal",Porto,https://en.wikipedia.org/wiki/Porto,place
 wm024,"Ponta de São Lourenço, Madeira, Portugal. Heading north north east.",Ponta de São Lourenço,https://en.wikipedia.org/wiki/Ponta_de_S%C3%A3o_Louren%C3%A7o,depicts
 wm027,"""Mary of the ports"" by Manuel Rial, in the beach of Peralta or Confín, O Grove, Galicia (Spain).",O Grove,https://en.wikipedia.org/wiki/O_Grove,place
-wm030,This is a photo of a monument in Iran identified by the ID,Tachara,https://en.wikipedia.org/wiki/Tachara,depicts
+wm030,,Tachara,https://en.wikipedia.org/wiki/Tachara,depicts
 wm031,"Bahrain Fort (Qalʿat al-Bahrain), UNESCO World Heritage Site Ref. Number 1192.",Qal'at al-Bahrain,https://en.wikipedia.org/wiki/Qal%27at_al-Bahrain,depicts
 wm032,"Moscow, Russia. Tsaritsyno Museum Reserve. Figure Bridge.",Moscow,https://en.wikipedia.org/wiki/Moscow,place
 wm036,"A view towards Okshornan peaks from Tungeneset, Norway, in 2015 September. The mountains are reflected from a small puddle on the rocks.",,,
@@ -43,7 +43,7 @@ wm077,Ruins of the St Olof Church at Sigtuna.,Sigtuna,https://en.wikipedia.org/w
 wm078,"Sellin (Rügen), Beach chairs on the main beach",Sellin,https://en.wikipedia.org/wiki/Sellin,place
 wm079,The beach at Beadnell in Northumberland.,Beadnell,https://en.wikipedia.org/wiki/Beadnell,place
 wm084,,Grand Manan,https://en.wikipedia.org/wiki/Grand_Manan,place
-wm086,"This is a photo of a monument in Mexico, identified by ID",Tulum,https://en.wikipedia.org/wiki/Tulum,place
+wm086,,Tulum,https://en.wikipedia.org/wiki/Tulum,place
 wm087,"View of Noordhoek Beach from Chapman's Peak Dr, Cape Peninsula, South Africa.",Cape Town,https://en.wikipedia.org/wiki/Cape_Town,place
 wm088,"Beach at Robberg Nature Reserve, Bosluiskop, Western Cape, South Africa",Robberg Nature Reserve and Marine Protected Area,https://en.wikipedia.org/wiki/Robberg_Nature_Reserve_and_Marine_Protected_Area,depicts
 wm089,Panoramic view of the Lake Umayo and the Sillustani burial ground (see the 2 towers on the right). Sillustani is a pre-Incan cemetery with tombs (chullpas) built above ground in tower-like structures housing the remains of nobles.,Sillustani,https://en.wikipedia.org/wiki/Sillustani,place
@@ -234,7 +234,7 @@ wh38290022,"Former brewery in Nyköpings, Sweden.",Nyköping,https://en.wikipedi
 wh38295652,"Nyköping Castle (Swedish: Nyköpingshus) in Nyköping, Sweden, is a Mediaeval castle from the Birger Jarl era, partly in ruins. The castle is mostly known for the Nyköping Banquet which took place here in 1317.",Nyköping,https://en.wikipedia.org/wiki/Nyk%C3%B6ping,place
 wh38330305,"Former breweries in Nyköping, Sweden.",Nyköping,https://en.wikipedia.org/wiki/Nyk%C3%B6ping,place
 wh38331535,"Residential buildings in Nyköping, Sweden. Intersection of Bagaregatan/Repslagargatan.",Nyköping,https://en.wikipedia.org/wiki/Nyk%C3%B6ping,place
-wh38360674,"Sankt Nicolai kyrka (church). Nyköping, Sweden. This is a photo of a protected building in Sweden, number 21300000003380 in the RAÄ buildings database.",Nyköping,https://en.wikipedia.org/wiki/Nyk%C3%B6ping,place
+wh38360674,"Sankt Nicolai kyrka (church). Nyköping, Sweden.",Nyköping,https://en.wikipedia.org/wiki/Nyk%C3%B6ping,place
 wh39083470,"Entrance to Nyköping Castle, Nyköping (Sweden).",Nyköping,https://en.wikipedia.org/wiki/Nyk%C3%B6ping,place
 wh39859843,"Hadrian's Gate, Antalya, Turkey",Antalya,https://en.wikipedia.org/wiki/Antalya,place
 wh41167786,A south view of Bodø Cathedral,Bodø Cathedral,https://en.wikipedia.org/wiki/Bod%C3%B8_Cathedral,depicts
@@ -267,7 +267,7 @@ wh47247036,Amursk. Amursk combined heat and power plant,Amursk,https://en.wikipe
 wh47392651,Amursk. Amursk combined heat and power plant,Amursk,https://en.wikipedia.org/wiki/Amursk,place
 wh47412780,Amursk. Amursk combined heat and power plant,Amursk,https://en.wikipedia.org/wiki/Amursk,place
 wh47528669,,Amursk,https://en.wikipedia.org/wiki/Amursk,place
-wh47891034,"This is a photo of a monument in Mexico, identified by ID",Tulum,https://en.wikipedia.org/wiki/Tulum,place
+wh47891034,,Tulum,https://en.wikipedia.org/wiki/Tulum,place
 wh48370104,"A number of harbor buildings at Nyholmen, Bodø",,,
 wh48411974,,Carballo,https://en.wikipedia.org/wiki/Carballo,place
 wh48411977,,Carballo,https://en.wikipedia.org/wiki/Carballo,place
@@ -306,12 +306,12 @@ wh59292418,"Shot of the harbour of Papeete (Tahiti, French Polynesia) and the su
 wh59345846,"Wreck of HMS Justice W140, known as ""St. Christopher"" in Ushuaia, Argentina.",Ushuaia,https://en.wikipedia.org/wiki/Ushuaia,place
 wh62182211,"Building at 44 Rue Émile Grand in Albi, Tarn, France",Albi,https://en.wikipedia.org/wiki/Albi,place
 wh62213504,"Building at 1 place du Vigan in Albi, Tarn, France",Albi,https://en.wikipedia.org/wiki/Albi,place
-wh62270176,This is a photo of a monument in Bangladesh identified by the ID,Hardinge Bridge,https://en.wikipedia.org/wiki/Hardinge_Bridge,depicts
+wh62270176,,Hardinge Bridge,https://en.wikipedia.org/wiki/Hardinge_Bridge,depicts
 wh62311059,"This is a picture of a Working Life Museums in Sweden, number",Falun,https://en.wikipedia.org/wiki/Falun,place
 wh62671094,"The Valtionhotelli hotel in Imatra, Finland. Pictured is the side facing the Imatra rapid, Imatrankoski.",Imatra,https://en.wikipedia.org/wiki/Imatra,depicts
-wh62748460,This is a photo of a monument in Finland identified by the ID 'Helsinki-Malmi Airport' (Q662434) - RKY: 1560,Helsinki-Malmi Airport,https://en.wikipedia.org/wiki/Helsinki-Malmi_Airport,depicts
-wh62865420,This is an image of a place or building that is listed on the National Register of Historic Places in the United States of America. Its reference number is 66000815 (Wikidata).,San Jacinto Battleground State Historic Site,https://en.wikipedia.org/wiki/San_Jacinto_Battleground_State_Historic_Site,depicts
-wh62934815,"Historic industrial landscape in Falun, Sweden. This is a photo of a protected building in Sweden, number 21000001455100 in the RAÄ buildings database.",Falun,https://en.wikipedia.org/wiki/Falun,place
+wh62748460,,Helsinki-Malmi Airport,https://en.wikipedia.org/wiki/Helsinki-Malmi_Airport,depicts
+wh62865420,Its reference number is 66000815 (Wikidata).,San Jacinto Battleground State Historic Site,https://en.wikipedia.org/wiki/San_Jacinto_Battleground_State_Historic_Site,depicts
+wh62934815,"Historic industrial landscape in Falun, Sweden.",Falun,https://en.wikipedia.org/wiki/Falun,place
 wh62977853,"Homestead of Rusinov family in Malye Korely open-air museum, Arkhangelsk Oblast, Russia",Novodvinsk,https://en.wikipedia.org/wiki/Novodvinsk,place
 wh63340069,"Falun central station, Falun.",Falun,https://en.wikipedia.org/wiki/Falun,place
 wh63340080,"Falun central station, Falun.",Falun,https://en.wikipedia.org/wiki/Falun,place
@@ -335,7 +335,7 @@ wh70964185,"Dublin, Ohio Justice Center, headquarters of the Dublin Police Depar
 wh71784080,A view of the east wing Dublin Methodist Hospital looking due west right at it.,,,
 wh71784227,"Front profile Dublin Methodist Hospital located in Dublin, Ohio.",,,
 wh72701628,"View of the National Anzac Centre, Princess Royal Fortress, Albany, Western Australia, with King George Sound (Western Australia) in the background",,,
-wh73018828,This is a photo of a monument in Bangladesh identified by the ID,Hardinge Bridge,https://en.wikipedia.org/wiki/Hardinge_Bridge,depicts
+wh73018828,,Hardinge Bridge,https://en.wikipedia.org/wiki/Hardinge_Bridge,depicts
 wh73172303,,Samara,https://en.wikipedia.org/wiki/Samara,place
 wh73214779,,Sbeitla,https://en.wikipedia.org/wiki/Sbeitla,place
 wh73371891,Japanese garden pond at Daisen Park in Sakai.,Sakai,https://en.wikipedia.org/wiki/Sakai,place
@@ -360,14 +360,14 @@ wh79599299,"Pergola on the Plaza de España, Tazacorte, La Palma, Canary Islands
 wh79677427,"Near Ivoz-Ramet, view to the Meuse",,,
 wh79815847,View from the Swakopmund Jetty towards the sea on a cloudy day. This is a tone-mapped HDR photo created from an exposure stack of five images.,Swakopmund,https://en.wikipedia.org/wiki/Swakopmund,place
 wh79906195,"Summit Air BAe 146 Avro RJ85 C-FLRJ at Yellowknife Airport YZF, NWT Canada on September 6, 2015.",Yellowknife,https://en.wikipedia.org/wiki/Yellowknife,place
-wh80015174,This is a photo of a natural heritage site in Bangladesh identified by the ID:,Lawachara National Park,https://en.wikipedia.org/wiki/Lawachara_National_Park,depicts
+wh80015174,,Lawachara National Park,https://en.wikipedia.org/wiki/Lawachara_National_Park,depicts
 wh80309489,"Aquaculture fish farming of salmon and mackerel in the Chilean fjords about 6 km south from Castro, on March 16, 2019. Fish pens and crew scow can be moved by tug boat.",,,
 wh80309490,"Mussel aquaculture farming in the fjords south of Castro, Chile on March 16, 2019.",,,
 wh80760428,Dunes and some bushes south of Swakopmund.,Swakopmund,https://en.wikipedia.org/wiki/Swakopmund,place
 wh80929572,"Bodega Dante Robino, Mendoza, Argentina",,,
 wh81179003,Arkhangelsk. Antonov Estate,Arkhangelsk,https://en.wikipedia.org/wiki/Arkhangelsk,place
 wh81495859,"Matamoros street, Tonalá (State of Jalisco, Mexico).",,,
-wh82566382,This is a photo of a monument in Iran identified by the ID,Vakil Mosque,https://en.wikipedia.org/wiki/Vakil_Mosque,depicts
-wh82679251,This is a photo of a monument in Bangladesh identified by the ID,Hardinge Bridge,https://en.wikipedia.org/wiki/Hardinge_Bridge,depicts
-wh82680527,This is a photo of a monument in Bangladesh identified by the ID,Hardinge Bridge,https://en.wikipedia.org/wiki/Hardinge_Bridge,depicts
-wh82708128,This is a photo of a monument in Bangladesh identified by the ID,Hardinge Bridge,https://en.wikipedia.org/wiki/Hardinge_Bridge,depicts
+wh82566382,,Vakil Mosque,https://en.wikipedia.org/wiki/Vakil_Mosque,depicts
+wh82679251,,Hardinge Bridge,https://en.wikipedia.org/wiki/Hardinge_Bridge,depicts
+wh82680527,,Hardinge Bridge,https://en.wikipedia.org/wiki/Hardinge_Bridge,depicts
+wh82708128,,Hardinge Bridge,https://en.wikipedia.org/wiki/Hardinge_Bridge,depicts
