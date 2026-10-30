@@ -1,7 +1,7 @@
 {
  "model": "ViT-L-14/openai, country then city",
  "version": "atlas-v0-zeroshot",
- "generatedAt": "2026-10-28T17:48:49+00:00",
+ "generatedAt": "2026-10-30T07:32:37+00:00",
  "guesses": {
   "wm000": {
    "lng": 102.44784,
