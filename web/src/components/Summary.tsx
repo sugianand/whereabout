@@ -40,6 +40,7 @@ import {
 import { useCountUp } from "@/lib/useCountUp";
 
 import DailyArchive from "./DailyArchive";
+import GameTour from "./GameTour";
 import UnitsSwitch from "./UnitsSwitch";
 
 type SummaryProps = {
@@ -519,6 +520,9 @@ export default function Summary({
           <strong className="text-gold">{rematchResultLine(t.player, firstTotal)}</strong>
         </p>
       )}
+
+      {/* Back from looking at a round, the tour doesn't fly again: it opens on the whole game. */}
+      <GameTour results={results} autoplay={returnedFrom === null} />
 
       <div className="mt-10 flex items-center justify-between gap-3">
         <p className="text-sm text-chalk-dim">

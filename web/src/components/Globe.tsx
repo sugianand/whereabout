@@ -161,7 +161,7 @@ function recordCamera(map: MapLibreMap, el: HTMLElement | null) {
   el.dataset.zoom = map.getZoom().toFixed(2);
 }
 
-function createPinElement(
+export function createPinElement(
   variant: "player" | "atlas" | "truth" = "player",
   label?: string,
 ): HTMLElement {

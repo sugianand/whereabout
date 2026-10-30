@@ -746,9 +746,60 @@ test("on the narrowest phones every header control stays on screen", async ({ pa
   await expect(page).toHaveURL(/\/streak\/?$/);
 });
 
+test("the summary flies through the whole game on one globe, then shows every round at once", async ({
+  page,
+}) => {
+  test.setTimeout(150_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("./?daily");
+  for (let round = 1; round <= 5; round++) {
+    const card = await playRoundWithKeyboard(page);
+    await card.getByRole("button", { name: round < 5 ? "Next photo" : "See your results" }).click();
+  }
+  await expect(page.getByText("out of 25,000 points")).toBeVisible();
+  const places = await page.getByRole("listitem").locator("span.truncate").allInnerTexts();
+
+  const tour = page.getByTestId("game-tour");
+  // The tour sits above the list of rounds and starts on round one.
+  await expect(tour).toHaveAttribute("data-stop", "1");
+  await expect(tour.getByText(`Round 1 of 5: ${places[0]}.`, { exact: false })).toBeVisible();
+  const tourBox = (await tour.boundingBox())!;
+  const listBox = (await page.getByRole("list", { name: "Your rounds" }).boundingBox())!;
+  expect(tourBox.y + tourBox.height).toBeLessThanOrEqual(listBox.y);
+  expect(tourBox.x + tourBox.width, "fits the screen").toBeLessThanOrEqual(
+    page.viewportSize()!.width,
+  );
+  await expect(tour.locator("[data-ready]")).toBeVisible();
+
+  // Round by round, then the whole game, with a numbered gold pin on every answer.
+  await expect(tour).toHaveAttribute("data-stop", "3", { timeout: 15_000 });
+  await expect(tour).toHaveAttribute("data-stop", "all", { timeout: 20_000 });
+  await expect(tour.getByText("All five rounds at once.")).toBeVisible();
+  await expect(tour.locator(".globe-pin--truth")).toHaveCount(5);
+  await expect(tour.locator(".globe-pin--truth .globe-pin__label")).toHaveText([
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+  ]);
+
+  // Any round is one tap away, and the tour flies again on request.
+  await tour.getByRole("button", { name: /^Show round 4, / }).click();
+  await expect(tour).toHaveAttribute("data-stop", "4");
+  await expect(tour.getByText(`Round 4 of 5: ${places[3]}.`, { exact: false })).toBeVisible();
+  await tour.getByRole("button", { name: "Fly through again" }).click();
+  await expect(tour).toHaveAttribute("data-stop", "1");
+  await expect(tour.getByRole("button", { name: "Flying…" })).toBeDisabled();
+  expect(errors).toEqual([]);
+});
+
 test("any round of a finished game opens again from the summary, and back returns to it", async ({
   page,
 }) => {
+  // Five rounds, three replays and the summary's own globe, all on a software-rendered GL.
+  test.setTimeout(120_000);
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("./?daily");
@@ -782,6 +833,8 @@ test("any round of a finished game opens again from the summary, and back return
   await page.getByRole("button", { name: "Back to your results" }).click();
   await expect(page.getByRole("button", { name: /^Look again at round 4: / })).toBeFocused();
   await expect(page.getByRole("heading", { level: 1 }).locator(".sr-only")).toHaveText(total);
+  // Back from a round, the tour doesn't fly again: it opens on the whole game.
+  await expect(page.getByTestId("game-tour")).toHaveAttribute("data-stop", "all");
 
   // A phone's back gesture closes a replay instead of leaving the game.
   await page.getByRole("button", { name: /^Look again at round 1: / }).click();

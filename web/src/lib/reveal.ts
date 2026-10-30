@@ -77,13 +77,20 @@ export function revealCamera(
   }
   const path = greatCirclePath(longest, view.truth, 32);
   const [lng, lat] = path[Math.floor(path.length / 2)];
-  // 20,000 km (half the planet) fits at zoom ~0.6; each halving of distance adds ~0.9 zoom.
-  const fit = Math.log2(Math.max(framePx, 160) / REFERENCE_FRAME_PX);
-  const zoom = 0.6 + 0.9 * Math.log2(20000 / Math.max(longestKm, 60)) + fit;
   return {
     center: { lng: ((((lng + 180) % 360) + 360) % 360) - 180, lat },
-    zoom: Math.min(5.5, Math.max(0, zoom)),
+    zoom: zoomForSpan(longestKm, framePx),
   };
+}
+
+/**
+ * The zoom that fits a stretch of `km` across a frame `framePx` wide: 20,000 km (half the
+ * planet) fits at zoom ~0.6 on the reference frame, and each halving of distance adds ~0.9.
+ */
+export function zoomForSpan(km: number, framePx = REFERENCE_FRAME_PX): number {
+  const fit = Math.log2(Math.max(framePx, 160) / REFERENCE_FRAME_PX);
+  const zoom = 0.6 + 0.9 * Math.log2(20000 / Math.max(km, 60)) + fit;
+  return Math.min(5.5, Math.max(0, zoom));
 }
 
 export interface Padding {

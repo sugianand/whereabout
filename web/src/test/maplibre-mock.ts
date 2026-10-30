@@ -82,6 +82,13 @@ export class FakeMap {
     this.move(options);
   }
 
+  flyToCalls: Array<CameraOptions> = [];
+
+  flyTo(options: CameraOptions) {
+    this.flyToCalls.push(options);
+    this.move(options);
+  }
+
   jumpTo(options: CameraOptions) {
     this.jumpToCalls.push(options);
     this.move(options);
