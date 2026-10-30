@@ -8,6 +8,16 @@ export interface Credit {
   sourceUrl: string;
 }
 
+/**
+ * One thing to learn about a photo's place, shown at the reveal (data/postcards/postcards.csv):
+ * the English description from its Commons file page (CC BY-SA 4.0, attributed to that page) and
+ * an English Wikipedia article about what it shows. Every postcard has at least one of the two.
+ */
+export interface Postcard {
+  description?: string;
+  article?: { title: string; url: string };
+}
+
 /** A photo as bundled for the browser (src/data/photos.json, built from photos.csv). */
 export interface CatalogPhoto extends LngLat {
   id: string;
@@ -26,6 +36,8 @@ export interface CatalogPhoto extends LngLat {
   climateGroup?: string;
   /** ESA WorldCover 2021 class around the spot, e.g. "Built-up". */
   landCover?: string;
+  /** Its postcard, when the Postcards workflow found one. */
+  postcard?: Postcard;
 }
 
 /** What the player may see before guessing: the photo, never its location. */
@@ -50,6 +62,8 @@ export interface Reveal {
     credit: Credit | null;
     /** What the maps say about the spot, for the reveal's real clues. Absent from the API. */
     clues?: PhotoClues;
+    /** What to learn about the place. Absent from the API, and for photos with none. */
+    postcard?: Postcard;
   };
   /**
    * Atlas's guess, when the backend supplies it (the API does, scored server-side). `null`

@@ -68,6 +68,7 @@ export class LocalBackend implements GameBackend {
           ...(photo.climateGroup ? { climateGroup: photo.climateGroup } : {}),
           ...(photo.landCover ? { landCover: photo.landCover } : {}),
         },
+        ...(photo.postcard ? { postcard: photo.postcard } : {}),
       },
     };
   }

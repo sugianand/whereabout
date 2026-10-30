@@ -953,6 +953,65 @@ test("the reveal shows the photo's real clues next to what Atlas read", async ({
   await expect(card.getByText(/ESA WorldCover 2021/)).toBeVisible();
 });
 
+test("every reveal teaches one thing about the place: its postcard under the name", async ({
+  page,
+  isMobile,
+}) => {
+  type Photo = {
+    id: string;
+    place: string;
+    credit: { sourceUrl: string };
+    postcard?: { description?: string; article?: { title: string; url: string } };
+  };
+  const catalog: Photo[] = JSON.parse(
+    readFileSync(resolve(process.cwd(), "src/data/photos.json"), "utf8"),
+  );
+  const atlas = JSON.parse(readFileSync(resolve(process.cwd(), "src/data/atlas.json"), "utf8"));
+  const playable = catalog.filter((p) => Object.hasOwn(atlas.guesses, p.id));
+  // The longest description with an article: the hardest postcard to fit on a phone.
+  const [longest] = playable
+    .filter((p) => p.postcard?.description && p.postcard.article)
+    .sort((a, b) => b.postcard!.description!.length - a.postcard!.description!.length);
+  expect(longest, "a playable photo has a whole postcard").toBeTruthy();
+  const others = playable.filter((p) => p.id !== longest.id).slice(0, 4);
+  // A challenge link deals exactly these photos, the longest postcard first.
+  const ids = [longest, ...others].map((p) => p.id);
+  await page.goto(`./?challenge=${ids.join(".")}_${ids.map(() => 2500).join(".")}`);
+  const card = await playRoundWithKeyboard(page);
+  await expect(card.getByRole("heading", { name: longest.place })).toBeVisible();
+
+  const postcard = card.getByTestId("postcard");
+  await expect(postcard).toContainText(longest.postcard!.description!.slice(0, 30));
+  const article = longest.postcard!.article!;
+  await expect(
+    postcard.getByRole("link", { name: `Read about ${article.title} on Wikipedia` }),
+  ).toHaveAttribute("href", article.url);
+  await expect(
+    postcard.getByRole("link", { name: "Description: Wikimedia Commons, CC BY-SA 4.0" }),
+  ).toHaveAttribute("href", longest.credit.sourceUrl);
+
+  if (isMobile) {
+    // Cut to one line on a phone, so the card still leaves the answer in view…
+    await page.waitForTimeout(800);
+    const cardBox = (await card.boundingBox())!;
+    expect(cardBox.height).toBeLessThan(page.viewportSize()!.height / 2);
+    // …and one tap away in full.
+    const more = postcard.getByRole("button", { name: "More" });
+    const text = postcard.getByText(longest.postcard!.description!);
+    const cut = (await text.boundingBox())!.height;
+    await more.click();
+    await expect(postcard.getByRole("button", { name: "Less" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    expect((await text.boundingBox())!.height).toBeGreaterThan(cut);
+  } else {
+    // Wider screens show it whole, with nothing to unfold.
+    await expect(postcard.getByRole("button", { name: "More" })).toBeHidden();
+    await expect(postcard.getByText(longest.postcard!.description!)).toBeVisible();
+  }
+});
+
 test("the summary offers a rematch of the photos Atlas beat you on, scored against your first try", async ({
   page,
 }) => {

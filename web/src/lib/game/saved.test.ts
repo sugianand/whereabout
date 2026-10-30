@@ -25,6 +25,10 @@ const PHOTOS: CatalogPhoto[] = ["a1", "b2", "c3", "d4", "e5"].map((id, i) => ({
   country: "BR",
   drivingSide: "right",
   credit: { author: "Ann", license: "CC BY 4.0", sourceUrl: `https://example.org/${id}` },
+  postcard: {
+    description: `What to learn about ${id}.`,
+    article: { title: `Place ${id}`, url: `https://en.wikipedia.org/wiki/Place_${id}` },
+  },
 }));
 const IDS = PHOTOS.map((p) => p.id);
 const DECK = [...IDS, "f6", "g7"];
@@ -147,6 +151,13 @@ describe("parseSaved", () => {
       tamper((g) => ((g.results as { reveal: { score: number } }[])[0].reveal.score = 9999)),
     ).toBeNull();
     expect(tamper((g) => ((g.dealt as string[])[0] = "b2"))).toBeNull();
+    // A kept postcard is read back only as the catalog writes it, so no stored link can point
+    // anywhere but English Wikipedia.
+    type Kept = { reveal: { answer: { postcard?: { article: { url: string } } } } }[];
+    expect(
+      tamper((g) => ((g.results as Kept)[0].reveal.answer.postcard!.article.url = "javascript:1")),
+    ).toBeNull();
+    expect(tamper((g) => delete (g.results as Kept)[0].reveal.answer.postcard)).not.toBeNull();
     // The round in progress must be the one after the last played.
     expect(tamper((g) => ((g.round as { photoId: string }).photoId = "c3"))).toBeNull();
     expect(tamper((g) => ((g.round as { hintsUsed: number }).hintsUsed = 7))).toBeNull();

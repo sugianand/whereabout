@@ -17,6 +17,7 @@
 import { CONTINENTS } from "@/lib/continents";
 import { MAX_HINTS, MAX_POINTS, type LngLat } from "@/lib/geo";
 import type { Clue } from "@/lib/hints";
+import { isPostcard } from "@/lib/postcard";
 
 import { BLITZ_MS } from "./blitz";
 import { encodeChallenge, parseChallenge } from "./challenge";
@@ -165,6 +166,8 @@ function isResult(v: unknown, photoId: string): v is RoundResult {
   }
   const answer = reveal.answer;
   if (!isLngLat(answer) || !isStr((answer as Obj).place)) return false;
+  const postcard = (answer as Obj).postcard;
+  if (postcard !== undefined && !isPostcard(postcard)) return false;
   if (v.atlas !== null) {
     if (!isLngLat(v.atlas)) return false;
     const a = v.atlas as unknown as Obj;

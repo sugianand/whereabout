@@ -1,5 +1,6 @@
 // Converts data/curation/photos.csv into src/data/photos.json for the browser, with each photo's
-// size (data/curation/quality.csv) and hint labels (data/labels/concept_labels.csv).
+// size (data/curation/quality.csv), hint labels (data/labels/concept_labels.csv) and postcard
+// (data/postcards/postcards.csv).
 // Run: npm run catalog   (CI fails if the committed JSON is out of date; see catalog.test.ts)
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -7,6 +8,7 @@ import { fileURLToPath } from "node:url";
 const csvPath = fileURLToPath(new URL("../../data/curation/photos.csv", import.meta.url));
 const qualityPath = fileURLToPath(new URL("../../data/curation/quality.csv", import.meta.url));
 const labelsPath = fileURLToPath(new URL("../../data/labels/concept_labels.csv", import.meta.url));
+const postcardsPath = fileURLToPath(new URL("../../data/postcards/postcards.csv", import.meta.url));
 const outPath = fileURLToPath(new URL("../src/data/photos.json", import.meta.url));
 
 /** Minimal RFC 4180 parser: quoted fields, escaped quotes, commas and newlines in quotes. */
@@ -109,15 +111,52 @@ export function joinLabels(catalog, labelsText) {
   });
 }
 
+/** The longest description the Postcards workflow writes (data/postcards/README.md). */
+export const POSTCARD_MAX_CHARS = 240;
+/** Only English Wikipedia articles are linked, by their canonical address. */
+export const WIKIPEDIA_URL = /^https:\/\/en\.wikipedia\.org\/wiki\/[^\s"<>]+$/;
+
 /**
- * Builds the catalog from photos.csv text, joined with quality.csv and concept_labels.csv text
- * when given.
+ * Adds each photo's postcard from data/postcards/postcards.csv text: its Commons description
+ * and an English Wikipedia article about what it shows, either or both. A description that is
+ * empty or longer than the workflow writes, or an article without a title or with an address
+ * that isn't English Wikipedia, is left out; a photo left with neither gets no postcard.
+ */
+export function joinPostcards(catalog, postcardsText) {
+  if (postcardsText == null) return catalog;
+  const [header = [], ...body] = parseCsv(postcardsText);
+  const byId = new Map();
+  for (const cells of body) {
+    const r = Object.fromEntries(header.map((h, i) => [h, cells[i]]));
+    if (r.id) byId.set(r.id, r);
+  }
+  return catalog.map((p) => {
+    const r = byId.get(p.id);
+    if (!r) return p;
+    const description = (r.description ?? "").trim();
+    const title = (r.wikipedia_title ?? "").trim();
+    const url = (r.wikipedia_url ?? "").trim();
+    const postcard = {
+      ...(description && description.length <= POSTCARD_MAX_CHARS ? { description } : {}),
+      ...(title && WIKIPEDIA_URL.test(url) ? { article: { title, url } } : {}),
+    };
+    return Object.keys(postcard).length > 0 ? { ...p, postcard } : p;
+  });
+}
+
+/**
+ * Builds the catalog from photos.csv text, joined with quality.csv, concept_labels.csv and
+ * postcards.csv text when given.
  * @param {string} photosText
  * @param {string | null} [qualityText]
  * @param {string | null} [labelsText]
+ * @param {string | null} [postcardsText]
  */
-export function buildCatalog(photosText, qualityText, labelsText = null) {
-  return joinLabels(joinQuality(toCatalog(photosText), qualityText), labelsText);
+export function buildCatalog(photosText, qualityText, labelsText = null, postcardsText = null) {
+  return joinPostcards(
+    joinLabels(joinQuality(toCatalog(photosText), qualityText), labelsText),
+    postcardsText,
+  );
 }
 
 export function toCatalog(text) {
@@ -141,6 +180,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     readFileSync(csvPath, "utf8"),
     existsSync(qualityPath) ? readFileSync(qualityPath, "utf8") : null,
     existsSync(labelsPath) ? readFileSync(labelsPath, "utf8") : null,
+    existsSync(postcardsPath) ? readFileSync(postcardsPath, "utf8") : null,
   );
   writeFileSync(outPath, JSON.stringify(catalog, null, 1) + "\n");
   console.log(`wrote ${catalog.length} photos to src/data/photos.json`);

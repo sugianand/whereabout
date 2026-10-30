@@ -3,8 +3,9 @@ name: Postcards
 # Fetches one thing to learn about each catalog photo's place (whereabout_ml.postcards): the
 # English description on the photo's Commons file page, and the English Wikipedia article about
 # what it depicts (structured data, checked to lie near the camera) or, failing that, about the
-# nearest named part of its place. Commits data/postcards/postcards.csv. Commons and Wikipedia
-# are reached from here because the development sandbox cannot reach them.
+# nearest named part of its place. Commits data/postcards/postcards.csv and the site's catalog
+# rebuilt with it. Commons and Wikipedia are reached from here because the development sandbox
+# cannot reach them.
 #
 # It runs when the catalog or the postcard code changes, after the Commons harvest grows the
 # catalog (that workflow starts it), or by hand.
@@ -55,13 +56,18 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
+      # The site's catalog (web/src/data/photos.json) carries each photo's postcard for the
+      # reveal; keep it in step (a web test fails if it drifts). The script needs only Node.
+      - name: Update the site's catalog
+        run: node web/scripts/build-catalog.mjs
+
       - name: Commit results
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/postcards/postcards.csv
+          git add data/postcards/postcards.csv web/src/data/photos.json
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0

@@ -644,3 +644,96 @@ describe("RevealCard real clues", () => {
     expect(screen.queryByText(/Atlas didn’t say/)).toBeNull();
   });
 });
+
+describe("RevealCard postcard", () => {
+  function withPostcard(postcard: NonNullable<RoundResult["reveal"]["answer"]["postcard"]>) {
+    const r = result(5, 100, 4900);
+    return {
+      ...r,
+      reveal: {
+        ...r.reveal,
+        answer: {
+          ...r.reveal.answer,
+          place: "Nyköping, Sweden",
+          credit: {
+            author: "Ann",
+            license: "CC BY-SA 4.0",
+            sourceUrl: "https://commons.wikimedia.org/wiki/File:Nykopingshus.jpg",
+          },
+          postcard,
+        },
+      },
+    };
+  }
+
+  it("teaches the place under its name: the description, credited, and the article", () => {
+    render(
+      <RevealCard
+        result={withPostcard({
+          description: "Nyköping Castle, partly in ruins.",
+          article: { title: "Nyköping", url: "https://en.wikipedia.org/wiki/Nyk%C3%B6ping" },
+        })}
+        isLast={false}
+        onNext={() => {}}
+      />,
+    );
+    const postcard = screen.getByTestId("postcard");
+    expect(postcard).toHaveTextContent("Nyköping Castle, partly in ruins.");
+    expect(
+      within(postcard).getByRole("link", { name: "Read about Nyköping on Wikipedia" }),
+    ).toHaveAttribute("href", "https://en.wikipedia.org/wiki/Nyk%C3%B6ping");
+    expect(
+      within(postcard).getByRole("link", { name: "Description: Wikimedia Commons, CC BY-SA 4.0" }),
+    ).toHaveAttribute("href", "https://commons.wikimedia.org/wiki/File:Nykopingshus.jpg");
+    // Outside the phone fold: every round shows it without a tap.
+    expect(screen.getByTestId("atlas-thinking")).not.toContainElement(postcard);
+    // Right under the place it describes.
+    expect(screen.getByRole("heading", { name: "Nyköping, Sweden" }).nextElementSibling).toBe(
+      postcard,
+    );
+  });
+
+  it("shows whichever half the photo has", () => {
+    const { unmount } = render(
+      <RevealCard
+        result={withPostcard({
+          article: { title: "Kourou", url: "https://en.wikipedia.org/wiki/Kourou" },
+        })}
+        isLast={false}
+        onNext={() => {}}
+      />,
+    );
+    expect(screen.getByRole("link", { name: "Read about Kourou on Wikipedia" })).toBeVisible();
+    expect(screen.queryByRole("link", { name: /^Description:/ })).toBeNull();
+    unmount();
+    render(
+      <RevealCard
+        result={withPostcard({ description: "Karst peaks above the rice fields at sunrise." })}
+        isLast={false}
+        onNext={() => {}}
+      />,
+    );
+    expect(screen.getByTestId("postcard")).toHaveTextContent("Karst peaks");
+    expect(screen.queryByRole("link", { name: /on Wikipedia$/ })).toBeNull();
+  });
+
+  it("never links an address that isn't English Wikipedia", () => {
+    render(
+      <RevealCard
+        result={withPostcard({
+          description: "A harbour at dusk.",
+          article: { title: "Evil", url: "javascript:alert(1)" },
+        })}
+        isLast={false}
+        onNext={() => {}}
+      />,
+    );
+    expect(screen.queryByRole("link", { name: /on Wikipedia$/ })).toBeNull();
+    expect(screen.getByTestId("postcard")).toHaveTextContent("A harbour at dusk.");
+  });
+
+  it("has no postcard when the photo has none", () => {
+    render(<RevealCard result={result(5, 100, 4900)} isLast={false} onNext={() => {}} />);
+    expect(screen.queryByTestId("postcard")).toBeNull();
+  });
+});

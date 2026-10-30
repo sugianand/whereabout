@@ -12,6 +12,7 @@ import { trueClues, type TrueClue } from "@/lib/trueClues";
 import { useCountUp } from "@/lib/useCountUp";
 
 import AtlasEyes from "./AtlasEyes";
+import PostcardNote from "./PostcardNote";
 
 /**
  * Looking at a finished game's round again from the summary: the same card with no new score,
@@ -220,6 +221,9 @@ export default function RevealCard({
       >
         {reveal.answer.place}
       </h2>
+      {reveal.answer.postcard && (
+        <PostcardNote postcard={reveal.answer.postcard} sourceUrl={credit?.sourceUrl ?? null} />
+      )}
 
       {/* Announced once, in full, for screen readers; the animated numbers are hidden from them. */}
       <p className="sr-only" aria-live="polite">

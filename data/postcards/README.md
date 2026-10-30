@@ -1,6 +1,9 @@
 # Postcards
 
 `postcards.csv` gives catalog photos one thing to learn about their place, for the reveal.
+`web/scripts/build-catalog.mjs` folds it into the site's catalog (`web/src/data/photos.json`) as
+each photo's `postcard`, keeping only descriptions of at most 240 characters and links to English
+Wikipedia, and the reveal shows it under the place name.
 It is written by the [Postcards workflow](../../.github/workflows/postcards.yml)
 (`whereabout_ml.postcards`), which runs in CI because Commons and Wikipedia cannot be reached
 from the development sandbox. Rerun it with `postcards --catalog data/curation/photos.csv --out
