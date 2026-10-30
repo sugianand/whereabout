@@ -7,7 +7,11 @@ export interface RevealView {
   truth: LngLat;
   /** Atlas's country distribution (ISO alpha-2 to p) for the heatmap; absent in older data. */
   belief?: Record<string, number>;
-  guesses: { actor: Actor; at: LngLat }[];
+  /**
+   * `label` marks a guess's pin with a short tag (a seat number in pass and play), so several
+   * player pins on one reveal can be told apart; a labelled guess gets its own pin on the globe.
+   */
+  guesses: { actor: Actor; at: LngLat; label?: string }[];
 }
 
 export interface RevealLines {

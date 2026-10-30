@@ -161,7 +161,10 @@ function recordCamera(map: MapLibreMap, el: HTMLElement | null) {
   el.dataset.zoom = map.getZoom().toFixed(2);
 }
 
-function createPinElement(variant: "player" | "atlas" | "truth" = "player"): HTMLElement {
+function createPinElement(
+  variant: "player" | "atlas" | "truth" = "player",
+  label?: string,
+): HTMLElement {
   // MapLibre positions the outer element with its own `transform`, so the drop shape is
   // drawn by an inner element that can be rotated freely.
   const el = document.createElement("div");
@@ -170,6 +173,14 @@ function createPinElement(variant: "player" | "atlas" | "truth" = "player"): HTM
   const drop = document.createElement("div");
   drop.className = "globe-pin__drop";
   el.appendChild(drop);
+  if (label) {
+    // Upright over the rotated drop, so a seat number reads the right way up.
+    el.classList.add("globe-pin--labelled");
+    const tag = document.createElement("span");
+    tag.className = "globe-pin__label";
+    tag.textContent = label;
+    el.appendChild(tag);
+  }
   return el;
 }
 
@@ -319,9 +330,10 @@ export default function Globe({
     hadRevealRef.current = true;
 
     for (const g of reveal.guesses) {
-      if (g.actor === "atlas") {
+      // The player's own pin is the `pin` marker; Atlas's and labelled pins are drawn here.
+      if (g.actor === "atlas" || g.label) {
         revealMarkersRef.current.push(
-          new MarkerClass({ element: createPinElement("atlas"), anchor: "bottom" })
+          new MarkerClass({ element: createPinElement(g.actor, g.label), anchor: "bottom" })
             .setLngLat([g.at.lng, g.at.lat])
             .addTo(map),
         );

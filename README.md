@@ -26,6 +26,10 @@ streak in your browser beside the one from anywhere.
 **Survival** (at `/survival`, linked from the results screen) deals photo after photo until your
 misses empty a 5,000-point health bar: each round costs half the points it missed, a pin within
 25 km heals 1,000 instead, and your best run (photos survived, then points) is kept in your browser.
+**Pass and play** (at `/pass-and-play`, linked from the results screen) is for two to four players
+on one phone or laptop: each pins the same photo in turn behind a "Pass to …" screen that hides the
+last pin, then one reveal shows every numbered pin, Atlas's, and the running table. Five photos a
+game, the first turn moves one seat along each round, and the names are kept for the next game.
 **Your map** (at `/map`) puts every photo you've played on one globe, each dot coloured by how
 close your pin landed, with the countries and continents you've seen counted and your rounds
 listed newest first; pick one to fly the globe to it. It is kept only in your browser.

@@ -682,6 +682,17 @@ export default function Summary({
       </Link>
 
       <Link
+        href="/pass-and-play"
+        className="mt-4 block rounded-2xl border border-flare/40 p-5 transition hover:border-flare hover:bg-flare/5"
+      >
+        <span className="block font-sign text-2xl font-bold text-flare">Pass and play</span>
+        <span className="mt-1 block text-chalk-dim">
+          Two to four players on this device take turns pinning the same five photos, then one
+          reveal shows every pin, Atlas&apos;s too.
+        </span>
+      </Link>
+
+      <Link
         href="/map"
         className="mt-4 block rounded-2xl border border-gold/40 p-5 transition hover:border-gold hover:bg-gold/5"
       >
