@@ -93,16 +93,27 @@ function outcomeClause(result: Played, units: Units, pick: number): string {
   );
 }
 
+/** Atlas's say on a round, in its two halves: how sure it was (null with no country), and the outcome. */
+export interface AtlasSay {
+  sure: string | null;
+  outcome: string;
+}
+
 /**
- * Atlas's line for this round in the player's units, or null when Atlas sat the photo out.
+ * Atlas's say on this round in the player's units, or null when Atlas sat the photo out.
  * `pick` chooses among equivalent phrasings; by default it comes from the photo id, so a
  * round reads the same when it is looked at again.
  */
-export function atlasLine(result: RoundResult, units: Units, pick?: number): string | null {
+export function atlasSay(result: RoundResult, units: Units, pick?: number): AtlasSay | null {
   if (!result.atlas) return null;
   const played = result as Played;
   const p = pick ?? seed(result.round.photo.id);
-  const sure = surenessClause(played, p);
-  const outcome = outcomeClause(played, units, p >> 1);
-  return sure ? `${sure} ${outcome}` : outcome;
+  return { sure: surenessClause(played, p), outcome: outcomeClause(played, units, p >> 1) };
+}
+
+/** Atlas's say as one line, or null when Atlas sat the photo out. */
+export function atlasLine(result: RoundResult, units: Units, pick?: number): string | null {
+  const say = atlasSay(result, units, pick);
+  if (!say) return null;
+  return say.sure ? `${say.sure} ${say.outcome}` : say.outcome;
 }

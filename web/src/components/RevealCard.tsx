@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
-import { atlasLine } from "@/lib/atlasVoice";
+import { atlasLine, atlasSay } from "@/lib/atlasVoice";
 import { countryName, shortlist } from "@/lib/countries";
 import { rematchOutcome } from "@/lib/game/rematch";
 import type { RoundResult } from "@/lib/game/state";
@@ -198,6 +198,7 @@ export default function RevealCard({
   const thinkingId = useId();
   const units = useUnits();
   const atlasSays = atlasLine(result, units);
+  const atlasHalves = atlasSay(result, units);
 
   // Move focus to the next action so keyboard players can press Enter to continue.
   useEffect(() => {
@@ -264,10 +265,17 @@ export default function RevealCard({
         </p>
       )}
 
-      {/* Atlas's own verdict, from this round's numbers; the plain one is announced above. */}
-      {atlasSays && (
-        <p className="mt-3 text-chalk" aria-hidden="true" data-testid="atlas-line">
-          <span className="font-semibold text-sonar">Atlas: </span>“{atlasSays}”
+      {/* Atlas's own verdict, from this round's numbers; the plain one is announced above.
+          Phones keep the card short with the outcome alone: how sure Atlas was is in the fold. */}
+      {atlasHalves && (
+        <p
+          className="mt-2 text-sm text-chalk md:mt-3 md:text-base"
+          aria-hidden="true"
+          data-testid="atlas-line"
+        >
+          <span className="font-semibold text-sonar">Atlas: </span>“
+          {atlasHalves.sure && <span className="hidden md:inline">{atlasHalves.sure} </span>}
+          {atlasHalves.outcome}”
         </p>
       )}
       {friend !== undefined && (
