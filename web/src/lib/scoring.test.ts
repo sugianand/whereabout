@@ -109,4 +109,13 @@ describe("formatDistance", () => {
   ])("%s km reads as %s", (km, text) => {
     expect(formatDistance(km)).toBe(text);
   });
+  it.each([
+    [0.012, "39 ft"],
+    [3.456, "2.1 mi"],
+    [16.09344, "10 mi"],
+    [343.5, "213 mi"],
+    [12345.6, "7,671 mi"],
+  ])("%s km reads in miles as %s", (km, text) => {
+    expect(formatDistance(km, "mi")).toBe(text);
+  });
 });

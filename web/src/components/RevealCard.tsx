@@ -10,9 +10,11 @@ import { formatDistance, formatPoints, maxPoints } from "@/lib/geo";
 import { REVEAL_DRAW_MS } from "@/lib/reveal";
 import { trueClues, type TrueClue } from "@/lib/trueClues";
 import { useCountUp } from "@/lib/useCountUp";
+import { useUnits } from "@/lib/useUnits";
 
 import AtlasEyes from "./AtlasEyes";
 import PostcardNote from "./PostcardNote";
+import UnitsSwitch from "./UnitsSwitch";
 
 /**
  * Looking at a finished game's round again from the summary: the same card with no new score,
@@ -58,6 +60,7 @@ function ScoreLine({
 }) {
   // Numbers start counting as the arcs land on the truth.
   const km = useCountUp(distanceKm ?? 0, 900, REVEAL_DRAW_MS - 200);
+  const units = useUnits();
   const pts = useCountUp(score, 900, REVEAL_DRAW_MS - 200);
   const color = tone === "flare" ? "text-flare" : "text-sonar";
   return (
@@ -67,8 +70,11 @@ function ScoreLine({
         className={`size-2.5 shrink-0 -translate-y-0.5 rounded-full ${tone === "flare" ? "bg-flare" : "bg-sonar"}`}
       />
       <span className="w-14 text-chalk-dim">{who}</span>
-      <span className={`font-sign tabular text-3xl font-bold ${color}`}>
-        {distanceKm === null ? "No pin" : formatDistance(km)}
+      <span
+        className={`font-sign tabular text-3xl font-bold ${color}`}
+        data-testid="reveal-distance"
+      >
+        {distanceKm === null ? "No pin" : formatDistance(km, units)}
       </span>
       <span className="ml-auto tabular text-chalk-dim">{formatPoints(pts)} points</span>
     </div>
@@ -189,6 +195,7 @@ export default function RevealCard({
   const [openFor, setOpenFor] = useState<RoundResult | null>(null);
   const thinkingOpen = openFor === result;
   const thinkingId = useId();
+  const units = useUnits();
 
   // Move focus to the next action so keyboard players can press Enter to continue.
   useEffect(() => {
@@ -214,7 +221,10 @@ export default function RevealCard({
           {timedOut}
         </p>
       )}
-      <p className="text-sm text-gold">It was taken in</p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-gold">It was taken in</p>
+        <UnitsSwitch />
+      </div>
       <h2
         id="reveal-place"
         className="font-sign text-3xl font-extrabold leading-tight text-chalk md:text-5xl"
@@ -230,9 +240,9 @@ export default function RevealCard({
         {timedOut ? `${timedOut} ` : ""}
         {reveal.distanceKm === null
           ? `You scored ${formatPoints(reveal.score)} points.`
-          : `You were ${formatDistance(reveal.distanceKm)} away and scored ${formatPoints(reveal.score)} points.`}
+          : `You were ${formatDistance(reveal.distanceKm, units)} away and scored ${formatPoints(reveal.score)} points.`}
         {atlas
-          ? ` Atlas was ${formatDistance(atlas.distanceKm)} away and scored ${formatPoints(atlas.score)}.`
+          ? ` Atlas was ${formatDistance(atlas.distanceKm, units)} away and scored ${formatPoints(atlas.score)}.`
           : ""}
         {said ? ` ${said}` : ""}
         {hinted ? ` ${hinted}` : ""}

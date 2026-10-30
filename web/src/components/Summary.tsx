@@ -11,6 +11,8 @@ import type { DailyScores } from "@/lib/game/dailyArchive";
 import { rematchOutcome } from "@/lib/game/rematch";
 import { ROUNDS_PER_GAME, totals, type RoundResult } from "@/lib/game/state";
 import { MAX_POINTS, formatDistance, formatPoints } from "@/lib/geo";
+import { useUnits } from "@/lib/useUnits";
+import type { Units } from "@/lib/units";
 import { CONTINENTS } from "@/lib/continents";
 import {
   MIN_RANKED_ROUNDS,
@@ -29,6 +31,7 @@ import {
   type ShareOutcome,
 } from "@/lib/share";
 import {
+  legendLabels,
   renderShareImage,
   sendShareImage,
   shareImageName,
@@ -37,6 +40,7 @@ import {
 import { useCountUp } from "@/lib/useCountUp";
 
 import DailyArchive from "./DailyArchive";
+import UnitsSwitch from "./UnitsSwitch";
 
 type SummaryProps = {
   results: RoundResult[];
@@ -356,7 +360,8 @@ export function challengeResultLine(player: number, friend: number): string {
 }
 
 /** What the player is about to send, round by round, so nothing in it is a surprise. */
-function ShareCardPreview({ card }: { card: ShareCard }) {
+function ShareCardPreview({ card, units }: { card: ShareCard; units: Units }) {
+  const [near, mid, far] = legendLabels(units);
   return (
     <figure
       aria-label="Your share card"
@@ -388,7 +393,7 @@ function ShareCardPreview({ card }: { card: ShareCard }) {
         ))}
       </div>
       <p className="mt-3 text-xs text-chalk-dim">
-        🟩 within 25 km · 🟨 750 km · 🟧 2,500 km · 🟥 further
+        🟩 within {near} · 🟨 {mid} · 🟧 {far} · 🟥 further
         {card.atlasRounds > 0 && " · ✅ beat Atlas · ❌ Atlas closer · 🤝 tie · ▫️ Atlas sat out"}
       </p>
     </figure>
@@ -417,6 +422,7 @@ export default function Summary({
   onRematch,
 }: SummaryProps) {
   const t = totals(results);
+  const units = useUnits();
   const counted = useCountUp(t.player, 1400);
   const shown = returnedFrom === null ? counted : t.player;
   const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -443,7 +449,7 @@ export default function Summary({
     setSent({ what: "picture", outcome: "drawing" });
     let outcome: ImageOutcome = "failed";
     try {
-      const blob = await renderShareImage(card);
+      const blob = await renderShareImage(card, units);
       if (blob)
         outcome = await sendShareImage(blob, shareImageName(card), shareText(card), navigator);
     } catch {
@@ -514,14 +520,15 @@ export default function Summary({
         </p>
       )}
 
-      {onReplay && (
-        <p className="mt-10 text-sm text-chalk-dim">
-          Tap a round to see it again on the globe, with both pins.
+      <div className="mt-10 flex items-center justify-between gap-3">
+        <p className="text-sm text-chalk-dim">
+          {onReplay && "Tap a round to see it again on the globe, with both pins."}
         </p>
-      )}
+        <UnitsSwitch />
+      </div>
       <ol
         aria-label="Your rounds"
-        className={`${onReplay ? "mt-2" : "mt-10"} divide-y divide-graticule/60 border-y border-graticule/60`}
+        className={`mt-2 divide-y divide-graticule/60 border-y border-graticule/60`}
       >
         {results.map((r, i) => {
           const row = (
@@ -531,7 +538,7 @@ export default function Summary({
                 <span className="block truncate text-lg">{r.reveal.answer.place}</span>
                 {r.atlas && (
                   <span className="text-sm text-sonar">
-                    Atlas: {formatDistance(r.atlas.distanceKm)}
+                    Atlas: {formatDistance(r.atlas.distanceKm, units)}
                   </span>
                 )}
                 {challenge && challenge.scores[i] !== undefined && (
@@ -547,7 +554,9 @@ export default function Summary({
               </span>
               <span className="text-right">
                 <span className="block font-sign tabular text-2xl font-bold text-flare">
-                  {r.reveal.distanceKm === null ? "No pin" : formatDistance(r.reveal.distanceKm)}
+                  {r.reveal.distanceKm === null
+                    ? "No pin"
+                    : formatDistance(r.reveal.distanceKm, units)}
                 </span>
                 <span className="tabular text-sm text-chalk-dim">
                   {formatPoints(r.reveal.score)} points
@@ -565,7 +574,7 @@ export default function Summary({
                   }}
                   type="button"
                   onClick={() => onReplay(i)}
-                  aria-label={`Look again at round ${i + 1}: ${r.reveal.answer.place}, ${r.reveal.distanceKm === null ? "no pin before time ran out" : `you were ${formatDistance(r.reveal.distanceKm)} away`}`}
+                  aria-label={`Look again at round ${i + 1}: ${r.reveal.answer.place}, ${r.reveal.distanceKm === null ? "no pin before time ran out" : `you were ${formatDistance(r.reveal.distanceKm, units)} away`}`}
                   className={`${grid} group w-full grid-cols-[2rem_1fr_auto_1rem] rounded-lg px-1 text-left transition hover:bg-chalk/5 focus-visible:bg-chalk/5`}
                 >
                   {row}
@@ -588,7 +597,7 @@ export default function Summary({
         <RecordPanel record={record} newBadges={newBadges} today={today} onReset={onResetRecord} />
       )}
 
-      <ShareCardPreview card={card} />
+      <ShareCardPreview card={card} units={units} />
 
       <div className="mt-6 flex flex-wrap items-center gap-4">
         <button

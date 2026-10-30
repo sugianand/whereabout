@@ -12,6 +12,7 @@ import {
   IMAGE_SIZE,
   VERSUS_WORD,
   drawShareImage,
+  legendLabels,
   sendShareImage,
   shareImageLayout,
   shareImageName,
@@ -129,8 +130,21 @@ describe("shareImageLayout", () => {
     expect(w).toContain("example.org/whereabout/?daily");
   });
 
+  it("labels the legend in the player's units, from the same bands the tiles use", () => {
+    expect(legendLabels()).toEqual(["25 km", "750 km", "2,500 km", "further"]);
+    expect(legendLabels("mi")).toEqual(["16 mi", "466 mi", "1,553 mi", "further"]);
+    expect(words(card())).toEqual(expect.arrayContaining(legendLabels()));
+    const inMiles = shareImageLayout(card(), "mi").texts.map((t) => t.text);
+    expect(inMiles).toEqual(expect.arrayContaining(legendLabels("mi")));
+    expect(inMiles.some((t) => t.endsWith(" km"))).toBe(false);
+  });
+
   it("keeps every shape and word inside the picture", () => {
-    for (const layout of [shareImageLayout(card()), shareImageLayout(card(false, 2))]) {
+    for (const layout of [
+      shareImageLayout(card()),
+      shareImageLayout(card(false, 2)),
+      shareImageLayout(card(), "mi"),
+    ]) {
       for (const r of layout.rects) {
         expect(r.x).toBeGreaterThanOrEqual(0);
         expect(r.y).toBeGreaterThanOrEqual(0);

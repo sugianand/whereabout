@@ -1,3 +1,5 @@
+import { KM_PER_MILE, type Units } from "./units";
+
 /** A point on the globe in degrees. Longitude first, matching MapLibre and GeoJSON. */
 export type LngLat = { lng: number; lat: number };
 
@@ -137,11 +139,18 @@ export function greatCirclePath(a: LngLat, b: LngLat, segments = 64): [number, n
   return points;
 }
 
-/** "344 km", "1,240 km", "12 m" — how far off a guess was, for people. */
-export function formatDistance(km: number): string {
-  if (km < 1) return `${Math.round(km * 1000)} m`;
-  if (km < 10) return `${km.toFixed(1)} km`;
-  return `${Math.round(km).toLocaleString("en-US")} km`;
+/** How far off a guess was, for people: "1,234 km", "7.5 km", "450 m"; in miles "767 mi", "4.7 mi", "820 ft". */
+export function formatDistance(km: number, units: Units = "km"): string {
+  if (units === "km") {
+    if (km < 1) return `${Math.round(km * 1000)} m`;
+    if (km < 10) return `${km.toFixed(1)} km`;
+    return `${Math.round(km).toLocaleString("en-US")} km`;
+  }
+  const mi = km / KM_PER_MILE;
+  // Under a tenth of a mile reads better in feet, as on road signs.
+  if (mi < 0.1) return `${Math.round(mi * 5280).toLocaleString("en-US")} ft`;
+  if (mi < 10) return `${mi.toFixed(1)} mi`;
+  return `${Math.round(mi).toLocaleString("en-US")} mi`;
 }
 
 type LineFeature = {

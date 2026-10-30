@@ -10,6 +10,8 @@ import { MAP_COLORS, buildGlobeStyle } from "@/lib/basemap";
 import { countryName } from "@/lib/countries";
 import { CLOSENESS_KM, closenessOf, type Closeness } from "@/lib/feel";
 import { formatDistance, formatPoints } from "@/lib/geo";
+import type { Units } from "@/lib/units";
+import { useUnits } from "@/lib/useUnits";
 import { maplibreWorkerUrl } from "@/lib/maplibre-worker";
 import {
   BANDS,
@@ -20,6 +22,7 @@ import {
 } from "@/lib/playedMap";
 
 import { INITIAL_VIEW } from "./Globe";
+import UnitsSwitch from "./UnitsSwitch";
 
 /** Each closeness band's dot colour: gold for a bullseye, cooling to a dim grey far away. */
 export const BAND_COLORS: Readonly<Record<Closeness, string>> = {
@@ -31,12 +34,12 @@ export const BAND_COLORS: Readonly<Record<Closeness, string>> = {
 
 const km = (n: number) => n.toLocaleString("en-US");
 
-export const BAND_LABELS: Readonly<Record<Closeness, string>> = {
-  bullseye: `Within ${km(CLOSENESS_KM.bullseye)} km`,
-  close: `Within ${km(CLOSENESS_KM.close)} km`,
-  near: `Within ${km(CLOSENESS_KM.near)} km`,
-  far: "Further, or no pin",
-};
+/** Each closeness in words, its distance in the player's units. */
+export function bandLabel(band: Closeness, units: Units = "km"): string {
+  return band === "far"
+    ? "Further, or no pin"
+    : `Within ${formatDistance(CLOSENESS_KM[band], units)}`;
+}
 
 /** Rounds listed before "Show all". */
 export const LIST_FIRST = 12;
@@ -97,6 +100,7 @@ export default function PlayedMap() {
   const mapRef = useRef<MapLibreMap | null>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
+  const units = useUnits();
 
   useEffect(() => {
     // Storage only exists in the browser, so the history is read once the page is mounted.
@@ -224,18 +228,21 @@ export default function PlayedMap() {
         )}
       </div>
 
-      <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm" aria-label="Closeness">
-        {BANDS.map((b) => (
-          <li key={b} className="flex items-center gap-2">
-            <span
-              aria-hidden="true"
-              className="inline-block h-3 w-3 rounded-full"
-              style={{ background: BAND_COLORS[b] }}
-            />
-            {BAND_LABELS[b]}: <strong>{summary.bands[b]}</strong>
-          </li>
-        ))}
-      </ul>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm" aria-label="Closeness">
+          {BANDS.map((b) => (
+            <li key={b} className="flex items-center gap-2">
+              <span
+                aria-hidden="true"
+                className="inline-block h-3 w-3 rounded-full"
+                style={{ background: BAND_COLORS[b] }}
+              />
+              {bandLabel(b, units)}: <strong>{summary.bands[b]}</strong>
+            </li>
+          ))}
+        </ul>
+        <UnitsSwitch />
+      </div>
 
       <section className="mt-12 grid gap-10 md:grid-cols-[1fr_1.4fr]">
         <div>
@@ -284,7 +291,7 @@ export default function PlayedMap() {
                     <span className="min-w-0 flex-1">
                       <span className="block truncate">{p.place}</span>
                       <span className="block text-xs text-chalk-dim">
-                        {p.km === null ? "No pin" : `${formatDistance(p.km)} off`} ·{" "}
+                        {p.km === null ? "No pin" : `${formatDistance(p.km, units)} off`} ·{" "}
                         {formatPoints(p.score)} points · {p.day}
                       </span>
                     </span>

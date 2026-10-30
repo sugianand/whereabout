@@ -7,7 +7,8 @@
  * The drawing is split in two: `shareImageLayout` decides every shape and word (pure, tested), and
  * `drawShareImage` only paints a layout onto a 2D context.
  */
-import { formatPoints } from "@/lib/geo";
+import { formatDistance, formatPoints } from "@/lib/geo";
+import type { Units } from "@/lib/units";
 
 import { DISTANCE_BANDS, type DistanceBand, type ShareCard, type Versus } from "./share";
 
@@ -38,7 +39,15 @@ export const VERSUS_WORD: Record<Versus, { text: string; color: string }> = {
   none: { text: "–", color: INK.dim },
 };
 
-const LEGEND_LABELS = ["25 km", "750 km", "2,500 km", "further"];
+/** The legend under the tiles: each band's upper bound in the player's units, then "further". */
+export function legendLabels(units: Units = "km"): string[] {
+  return [
+    ...DISTANCE_BANDS.filter((b) => Number.isFinite(b.maxKm)).map((b) =>
+      formatDistance(b.maxKm, units),
+    ),
+    "further",
+  ];
+}
 
 export function bandColor(band: DistanceBand): string {
   const i = DISTANCE_BANDS.indexOf(band);
@@ -76,7 +85,7 @@ const MARGIN = 96;
 const TILE = 150;
 
 /** Every shape and word of the picture, in paint order. */
-export function shareImageLayout(card: ShareCard): ShareImageLayout {
+export function shareImageLayout(card: ShareCard, units: Units = "km"): ShareImageLayout {
   const W = IMAGE_SIZE;
   const rects: ImageRect[] = [
     { x: 32, y: 32, w: W - 64, h: W - 64, radius: 40, stroke: INK.frame },
@@ -132,7 +141,7 @@ export function shareImageLayout(card: ShareCard): ShareImageLayout {
   // How close each colour means, then where to play.
   const legendY = 968;
   let lx = MARGIN;
-  LEGEND_LABELS.forEach((label, i) => {
+  legendLabels(units).forEach((label, i) => {
     rects.push({ x: lx, y: legendY - 22, w: 26, h: 26, radius: 6, fill: BAND_COLORS[i] });
     text(label, lx + 38, legendY, `400 28px ${SANS}`, INK.dim);
     lx += 38 + label.length * 15 + 40;
@@ -188,9 +197,10 @@ export function drawShareImage(ctx: DrawingContext, layout: ShareImageLayout): v
  */
 export async function renderShareImage(
   card: ShareCard,
+  units: Units = "km",
   doc: Document = document,
 ): Promise<Blob | null> {
-  const layout = shareImageLayout(card);
+  const layout = shareImageLayout(card, units);
   try {
     await Promise.all([...new Set(layout.texts.map((t) => t.font))].map((f) => doc.fonts?.load(f)));
   } catch {

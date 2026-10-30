@@ -258,6 +258,60 @@ test("the reveal buzzes and chimes for how close the pin landed, until muted", a
   await expect(toggle).toHaveAttribute("aria-pressed", "false");
 });
 
+test.describe("in a US browser", () => {
+  test.use({ locale: "en-US" });
+
+  test("distances read in miles, and one tap switches every distance, kept across pages", async ({
+    page,
+  }) => {
+    await page.goto("./?daily");
+    let card = await playRoundWithKeyboard(page);
+    const you = card.getByTestId("reveal-distance").first();
+    await expect(you).toHaveText(/^[\d,.]+ (mi|ft)$/);
+    const switcher = card.getByRole("group", { name: "Distances in" });
+    await expect(switcher.getByRole("button", { name: "miles" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(card.locator("[aria-live]")).toContainText(/ (mi|ft) away/);
+
+    await switcher.getByRole("button", { name: "kilometres" }).click();
+    await expect(you).toHaveText(/^[\d,.]+ k?m$/);
+    await expect(card.locator("[aria-live]")).toContainText(/ k?m away/);
+
+    for (let round = 2; round <= 5; round++) {
+      await card.getByRole("button", { name: "Next photo" }).click();
+      card = await playRoundWithKeyboard(page);
+      await expect(you).toHaveText(/^[\d,.]+ k?m$/);
+    }
+    await card.getByRole("button", { name: "See your results" }).click();
+    const rows = page.getByRole("list", { name: "Your rounds" });
+    await expect(rows).toContainText(/\d km/);
+    await expect(rows).not.toContainText(/\d (mi|ft)/);
+    await page.getByRole("button", { name: "miles" }).click();
+    await expect(rows).toContainText(/\d (mi|ft)/);
+    await expect(rows).not.toContainText(/\d km/);
+
+    // The choice is kept for the next page: your map's legend reads in miles too.
+    await page.goto("./map");
+    await expect(page.getByRole("list", { name: "Closeness" })).toContainText("Within 16 mi");
+  });
+});
+
+test.describe("in a German browser", () => {
+  test.use({ locale: "de-DE" });
+
+  test("distances read in kilometres", async ({ page }) => {
+    await page.goto("./?daily");
+    const card = await playRoundWithKeyboard(page);
+    await expect(card.getByTestId("reveal-distance").first()).toHaveText(/^[\d,.]+ k?m$/);
+    await expect(card.getByRole("button", { name: "kilometres" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+});
+
 test("under reduced motion the reveal neither buzzes nor chimes, and offers no toggle", async ({
   page,
 }) => {

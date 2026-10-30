@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type DragEvent } from "react"
 
 import { countryAt } from "@/lib/countryHit";
 import { formatDistance, formatPoints, haversineKm, scoreDistance, type LngLat } from "@/lib/geo";
+import { useUnits } from "@/lib/useUnits";
 import { loadEncoder, type DownloadProgress, type ImageEncoder } from "@/lib/pocket/encoder";
 import {
   declineMessage,
@@ -105,6 +106,7 @@ declare global {
  */
 export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps }) {
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
+  const units = useUnits();
   const [photo, setPhoto] = useState<string | null>(null);
   const [truth, setTruth] = useState<LngLat | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -495,7 +497,9 @@ export default function PocketAtlas({ deps = DEFAULT_DEPS }: { deps?: PocketDeps
               {phase.kind === "revealed" && (
                 <p className="mt-4 text-xl">
                   Atlas was{" "}
-                  <strong className="tabular text-sonar">{formatDistance(phase.distanceKm)}</strong>{" "}
+                  <strong className="tabular text-sonar">
+                    {formatDistance(phase.distanceKm, units)}
+                  </strong>{" "}
                   off, worth <strong className="tabular">{formatPoints(phase.score)}</strong> points
                   in the game.
                 </p>
