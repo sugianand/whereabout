@@ -187,3 +187,4 @@ jobs:
           gh workflow run quality.yml --ref main
           gh workflow run labels.yml --ref main
           gh workflow run atlas.yml --ref main
+          gh workflow run postcards.yml --ref main

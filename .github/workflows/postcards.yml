@@ -1,0 +1,79 @@
+name: Postcards
+
+# Fetches one thing to learn about each catalog photo's place (whereabout_ml.postcards): the
+# English description on the photo's Commons file page, and the English Wikipedia article about
+# what it depicts (structured data, checked to lie near the camera) or, failing that, about the
+# nearest named part of its place. Commits data/postcards/postcards.csv. Commons and Wikipedia
+# are reached from here because the development sandbox cannot reach them.
+#
+# It runs when the catalog or the postcard code changes, after the Commons harvest grows the
+# catalog (that workflow starts it), or by hand.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "ml/src/whereabout_ml/postcards.py"
+      - "data/curation/photos.csv"
+      - ".github/workflows/postcards.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: postcards
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: python -m pip install -e api -e eval -e "ml[dev]"
+
+      - name: Test the postcard code
+        run: python -m pytest -q ml/tests/test_postcards.py
+
+      - name: Fetch postcards from Commons, Wikidata and Wikipedia
+        shell: bash
+        run: |
+          set -euo pipefail
+          postcards --catalog data/curation/photos.csv --out data/postcards/postcards.csv \
+            | tee postcards.json
+          {
+            echo '### Postcards'
+            echo '```json'
+            cat postcards.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit results
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/postcards/postcards.csv
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "chore(postcards): fetch each catalog photo's description and article"
+          for attempt in 1 2 3; do
+            git fetch --depth=50 origin main
+            if git rebase origin/main && git push origin HEAD:main; then
+              exit 0
+            fi
+            git rebase --abort || true
+            sleep $((attempt * 5))
+          done
+          echo "::error title=Could not push postcards::rebase or push failed three times"
+          exit 1

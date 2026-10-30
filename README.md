@@ -216,6 +216,16 @@ merge-harvest --catalog data/curation/photos.csv --harvested data/harvest/harves
 cd web && npm run catalog
 ```
 
+Each catalog photo can carry a postcard for the reveal: the English description from its
+Commons file page and an English Wikipedia article about what it depicts, found through its
+structured data and kept only if the article's coordinates lie near the camera.
+[`.github/workflows/postcards.yml`](.github/workflows/postcards.yml) fetches them and commits
+[`data/postcards/`](data/postcards/README.md); locally:
+
+```bash
+postcards --catalog data/curation/photos.csv --out data/postcards/postcards.csv
+```
+
 ## Tests
 
 Every push runs the Python suites, the web unit tests, a production build, a type-check, a

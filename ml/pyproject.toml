@@ -29,6 +29,7 @@ geo-split = "whereabout_ml.split:main"
 photo-quality = "whereabout_ml.photo_quality:main"
 merge-harvest = "whereabout_ml.merge_harvest:main"
 reference-set = "whereabout_ml.reference_set:main"
+postcards = "whereabout_ml.postcards:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
