@@ -17,7 +17,8 @@ data/postcards/postcards.csv`.
 
 - **Description.** The file page's `ImageDescription`. A language-tagged description gives
   its English text only; an untagged one is kept only when it reads as English (one of a few
-  common English words). Links and an "English:" label are removed. Descriptions shorter than
+  common English words). Links, an "English:" label and the heritage contests' template sentence ("This is a photo of
+  a monument in … identified by the ID") are removed. Descriptions shorter than
   20 characters, or that only repeat the file name, are dropped. Longer ones end on a whole
   sentence, or on a whole word with an ellipsis.
 - **Article, `depicts`.** What the file's structured data says it depicts (Commons MediaInfo,

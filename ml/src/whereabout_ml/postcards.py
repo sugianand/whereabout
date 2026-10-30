@@ -3,9 +3,10 @@
 For every photo in the catalog this finds
 
 - **a short description**: the English description on the photo's own Commons file page
-  (`ImageDescription`), as plain text, trimmed to a sentence or two. A description with no
-  language tag is kept only when it reads as English. Descriptions that only repeat the file
-  name, or are too short to say anything, are dropped.
+  (`ImageDescription`), as plain text, trimmed to a sentence or two, without the heritage
+  contests' template sentence. A description with no language tag is kept only when it reads
+  as English. Descriptions that only repeat the file name, or are too short to say anything,
+  are dropped.
 - **a Wikipedia article** (English) about what the photo shows, found two ways, in order:
   1. *depicts*: the file's structured data names what it depicts (Commons MediaInfo, P180).
      The first depicted Wikidata item that has an English Wikipedia article **and** a
@@ -62,6 +63,13 @@ GetJson = Callable[[str], Mapping]
 _URL = re.compile(r"https?://\S+")
 _LANG_LABEL = re.compile(r"^\s*english\s*:\s*", re.IGNORECASE)
 _WORD = re.compile(r"[a-z]+")
+# Wiki Loves Monuments/Earth upload templates add "This is a photo of a monument in Iran
+# identified by the ID" to many descriptions; it says nothing about the place, so it goes.
+_HERITAGE_TEMPLATE = re.compile(
+    r"\bThis is an? (?:photo|image|picture) of an? [^.]*?"
+    r"(?:monument|heritage|protected|listed)\b[^.]*(?:\.|$)",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -135,7 +143,7 @@ def clean_description(value: object, file_title: str) -> str | None:
         raw, tagged = value, False
     else:
         return None
-    text = _URL.sub("", html_to_text(raw))
+    text = _HERITAGE_TEMPLATE.sub("", _URL.sub("", html_to_text(raw)))
     text = " ".join(_LANG_LABEL.sub("", text).split()).strip(" -–—")
     if len(text) < MIN_DESCRIPTION or not any(c.isalpha() for c in text):
         return None

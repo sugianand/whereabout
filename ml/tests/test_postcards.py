@@ -114,6 +114,23 @@ def test_a_language_label_and_links_are_removed_and_the_first_letter_capitalised
     assert got == "Sunrise over the karst peaks, see for more"
 
 
+@pytest.mark.parametrize(
+    ("given", "want"),
+    [
+        ("This is a photo of a monument in Iran identified by the ID", None),
+        ("This is a photo of a monument in Mexico, identified by ID", None),
+        (
+            "Historic industrial landscape in Falun, Sweden. This is a photo of a protected "
+            "building in Sweden with the number 21300000012345",
+            "Historic industrial landscape in Falun, Sweden.",
+        ),
+        ("The Hardinge Bridge over the Padma river", "The Hardinge Bridge over the Padma river"),
+    ],
+)
+def test_the_heritage_contest_template_sentence_is_removed(given, want):
+    assert pc.clean_description({"en": given}, "File:x.jpg") == want
+
+
 def test_long_descriptions_end_on_a_sentence_or_an_ellipsis():
     sentences = "The old town sits on a hill above the river. " * 10
     got = pc.trim(sentences.strip())
