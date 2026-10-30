@@ -671,8 +671,19 @@ export default function Summary({
       )}
 
       <Link
+        href="/survival"
+        className="mt-10 block rounded-2xl border border-flare/40 p-5 transition hover:border-flare hover:bg-flare/5"
+      >
+        <span className="block font-sign text-2xl font-bold text-flare">Survival</span>
+        <span className="mt-1 block text-chalk-dim">
+          One photo after another until your misses empty a 5,000-point health bar. A pin within 25
+          km heals.
+        </span>
+      </Link>
+
+      <Link
         href="/map"
-        className="mt-10 block rounded-2xl border border-gold/40 p-5 transition hover:border-gold hover:bg-gold/5"
+        className="mt-4 block rounded-2xl border border-gold/40 p-5 transition hover:border-gold hover:bg-gold/5"
       >
         <span className="block font-sign text-2xl font-bold text-gold">Your map</span>
         <span className="mt-1 block text-chalk-dim">

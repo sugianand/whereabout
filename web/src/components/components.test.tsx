@@ -109,6 +109,11 @@ describe("verdict", () => {
 });
 
 describe("Summary", () => {
+  it("offers a Survival run after the game", () => {
+    render(<Summary results={[result(1, 5000, 10)]} title="Fresh game" onPlayAgain={() => {}} />);
+    expect(screen.getByRole("link", { name: /^Survival/ })).toHaveAttribute("href", "/survival");
+  });
+
   it("offers a challenge link only when the browser deals the photos", () => {
     const { rerender } = render(
       <Summary results={[result(1, 5000, 10)]} title="Fresh game" onPlayAgain={() => {}} />,

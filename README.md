@@ -23,6 +23,9 @@ photo to load and pauses while the tab is hidden; your best Blitz is kept in you
 another, until your first miss. Pick a continent to deal only photos taken there
 (`/streak?region=europe`, or straight from a continent game); each continent keeps its own best
 streak in your browser beside the one from anywhere.
+**Survival** (at `/survival`, linked from the results screen) deals photo after photo until your
+misses empty a 5,000-point health bar: each round costs half the points it missed, a pin within
+25 km heals 1,000 instead, and your best run (photos survived, then points) is kept in your browser.
 **Your map** (at `/map`) puts every photo you've played on one globe, each dot coloured by how
 close your pin landed, with the countries and continents you've seen counted and your rounds
 listed newest first; pick one to fly the globe to it. It is kept only in your browser.
