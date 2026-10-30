@@ -9,11 +9,13 @@ import { ARCHIVE_NOTICE } from "@/lib/game/dailyArchive";
 import { encodeChallenge } from "@/lib/game/challenge";
 import { LOAD_ERROR } from "@/lib/game/deck";
 import { RECENT_KEY } from "@/lib/game/fresh";
+import { REMATCH_KEY, loadRematch } from "@/lib/game/rematch";
 import { SAVED_GAME_KEY } from "@/lib/game/saved";
-import { maxPoints } from "@/lib/geo";
+import { haversineKm, maxPoints, scoreDistance } from "@/lib/geo";
 import { cluesFor } from "@/lib/hints";
 import { INTRO_KEY, INTRO_TEXT } from "@/lib/intro";
 import { playablePhotos } from "@/lib/game/playable";
+import { PLAYED_KEY } from "@/lib/playedMap";
 import { RECORD_KEY } from "@/lib/playerRecord";
 import { ROUNDS_PER_GAME } from "@/lib/game/state";
 import { tierBlurb } from "@/lib/game/tiers";
@@ -1022,5 +1024,83 @@ describe("Daily Five archive", { timeout: 30000 }, () => {
     await mapReady();
     expect(await screen.findByText("Daily Five, October 9", {}, WAIT)).toBeInTheDocument();
     expect(screen.queryByText(ARCHIVE_NOTICE.old)).toBeNull();
+  });
+});
+
+describe("Rematch Atlas", { timeout: 40000 }, () => {
+  async function finish(map: FakeMap, at: (i: number) => { lng: number; lat: number }) {
+    for (let i = 0; i < ROUNDS_PER_GAME; i++) {
+      const card = await playRound(map, at(i));
+      const last = i === ROUNDS_PER_GAME - 1;
+      fireEvent.click(
+        within(card).getByRole("button", { name: last ? "See your results" : "Next photo" }),
+      );
+    }
+  }
+
+  it("keeps first tries Atlas won, and never a photo played before", async () => {
+    // The first daily photo is already on the map: it is not a first try.
+    const { id, lng, lat, place } = daily[0];
+    localStorage.setItem(
+      PLAYED_KEY,
+      JSON.stringify([
+        { id, lng, lat, place, country: null, km: 1, score: 4000, day: "2026-10-01" },
+      ]),
+    );
+    render(<Game {...bundledGame} start="daily" today={TODAY} />);
+    const map = await mapReady();
+    // Every pin on the far side of the world, so Atlas wins nearly every round it plays.
+    await finish(map, (i) => ({ lng: daily[i].lng + 180, lat: -daily[i].lat }));
+    await screen.findByRole("button", { name: "Play a fresh game" }, WAIT);
+    const pool = loadRematch();
+    const guesses = (atlasData as AtlasData).guesses;
+    const expected = daily.slice(1).filter((p) => {
+      const atlas = guesses[p.id];
+      const mine = scoreDistance(haversineKm({ lng: p.lng + 180, lat: -p.lat }, p));
+      return atlas && scoreDistance(haversineKm(atlas, p)) > mine;
+    });
+    expect(expected.length).toBeGreaterThan(0);
+    expect(pool.map((w) => w.id).sort()).toEqual(expected.map((p) => p.id).sort());
+    expect(pool.some((w) => w.id === daily[0].id)).toBe(false);
+    for (const w of pool) expect(w.atlas).toBeGreaterThan(w.score);
+  });
+
+  it("offers the five Atlas won by most, scores you against your first try, and lets beaten ones go", async () => {
+    const five = playable.filter((p) => !daily.some((d) => d.id === p.id)).slice(30, 35);
+    const firsts = [0, 100, 200, 300, 400];
+    localStorage.setItem(
+      REMATCH_KEY,
+      JSON.stringify(five.map((p, i) => ({ id: p.id, score: firsts[i], atlas: 4000 }))),
+    );
+    render(<Game {...bundledGame} start="daily" today={TODAY} />);
+    const map = await mapReady();
+    await finish(map, (i) => daily[i]);
+
+    fireEvent.click(await screen.findByRole("button", { name: /^Rematch Atlas/ }, WAIT));
+    expect(await screen.findAllByText("Rematch Atlas", {}, WAIT)).not.toHaveLength(0);
+    expect(screen.getByText(/Your first tries:/)).toHaveTextContent("Your first tries: 1,000");
+    const img = await screen.findByRole("img", {}, WAIT);
+    // Biggest margin first: the photo you scored 0 on.
+    expect(img).toHaveAttribute("src", five[0].imageUrl);
+
+    // The summary's globe is gone: the rematch has a new one.
+    const again = await mapReady();
+    for (let i = 0; i < ROUNDS_PER_GAME; i++) {
+      const c = await playRound(again, five[i]);
+      expect(within(c).getByTestId("first-try-line")).toHaveTextContent(
+        `Your first try scored ${firsts[i].toLocaleString("en-US")} here. You did better.`,
+      );
+      const last = i === ROUNDS_PER_GAME - 1;
+      fireEvent.click(
+        within(c).getByRole("button", { name: last ? "See your results" : "Next photo" }),
+      );
+    }
+    expect(await screen.findByTestId("rematch-result", {}, WAIT)).toHaveTextContent(
+      "Your first tries scored 1,000. You beat your first tries by 24,000 points.",
+    );
+    expect(screen.getAllByText(/^First try: [\d,]+ points$/)).toHaveLength(5);
+    // Every one beaten Atlas's 4,000: the pool is empty and no rematch is offered.
+    expect(loadRematch()).toEqual([]);
+    expect(screen.queryByRole("button", { name: /^Rematch Atlas/ })).toBeNull();
   });
 });

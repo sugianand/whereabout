@@ -8,6 +8,7 @@ import type { BlitzBest } from "@/lib/game/blitz";
 import { challengeOutcome, challengeText, sumScores, type Challenge } from "@/lib/game/challenge";
 import { dayKey } from "@/lib/game/daily";
 import type { DailyScores } from "@/lib/game/dailyArchive";
+import { rematchOutcome } from "@/lib/game/rematch";
 import { ROUNDS_PER_GAME, totals, type RoundResult } from "@/lib/game/state";
 import { MAX_POINTS, formatDistance, formatPoints } from "@/lib/geo";
 import { CONTINENTS } from "@/lib/continents";
@@ -68,7 +69,20 @@ type SummaryProps = {
   challenge?: Challenge;
   /** Set after a Blitz game: how it compares with the best Blitz kept in this browser. */
   blitz?: BlitzBest;
+  /** Set when this game was a rematch against Atlas: the first try's points on each photo. */
+  rematch?: Challenge;
+  /** Deal the five photos Atlas beat the player by the most; omitted until there are five. */
+  onRematch?: () => void;
 };
+
+/** "You beat your first tries by 2,300 points.", from this game's and the first tries' totals. */
+export function rematchResultLine(player: number, first: number): string {
+  const outcome = rematchOutcome(player, first);
+  const by = formatPoints(Math.abs(player - first));
+  if (outcome === "better") return `You beat your first tries by ${by} points.`;
+  if (outcome === "worse") return `Your first tries were ${by} points better.`;
+  return "Exactly what your first tries scored.";
+}
 
 /** "A new Blitz best!" or "Your Blitz best is 14,200 points.", after a Blitz game. */
 export function blitzLine(blitz: BlitzBest): string {
@@ -377,6 +391,8 @@ export default function Summary({
   canChallenge = false,
   challenge,
   blitz,
+  rematch,
+  onRematch,
 }: SummaryProps) {
   const t = totals(results);
   const counted = useCountUp(t.player, 1400);
@@ -408,6 +424,7 @@ export default function Summary({
     setSent({ what: "challenge", outcome: await sendShare(text, navigator) });
   }
   const friendTotal = challenge ? sumScores(challenge.scores) : null;
+  const firstTotal = rematch ? sumScores(rematch.scores) : null;
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col px-6 pb-16 pt-16 md:pt-24">
@@ -456,6 +473,14 @@ export default function Summary({
         </p>
       )}
 
+      {firstTotal !== null && (
+        <p className="mt-3 text-xl" data-testid="rematch-result">
+          Your first tries scored{" "}
+          <span className="tabular text-gold">{formatPoints(firstTotal)}</span>.{" "}
+          <strong className="text-gold">{rematchResultLine(t.player, firstTotal)}</strong>
+        </p>
+      )}
+
       {onReplay && (
         <p className="mt-10 text-sm text-chalk-dim">
           Tap a round to see it again on the globe, with both pins.
@@ -479,6 +504,11 @@ export default function Summary({
                 {challenge && challenge.scores[i] !== undefined && (
                   <span className="ml-3 text-sm text-gold">
                     Friend: {formatPoints(challenge.scores[i])} points
+                  </span>
+                )}
+                {rematch && rematch.scores[i] !== undefined && (
+                  <span className="ml-3 text-sm text-gold">
+                    First try: {formatPoints(rematch.scores[i])} points
                   </span>
                 )}
               </span>
@@ -564,6 +594,22 @@ export default function Summary({
           {sent && SENT_NOTE[sent.what][sent.outcome]}
         </p>
       </div>
+
+      {onRematch && (
+        <button
+          type="button"
+          onClick={onRematch}
+          className="mt-10 block w-full rounded-2xl border border-flare/50 p-5 text-left transition hover:border-flare hover:bg-flare/5"
+        >
+          <span className="block font-sign text-2xl font-bold text-flare">
+            {rematch ? "Rematch Atlas again" : "Rematch Atlas"}
+          </span>
+          <span className="mt-1 block text-chalk-dim">
+            The five photos where Atlas beat you by the most. Beat your first try on each; a photo
+            leaves the rematch once you outscore Atlas on it.
+          </span>
+        </button>
+      )}
 
       {dailyScores && onPlayDailyOn && (
         <DailyArchive

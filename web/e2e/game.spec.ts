@@ -914,3 +914,49 @@ test("the reveal shows the photo's real clues next to what Atlas read", async ({
   for (let i = 0; i < expected.length; i++) await expect(rows.nth(i)).toContainText("Atlas");
   await expect(card.getByText(/ESA WorldCover 2021/)).toBeVisible();
 });
+
+test("the summary offers a rematch of the photos Atlas beat you on, scored against your first try", async ({
+  page,
+}) => {
+  // A whole game, the rematch's first two rounds and a reload: twice a usual game's length.
+  test.slow();
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  // Five photos Atlas won outright on the first try, as earlier games would have kept them.
+  const atlas = JSON.parse(readFileSync(resolve(process.cwd(), "src/data/atlas.json"), "utf8"));
+  const ids = Object.keys(atlas.guesses).sort().slice(0, 5);
+  await page.goto("./map/");
+  await page.evaluate(
+    (pool) => localStorage.setItem("whereabout:rematch", JSON.stringify(pool)),
+    ids.map((id) => ({ id, score: 0, atlas: 5000 })),
+  );
+  await page.goto("./?daily");
+  for (let round = 1; round <= 5; round++) {
+    const card = await playRoundWithKeyboard(page);
+    await card.getByRole("button", { name: round < 5 ? "Next photo" : "See your results" }).click();
+  }
+  const offer = page.getByRole("button", { name: /^Rematch Atlas/ });
+  await offer.scrollIntoViewIfNeeded();
+  await expect(offer).toBeVisible();
+  await offer.click();
+
+  await expect(page.getByText("Rematch Atlas", { exact: true })).toBeVisible();
+  await expect(page.getByText("Your first tries: 0")).toBeVisible();
+  const card = await playRoundWithKeyboard(page);
+  await expect(card.getByTestId("first-try-line")).toHaveText(
+    /^Your first try scored 0 here\. (You did better\.|Same as last time\.)$/,
+  );
+  if ((page.viewportSize()?.width ?? 1000) < 768) {
+    const box = (await card.boundingBox())!;
+    expect(box.height, "the first-try line keeps the card short").toBeLessThan(
+      page.viewportSize()!.height / 2,
+    );
+  }
+  // A reload mid-rematch picks the same rematch back up.
+  await card.getByRole("button", { name: "Next photo" }).click();
+  await expect(page.getByText("Round 2 of 5", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("Rematch Atlas", { exact: true })).toBeVisible();
+  await expect(page.getByText("Round 2 of 5", { exact: true })).toBeVisible();
+  expect(errors).toEqual([]);
+});

@@ -170,6 +170,22 @@ describe("parseSaved", () => {
     expect(roundTrip(other)).toBeNull();
   });
 
+  it("keeps a rematch with its first tries, and only on the five photos it names", async () => {
+    const rematch: GameMode = {
+      kind: "rematch",
+      rematch: { ids: IDS, scores: [0, 10, 20, 30, 40] },
+    };
+    const kept = snapshot(rematch, IDS, await played(2), NOW)!;
+    expect(roundTrip(kept)?.mode).toEqual(rematch);
+    const reordered = {
+      ...kept,
+      mode: { ...rematch, rematch: { ids: [...IDS].reverse(), scores: [0, 10, 20, 30, 40] } },
+    };
+    expect(roundTrip(reordered)).toBeNull();
+    const short = { ...kept, mode: { ...rematch, rematch: { ids: IDS, scores: [1, 2] } } };
+    expect(roundTrip(short)).toBeNull();
+  });
+
   it("caps a Blitz clock at one round's allowance", async () => {
     const kept = snapshot({ kind: "blitz", game: 2 }, IDS, await midRound(), NOW, 10_000)!;
     const big = { ...kept, round: { ...kept.round!, blitzMsLeft: 10 * BLITZ_MS } };

@@ -9,7 +9,8 @@ import type { Tier } from "./tiers";
  * one drawn from the photos taken on one continent (./regions.ts). A challenge replays the five
  * photos a friend's link names (./challenge.ts). Blitz is a fresh game against a 30-second clock
  * on each photo (./blitz.ts). A Daily Five with `archive` is a past day's, played from the
- * archive (./dailyArchive.ts): it never counts toward the streak. `game` counts games of that kind in one visit, so each new one is
+ * archive (./dailyArchive.ts): it never counts toward the streak. A rematch replays the five
+ * photos Atlas beat the player by the most, with their first try on each to beat (./rematch.ts). `game` counts games of that kind in one visit, so each new one is
  * a new value even when nothing else changes.
  */
 export type GameMode =
@@ -18,6 +19,7 @@ export type GameMode =
   | { kind: "tier"; tier: Tier; game: number }
   | { kind: "region"; region: Continent; game: number }
   | { kind: "challenge"; challenge: Challenge }
+  | { kind: "rematch"; rematch: Challenge }
   | { kind: "blitz"; game: number };
 
 /**
@@ -36,6 +38,8 @@ export function sameKindOfGame(a: GameMode, b: GameMode): boolean {
       return (
         b.kind === "challenge" && encodeChallenge(a.challenge) === encodeChallenge(b.challenge)
       );
+    case "rematch":
+      return b.kind === "rematch" && encodeChallenge(a.rematch) === encodeChallenge(b.rematch);
     case "fresh":
     case "blitz":
       return a.kind === b.kind;

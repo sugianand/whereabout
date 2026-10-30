@@ -26,7 +26,13 @@ import {
   type BlitzBest,
   type BlitzClock,
 } from "@/lib/game/blitz";
-import { CHALLENGE_PARAM, encodeChallenge, parseChallenge, sumScores } from "@/lib/game/challenge";
+import {
+  CHALLENGE_PARAM,
+  encodeChallenge,
+  parseChallenge,
+  sumScores,
+  type Challenge,
+} from "@/lib/game/challenge";
 import { dayKey, pickDaily } from "@/lib/game/daily";
 import {
   loadDailyScores,
@@ -37,6 +43,7 @@ import {
 import { fetchRecords, recordUrl, type Deck, type GameRecord } from "@/lib/game/deck";
 import { loadRecent, pickFresh, rememberPlayed, saveRecent } from "@/lib/game/fresh";
 import type { GameMode } from "@/lib/game/mode";
+import { keepForRematch, loadRematch, pickRematch } from "@/lib/game/rematch";
 import { gameToResume, loadSaved, snapshot, storeSaved, type SavedGame } from "@/lib/game/saved";
 import { ROUNDS_PER_GAME, gameReducer, initialState, totals } from "@/lib/game/state";
 import {
@@ -49,7 +56,7 @@ import {
 import { TIERS, TIER_NAMES, isTier, tierBlurb, type Tier, type Tiers } from "@/lib/game/tiers";
 import type { Continent } from "@/lib/continents";
 import type { CatalogPhoto, GameBackend } from "@/lib/game/types";
-import { formatPoints, maxPoints, type LngLat } from "@/lib/geo";
+import { formatPoints, haversineKm, maxPoints, scoreDistance, type LngLat } from "@/lib/geo";
 import type { Clue } from "@/lib/hints";
 import { feelRevealInBrowser } from "@/lib/feel";
 import { hasSeenIntro, INTRO_TEXT, markIntroSeen } from "@/lib/intro";
@@ -62,7 +69,7 @@ import {
   tallyContinents,
   type PlayerRecord,
 } from "@/lib/playerRecord";
-import { keepOnMap } from "@/lib/playedMap";
+import { keepOnMap, loadPlayed } from "@/lib/playedMap";
 import type { RevealView } from "@/lib/reveal";
 
 import BlitzRing from "./BlitzRing";
@@ -80,6 +87,7 @@ export function modeTitle(mode: GameMode): string {
   if (mode.kind === "region") return `${mode.region} game`;
   if (mode.kind === "challenge") return "A friend's challenge";
   if (mode.kind === "blitz") return "Blitz";
+  if (mode.kind === "rematch") return "Rematch Atlas";
   const label = new Date(`${mode.day}T12:00:00Z`).toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
@@ -257,6 +265,9 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   // The first score of each Daily Five finished in this browser, for the summary's calendar.
   // Read as each game ends (see `next`), so a Daily Five finished in another tab shows up too.
   const [dailyScores, setDailyScores] = useState<DailyScores>({});
+  // The rematch against Atlas the summary offers, worked out as each game ends (see `next`):
+  // null until five photos Atlas beat the player on are waiting (src/lib/game/rematch.ts).
+  const [rematchOffer, setRematchOffer] = useState<Challenge | null>(null);
 
   useEffect(() => {
     if (mode) return;
@@ -324,8 +335,8 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
         ROUNDS_PER_GAME,
       );
     const picked =
-      mode.kind === "challenge"
-        ? mode.challenge.ids.map((id) => ({ id }))
+      mode.kind === "challenge" || mode.kind === "rematch"
+        ? (mode.kind === "challenge" ? mode.challenge : mode.rematch).ids.map((id) => ({ id }))
         : mode.kind === "daily"
           ? pickDaily(pool, mode.day, ROUNDS_PER_GAME)
           : mode.kind === "tier" && tiers
@@ -555,8 +566,18 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
           ? reveal.atlas
           : ((photoId ? records.get(photoId)?.atlas : null) ?? null);
       dispatch({ type: "revealed", reveal, atlas: atlasGuess });
-      // Every revealed round joins your map (/map), kept only in this browser.
       if (photoId) {
+        // A photo not yet on your map is a first try; one Atlas won waits for a rematch.
+        const firstTry = !loadPlayed().some((p) => p.id === photoId);
+        keepForRematch(
+          {
+            id: photoId,
+            score: reveal.score,
+            atlas: atlasGuess ? scoreDistance(haversineKm(atlasGuess, reveal.answer)) : null,
+          },
+          firstTry,
+        );
+        // Every revealed round joins your map (/map), kept only in this browser.
         keepOnMap({
           id: photoId,
           lng: reveal.answer.lng,
@@ -609,6 +630,8 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
       setRecord(after);
       setEarned(newBadges(before, after.badges));
       setBlitzBest(mode.kind === "blitz" ? rememberBlitz(t.player) : null);
+      // Rematches are dealt by the browser, like challenges.
+      setRematchOffer(apiUrl ? null : pickRematch(loadRematch(), deck.ids));
       const todayKey = dayKey(today ?? new Date());
       setDailyScores(
         mode.kind === "daily"
@@ -671,6 +694,13 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
 
   function playBlitz() {
     setMode((m) => ({ kind: "blitz", game: m && "game" in m ? m.game + 1 : 1 }));
+    restart();
+  }
+
+  /** The five photos Atlas beat the player by the most, against their first try on each. */
+  function playRematch() {
+    if (!rematchOffer) return;
+    setMode({ kind: "rematch", rematch: rematchOffer });
     restart();
   }
 
@@ -738,6 +768,8 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
         canChallenge={!apiUrl}
         challenge={mode?.kind === "challenge" ? mode.challenge : undefined}
         blitz={blitzBest ?? undefined}
+        rematch={mode?.kind === "rematch" ? mode.rematch : undefined}
+        onRematch={rematchOffer ? playRematch : undefined}
       />
     );
   }
@@ -816,6 +848,14 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
               Score to beat:{" "}
               <span className="tabular font-semibold">
                 {formatPoints(sumScores(mode.challenge.scores))}
+              </span>
+            </p>
+          )}
+          {mode?.kind === "rematch" && !replayed && (
+            <p className="mt-1 inline-block rounded-full bg-ocean-deep/60 px-2 py-0.5 text-[11px] text-gold backdrop-blur">
+              Your first tries:{" "}
+              <span className="tabular font-semibold">
+                {formatPoints(sumScores(mode.rematch.scores))}
               </span>
             </p>
           )}
@@ -1044,6 +1084,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
             onNext={next}
             sureness={deck.sureness}
             friend={mode?.kind === "challenge" ? mode.challenge.scores[index] : undefined}
+            firstTry={mode?.kind === "rematch" ? mode.rematch.scores[index] : undefined}
             replay={
               replayed
                 ? {

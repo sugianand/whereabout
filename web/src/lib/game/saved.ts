@@ -136,8 +136,10 @@ function isMode(v: unknown, deckIds: readonly string[]): v is GameMode {
       return game && isTier(v.tier);
     case "region":
       return game && (CONTINENTS as readonly unknown[]).includes(v.region);
-    case "challenge": {
-      const c = v.challenge;
+    case "challenge":
+    case "rematch": {
+      // A rematch carries the same shape as a challenge: five photos and a score on each.
+      const c = v.kind === "challenge" ? v.challenge : v.rematch;
       if (!isObj(c) || !Array.isArray(c.ids) || !Array.isArray(c.scores)) return false;
       if (!c.ids.every(isStr) || !c.scores.every(isNum)) return false;
       const value = encodeChallenge({ ids: c.ids as string[], scores: c.scores as number[] });
@@ -203,6 +205,7 @@ export function parseSaved(raw: string | null, deckIds: readonly string[], now: 
     return null;
   }
   if (v.mode.kind === "challenge" && v.mode.challenge.ids.join() !== dealt.join()) return null;
+  if (v.mode.kind === "rematch" && v.mode.rematch.ids.join() !== dealt.join()) return null;
   if (!Array.isArray(results) || results.length > ROUNDS_PER_GAME) return null;
   if (!results.every((r, i) => isResult(r, dealt[i]))) return null;
   // A round in progress is always the one after the last played.

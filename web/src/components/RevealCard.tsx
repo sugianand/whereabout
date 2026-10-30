@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 
 import { countryName, shortlist } from "@/lib/countries";
+import { rematchOutcome } from "@/lib/game/rematch";
 import type { RoundResult } from "@/lib/game/state";
 import { surenessLine, type SurenessBand } from "@/lib/game/sureness";
 import { formatDistance, formatPoints, maxPoints } from "@/lib/geo";
@@ -38,6 +39,8 @@ type RevealCardProps = {
   sureness?: readonly SurenessBand[];
   /** In a friend's challenge, the points the friend scored on this photo. */
   friend?: number;
+  /** In a rematch against Atlas, the points the player scored on their first try here. */
+  firstTry?: number;
 };
 
 function ScoreLine({
@@ -113,6 +116,18 @@ export function verdict(result: RoundResult): string | null {
   return "Atlas got closer this time.";
 }
 
+/** "Your first try scored 1,200 here. You did better.", in a rematch against Atlas. */
+export function firstTryLine(score: number, first: number): string {
+  const outcome = rematchOutcome(score, first);
+  const verdict =
+    outcome === "better"
+      ? "You did better."
+      : outcome === "worse"
+        ? "Your first try was closer."
+        : "Same as last time.";
+  return `Your first try scored ${formatPoints(first)} here. ${verdict}`;
+}
+
 /** "Your friend scored 3,100 here. You beat them.", comparing this round's points. */
 export function friendLine(score: number, friend: number): string {
   const verdict =
@@ -150,6 +165,7 @@ export default function RevealCard({
   sureness,
   replay,
   friend,
+  firstTry,
 }: RevealCardProps) {
   const { reveal, atlas } = result;
   const credit = reveal.answer.credit;
@@ -235,6 +251,11 @@ export default function RevealCard({
       {friend !== undefined && (
         <p className="mt-1 text-sm text-gold" data-testid="friend-line">
           {friendLine(reveal.score, friend)}
+        </p>
+      )}
+      {firstTry !== undefined && (
+        <p className="mt-1 text-sm text-gold" data-testid="first-try-line">
+          {firstTryLine(reveal.score, firstTry)}
         </p>
       )}
 
