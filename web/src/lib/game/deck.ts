@@ -100,7 +100,7 @@ export const LOAD_ERROR =
 
 /** Fetch the records for `ids`, in that order. Rejects with a player-facing message. */
 export async function fetchRecords(
-  deck: Deck,
+  deck: Pick<Deck, "version">,
   ids: readonly string[],
   fetchImpl: typeof fetch = (...args) => fetch(...args),
 ): Promise<GameRecord[]> {

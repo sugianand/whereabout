@@ -41,7 +41,7 @@ test("every round played lands on your map, coloured and counted", async ({ page
   }
   const kept = JSON.parse(
     (await page.evaluate(() => localStorage.getItem("whereabout:played"))) ?? "[]",
-  ) as { id: string; place: string; country: string | null }[];
+  ) as { id: string; place: string; country: string | null; km: number }[];
   expect(kept).toHaveLength(2);
   const countries = new Set(kept.map((p) => p.country).filter(Boolean)).size;
 
@@ -64,6 +64,30 @@ test("every round played lands on your map, coloured and counted", async ({ page
   await expect(rounds.first()).toContainText(kept[1].place);
   await rounds.first().click();
   await expect(rounds.first()).toHaveAttribute("aria-pressed", "true");
+
+  // Both rounds are closest calls, nearest first, each with its photo and Atlas's distance.
+  const calls = page.getByTestId("closest-call");
+  await expect(calls).toHaveCount(2);
+  const nearest = [...kept].sort((a, b) => a.km - b.km)[0];
+  await expect(calls.first()).toContainText(nearest.place);
+  for (const card of await calls.all()) {
+    await expect(card.getByRole("img")).toHaveJSProperty("complete", true);
+    // The fixture photo stands in for Wikimedia's thumbnail.
+    expect(
+      await card.getByRole("img").evaluate((i: HTMLImageElement) => i.naturalWidth),
+    ).toBeGreaterThan(0);
+    await expect(card).toContainText(/Atlas\s*([\d.,]+ k?m|No guess)/);
+  }
+  // A closest call opens a game on its photo's continent.
+  const play = calls.getByRole("link", { name: /^Play .+ →$/ }).first();
+  if ((await play.count()) > 0) {
+    const name = (await play.textContent())!.replace(/^Play | →$/g, "");
+    await play.click();
+    await expect(page).toHaveURL(/\?region=[a-z-]+$/);
+    await expect(page.getByText(`${name} game`, { exact: true })).toBeVisible();
+    await page.goBack();
+    await expect(calls).toHaveCount(2);
+  }
 
   // Nothing spills sideways on a phone.
   const overflow = await page.evaluate(

@@ -21,6 +21,7 @@ import {
   type PlayedPhoto,
 } from "@/lib/playedMap";
 
+import ClosestCalls, { type ClosestCallsDeck } from "./ClosestCalls";
 import { INITIAL_VIEW } from "./Globe";
 import UnitsSwitch from "./UnitsSwitch";
 
@@ -90,9 +91,10 @@ function addLayers(map: MapLibreMap) {
  * Your map: every photo you've played on the globe, a dot coloured by how close your pin
  * landed, with the countries and continents you've seen counted and your rounds listed newest
  * first. Picking a round in the list flies the globe to it. Everything comes from this browser
- * (`lib/playedMap.ts`), read after mount so the static page never guesses at it.
+ * (`lib/playedMap.ts`), read after mount so the static page never guesses at it. With the
+ * deck, the page also shows your closest calls (`ClosestCalls`).
  */
-export default function PlayedMap() {
+export default function PlayedMap({ deck }: { deck?: ClosestCallsDeck } = {}) {
   const [played, setPlayed] = useState<PlayedPhoto[] | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
@@ -243,6 +245,8 @@ export default function PlayedMap() {
         </ul>
         <UnitsSwitch />
       </div>
+
+      {deck && <ClosestCalls played={played} deck={deck} />}
 
       <section className="mt-12 grid gap-10 md:grid-cols-[1fr_1.4fr]">
         <div>

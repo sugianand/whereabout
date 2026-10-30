@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import PlayedMap from "@/components/PlayedMap";
+import { bundledDeck } from "@/lib/game/bundled";
 
 export const metadata: Metadata = {
   title: "Your map — Whereabout",
@@ -22,7 +23,11 @@ export default function YourMapPage() {
         Every photo you&apos;ve played, where it was really taken, coloured by how close your pin
         landed. It stays in this browser and nowhere else.
       </p>
-      <PlayedMap />
+      {/* Only what the closest calls need: where records live, which photos are dealt, and
+          the continents a game can be played on. */}
+      <PlayedMap
+        deck={{ version: bundledDeck.version, ids: bundledDeck.ids, regions: bundledDeck.regions }}
+      />
     </main>
   );
 }
