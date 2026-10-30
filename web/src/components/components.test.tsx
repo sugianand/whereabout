@@ -542,11 +542,10 @@ describe("RevealCard on phones", () => {
     expect(panel).not.toHaveClass("hidden");
   });
 
-  it("keeps the score and the verdict outside the fold", () => {
+  it("keeps the score and Atlas's line outside the fold", () => {
     render(<RevealCard result={thinking(result(5, 100, 4900))} isLast={false} onNext={() => {}} />);
     const panel = screen.getByTestId("atlas-thinking");
-    const verdictLine = screen.getByText("Atlas got closer this time.");
-    expect(panel).not.toContainElement(verdictLine);
+    expect(panel).not.toContainElement(screen.getByTestId("atlas-line"));
     expect(panel).not.toContainElement(screen.getByRole("button", { name: "Next photo" }));
   });
 
@@ -740,5 +739,28 @@ describe("RevealCard postcard", () => {
   it("has no postcard when the photo has none", () => {
     render(<RevealCard result={result(5, 100, 4900)} isLast={false} onNext={() => {}} />);
     expect(screen.queryByTestId("postcard")).toBeNull();
+  });
+});
+
+describe("RevealCard Atlas's line", () => {
+  it("shows Atlas's verdict from the round's numbers, and announces it once", () => {
+    // Player 5 km out with 100 points (hints), Atlas 10 km out with 4,900: Atlas wins on points.
+    const r = { ...result(5, 100, 4900) };
+    r.reveal = { ...r.reveal, hintsUsed: 3 };
+    render(<RevealCard result={r} isLast={false} onNext={() => {}} />);
+    const line = screen.getByTestId("atlas-line");
+    expect(line).toHaveTextContent(
+      "Atlas: “You were 5.0 km closer, but your hints cost you: I take it on points.”",
+    );
+    expect(line).toHaveAttribute("aria-hidden", "true");
+    expect(screen.getByText(/Atlas says: You were 5\.0 km closer/)).toHaveAttribute(
+      "aria-live",
+      "polite",
+    );
+  });
+
+  it("has no line when Atlas sat the photo out", () => {
+    render(<RevealCard result={result(5, 100)} isLast={false} onNext={() => {}} />);
+    expect(screen.queryByTestId("atlas-line")).toBeNull();
   });
 });

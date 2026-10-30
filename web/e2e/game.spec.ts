@@ -1063,6 +1063,31 @@ test("the reveal shows the photo's real clues next to what Atlas read", async ({
   await expect(card.getByText(/ESA WorldCover 2021/)).toBeVisible();
 });
 
+test("Atlas has its say at the reveal, from that round's own numbers", async ({ page }) => {
+  const catalog = JSON.parse(readFileSync(resolve(process.cwd(), "src/data/photos.json"), "utf8"));
+  const atlas = JSON.parse(readFileSync(resolve(process.cwd(), "src/data/atlas.json"), "utf8"));
+  await page.goto("./?daily");
+  const card = await playRoundWithKeyboard(page);
+  const source = await card.getByRole("link", { name: /^Photo: / }).getAttribute("href");
+  const photo = catalog.find(
+    (p: { credit: { sourceUrl: string } }) => p.credit.sourceUrl === source,
+  );
+  const guess = atlas.guesses[photo.id];
+  const line = card.getByTestId("atlas-line");
+  if (!guess) {
+    await expect(line).toHaveCount(0);
+    return;
+  }
+  // Outside the phone fold, in Atlas's voice, with the sureness the round really had.
+  await expect(line).toBeVisible();
+  await expect(line).toHaveText(/^Atlas: “.+”$/);
+  if (guess.topCountries.length > 0)
+    await expect(line).toContainText(`${Math.max(1, Math.round(guess.confidence * 100))}%`);
+  await expect(line).toContainText(
+    /I beat you|I was .+ closer|You beat me|You edged me|You were .+ closer|Same points|Neither of us/,
+  );
+});
+
 test("every reveal teaches one thing about the place: its postcard under the name", async ({
   page,
   isMobile,

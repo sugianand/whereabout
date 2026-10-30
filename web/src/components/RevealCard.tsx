@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
+import { atlasLine } from "@/lib/atlasVoice";
 import { countryName, shortlist } from "@/lib/countries";
 import { rematchOutcome } from "@/lib/game/rematch";
 import type { RoundResult } from "@/lib/game/state";
@@ -196,6 +197,7 @@ export default function RevealCard({
   const thinkingOpen = openFor === result;
   const thinkingId = useId();
   const units = useUnits();
+  const atlasSays = atlasLine(result, units);
 
   // Move focus to the next action so keyboard players can press Enter to continue.
   useEffect(() => {
@@ -245,6 +247,7 @@ export default function RevealCard({
           ? ` Atlas was ${formatDistance(atlas.distanceKm, units)} away and scored ${formatPoints(atlas.score)}.`
           : ""}
         {said ? ` ${said}` : ""}
+        {atlasSays ? ` Atlas says: ${atlasSays}` : ""}
         {hinted ? ` ${hinted}` : ""}
       </p>
 
@@ -261,7 +264,12 @@ export default function RevealCard({
         </p>
       )}
 
-      {said && <p className="mt-3 text-chalk">{said}</p>}
+      {/* Atlas's own verdict, from this round's numbers; the plain one is announced above. */}
+      {atlasSays && (
+        <p className="mt-3 text-chalk" aria-hidden="true" data-testid="atlas-line">
+          <span className="font-semibold text-sonar">Atlas: </span>“{atlasSays}”
+        </p>
+      )}
       {friend !== undefined && (
         <p className="mt-1 text-sm text-gold" data-testid="friend-line">
           {friendLine(reveal.score, friend)}
