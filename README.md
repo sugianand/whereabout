@@ -26,6 +26,11 @@ streak in your browser beside the one from anywhere.
 **Survival** (at `/survival`, linked from the results screen) deals photo after photo until your
 misses empty a 5,000-point health bar: each round costs half the points it missed, a pin within
 25 km heals 1,000 instead, and your best run (photos survived, then points) is kept in your browser.
+**Further North** (at `/further-north`, linked from the results screen) shows two photos and asks
+which was taken further north. A right pick keeps the second photo and deals a new one beside it;
+the first wrong pick ends the run. Photos under one degree of latitude apart count either way. The
+reveal names both places with their latitudes and says whether Atlas, going by its own guesses,
+would have got the pair; your best streak is kept in your browser.
 **Pass and play** (at `/pass-and-play`, linked from the results screen) is for two to four players
 on one phone or laptop: each pins the same photo in turn behind a "Pass to …" screen that hides the
 last pin, then one reveal shows every numbered pin, Atlas's, and the running table. Five photos a

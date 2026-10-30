@@ -686,6 +686,17 @@ export default function Summary({
       </Link>
 
       <Link
+        href="/further-north"
+        className="mt-4 block rounded-2xl border border-flare/40 p-5 transition hover:border-flare hover:bg-flare/5"
+      >
+        <span className="block font-sign text-2xl font-bold text-flare">Further North</span>
+        <span className="mt-1 block text-chalk-dim">
+          Two photos, one question: which was taken further north? Call pairs until your first miss,
+          and see if Atlas would have got them.
+        </span>
+      </Link>
+
+      <Link
         href="/pass-and-play"
         className="mt-4 block rounded-2xl border border-flare/40 p-5 transition hover:border-flare hover:bg-flare/5"
       >
