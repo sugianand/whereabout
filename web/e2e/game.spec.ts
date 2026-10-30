@@ -91,6 +91,44 @@ test("a whole Daily Five can be played with the keyboard", async ({ page }) => {
     expect(sent).not.toContain(place);
     await expect(card).not.toContainText(place);
   }
+
+  // The same card as a picture: saved as a download where the browser can't share files...
+  const picture = page.getByRole("button", { name: "Share as a picture" });
+  const download = page.waitForEvent("download");
+  await picture.click();
+  const saved_png = await download;
+  expect(saved_png.suggestedFilename()).toMatch(/^whereabout-daily-five-[a-z]+-\d+\.png$/);
+  const png = readFileSync(await saved_png.path());
+  expect(png.subarray(1, 4).toString()).toBe("PNG");
+  expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1080, 1080]);
+  await expect(page.getByText("Picture saved. Post it anywhere.")).toBeVisible();
+
+  // ...and handed to the share sheet, with the text card alongside, where it can.
+  await page.evaluate(() => {
+    const w = window as unknown as { picture: object };
+    Object.defineProperty(navigator, "canShare", {
+      value: (d: ShareData) => (d.files?.length ?? 0) > 0,
+      configurable: true,
+    });
+    Object.defineProperty(navigator, "share", {
+      value: async (d: ShareData) => {
+        const f = d.files![0];
+        w.picture = { name: f.name, type: f.type, size: f.size, text: d.text };
+      },
+      configurable: true,
+    });
+  });
+  await picture.click();
+  await expect(page.getByText("Picture shared.")).toBeVisible();
+  const shared = await page.evaluate(
+    () => (window as unknown as { picture: { size: number } }).picture,
+  );
+  expect(shared).toMatchObject({
+    name: saved_png.suggestedFilename(),
+    type: "image/png",
+    text: sent,
+  });
+  expect(shared.size).toBeGreaterThan(1000);
   expect(errors).toEqual([]);
 });
 

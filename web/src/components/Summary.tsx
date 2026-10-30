@@ -28,6 +28,12 @@ import {
   type ShareCard,
   type ShareOutcome,
 } from "@/lib/share";
+import {
+  renderShareImage,
+  sendShareImage,
+  shareImageName,
+  type ImageOutcome,
+} from "@/lib/shareImage";
 import { useCountUp } from "@/lib/useCountUp";
 
 import DailyArchive from "./DailyArchive";
@@ -309,6 +315,22 @@ function ContinentRecordTable({ record }: { record: PlayerRecord }) {
   );
 }
 
+type Sent =
+  | { what: "result" | "challenge"; outcome: ShareOutcome }
+  | { what: "picture"; outcome: ImageOutcome | "drawing" };
+
+const PICTURE_NOTE: Record<ImageOutcome | "drawing", string> = {
+  drawing: "Drawing your picture…",
+  shared: "Picture shared.",
+  downloaded: "Picture saved. Post it anywhere.",
+  cancelled: "",
+  failed: "Couldn't draw the picture in this browser. Share the result as text instead.",
+};
+
+function sentNote(sent: Sent): string {
+  return sent.what === "picture" ? PICTURE_NOTE[sent.outcome] : SENT_NOTE[sent.what][sent.outcome];
+}
+
 const SENT_NOTE: Record<"result" | "challenge", Record<ShareOutcome, string>> = {
   result: {
     shared: "Result shared.",
@@ -405,9 +427,7 @@ export default function Summary({
     row?.scrollIntoView?.({ block: "center" });
   }, [returnedFrom]);
   // The last thing sent from this screen, the result card or a challenge link, and how it went.
-  const [sent, setSent] = useState<{ what: "result" | "challenge"; outcome: ShareOutcome } | null>(
-    null,
-  );
+  const [sent, setSent] = useState<Sent | null>(null);
   // The address only matters once shared; on the server there is no window yet.
   const card = shareCard(
     title,
@@ -417,6 +437,19 @@ export default function Summary({
 
   async function share() {
     setSent({ what: "result", outcome: await sendShare(shareText(card), navigator) });
+  }
+
+  async function sharePicture() {
+    setSent({ what: "picture", outcome: "drawing" });
+    let outcome: ImageOutcome = "failed";
+    try {
+      const blob = await renderShareImage(card);
+      if (blob)
+        outcome = await sendShareImage(blob, shareImageName(card), shareText(card), navigator);
+    } catch {
+      // No canvas to draw on: the note says so and the text share still works.
+    }
+    setSent({ what: "picture", outcome });
   }
 
   async function sendChallenge() {
@@ -565,6 +598,14 @@ export default function Summary({
         >
           Share result
         </button>
+        <button
+          type="button"
+          onClick={sharePicture}
+          disabled={sent?.what === "picture" && sent.outcome === "drawing"}
+          className="rounded-full border border-flare/60 px-6 py-3 font-semibold text-flare transition hover:border-flare disabled:opacity-60"
+        >
+          Share as a picture
+        </button>
         {canChallenge && (
           <button
             type="button"
@@ -591,7 +632,7 @@ export default function Summary({
           </button>
         )}
         <p role="status" className="text-sm text-chalk-dim">
-          {sent && SENT_NOTE[sent.what][sent.outcome]}
+          {sent && sentNote(sent)}
         </p>
       </div>
 
@@ -626,8 +667,8 @@ export default function Summary({
       >
         <span className="block font-sign text-2xl font-bold text-gold">Your map</span>
         <span className="mt-1 block text-chalk-dim">
-          Every photo you&apos;ve played on one globe, coloured by how close your pin landed,
-          with the countries you&apos;ve seen.
+          Every photo you&apos;ve played on one globe, coloured by how close your pin landed, with
+          the countries you&apos;ve seen.
         </span>
       </Link>
 
