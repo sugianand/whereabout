@@ -23,6 +23,7 @@ import type { RevealView } from "@/lib/reveal";
 import type { Units } from "@/lib/units";
 import { useUnits } from "@/lib/useUnits";
 
+import GamesMenu from "./GamesMenu";
 import Globe from "./Globe";
 import PhotoViewer from "./PhotoViewer";
 import UnitsSwitch from "./UnitsSwitch";
@@ -227,6 +228,9 @@ export default function Survival({ deck, loadRecords, random }: SurvivalProps) {
             Whereabout
           </Link>
           <p className="mt-1 text-sm text-chalk-dim">Survival: last as long as you can</p>
+          <div className="mt-2">
+            <GamesMenu screen="survival" streakHref="/streak" />
+          </div>
         </div>
         <div className="pointer-events-auto flex flex-col items-end text-right">
           <dl>

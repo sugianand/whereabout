@@ -19,6 +19,7 @@ import {
 import { placeholderUrl, sources } from "@/lib/photoSources";
 
 import ControlsHelp from "./ControlsHelp";
+import GamesMenu from "./GamesMenu";
 
 type OddOneOutProps = {
   deck: Deck;
@@ -186,6 +187,7 @@ export default function OddOneOut({ deck, loadRecords, random }: OddOneOutProps)
           </p>
         </div>
         <div className="flex shrink-0 items-start gap-3">
+          <GamesMenu screen="odd-one-out" streakHref="/streak" />
           <ControlsHelp screen="odd-one-out" />
           <dl className="text-right">
             <dt className="text-sm text-chalk-dim">Streak</dt>

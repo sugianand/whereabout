@@ -31,7 +31,10 @@ function keysTo(from: LngLat, wanted: (country: string | null) => boolean): Keys
   for (let dy = Math.ceil(-89 - from.lat); dy <= Math.floor(89 - from.lat); dy++) {
     for (let dx = -180; dx <= 180; dx++) {
       const keys: Keys = [
-        { key: dx < 0 ? "Shift+ArrowLeft" : "Shift+ArrowRight", times: Math.floor(Math.abs(dx) / 10) },
+        {
+          key: dx < 0 ? "Shift+ArrowLeft" : "Shift+ArrowRight",
+          times: Math.floor(Math.abs(dx) / 10),
+        },
         { key: dx < 0 ? "ArrowLeft" : "ArrowRight", times: Math.abs(dx) % 10 },
         { key: dy < 0 ? "Shift+ArrowDown" : "Shift+ArrowUp", times: Math.floor(Math.abs(dy) / 10) },
         { key: dy < 0 ? "ArrowDown" : "ArrowUp", times: Math.abs(dy) % 10 },
@@ -86,7 +89,11 @@ test("Country Streak counts countries named in a row and ends on the first miss"
   page.on("pageerror", (e) => errors.push(e.message));
 
   await page.goto("./");
-  await page.getByRole("link", { name: "Country Streak" }).click();
+  await page.getByRole("button", { name: "Games" }).click();
+  await page
+    .getByRole("dialog", { name: "Ways to play" })
+    .getByRole("link", { name: /^Country Streak/ })
+    .click();
   await expect(page).toHaveURL(/\/streak\/?$/);
   await expect(page.getByText("Country Streak: name the country")).toBeVisible();
   await expect(page.getByRole("button", { name: "Tap the country on the globe" })).toBeDisabled();
@@ -137,7 +144,11 @@ test("a streak can be dealt from one continent, with its own best", async ({ pag
   // From a Europe game, Country Streak opens on Europe too.
   await page.goto("./?region=europe");
   await expect(page.getByText("Europe game", { exact: true })).toBeVisible();
-  await page.getByRole("link", { name: "Country Streak" }).click();
+  await page.getByRole("button", { name: "Games" }).click();
+  await page
+    .getByRole("dialog", { name: "Ways to play" })
+    .getByRole("link", { name: /^Country Streak/ })
+    .click();
   await expect(page).toHaveURL(/\/streak\/?\?region=europe$/);
   await expect(page.getByText(/^Country Streak in Europe: [\d,]+ photos$/)).toBeVisible();
   await expect(page.getByRole("combobox", { name: /^Which photos/ })).toHaveValue("europe");

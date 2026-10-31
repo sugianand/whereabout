@@ -748,8 +748,14 @@ describe("Blitz", { timeout: 20000 }, () => {
     window.history.replaceState(null, "", "/");
     render(<Game {...bundledGame} today={TODAY} />);
     await mapReady();
-    fireEvent.click(await screen.findByRole("button", { name: "Blitz" }, WAIT));
+    fireEvent.click(await screen.findByRole("button", { name: "Games" }, WAIT));
+    fireEvent.click(
+      within(screen.getByRole("dialog", { name: "Ways to play" })).getByRole("button", {
+        name: /^Blitz/,
+      }),
+    );
     await waitFor(() => expect(window.location.search).toBe("?blitz"));
+    expect(screen.queryByRole("dialog")).toBeNull();
     for (let i = 0; i < ROUNDS_PER_GAME; i++) {
       fireEvent.load(await screen.findByRole("img", { name: /photo to locate/ }, WAIT));
       await screen.findByTestId("blitz-clock", {}, WAIT);

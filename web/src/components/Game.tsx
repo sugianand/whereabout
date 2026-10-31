@@ -76,6 +76,7 @@ import type { RevealView } from "@/lib/reveal";
 import BlitzRing from "./BlitzRing";
 import ControlsHelp from "./ControlsHelp";
 import FeelToggle from "./FeelToggle";
+import GamesMenu from "./GamesMenu";
 import Globe from "./Globe";
 import PhotoViewer from "./PhotoViewer";
 import RevealCard from "./RevealCard";
@@ -695,6 +696,12 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
     restart();
   }
 
+  /** A fresh untimed game of five, from a Blitz (the Games menu's "Five rounds"). */
+  function playRounds() {
+    setMode((m) => ({ kind: "fresh", game: m && "game" in m ? m.game + 1 : 1 }));
+    restart();
+  }
+
   function playBlitz() {
     setMode((m) => ({ kind: "blitz", game: m && "game" in m ? m.game + 1 : 1 }));
     restart();
@@ -971,27 +978,20 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
                   onPick={playFrom}
                 />
               )}
-              {!apiUrl && mode.kind !== "blitz" && (
-                <button
-                  type="button"
-                  onClick={playBlitz}
-                  title="30 seconds a photo: your pin goes in when time runs out"
-                  className="pointer-events-auto shrink-0 rounded-full border border-flare/50 bg-ocean-deep/60 px-3 py-1 text-xs font-semibold text-flare backdrop-blur transition hover:border-flare"
-                >
-                  Blitz
-                </button>
-              )}
-              {!apiUrl && deck.streakIds.length > 0 && (
-                <Link
-                  // From a continent game, the streak deals from the same continent.
-                  href={
-                    mode.kind === "region" ? `/streak?region=${regionSlug(mode.region)}` : "/streak"
-                  }
-                  className="pointer-events-auto shrink-0 rounded-full border border-chalk/30 bg-ocean-deep/60 px-3 py-1 text-xs font-semibold backdrop-blur transition hover:border-chalk"
-                >
-                  <span className={NARROW_HIDDEN}>Country</span> Streak
-                </Link>
-              )}
+              <GamesMenu
+                screen={mode.kind === "blitz" ? "blitz" : "round"}
+                blitz={!apiUrl}
+                onPlayBlitz={playBlitz}
+                onPlayRound={mode.kind === "blitz" ? playRounds : undefined}
+                // From a continent game, the streak deals from the same continent.
+                streakHref={
+                  !apiUrl && deck.streakIds.length > 0
+                    ? mode.kind === "region"
+                      ? `/streak?region=${regionSlug(mode.region)}`
+                      : "/streak"
+                    : undefined
+                }
+              />
               <FeelToggle />
               <ControlsHelp screen="round" />
             </div>

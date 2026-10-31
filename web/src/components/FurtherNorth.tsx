@@ -23,6 +23,7 @@ import type { Units } from "@/lib/units";
 import { useUnits } from "@/lib/useUnits";
 
 import ControlsHelp from "./ControlsHelp";
+import GamesMenu from "./GamesMenu";
 import UnitsSwitch from "./UnitsSwitch";
 
 type FurtherNorthProps = {
@@ -202,6 +203,7 @@ export default function FurtherNorth({ deck, loadRecords, random }: FurtherNorth
           </p>
         </div>
         <div className="flex shrink-0 items-start gap-3">
+          <GamesMenu screen="further-north" streakHref="/streak" />
           <ControlsHelp screen="further-north" />
           <dl className="text-right">
             <dt className="text-sm text-chalk-dim">Streak</dt>

@@ -519,7 +519,11 @@ test("a Blitz game gives each photo 30 seconds, then locks the round in for 0 wi
 }) => {
   test.setTimeout(120_000);
   await page.goto("./");
-  await page.getByRole("button", { name: "Blitz", exact: true }).click();
+  await page.getByRole("button", { name: "Games" }).click();
+  await page
+    .getByRole("dialog", { name: "Ways to play" })
+    .getByRole("button", { name: /^Blitz/ })
+    .click();
   await expect(page).toHaveURL(/\?blitz$/);
   await expect(page.getByText("Blitz", { exact: true })).toBeVisible();
 
@@ -742,7 +746,11 @@ test("on the narrowest phones every header control stays on screen", async ({ pa
     }
   }
   // The shortened labels still name what they do, and still work.
-  await page.getByRole("link", { name: /Streak$/ }).click();
+  await page.getByRole("button", { name: "Games" }).click();
+  await page
+    .getByRole("dialog", { name: "Ways to play" })
+    .getByRole("link", { name: /^Country Streak/ })
+    .click();
   await expect(page).toHaveURL(/\/streak\/?$/);
 });
 

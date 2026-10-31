@@ -25,6 +25,7 @@ import type { Continent } from "@/lib/continents";
 import type { LngLat } from "@/lib/geo";
 import type { RevealView } from "@/lib/reveal";
 
+import GamesMenu from "./GamesMenu";
 import Globe from "./Globe";
 import PhotoViewer from "./PhotoViewer";
 
@@ -255,8 +256,9 @@ export default function CountryStreak({ deck, loadRecords, random }: CountryStre
               ? `Country Streak in ${region}: ${photos(regions[region]!.length)}`
               : "Country Streak: name the country"}
           </p>
-          {regionList.length > 0 && (
-            <div className="mt-2">
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <GamesMenu screen="streak" streakHref={slug ? `/streak?region=${slug}` : "/streak"} />
+            {regionList.length > 0 && (
               <select
                 aria-label="Which photos: from anywhere, or taken on one continent"
                 value={slug ?? "any"}
@@ -272,8 +274,8 @@ export default function CountryStreak({ deck, loadRecords, random }: CountryStre
                   ))}
                 </optgroup>
               </select>
-            </div>
-          )}
+            )}
+          </div>
         </div>
         <dl className="pointer-events-auto text-right">
           <div>
