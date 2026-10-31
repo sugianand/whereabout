@@ -36,6 +36,9 @@ taken on one continent and one on another; tap the odd one (keys 1 to 4 on a key
 tap deals four more, the first miss ends the run, and your best run is kept in your browser. The
 reveal names every photo's continent and place, and what Atlas would have picked from its own
 guesses: the one photo it placed on a different continent, or else its pin furthest from the rest.
+The results screen gathers these quick games (Blitz, Country Streak, Survival, Further North and
+Odd one out) in one list, each with your best from this browser beside its name, so you see what
+to beat before you open one; Blitz starts straight from its card.
 **Pass and play** (at `/pass-and-play`, linked from the results screen) is for two to four players
 on one phone or laptop: each pins the same photo in turn behind a "Pass to …" screen that hides the
 last pin, then one reveal shows every numbered pin, Atlas's, and the running table. Five photos a

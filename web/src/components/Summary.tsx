@@ -41,6 +41,7 @@ import { useCountUp } from "@/lib/useCountUp";
 
 import DailyArchive from "./DailyArchive";
 import GameTour from "./GameTour";
+import QuickGames from "./QuickGames";
 import UnitsSwitch from "./UnitsSwitch";
 
 type SummaryProps = {
@@ -84,6 +85,10 @@ type SummaryProps = {
   rematch?: Challenge;
   /** Deal the five photos Atlas beat the player by the most; omitted until there are five. */
   onRematch?: () => void;
+  /** Start a Blitz game from the quick games; omitted, Blitz isn't offered there. */
+  onPlayBlitz?: () => void;
+  /** Where the quick games' Country Streak opens; omitted, it isn't offered there. */
+  streakHref?: string;
 };
 
 /** "You beat your first tries by 2,300 points.", from this game's and the first tries' totals. */
@@ -421,6 +426,8 @@ export default function Summary({
   blitz,
   rematch,
   onRematch,
+  onPlayBlitz,
+  streakHref,
 }: SummaryProps) {
   const t = totals(results);
   const units = useUnits();
@@ -674,38 +681,7 @@ export default function Summary({
         />
       )}
 
-      <Link
-        href="/survival"
-        className="mt-10 block rounded-2xl border border-flare/40 p-5 transition hover:border-flare hover:bg-flare/5"
-      >
-        <span className="block font-sign text-2xl font-bold text-flare">Survival</span>
-        <span className="mt-1 block text-chalk-dim">
-          One photo after another until your misses empty a 5,000-point health bar. A pin within 25
-          km heals.
-        </span>
-      </Link>
-
-      <Link
-        href="/further-north"
-        className="mt-4 block rounded-2xl border border-flare/40 p-5 transition hover:border-flare hover:bg-flare/5"
-      >
-        <span className="block font-sign text-2xl font-bold text-flare">Further North</span>
-        <span className="mt-1 block text-chalk-dim">
-          Two photos, one question: which was taken further north? Call pairs until your first miss,
-          and see if Atlas would have got them.
-        </span>
-      </Link>
-
-      <Link
-        href="/odd-one-out"
-        className="mt-4 block rounded-2xl border border-flare/40 p-5 transition hover:border-flare hover:bg-flare/5"
-      >
-        <span className="block font-sign text-2xl font-bold text-flare">Odd one out</span>
-        <span className="mt-1 block text-chalk-dim">
-          Four photos, three from one continent: tap the one from somewhere else, until your first
-          miss.
-        </span>
-      </Link>
+      <QuickGames onPlayBlitz={onPlayBlitz} streakHref={streakHref} blitzBest={blitz?.best} />
 
       <Link
         href="/pass-and-play"

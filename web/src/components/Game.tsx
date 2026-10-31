@@ -770,6 +770,14 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
         blitz={blitzBest ?? undefined}
         rematch={mode?.kind === "rematch" ? mode.rematch : undefined}
         onRematch={rematchOffer ? playRematch : undefined}
+        onPlayBlitz={apiUrl ? undefined : playBlitz}
+        streakHref={
+          apiUrl || deck.streakIds.length === 0
+            ? undefined
+            : mode?.kind === "region"
+              ? `/streak?region=${regionSlug(mode.region)}`
+              : "/streak"
+        }
       />
     );
   }
