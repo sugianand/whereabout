@@ -83,7 +83,9 @@ test("every round played lands on your map, coloured and counted", async ({ page
   if ((await play.count()) > 0) {
     const name = (await play.textContent())!.replace(/^Play | →$/g, "");
     await play.click();
-    await expect(page).toHaveURL(/\?region=[a-z-]+$/);
+    // A client-side navigation away from a spinning, software-rendered globe; on the CI
+    // runner's two cores it has taken longer than the default 5 s to commit the new URL.
+    await expect(page).toHaveURL(/\?region=[a-z-]+$/, { timeout: 20_000 });
     await expect(page.getByText(`${name} game`, { exact: true })).toBeVisible();
     await page.goBack();
     await expect(calls).toHaveCount(2);
