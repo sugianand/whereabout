@@ -58,6 +58,11 @@ const BLURBS: Record<QuickMode, { name: string; blurb: string }> = {
     blurb:
       "Four photos, three from one continent: tap the one from somewhere else, until your first miss.",
   },
+  "how-far": {
+    name: "How far apart?",
+    blurb:
+      "Two photos and a slider: set how far apart they were taken. Five pairs, scored by how many times off you were, against Atlas.",
+  },
 };
 
 const CARD =
@@ -171,7 +176,7 @@ export default function QuickGames({
     <ul className={compact ? "space-y-2" : "mt-3 space-y-4"}>
       {offerBlitz && <li>{card("blitz", blitzHref, onPlayBlitz)}</li>}
       {offerStreak && <li>{card("streak", streakHref)}</li>}
-      {(["survival", "further-north", "odd-one-out"] as const).map((mode) => (
+      {(["survival", "further-north", "odd-one-out", "how-far"] as const).map((mode) => (
         <li key={mode}>{card(mode, `/${mode}`)}</li>
       ))}
     </ul>

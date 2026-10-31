@@ -96,4 +96,13 @@ describe("isShortcut", () => {
     button.remove();
     expect(isTypingTarget(null)).toBe(false);
   });
+
+  it("still fires on a slider, which takes only arrow and paging keys", () => {
+    const slider = document.createElement("input");
+    slider.type = "range";
+    document.body.append(slider);
+    expect(isTypingTarget(slider)).toBe(false);
+    expect(isShortcut(press("?", { shiftKey: true }, slider))).toBe(true);
+    slider.remove();
+  });
 });

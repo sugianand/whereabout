@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { BLITZ_BEST_KEY } from "./blitz";
 import { BEST_NORTH_KEY } from "./furtherNorth";
+import { BEST_HOW_FAR_KEY } from "./howFar";
 import { BEST_ODD_KEY } from "./oddOneOut";
 import { NO_BESTS, QUICK_MODES, bestLine, bestStreak, loadQuickBests } from "./quickBests";
 import { BEST_STREAK_KEY, bestStreakKey } from "./streak";
@@ -21,12 +22,14 @@ describe("loadQuickBests", () => {
     localStorage.setItem(BEST_SURVIVAL_KEY, JSON.stringify({ survived: 4, total: 15200 }));
     localStorage.setItem(BEST_NORTH_KEY, "9");
     localStorage.setItem(BEST_ODD_KEY, "3");
+    localStorage.setItem(BEST_HOW_FAR_KEY, "3120");
     expect(loadQuickBests()).toEqual({
       blitz: 18250,
       streak: { streak: 6, region: null },
       survival: { survived: 4, total: 15200 },
       "further-north": 9,
       "odd-one-out": 3,
+      "how-far": 3120,
     });
   });
 
@@ -34,7 +37,9 @@ describe("loadQuickBests", () => {
     localStorage.setItem(BEST_NORTH_KEY, "0");
     localStorage.setItem(BEST_ODD_KEY, "not a number");
     localStorage.setItem(BEST_SURVIVAL_KEY, "{");
+    localStorage.setItem(BEST_HOW_FAR_KEY, "9000");
     const bests = loadQuickBests();
+    expect(bests["how-far"]).toBeNull();
     expect(bests["further-north"]).toBeNull();
     expect(bests["odd-one-out"]).toBeNull();
     expect(bests.survival).toBeNull();
@@ -67,6 +72,7 @@ describe("bestLine", () => {
     survival: { survived: 1, total: 4800 },
     "further-north": 9,
     "odd-one-out": 1,
+    "how-far": 3120,
   };
 
   it("reads each best the way its card shows it", () => {
@@ -75,6 +81,7 @@ describe("bestLine", () => {
     expect(bestLine("survival", bests)).toBe("Best: 1 photo, 4,800 points");
     expect(bestLine("further-north", bests)).toBe("Best: 9 in a row");
     expect(bestLine("odd-one-out", bests)).toBe("Best: 1 in a row");
+    expect(bestLine("how-far", bests)).toBe("Best: 3,120 points");
   });
 
   it("names no continent for an all-world streak, and counts photos in the plural", () => {

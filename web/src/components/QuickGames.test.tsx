@@ -20,6 +20,7 @@ describe("QuickGames", () => {
     expect(screen.getByTestId("best-further-north")).toHaveTextContent("Best: 5 in a row");
     expect(screen.getByTestId("best-survival")).toHaveTextContent("No best yet");
     expect(screen.getByTestId("best-odd-one-out")).toHaveTextContent("No best yet");
+    expect(screen.getByTestId("best-how-far")).toHaveTextContent("No best yet");
   });
 
   it("links every mode, and Blitz starts from its button", () => {
@@ -37,6 +38,10 @@ describe("QuickGames", () => {
     expect(screen.getByRole("link", { name: /^Odd one out/ })).toHaveAttribute(
       "href",
       "/odd-one-out",
+    );
+    expect(screen.getByRole("link", { name: /^How far apart\?/ })).toHaveAttribute(
+      "href",
+      "/how-far",
     );
     fireEvent.click(screen.getByRole("button", { name: /^Blitz/ }));
     expect(onPlayBlitz).toHaveBeenCalledOnce();

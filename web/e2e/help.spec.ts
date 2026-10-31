@@ -191,6 +191,46 @@ test.describe("on a keyboard", () => {
       }
     });
   }
+  test("? lists How far apart?'s controls, and every key it lists works", async ({ page }) => {
+    await page.goto("./how-far");
+    const checked = new Set<string>();
+    const slider = page.getByRole("slider", { name: "How far apart were these taken?" });
+    const estimate = page.getByTestId("how-far-estimate");
+    const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+    await expect(page.getByRole("button", { name: "Lock it in" })).toBeEnabled();
+
+    // ? opens the sheet even with the slider focused.
+    await slider.focus();
+    const sheet = await openWithKey(page, "Controls for How far apart?");
+    await expectSheetLists(sheet, "how-far", false);
+    checked.add("help");
+    await page.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+    await expect(card).toBeHidden();
+
+    // The arrows move the slider one step either way.
+    await slider.focus();
+    for (const key of keysOf("how-far", "distance")) {
+      const before = await estimate.textContent();
+      await page.keyboard.press(key);
+      await expect(estimate).not.toHaveText(before!);
+    }
+    checked.add("distance");
+
+    await page.keyboard.press(keysOf("how-far", "lock")[0]);
+    await expect(card).toBeVisible();
+    checked.add("lock");
+
+    await expect(card.getByRole("button", { name: "Next pair" })).toBeFocused();
+    await page.keyboard.press(keysOf("how-far", "next")[0]);
+    await expect(card).toBeHidden();
+    await expect(page.getByText("How far apart? Pair 2 of 5")).toBeVisible();
+    // The next pair hands focus back to the slider, so the arrows work straight away.
+    await expect(slider).toBeFocused();
+    checked.add("next");
+
+    expect([...checked].sort()).toEqual(keyed("how-far"));
+  });
 });
 
 test.describe("on a touch screen", () => {
@@ -200,6 +240,7 @@ test.describe("on a touch screen", () => {
     ["round", "./?daily", "Controls for a round"],
     ["further-north", "./further-north", "Controls for Further North"],
     ["odd-one-out", "./odd-one-out", "Controls for Odd one out"],
+    ["how-far", "./how-far", "Controls for How far apart?"],
   ] as const) {
     test(`the help button lists ${screen}'s gestures on screen`, async ({ page }) => {
       await page.goto(path);

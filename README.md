@@ -36,8 +36,14 @@ taken on one continent and one on another; tap the odd one (keys 1 to 4 on a key
 tap deals four more, the first miss ends the run, and your best run is kept in your browser. The
 reveal names every photo's continent and place, and what Atlas would have picked from its own
 guesses: the one photo it placed on a different continent, or else its pin furthest from the rest.
-The results screen gathers these quick games (Blitz, Country Streak, Survival, Further North and
-Odd one out) in one list, each with your best from this browser beside its name, so you see what
+**How far apart?** (at `/how-far`, in the Games menu) shows two photos and a slider on a log scale
+from 10 km to 20,000 km: set how far apart you think they were taken. Each of the five pairs scores
+up to 1,000 points by how many times off you were (all of them when exact, none from 10× off), and
+the deal mixes pairs from one continent with pairs from two, so the whole slider matters. The
+reveal places the truth, your estimate and Atlas's (the distance between its own two guesses) on
+the scale; your best game is kept in your browser.
+The results screen gathers these quick games (Blitz, Country Streak, Survival, Further North, Odd
+one out and How far apart?) in one list, each with your best from this browser beside its name, so you see what
 to beat before you open one; Blitz starts straight from its card. The same list, with the
 five-round game and pass and play, opens from the **Games** button in the header of round one
 and of every quick game, so each way to play is one tap away before you've finished a game.

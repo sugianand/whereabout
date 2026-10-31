@@ -26,7 +26,7 @@ export type ControlGroup = {
   controls: readonly Control[];
 };
 
-export type HelpScreen = "round" | "further-north" | "odd-one-out";
+export type HelpScreen = "round" | "further-north" | "odd-one-out" | "how-far";
 
 const k = (label: string, press = label): Key => ({ label, press });
 
@@ -180,6 +180,41 @@ export const CONTROLS: Record<HelpScreen, readonly ControlGroup[]> = {
       ],
     },
   ],
+  "how-far": [
+    {
+      title: "The slider",
+      focus: "Tab to the slider first",
+      controls: [
+        {
+          id: "distance",
+          does: "Set how far apart the photos were taken",
+          keys: [k("←", "ArrowLeft"), k("→", "ArrowRight")],
+          mouse: "Drag the slider",
+          touch: "Drag the slider",
+        },
+        {
+          id: "lock",
+          does: "Lock in your estimate",
+          keys: [k("Enter")],
+          mouse: "Lock it in",
+          touch: "Lock it in",
+        },
+      ],
+    },
+    {
+      title: "The answer",
+      controls: [
+        {
+          id: "next",
+          does: "Next pair, from the answer",
+          keys: [k("Enter")],
+          mouse: "Next pair",
+          touch: "Next pair",
+        },
+        HELP,
+      ],
+    },
+  ],
 };
 
 /** The sheet's title for each screen. */
@@ -187,14 +222,18 @@ export const SCREEN_TITLES: Record<HelpScreen, string> = {
   round: "Controls for a round",
   "further-north": "Controls for Further North",
   "odd-one-out": "Controls for Odd one out",
+  "how-far": "Controls for How far apart?",
 };
 
-/** True when a key press is going into something the player types or chooses in. */
+/**
+ * True when a key press is going into something the player types or chooses in. A slider only
+ * takes arrow and paging keys, so a shortcut like `?` still works while it has focus.
+ */
 export function isTypingTarget(target: EventTarget | null): boolean {
   if (!target || typeof (target as Element).closest !== "function") return false;
   const el = target as HTMLElement;
   if (el.isContentEditable) return true;
-  return !!el.closest("input, textarea, select, [contenteditable='true']");
+  return !!el.closest("input:not([type='range']), textarea, select, [contenteditable='true']");
 }
 
 /** True for a bare key press (no Ctrl, Alt or Cmd) that isn't typing into a field. */

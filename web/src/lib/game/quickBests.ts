@@ -3,7 +3,7 @@
  * gathered for the results screen's mode cards so a player sees what to beat before opening one.
  *
  * Nothing new is stored here. Each mode keeps its own best under its own key (blitz.ts,
- * streak.ts, survival.ts, furtherNorth.ts, oddOneOut.ts); this only reads them back through the
+ * streak.ts, survival.ts, furtherNorth.ts, oddOneOut.ts, howFar.ts); this only reads them back through the
  * same loaders, so a value a mode would refuse (a negative streak, junk JSON) is refused here too.
  */
 
@@ -12,13 +12,21 @@ import { formatPoints } from "@/lib/geo";
 
 import { loadBlitzBest } from "./blitz";
 import { loadBestNorth } from "./furtherNorth";
+import { loadBestHowFar } from "./howFar";
 import { loadBestOdd } from "./oddOneOut";
 import { regionSlug } from "./regions";
 import { loadBestStreak } from "./streak";
 import { loadBestSurvival, type SurvivalBest } from "./survival";
 
 /** The quick modes the results screen links to, in the order its cards show them. */
-export const QUICK_MODES = ["blitz", "streak", "survival", "further-north", "odd-one-out"] as const;
+export const QUICK_MODES = [
+  "blitz",
+  "streak",
+  "survival",
+  "further-north",
+  "odd-one-out",
+  "how-far",
+] as const;
 
 export type QuickMode = (typeof QUICK_MODES)[number];
 
@@ -39,6 +47,8 @@ export interface QuickBests {
   "further-north": number | null;
   /** The longest run of right taps. */
   "odd-one-out": number | null;
+  /** The best whole game's points. */
+  "how-far": number | null;
 }
 
 export const NO_BESTS: QuickBests = {
@@ -47,6 +57,7 @@ export const NO_BESTS: QuickBests = {
   survival: null,
   "further-north": null,
   "odd-one-out": null,
+  "how-far": null,
 };
 
 /**
@@ -75,6 +86,7 @@ export function loadQuickBests(): QuickBests {
     survival: loadBestSurvival(),
     "further-north": positive(loadBestNorth()),
     "odd-one-out": positive(loadBestOdd()),
+    "how-far": positive(loadBestHowFar()),
   };
 }
 
@@ -104,6 +116,10 @@ export function bestLine(mode: QuickMode, bests: QuickBests): string | null {
     case "odd-one-out": {
       const n = bests[mode];
       return n === null ? null : `Best: ${inARow(n)}`;
+    }
+    case "how-far": {
+      const n = bests["how-far"];
+      return n === null ? null : `Best: ${formatPoints(n)} points`;
     }
   }
 }
