@@ -3,7 +3,7 @@
  * gathered for the results screen's mode cards so a player sees what to beat before opening one.
  *
  * Nothing new is stored here. Each mode keeps its own best under its own key (blitz.ts,
- * streak.ts, survival.ts, furtherNorth.ts, oddOneOut.ts, howFar.ts); this only reads them back through the
+ * streak.ts, survival.ts, furtherNorth.ts, oddOneOut.ts, howFar.ts, whichWay.ts); this only reads them back through the
  * same loaders, so a value a mode would refuse (a negative streak, junk JSON) is refused here too.
  */
 
@@ -17,6 +17,7 @@ import { loadBestOdd } from "./oddOneOut";
 import { regionSlug } from "./regions";
 import { loadBestStreak } from "./streak";
 import { loadBestSurvival, type SurvivalBest } from "./survival";
+import { loadBestWay } from "./whichWay";
 
 /** The quick modes the results screen links to, in the order its cards show them. */
 export const QUICK_MODES = [
@@ -26,6 +27,7 @@ export const QUICK_MODES = [
   "further-north",
   "odd-one-out",
   "how-far",
+  "which-way",
 ] as const;
 
 export type QuickMode = (typeof QUICK_MODES)[number];
@@ -49,6 +51,8 @@ export interface QuickBests {
   "odd-one-out": number | null;
   /** The best whole game's points. */
   "how-far": number | null;
+  /** The longest run of right compass picks. */
+  "which-way": number | null;
 }
 
 export const NO_BESTS: QuickBests = {
@@ -58,6 +62,7 @@ export const NO_BESTS: QuickBests = {
   "further-north": null,
   "odd-one-out": null,
   "how-far": null,
+  "which-way": null,
 };
 
 /**
@@ -87,6 +92,7 @@ export function loadQuickBests(): QuickBests {
     "further-north": positive(loadBestNorth()),
     "odd-one-out": positive(loadBestOdd()),
     "how-far": positive(loadBestHowFar()),
+    "which-way": positive(loadBestWay()),
   };
 }
 
@@ -113,7 +119,8 @@ export function bestLine(mode: QuickMode, bests: QuickBests): string | null {
       return `Best: ${s.survived} ${s.survived === 1 ? "photo" : "photos"}, ${formatPoints(s.total)} points`;
     }
     case "further-north":
-    case "odd-one-out": {
+    case "odd-one-out":
+    case "which-way": {
       const n = bests[mode];
       return n === null ? null : `Best: ${inARow(n)}`;
     }

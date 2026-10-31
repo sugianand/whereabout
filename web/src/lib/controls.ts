@@ -6,6 +6,8 @@
  * listed, so a key only appears here once it works (e2e/help.spec.ts).
  */
 
+import { POINTS, POINT_KEYS } from "@/lib/game/whichWay";
+
 /** One key as shown (`label`) and as a test presses it (`press`, a Playwright key name). */
 export type Key = { label: string; press: string };
 
@@ -26,7 +28,7 @@ export type ControlGroup = {
   controls: readonly Control[];
 };
 
-export type HelpScreen = "round" | "further-north" | "odd-one-out" | "how-far";
+export type HelpScreen = "round" | "further-north" | "odd-one-out" | "how-far" | "which-way";
 
 const k = (label: string, press = label): Key => ({ label, press });
 
@@ -215,6 +217,28 @@ export const CONTROLS: Record<HelpScreen, readonly ControlGroup[]> = {
       ],
     },
   ],
+  "which-way": [
+    {
+      title: "Which way?",
+      controls: [
+        {
+          id: "pick",
+          does: "Pick the way from photo 1 to photo 2 (keys laid out like a number pad: 8 is north)",
+          keys: POINTS.map((p) => k(POINT_KEYS[p])),
+          mouse: "Click a compass point",
+          touch: "Tap a compass point",
+        },
+        {
+          id: "next",
+          does: "Travel on, from the answer",
+          keys: [k("Enter")],
+          mouse: "Travel on",
+          touch: "Travel on",
+        },
+        HELP,
+      ],
+    },
+  ],
 };
 
 /** The sheet's title for each screen. */
@@ -223,6 +247,7 @@ export const SCREEN_TITLES: Record<HelpScreen, string> = {
   "further-north": "Controls for Further North",
   "odd-one-out": "Controls for Odd one out",
   "how-far": "Controls for How far apart?",
+  "which-way": "Controls for Which way?",
 };
 
 /**

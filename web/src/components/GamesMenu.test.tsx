@@ -38,6 +38,10 @@ describe("GamesMenu", () => {
       "href",
       "/how-far",
     );
+    expect(within(sheet).getByRole("link", { name: /^Which way\?/ })).toHaveAttribute(
+      "href",
+      "/which-way",
+    );
     expect(within(sheet).getByRole("link", { name: /^Pass and play/ })).toHaveAttribute(
       "href",
       "/pass-and-play",

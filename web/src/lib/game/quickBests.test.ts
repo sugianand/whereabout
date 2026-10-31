@@ -7,6 +7,7 @@ import { BEST_ODD_KEY } from "./oddOneOut";
 import { NO_BESTS, QUICK_MODES, bestLine, bestStreak, loadQuickBests } from "./quickBests";
 import { BEST_STREAK_KEY, bestStreakKey } from "./streak";
 import { BEST_SURVIVAL_KEY } from "./survival";
+import { BEST_WAY_KEY } from "./whichWay";
 
 afterEach(() => localStorage.clear());
 
@@ -23,6 +24,7 @@ describe("loadQuickBests", () => {
     localStorage.setItem(BEST_NORTH_KEY, "9");
     localStorage.setItem(BEST_ODD_KEY, "3");
     localStorage.setItem(BEST_HOW_FAR_KEY, "3120");
+    localStorage.setItem(BEST_WAY_KEY, "4");
     expect(loadQuickBests()).toEqual({
       blitz: 18250,
       streak: { streak: 6, region: null },
@@ -30,6 +32,7 @@ describe("loadQuickBests", () => {
       "further-north": 9,
       "odd-one-out": 3,
       "how-far": 3120,
+      "which-way": 4,
     });
   });
 
@@ -38,8 +41,10 @@ describe("loadQuickBests", () => {
     localStorage.setItem(BEST_ODD_KEY, "not a number");
     localStorage.setItem(BEST_SURVIVAL_KEY, "{");
     localStorage.setItem(BEST_HOW_FAR_KEY, "9000");
+    localStorage.setItem(BEST_WAY_KEY, "-1");
     const bests = loadQuickBests();
     expect(bests["how-far"]).toBeNull();
+    expect(bests["which-way"]).toBeNull();
     expect(bests["further-north"]).toBeNull();
     expect(bests["odd-one-out"]).toBeNull();
     expect(bests.survival).toBeNull();
@@ -73,6 +78,7 @@ describe("bestLine", () => {
     "further-north": 9,
     "odd-one-out": 1,
     "how-far": 3120,
+    "which-way": 2,
   };
 
   it("reads each best the way its card shows it", () => {
@@ -82,6 +88,7 @@ describe("bestLine", () => {
     expect(bestLine("further-north", bests)).toBe("Best: 9 in a row");
     expect(bestLine("odd-one-out", bests)).toBe("Best: 1 in a row");
     expect(bestLine("how-far", bests)).toBe("Best: 3,120 points");
+    expect(bestLine("which-way", bests)).toBe("Best: 2 in a row");
   });
 
   it("names no continent for an all-world streak, and counts photos in the plural", () => {

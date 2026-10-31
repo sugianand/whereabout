@@ -191,6 +191,46 @@ test.describe("on a keyboard", () => {
       }
     });
   }
+  test("? lists Which way?'s controls, and every compass key works", async ({ page }) => {
+    test.setTimeout(150_000);
+    await page.goto("./which-way");
+    const checked = new Set<string>();
+    const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+    const picks = keysOf("which-way", "pick");
+    expect(picks).toHaveLength(8);
+
+    await expect(page.getByRole("button", { name: "Headed north", exact: true })).toBeEnabled();
+    const sheet = await openWithKey(page, "Controls for Which way?");
+    await expectSheetLists(sheet, "which-way", false);
+    checked.add("help");
+    // A compass key pressed in the sheet doesn't pick behind it.
+    await page.keyboard.press(picks[0]);
+    await expect(card).toBeHidden();
+    await page.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+
+    for (const pick of picks) {
+      const name = await page.locator(`[aria-keyshortcuts="${pick}"]`).getAttribute("aria-label");
+      // A key only picks once both photos' records are in.
+      await expect(page.getByRole("button", { name: name!, exact: true })).toBeEnabled();
+      await page.keyboard.press(pick);
+      await expect(card).toBeVisible();
+      // The card says which point was picked, unless the pick was right on.
+      const said = (await card.textContent())!;
+      const point = name!.replace("Headed ", "");
+      const verdict = await card.getByRole("heading", { level: 2 }).textContent();
+      if (verdict === "Wrong") expect(said).toContain(`You picked ${point}.`);
+      await expect(
+        card.getByRole("button", { name: /^(Travel on|Start a new run)$/ }),
+      ).toBeFocused();
+      await page.keyboard.press(keysOf("which-way", "next")[0]);
+      await expect(card).toBeHidden();
+    }
+    checked.add("pick");
+    checked.add("next");
+    expect([...checked].sort()).toEqual(keyed("which-way"));
+  });
+
   test("? lists How far apart?'s controls, and every key it lists works", async ({ page }) => {
     await page.goto("./how-far");
     const checked = new Set<string>();
@@ -241,6 +281,7 @@ test.describe("on a touch screen", () => {
     ["further-north", "./further-north", "Controls for Further North"],
     ["odd-one-out", "./odd-one-out", "Controls for Odd one out"],
     ["how-far", "./how-far", "Controls for How far apart?"],
+    ["which-way", "./which-way", "Controls for Which way?"],
   ] as const) {
     test(`the help button lists ${screen}'s gestures on screen`, async ({ page }) => {
       await page.goto(path);

@@ -42,8 +42,16 @@ up to 1,000 points by how many times off you were (all of them when exact, none 
 the deal mixes pairs from one continent with pairs from two, so the whole slider matters. The
 reveal places the truth, your estimate and Atlas's (the distance between its own two guesses) on
 the scale; your best game is kept in your browser.
+**Which way?** (at `/which-way`, in the Games menu) shows where you stand and where you're headed:
+pick which of eight compass points you'd set off in, by the great-circle starting bearing (the
+heading of the shortest route, so Paris to Tokyo sets off north-east, not east). The reveal draws
+the route on the globe with its bearing and distance, says when a flat map would have misled you,
+and shows Atlas's pick from its own two guesses; a heading within 5° of the line between two points
+counts for either. A right pick travels on, where you were headed becoming where you stand; the
+first miss ends the run, and your best run is kept in your browser. Keys 1 to 9 pick on a number
+pad's layout (8 is north).
 The results screen gathers these quick games (Blitz, Country Streak, Survival, Further North, Odd
-one out and How far apart?) in one list, each with your best from this browser beside its name, so you see what
+one out, How far apart? and Which way?) in one list, each with your best from this browser beside its name, so you see what
 to beat before you open one; Blitz starts straight from its card. The same list, with the
 five-round game and pass and play, opens from the **Games** button in the header of round one
 and of every quick game, so each way to play is one tap away before you've finished a game.
