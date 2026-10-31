@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GameRecord } from "@/lib/game/deck";
+import { ODD_DAILY_KEY, dailyOddDealer } from "@/lib/game/oddDaily";
 import { BEST_ODD_KEY } from "@/lib/game/oddOneOut";
 import type { CatalogPhoto } from "@/lib/game/types";
 import { gameFor } from "@/test/deck";
@@ -127,5 +128,80 @@ describe("OddOneOut", () => {
     const game = gameFor(RECORDS.slice(0, 5));
     render(<OddOneOut deck={game.deck} loadRecords={game.loadRecords} />);
     expect(await screen.findByRole("heading", { name: "No photos to play yet" })).toBeVisible();
+  });
+});
+
+describe("OddOneOut, today's run", () => {
+  const DAY = "2026-10-31";
+  const now = () => new Date(`${DAY}T18:48:00Z`);
+
+  function play() {
+    const game = gameFor(RECORDS);
+    return render(<OddOneOut deck={game.deck} loadRecords={game.loadRecords} daily now={now} />);
+  }
+
+  it("deals the day's quads, picks the run back up after a reload, and ends on a miss", async () => {
+    const game = gameFor(RECORDS);
+    const dealer = dailyOddDealer(game.deck.regions, DAY);
+    const quads = [dealer.next()!, dealer.next()!];
+
+    const first = play();
+    await waitFor(() => expect(tap(1)).toBeEnabled(), { timeout: 5000 });
+    expect(shownIds()).toEqual(quads[0].ids);
+    expect(screen.getByText(/today's run \(2026-10-31\)/)).toBeInTheDocument();
+    expect(screen.queryByText("Best")).toBeNull();
+    fireEvent.click(tap(quads[0].odd + 1));
+    await screen.findByRole("button", { name: "Next four" });
+    first.unmount();
+
+    // A reload carries on at the next quad, with the streak so far: no fresh start.
+    play();
+    await waitFor(() => expect(tap(1)).toBeEnabled(), { timeout: 5000 });
+    expect(shownIds()).toEqual(quads[1].ids);
+    expect(streak()).toHaveTextContent("1");
+
+    fireEvent.click(tap(((quads[1].odd + 1) % 4) + 1));
+    const card = await screen.findByRole("region");
+    expect(within(card).getByRole("heading")).toHaveTextContent("Wrong");
+    expect(card).toHaveTextContent("Today's run is over: 1 quad in a row.");
+    expect(within(card).queryByRole("button", { name: "Start a new run" })).toBeNull();
+    expect(within(card).getByRole("link", { name: "Play a free run" })).toHaveAttribute(
+      "href",
+      "/odd-one-out",
+    );
+    const kept = JSON.parse(localStorage.getItem(ODD_DAILY_KEY)!)[DAY];
+    expect(kept).toMatchObject({ streak: 1, ended: "miss" });
+    // Today's run keeps its own result, apart from the free runs' best.
+    expect(localStorage.getItem(BEST_ODD_KEY)).toBeNull();
+
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    fireEvent.click(within(card).getByRole("button", { name: "Share today's run" }));
+    expect(await within(card).findByText("Result copied. Paste it anywhere.")).toBeVisible();
+    expect(writeText.mock.calls[0][0]).toMatch(
+      /^Whereabout · Odd one out · 2026-10-31\n🧩 1 quad in a row\n🟩🟥\n/,
+    );
+  });
+
+  it("shows the day's result instead of dealing it again once it has ended", async () => {
+    localStorage.setItem(
+      ODD_DAILY_KEY,
+      JSON.stringify({ [DAY]: { streak: 3, atlasRight: 2, atlasPlayed: 3, ended: "miss" } }),
+    );
+    play();
+    expect(await screen.findByRole("heading", { name: "3 quads in a row" })).toBeInTheDocument();
+    expect(
+      screen.getByText(/Atlas got 2 of the 3 quads it played\. The next run is dealt in 5h 12m\./),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Share today's run" })).toHaveFocus();
+    expect(screen.queryByRole("button", { name: /is the odd one out/ })).toBeNull();
+  });
+
+  it("links free runs and today's run to each other", async () => {
+    await setup();
+    expect(screen.getByRole("link", { name: "Today's run" })).toHaveAttribute(
+      "href",
+      "/odd-one-out/daily",
+    );
   });
 });

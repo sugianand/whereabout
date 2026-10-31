@@ -23,16 +23,15 @@ import {
   northDailyShare,
   northToday,
   rememberNorthDay,
-  untilNextNorth,
   type NorthDay,
 } from "@/lib/game/northDaily";
 import { formatDistance } from "@/lib/geo";
 import { placeholderUrl, sources } from "@/lib/photoSources";
-import { sendShare, type ShareOutcome } from "@/lib/share";
 import type { Units } from "@/lib/units";
 import { useUnits } from "@/lib/useUnits";
 
 import ControlsHelp from "./ControlsHelp";
+import { DailyRunResult, ShareDay } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
 import UnitsSwitch from "./UnitsSwitch";
 
@@ -49,13 +48,6 @@ type FurtherNorthProps = {
   daily?: boolean;
   /** For tests: the clock that picks today's run. */
   now?: () => Date;
-};
-
-const SHARE_NOTE: Record<ShareOutcome, string> = {
-  shared: "Result shared.",
-  copied: "Result copied. Paste it anywhere.",
-  cancelled: "",
-  failed: "Couldn't copy. Your browser blocked the clipboard.",
 };
 
 const SIDES: readonly Side[] = ["a", "b"];
@@ -551,13 +543,10 @@ function NorthCard({
       )}
       {over && daily ? (
         <ShareDay
-          day={daily}
-          entry={{
-            streak,
-            atlasRight,
-            atlasPlayed,
-            ended: "miss",
-          }}
+          shareText={(href) =>
+            northDailyShare(daily, { streak, atlasRight, atlasPlayed, ended: "miss" }, href)
+          }
+          freeHref="/further-north"
           focus
         />
       ) : (
@@ -574,73 +563,25 @@ function NorthCard({
   );
 }
 
-/**
- * Share today's run, and the way on to a free run. The share line is counts only
- * (`northDailyShare`), so it spoils no pair for a friend who hasn't played.
- */
-function ShareDay({
-  day,
-  entry,
-  focus = false,
-}: {
-  day: string;
-  entry: NorthDay;
-  focus?: boolean;
-}) {
-  const [note, setNote] = useState("");
-  const shareRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    if (focus) shareRef.current?.focus({ preventScroll: true });
-  }, [focus]);
-  async function share() {
-    const text = northDailyShare(day, entry, window.location.href);
-    setNote(SHARE_NOTE[await sendShare(text, navigator)]);
-  }
-  return (
-    <>
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <button
-          ref={shareRef}
-          type="button"
-          onClick={share}
-          className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
-        >
-          {"Share today's run"}
-        </button>
-        <Link
-          href="/further-north"
-          className="text-chalk-dim underline underline-offset-2 hover:text-chalk"
-        >
-          Play a free run
-        </Link>
-      </div>
-      <p className="mt-2 min-h-5 text-sm text-chalk-dim" role="status">
-        {note}
-      </p>
-    </>
-  );
-}
-
-/** Today's run once it has ended: how it went, the share, and when the next one is dealt. */
+/** Today's Further North once it has ended. */
 function NorthDayResult({ day, entry, now }: { day: string; entry: NorthDay; now?: () => Date }) {
   const cleared = entry.ended === "cleared";
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center px-6 py-16">
-      <p className="text-sm text-gold">{`Further North · today's run · ${day}`}</p>
-      <h1 className="mt-2 font-sign text-5xl font-extrabold leading-none tracking-tight">
-        {cleared ? "You called every pair" : `${pairs(entry.streak)} in a row`}
-      </h1>
-      <p className="mt-4 text-lg text-chalk-dim">
-        {cleared
-          ? `${pairs(entry.streak)} in a row, every photo the game has. `
-          : "That's today's run played. "}
-        {entry.atlasPlayed > 0 &&
-          `Atlas got ${entry.atlasRight} of the ${pairs(entry.atlasPlayed)} it played. `}
-        {`The next run is dealt in ${untilNextNorth(now?.())}.`}
-      </p>
-      <div className="mt-4">
-        <ShareDay day={day} entry={entry} focus />
-      </div>
-    </main>
+    <DailyRunResult
+      game="Further North"
+      day={day}
+      headline={cleared ? "You called every pair" : `${pairs(entry.streak)} in a row`}
+      summary={
+        (cleared
+          ? `${pairs(entry.streak)} in a row, every photo the game has.`
+          : "That's today's run played.") +
+        (entry.atlasPlayed > 0
+          ? ` Atlas got ${entry.atlasRight} of the ${pairs(entry.atlasPlayed)} it played.`
+          : "")
+      }
+      shareText={(href) => northDailyShare(day, entry, href)}
+      freeHref="/further-north"
+      now={now}
+    />
   );
 }

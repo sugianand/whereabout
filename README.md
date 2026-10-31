@@ -38,6 +38,8 @@ taken on one continent and one on another; tap the odd one (keys 1 to 4 on a key
 tap deals four more, the first miss ends the run, and your best run is kept in your browser. The
 reveal names every photo's continent and place, and what Atlas would have picked from its own
 guesses: the one photo it placed on a different continent, or else its pin furthest from the rest.
+**Today's run** (at `/odd-one-out/daily`) deals everyone the same quads on the same UTC day, one
+try a day, resumed after a reload and shared as counts only.
 **How far apart?** (at `/how-far`, in the Games menu) shows two photos and a slider on a log scale
 from 10 km to 20,000 km: set how far apart you think they were taken. Each of the five pairs scores
 up to 1,000 points by how many times off you were (all of them when exact, none from 10× off), and

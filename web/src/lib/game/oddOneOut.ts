@@ -159,7 +159,13 @@ export type OddState =
     });
 
 export type OddAction =
-  | { type: "start"; quad: Quad | null; upcoming: Quad | null }
+  | {
+      type: "start";
+      quad: Quad | null;
+      upcoming: Quad | null;
+      /** Pick a run back up where it was left (today's run, src/lib/game/oddDaily.ts). */
+      from?: { streak: number; atlasRight: number; atlasPlayed: number };
+    }
   | { type: "picked"; index: number; atlas: (AtlasGuess | null)[] }
   /** Move on to the upcoming quad, dealing `upcoming` as the one after it. */
   | { type: "next"; upcoming: Quad | null };
@@ -174,9 +180,9 @@ export function oddReducer(state: OddState, action: OddAction): OddState {
             phase: "picking",
             quad: action.quad,
             upcoming: action.upcoming,
-            streak: 0,
-            atlasRight: 0,
-            atlasPlayed: 0,
+            streak: action.from?.streak ?? 0,
+            atlasRight: action.from?.atlasRight ?? 0,
+            atlasPlayed: action.from?.atlasPlayed ?? 0,
           }
         : { phase: "none" };
     case "picked": {

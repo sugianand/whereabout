@@ -4,7 +4,15 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
 import { isShortcut } from "@/lib/controls";
+import { FRESH_RUN, runToday, type DailyRun } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
+import {
+  dailyOddDealer,
+  loadOddDay,
+  oddDailyShare,
+  rememberOddDay,
+  type OddDealer,
+} from "@/lib/game/oddDaily";
 import {
   QUAD,
   dealQuad,
@@ -19,6 +27,7 @@ import {
 import { placeholderUrl, sources } from "@/lib/photoSources";
 
 import ControlsHelp from "./ControlsHelp";
+import { DailyRunResult, ShareDay } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
 
 type OddOneOutProps = {
@@ -27,6 +36,13 @@ type OddOneOutProps = {
   loadRecords?: (ids: string[]) => Promise<GameRecord[]>;
   /** For tests: the randomness that deals each quad. */
   random?: () => number;
+  /**
+   * Today's run (src/lib/game/oddDaily.ts): the day's quads, one try a day, picked back up where
+   * it was left, with a share line at the end. Off, every run is dealt at random.
+   */
+  daily?: boolean;
+  /** For tests: the clock that picks today's run. */
+  now?: () => Date;
 };
 
 const SLOTS = Array.from({ length: QUAD }, (_, i) => i);
@@ -40,7 +56,13 @@ function quads(n: number): string {
  * Odd one out (src/lib/game/oddOneOut.ts): four photos, three from one continent; tap the one
  * from somewhere else. Endless until the first wrong tap.
  */
-export default function OddOneOut({ deck, loadRecords, random }: OddOneOutProps) {
+export default function OddOneOut({
+  deck,
+  loadRecords,
+  random,
+  daily = false,
+  now,
+}: OddOneOutProps) {
   const [state, dispatch] = useReducer(oddReducer, initialOdd);
   const [best, setBest] = useState(0);
   const [bestBeforeRun, setBestBeforeRun] = useState(0);
@@ -48,21 +70,49 @@ export default function OddOneOut({ deck, loadRecords, random }: OddOneOutProps)
   const [error, setError] = useState<string | null>(null);
   // Photos dealt this run, kept back from the next quads while fresh ones remain.
   const seen = useRef(new Set<string>());
+  // Today's run deals from the day's own stream instead.
+  const dealer = useRef<OddDealer | null>(null);
+  // Today's run: the day it was dealt for (kept when the clock passes midnight mid-run) and,
+  // once it has ended, how it went, which shows instead of the game.
+  const [day, setDay] = useState<string | null>(null);
+  const [dayDone, setDayDone] = useState<DailyRun | null>(null);
 
   const deal = useCallback((): Quad | null => {
+    if (dealer.current) return dealer.current.next();
     const quad = dealQuad(deck.regions, random ?? Math.random, seen.current);
     quad?.ids.forEach((id) => seen.current.add(id));
     return quad;
   }, [deck.regions, random]);
 
   const start = useCallback(() => {
+    if (daily) {
+      const today = runToday(now?.());
+      const kept = loadOddDay(today);
+      setDay(today);
+      if (kept?.ended) {
+        setDayDone(kept);
+        return;
+      }
+      const { streak, atlasRight, atlasPlayed } = kept ?? FRESH_RUN;
+      // Replay the day's stream past the quads already answered, to the one the run was on.
+      dealer.current = dailyOddDealer(deck.regions, today);
+      dealer.current.skip(streak);
+      const quad = deal();
+      dispatch({
+        type: "start",
+        quad,
+        upcoming: quad ? deal() : null,
+        from: { streak, atlasRight, atlasPlayed },
+      });
+      return;
+    }
     const stored = loadBestOdd();
     setBest(stored);
     setBestBeforeRun(stored);
     seen.current = new Set();
     const quad = deal();
     dispatch({ type: "start", quad, upcoming: quad ? deal() : null });
-  }, [deal]);
+  }, [deal, daily, deck.regions, now]);
 
   // Quads are dealt in the browser after hydration, never at build time.
   useEffect(() => {
@@ -123,12 +173,22 @@ export default function OddOneOut({ deck, loadRecords, random }: OddOneOutProps)
         index,
         atlas: state.quad.ids.map((id) => records.get(id)?.atlas ?? null),
       } as const;
-      // Keep the run as the best after every right tap, so leaving mid-run keeps it.
       const after = oddReducer(state, action);
-      if (after.phase === "answered" && after.correct) setBest(rememberOdd(after.streak));
+      if (after.phase === "answered" && day) {
+        // Today's run is kept after every tap, so a reload resumes it and never deals it again.
+        rememberOddDay(day, {
+          streak: after.streak,
+          atlasRight: after.atlasRight,
+          atlasPlayed: after.atlasPlayed,
+          ended: after.correct ? null : "miss",
+        });
+      } else if (after.phase === "answered" && after.correct) {
+        // Keep the run as the best after every right tap, so leaving mid-run keeps it.
+        setBest(rememberOdd(after.streak));
+      }
       dispatch(action);
     },
-    [state, ready, records],
+    [state, ready, records, day],
   );
 
   // 1 to 4 pick a photo from the keyboard.
@@ -144,6 +204,25 @@ export default function OddOneOut({ deck, loadRecords, random }: OddOneOutProps)
   }, [ready, choose]);
 
   const next = useCallback(() => dispatch({ type: "next", upcoming: deal() }), [deal]);
+
+  if (dayDone && day) {
+    return (
+      <DailyRunResult
+        game="Odd one out"
+        day={day}
+        headline={`${quads(dayDone.streak)} in a row`}
+        summary={
+          "That's today's run played." +
+          (dayDone.atlasPlayed > 0
+            ? ` Atlas got ${dayDone.atlasRight} of the ${quads(dayDone.atlasPlayed)} it played.`
+            : "")
+        }
+        shareText={(href) => oddDailyShare(day, dayDone, href)}
+        freeHref="/odd-one-out"
+        now={now}
+      />
+    );
+  }
 
   if (state.phase === "none") {
     return (
@@ -183,8 +262,16 @@ export default function OddOneOut({ deck, loadRecords, random }: OddOneOutProps)
             Whereabout
           </Link>
           <p className="mt-1 text-sm text-chalk-dim">
-            Odd one out: three photos share a continent. Which one doesn&apos;t?
+            {day
+              ? `Odd one out, today's run (${day}): three photos share a continent. Which one doesn't?`
+              : "Odd one out: three photos share a continent. Which one doesn't?"}
           </p>
+          <Link
+            href={daily ? "/odd-one-out" : "/odd-one-out/daily"}
+            className="mt-0.5 inline-block text-sm text-gold underline underline-offset-2 hover:brightness-110"
+          >
+            {daily ? "Free runs" : "Today's run"}
+          </Link>
         </div>
         <div className="flex shrink-0 items-start gap-3">
           <GamesMenu screen="odd-one-out" streakHref="/streak" />
@@ -194,10 +281,12 @@ export default function OddOneOut({ deck, loadRecords, random }: OddOneOutProps)
             <dd className="font-sign tabular text-3xl font-bold leading-none" aria-live="polite">
               {streak}
             </dd>
-            <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
-              <dt>Best</dt>
-              <dd className="tabular">{best}</dd>
-            </div>
+            {!daily && (
+              <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
+                <dt>Best</dt>
+                <dd className="tabular">{best}</dd>
+              </div>
+            )}
           </dl>
         </div>
       </header>
@@ -237,6 +326,7 @@ export default function OddOneOut({ deck, loadRecords, random }: OddOneOutProps)
             over={over}
             best={best}
             newBest={over && answered.streak > bestBeforeRun}
+            daily={day}
             onNext={over ? start : next}
           />
         </div>
@@ -364,6 +454,7 @@ function OddCard({
   over,
   best,
   newBest,
+  daily,
   onNext,
 }: {
   quad: Quad;
@@ -374,6 +465,8 @@ function OddCard({
   over: boolean;
   best: number;
   newBest: boolean;
+  /** Today's run's day, when this is it: its end shares the day instead of starting again. */
+  daily: string | null;
   onNext: () => void;
 }) {
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -401,20 +494,33 @@ function OddCard({
           {`${atlasSentence(atlas, quad)} Atlas this run: ${atlasRight} of ${quads(atlasPlayed)}.`}
         </p>
       )}
-      {over && (
+      {over && daily && (
+        <p className="mt-2 text-chalk">{`Today's run is over: ${quads(streak)} in a row.`}</p>
+      )}
+      {over && !daily && (
         <p className="mt-2 text-chalk">
           {`Run over: ${quads(streak)} in a row. `}
           {newBest ? "That's your new best!" : best > 0 ? `Your best is ${quads(best)}.` : ""}
         </p>
       )}
-      <button
-        ref={nextRef}
-        type="button"
-        onClick={onNext}
-        className="mt-3 rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
-      >
-        {over ? "Start a new run" : "Next four"}
-      </button>
+      {over && daily ? (
+        <ShareDay
+          shareText={(href) =>
+            oddDailyShare(daily, { streak, atlasRight, atlasPlayed, ended: "miss" }, href)
+          }
+          freeHref="/odd-one-out"
+          focus
+        />
+      ) : (
+        <button
+          ref={nextRef}
+          type="button"
+          onClick={onNext}
+          className="mt-3 rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
+        >
+          {over ? "Start a new run" : "Next four"}
+        </button>
+      )}
     </section>
   );
 }
