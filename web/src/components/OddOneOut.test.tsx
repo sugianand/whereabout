@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { QUICK_RECORD_KEY, loadFreeTallies } from "@/lib/game/quickRecord";
 import type { GameRecord } from "@/lib/game/deck";
 import { ODD_DAILY_KEY, dailyOddDealer } from "@/lib/game/oddDaily";
 import { BEST_ODD_KEY } from "@/lib/game/oddOneOut";
@@ -117,6 +118,8 @@ describe("OddOneOut", () => {
     expect(within(card).getByRole("heading")).toHaveTextContent("Wrong");
     expect(card).toHaveTextContent("Run over: 1 quad in a row. That's your new best!");
     expect(screen.getByTestId(`odd-photo-${wrong}`).className).toContain("border-flare");
+    // Both rounds count in Atlas's record on your map, as one run.
+    expect(loadFreeTallies()["odd-one-out"]).toMatchObject({ runs: 1, rounds: 2, right: 1 });
 
     fireEvent.click(within(card).getByRole("button", { name: "Start a new run" }));
     await waitFor(() => expect(tap(1)).toBeEnabled());
@@ -173,6 +176,8 @@ describe("OddOneOut, today's run", () => {
     expect(kept).toMatchObject({ streak: 1, ended: "miss" });
     // Today's run keeps its own result, apart from the free runs' best.
     expect(localStorage.getItem(BEST_ODD_KEY)).toBeNull();
+    // Today's runs are read from their own days; they never add to the free runs' record.
+    expect(localStorage.getItem(QUICK_RECORD_KEY)).toBeNull();
 
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });

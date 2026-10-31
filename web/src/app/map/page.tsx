@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import PlayedMap from "@/components/PlayedMap";
+import QuickRecord from "@/components/QuickRecord";
 import { bundledDeck } from "@/lib/game/bundled";
 
 export const metadata: Metadata = {
   title: "Your map — Whereabout",
   description:
-    "Every photo you've played in Whereabout on one globe, coloured by how close your pin landed, with the countries you've seen. Kept only in your browser.",
+    "Every photo you've played in Whereabout on one globe, coloured by how close your pin landed, with the countries you've seen and how you stand against Atlas in the quick games. Kept only in your browser.",
 };
 
 export default function YourMapPage() {
@@ -28,6 +29,7 @@ export default function YourMapPage() {
       <PlayedMap
         deck={{ version: bundledDeck.version, ids: bundledDeck.ids, regions: bundledDeck.regions }}
       />
+      <QuickRecord />
     </main>
   );
 }

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "r
 
 import { isShortcut } from "@/lib/controls";
 import { seededShuffle } from "@/lib/game/daily";
+import { recordFreeRound } from "@/lib/game/quickRecord";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import {
   TIE_DEGREES,
@@ -186,9 +187,15 @@ export default function FurtherNorth({
           atlasPlayed: after.atlasPlayed,
           ended: !after.verdict.correct ? "miss" : cleared ? "cleared" : null,
         });
-      } else if (after.phase === "answered" && after.verdict.correct) {
+      } else if (after.phase === "answered") {
+        // Count the round in Atlas's record on your map, as it is answered.
+        recordFreeRound("further-north", {
+          first: state.index === 0,
+          correct: after.verdict.correct,
+          atlas: after.atlas ? after.atlas.correct : null,
+        });
         // Keep the streak as the best after every right pick, so leaving mid-run keeps it.
-        setBest(rememberNorth(after.streak));
+        if (after.verdict.correct) setBest(rememberNorth(after.streak));
       }
       dispatch(action);
     },

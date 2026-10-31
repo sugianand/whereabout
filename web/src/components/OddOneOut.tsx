@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "r
 
 import { isShortcut } from "@/lib/controls";
 import { FRESH_RUN, runToday, type DailyRun } from "@/lib/game/dailyRuns";
+import { recordFreeRound } from "@/lib/game/quickRecord";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import {
   dailyOddDealer,
@@ -182,9 +183,16 @@ export default function OddOneOut({
           atlasPlayed: after.atlasPlayed,
           ended: after.correct ? null : "miss",
         });
-      } else if (after.phase === "answered" && after.correct) {
+      } else if (after.phase === "answered") {
+        // Count the round in Atlas's record on your map, as it is answered. A free run's
+        // first tap is the only one made on a streak of 0.
+        recordFreeRound("odd-one-out", {
+          first: state.streak === 0,
+          correct: after.correct,
+          atlas: after.atlas ? after.atlas.correct : null,
+        });
         // Keep the run as the best after every right tap, so leaving mid-run keeps it.
-        setBest(rememberOdd(after.streak));
+        if (after.correct) setBest(rememberOdd(after.streak));
       }
       dispatch(action);
     },

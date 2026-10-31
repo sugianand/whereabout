@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { QUICK_RECORD_KEY, loadFreeTallies } from "@/lib/game/quickRecord";
 import type { GameRecord } from "@/lib/game/deck";
 import { BEST_NORTH_KEY } from "@/lib/game/furtherNorth";
 import { NORTH_DAILY_KEY, dailyNorthOrder } from "@/lib/game/northDaily";
@@ -101,6 +102,8 @@ describe("FurtherNorth", () => {
     expect(card).toHaveTextContent("Run over: 1 pair in a row. That's your new best!");
     // Atlas has no guess for p4, so it sits this pair out.
     expect(card).not.toHaveTextContent("Atlas picked");
+    // Both rounds count in Atlas's record on your map, as one run.
+    expect(loadFreeTallies()["further-north"]).toMatchObject({ runs: 1, rounds: 2, right: 1 });
 
     fireEvent.click(within(card).getByRole("button", { name: "Start a new run" }));
     await waitFor(() => expect(pickButton(1)).toBeEnabled());
@@ -178,6 +181,8 @@ describe("FurtherNorth, today's run", () => {
     });
     // Today's run keeps its own result, apart from the free runs' best.
     expect(localStorage.getItem(BEST_NORTH_KEY)).toBeNull();
+    // Today's runs are read from their own days; they never add to the free runs' record.
+    expect(localStorage.getItem(QUICK_RECORD_KEY)).toBeNull();
 
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
