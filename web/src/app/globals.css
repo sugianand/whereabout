@@ -342,3 +342,19 @@ body {
     background-position: 0 0%;
   }
 }
+
+/* The controls sheet: keys and clicks on a keyboard-and-mouse screen, gestures on a touch one. */
+.wb-help-touch {
+  display: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .wb-help-keys,
+  .wb-help-mouse {
+    display: none;
+  }
+
+  .wb-help-touch {
+    display: inline;
+  }
+}

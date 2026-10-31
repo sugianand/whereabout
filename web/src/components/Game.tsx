@@ -57,6 +57,7 @@ import { TIERS, TIER_NAMES, isTier, tierBlurb, type Tier, type Tiers } from "@/l
 import type { Continent } from "@/lib/continents";
 import type { CatalogPhoto, GameBackend } from "@/lib/game/types";
 import { formatPoints, haversineKm, maxPoints, scoreDistance, type LngLat } from "@/lib/geo";
+import { ROUND_KEYS, isShortcut } from "@/lib/controls";
 import type { Clue } from "@/lib/hints";
 import { feelRevealInBrowser } from "@/lib/feel";
 import { hasSeenIntro, INTRO_TEXT, markIntroSeen } from "@/lib/intro";
@@ -73,6 +74,7 @@ import { keepOnMap, loadPlayed } from "@/lib/playedMap";
 import type { RevealView } from "@/lib/reveal";
 
 import BlitzRing from "./BlitzRing";
+import ControlsHelp from "./ControlsHelp";
 import FeelToggle from "./FeelToggle";
 import Globe from "./Globe";
 import PhotoViewer from "./PhotoViewer";
@@ -597,7 +599,8 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   }
 
   async function submit() {
-    if (state.phase !== "guessing" || !state.pin || state.submitting || !backend) return;
+    if (state.phase !== "guessing" || !state.pin || state.submitting || state.hinting) return;
+    if (!backend) return;
     dispatch({ type: "submitted" });
     await send(state.round.roundId, state.pin);
   }
@@ -736,6 +739,29 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
       ...(current.atlas?.belief ? { belief: current.atlas.belief } : {}),
     };
   }, [shown]);
+
+  // H takes a hint and G guesses where the pin is, from anywhere on the round's screen (the
+  // controls sheet lists them). A ref keeps the listener on the latest round without
+  // re-subscribing on every render.
+  const shortcuts = useRef({ submit, takeHint });
+  useEffect(() => {
+    shortcuts.current = { submit, takeHint };
+  });
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!isShortcut(e)) return;
+      const key = e.key.toLowerCase();
+      if (key === ROUND_KEYS.hint) {
+        e.preventDefault();
+        void shortcuts.current.takeHint();
+      } else if (key === ROUND_KEYS.guess) {
+        e.preventDefault();
+        void shortcuts.current.submit();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   if (state.phase === "finished" && !replayed) {
     return (
@@ -967,6 +993,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
                 </Link>
               )}
               <FeelToggle />
+              <ControlsHelp screen="round" />
             </div>
           )}
           {!shown && (

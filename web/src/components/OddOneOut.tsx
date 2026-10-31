@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
+import { isShortcut } from "@/lib/controls";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import {
   QUAD,
@@ -16,6 +17,8 @@ import {
   type Quad,
 } from "@/lib/game/oddOneOut";
 import { placeholderUrl, sources } from "@/lib/photoSources";
+
+import ControlsHelp from "./ControlsHelp";
 
 type OddOneOutProps = {
   deck: Deck;
@@ -131,7 +134,7 @@ export default function OddOneOut({ deck, loadRecords, random }: OddOneOutProps)
   useEffect(() => {
     if (!ready) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.altKey || e.ctrlKey || e.metaKey) return;
+      if (!isShortcut(e)) return;
       const n = Number(e.key);
       if (Number.isInteger(n) && n >= 1 && n <= QUAD) choose(n - 1);
     };
@@ -182,16 +185,19 @@ export default function OddOneOut({ deck, loadRecords, random }: OddOneOutProps)
             Odd one out: three photos share a continent. Which one doesn&apos;t?
           </p>
         </div>
-        <dl className="shrink-0 text-right">
-          <dt className="text-sm text-chalk-dim">Streak</dt>
-          <dd className="font-sign tabular text-3xl font-bold leading-none" aria-live="polite">
-            {streak}
-          </dd>
-          <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
-            <dt>Best</dt>
-            <dd className="tabular">{best}</dd>
-          </div>
-        </dl>
+        <div className="flex shrink-0 items-start gap-3">
+          <ControlsHelp screen="odd-one-out" />
+          <dl className="text-right">
+            <dt className="text-sm text-chalk-dim">Streak</dt>
+            <dd className="font-sign tabular text-3xl font-bold leading-none" aria-live="polite">
+              {streak}
+            </dd>
+            <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
+              <dt>Best</dt>
+              <dd className="tabular">{best}</dd>
+            </div>
+          </dl>
+        </div>
       </header>
 
       <div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-2 gap-2 px-2 pb-2 md:gap-3 md:px-6 md:pb-6">

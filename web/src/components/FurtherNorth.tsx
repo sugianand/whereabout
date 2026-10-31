@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
+import { isShortcut } from "@/lib/controls";
 import { seededShuffle } from "@/lib/game/daily";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import {
@@ -21,6 +22,7 @@ import { placeholderUrl, sources } from "@/lib/photoSources";
 import type { Units } from "@/lib/units";
 import { useUnits } from "@/lib/useUnits";
 
+import ControlsHelp from "./ControlsHelp";
 import UnitsSwitch from "./UnitsSwitch";
 
 type FurtherNorthProps = {
@@ -139,7 +141,7 @@ export default function FurtherNorth({ deck, loadRecords, random }: FurtherNorth
   useEffect(() => {
     if (!ready) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.altKey || e.ctrlKey || e.metaKey) return;
+      if (!isShortcut(e)) return;
       if (e.key === "1") choose("a");
       else if (e.key === "2") choose("b");
     };
@@ -199,16 +201,19 @@ export default function FurtherNorth({ deck, loadRecords, random }: FurtherNorth
             Further North: which photo was taken further north?
           </p>
         </div>
-        <dl className="shrink-0 text-right">
-          <dt className="text-sm text-chalk-dim">Streak</dt>
-          <dd className="font-sign tabular text-3xl font-bold leading-none" aria-live="polite">
-            {streak}
-          </dd>
-          <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
-            <dt>Best</dt>
-            <dd className="tabular">{best}</dd>
-          </div>
-        </dl>
+        <div className="flex shrink-0 items-start gap-3">
+          <ControlsHelp screen="further-north" />
+          <dl className="text-right">
+            <dt className="text-sm text-chalk-dim">Streak</dt>
+            <dd className="font-sign tabular text-3xl font-bold leading-none" aria-live="polite">
+              {streak}
+            </dd>
+            <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
+              <dt>Best</dt>
+              <dd className="tabular">{best}</dd>
+            </div>
+          </dl>
+        </div>
       </header>
 
       <div className="grid min-h-0 flex-1 grid-rows-2 gap-2 px-2 pb-2 md:grid-cols-2 md:grid-rows-1 md:gap-3 md:px-6 md:pb-6">
