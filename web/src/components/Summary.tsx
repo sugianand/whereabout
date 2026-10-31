@@ -697,6 +697,17 @@ export default function Summary({
       </Link>
 
       <Link
+        href="/odd-one-out"
+        className="mt-4 block rounded-2xl border border-flare/40 p-5 transition hover:border-flare hover:bg-flare/5"
+      >
+        <span className="block font-sign text-2xl font-bold text-flare">Odd one out</span>
+        <span className="mt-1 block text-chalk-dim">
+          Four photos, three from one continent: tap the one from somewhere else, until your first
+          miss.
+        </span>
+      </Link>
+
+      <Link
         href="/pass-and-play"
         className="mt-4 block rounded-2xl border border-flare/40 p-5 transition hover:border-flare hover:bg-flare/5"
       >

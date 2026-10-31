@@ -31,6 +31,11 @@ which was taken further north. A right pick keeps the second photo and deals a n
 the first wrong pick ends the run. Photos under one degree of latitude apart count either way. The
 reveal names both places with their latitudes and says whether Atlas, going by its own guesses,
 would have got the pair; your best streak is kept in your browser.
+**Odd one out** (at `/odd-one-out`, linked from the results screen) deals four photos, three
+taken on one continent and one on another; tap the odd one (keys 1 to 4 on a keyboard). A right
+tap deals four more, the first miss ends the run, and your best run is kept in your browser. The
+reveal names every photo's continent and place, and what Atlas would have picked from its own
+guesses: the one photo it placed on a different continent, or else its pin furthest from the rest.
 **Pass and play** (at `/pass-and-play`, linked from the results screen) is for two to four players
 on one phone or laptop: each pins the same photo in turn behind a "Pass to …" screen that hides the
 last pin, then one reveal shows every numbered pin, Atlas's, and the running table. Five photos a
