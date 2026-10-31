@@ -248,6 +248,25 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   const [state, dispatch] = useReducer(gameReducer, initialState);
   // The first-visit card. Browser storage is only readable after hydration, so it starts closed.
   const [introOpen, setIntroOpen] = useState(false);
+  const stageRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+
+  // The header's height, as --wb-header-h on the stage: on wide screens the reveal card stops
+  // below it, so the header's controls (Games, sound, help) stay usable at every reveal.
+  useEffect(() => {
+    const stage = stageRef.current;
+    const header = headerRef.current;
+    if (!stage || !header || typeof ResizeObserver === "undefined") return;
+    const measure = () =>
+      stage.style.setProperty(
+        "--wb-header-h",
+        `${Math.ceil(header.getBoundingClientRect().height)}px`,
+      );
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
   // The player's record against Atlas, updated once as each game ends (see `next` below).
   const [record, setRecord] = useState<PlayerRecord | null>(null);
   // The badges the game just finished earned, marked "New" on the summary.
@@ -827,6 +846,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
 
   return (
     <main
+      ref={stageRef}
       className="wb-stage relative h-dvh w-full overflow-hidden bg-ocean-deep"
       data-phase={shown ? "revealed" : state.phase}
       data-replay={replayed ? "true" : undefined}
@@ -865,7 +885,10 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
       {/* Two lines: the title and the score side by side, then the controls across the whole
           width. Kept under the title column, the controls only had what the score left over,
           and on a 360px phone they ran off the screen. */}
-      <header className="wb-header pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-wrap items-start justify-between gap-x-4 px-4 pt-4 md:px-6">
+      <header
+        ref={headerRef}
+        className="wb-header pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-wrap items-start justify-between gap-x-4 px-4 pt-4 md:px-6"
+      >
         {/* Only the controls take taps: on a phone this column spans the photo, and its empty
             space must not swallow taps meant for the photo's own buttons underneath. A zero
             basis keeps a long notice from pushing the score onto a line of its own. */}

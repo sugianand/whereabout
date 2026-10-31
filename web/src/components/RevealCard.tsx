@@ -208,7 +208,7 @@ export default function RevealCard({
   return (
     <section
       aria-labelledby="reveal-place"
-      className="wb-card pointer-events-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-graticule/70 bg-ocean-deep/95 p-4 shadow-2xl md:p-6"
+      className="wb-card wb-reveal-card pointer-events-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-graticule/70 bg-ocean-deep/95 p-4 shadow-2xl md:p-6"
     >
       {replay && (
         <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-chalk-dim">

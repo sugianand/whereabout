@@ -53,7 +53,9 @@ const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1
  *
  * The sheet is a modal dialog: focus moves to its close button and Tab stays inside it, its key
  * presses stop at it (so a round's H or a quick game's 1 to 4 never act behind it), and Esc, the
- * close button, a tap outside or picking a game close it.
+ * close button, a tap outside or picking a game close it. A link to another page leaves the
+ * sheet open until that page replaces this one: unmounting a Next link inside its own click can
+ * drop the navigation.
  */
 export default function GamesMenu({
   screen,
@@ -173,7 +175,7 @@ export default function GamesMenu({
                 <RoundBody />
               </button>
             ) : (
-              <Link href="/" onClick={picked} className={`${ROUND_CARD} ${ROUND_LINK}`}>
+              <Link href="/" className={`${ROUND_CARD} ${ROUND_LINK}`}>
                 <RoundBody />
               </Link>
             )}
@@ -193,7 +195,6 @@ export default function GamesMenu({
             <h3 className="mt-4 text-sm font-semibold text-gold">With friends</h3>
             <Link
               href="/pass-and-play"
-              onClick={picked}
               className="mt-2 block rounded-xl border border-flare/40 px-4 py-3 transition hover:border-flare hover:bg-flare/5"
             >
               <span className="block font-sign text-xl font-bold text-flare">Pass and play</span>

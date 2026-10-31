@@ -25,7 +25,10 @@ type QuickGamesProps = {
   blitzHref?: string;
   /** The mode being played on this screen: its card says so and isn't a link to itself. */
   current?: QuickMode;
-  /** Called after a card is picked, so a menu holding the cards can close. */
+  /**
+   * Called when Blitz's button is picked, so a menu holding the cards can close; a link card
+   * leaves the page instead, which closes it.
+   */
   onPicked?: () => void;
   /** Tighter cards with the heading left to the caller, for the Games menu. */
   compact?: boolean;
@@ -124,7 +127,7 @@ export default function QuickGames({
   const cardClass = compact ? COMPACT_CARD : CARD;
 
   // Each mode's card: the one being played reads "Playing now" and goes nowhere; the others
-  // are a link (or Blitz's button) that also tells a holding menu to close.
+  // are a link, or Blitz's button, which also tells a holding menu to close.
   const card = (mode: QuickMode, href: string | undefined, onClick?: () => void) => {
     const body = (
       <CardBody
@@ -156,7 +159,7 @@ export default function QuickGames({
       );
     }
     return (
-      <Link href={href!} onClick={onPicked} className={cardClass}>
+      <Link href={href!} className={cardClass}>
         {body}
       </Link>
     );

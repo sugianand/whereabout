@@ -97,3 +97,34 @@ test("on a 360px phone the Games button fits every quick game's header", async (
     expect(box.x + box.width, `${address} ends on screen`).toBeLessThanOrEqual(360);
   }
 });
+
+test("at the reveal the header's controls stay in reach above the card", async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 768, "phones keep the card in the lower half");
+  await page.goto("./?daily");
+  await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
+  await page.getByRole("application", { name: /Globe/ }).focus();
+  await page.keyboard.press("Enter");
+  await page.getByRole("button", { name: "Guess here" }).click();
+  const card = page.getByRole("region").filter({ hasText: "It was taken in" });
+  await expect(card).toBeVisible();
+  // Let the card finish rising before measuring it.
+  await page.waitForTimeout(1_600);
+
+  const header = page.locator("header").first();
+  const controls = header.locator("button:visible, select:visible");
+  expect(await controls.count()).toBeGreaterThan(0);
+  for (const control of await controls.all()) {
+    // Nothing lies over the middle of the control: a tap there reaches it.
+    const reachable = await control.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+      return hit !== null && el.contains(hit);
+    });
+    expect(reachable, `"${(await control.textContent())?.trim()}" stays clear of the card`).toBe(
+      true,
+    );
+  }
+  await page.getByRole("button", { name: "Sound and vibration at the reveal" }).click();
+  await page.getByRole("button", { name: "Games" }).click();
+  await expect(page.getByRole("dialog", { name: "Ways to play" })).toBeVisible();
+});
