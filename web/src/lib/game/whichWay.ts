@@ -149,7 +149,13 @@ export type WayState =
     });
 
 export type WayAction =
-  | { type: "start"; order: readonly string[] }
+  | {
+      type: "start";
+      /** The photos in the order they're dealt; you stand at the first. */
+      order: readonly string[];
+      /** A run picked back up (today's run after a reload): the counts it had reached. */
+      from?: { streak: number; atlasRight: number; atlasPlayed: number };
+    }
   | {
       type: "picked";
       point: Point;
@@ -183,7 +189,15 @@ export function atlasPoint(from: LngLat | null, to: LngLat | null): Point | null
 export function wayReducer(state: WayState, action: WayAction): WayState {
   switch (action.type) {
     case "start": {
-      const run = blankRun(action.order);
+      const from = action.from;
+      const run = from
+        ? {
+            ...blankRun(action.order),
+            streak: from.streak,
+            atlasRight: from.atlasRight,
+            atlasPlayed: from.atlasPlayed,
+          }
+        : blankRun(action.order);
       return action.order.length < 2 ? { phase: "cleared", ...run } : { phase: "picking", ...run };
     }
     case "redeal": {

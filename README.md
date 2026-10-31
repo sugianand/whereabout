@@ -54,6 +54,8 @@ and shows Atlas's pick from its own two guesses; a heading within 5° of the lin
 counts for either. A right pick travels on, where you were headed becoming where you stand; the
 first miss ends the run, and your best run is kept in your browser. Keys 1 to 9 pick on a number
 pad's layout (8 is north).
+**Today's run** (at `/which-way/daily`) sets everyone off on the same journey on the same UTC day,
+one try a day, picked back up at the photo you stood at after a reload and shared as counts only.
 The results screen gathers these quick games (Blitz, Country Streak, Survival, Further North, Odd
 one out, How far apart? and Which way?) in one list, each with your best from this browser beside its name, so you see what
 to beat before you open one; Blitz starts straight from its card. The same list, with the

@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GameRecord } from "@/lib/game/deck";
 import type { CatalogPhoto } from "@/lib/game/types";
-import { BEST_WAY_KEY } from "@/lib/game/whichWay";
+import { WAY_DAILY_KEY, dailyWayOrder } from "@/lib/game/wayDaily";
+import { BEST_WAY_KEY, POINT_NAMES, initialBearing, pointOf } from "@/lib/game/whichWay";
 import { gameFor } from "@/test/deck";
 import { FakeMap, FakeMarker, resetFakes } from "@/test/maplibre-mock";
 
@@ -166,5 +167,104 @@ describe("WhichWay", () => {
     expect(placed.find((m) => m.element.classList.contains("globe-pin--truth"))?.lngLat).toEqual([
       2.35, 48.86,
     ]);
+  });
+});
+
+describe("WhichWay, today's run", () => {
+  // Five cities on four continents, every pair far enough apart to make a fair question.
+  const CITIES: Record<string, [number, number]> = {
+    d1: [-0.13, 51.51], // London
+    d2: [139.69, 35.69], // Tokyo
+    d3: [-74.01, 40.71], // New York
+    d4: [18.42, -33.92], // Cape Town
+    d5: [151.21, -33.87], // Sydney
+  };
+  const DAILY = Object.entries(CITIES).map(([id, [lng, lat]]) =>
+    record(id, lng, lat, { lng: lng + 0.5, lat }),
+  );
+  const DAY = "2026-10-31";
+  const now = () => new Date(`${DAY}T18:48:00Z`);
+  const order = dailyWayOrder(Object.keys(CITIES), DAY);
+  const ll = (id: string) => ({ lng: CITIES[id][0], lat: CITIES[id][1] });
+  /** The point really heading from the stop at `i` to the next one. */
+  const truth = (i: number) => POINT_NAMES[pointOf(initialBearing(ll(order[i]), ll(order[i + 1])))];
+  /** A point opposite the truth, so always wrong. */
+  const wrong = (i: number) =>
+    POINT_NAMES[pointOf(initialBearing(ll(order[i]), ll(order[i + 1])) + 180)];
+
+  function play() {
+    const game = gameFor(DAILY);
+    return render(<WhichWay deck={game.deck} loadRecords={game.loadRecords} daily now={now} />);
+  }
+
+  it("deals the day's journey, picks it back up after a reload, and ends on a miss", async () => {
+    const first = play();
+    await waitFor(() => expect(point("north")).toBeEnabled());
+    expect(photo(1)).toHaveAttribute("data-photo", order[0]);
+    expect(photo(2)).toHaveAttribute("data-photo", order[1]);
+    expect(screen.getByText(/today's run \(2026-10-31\)/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Free runs" })).toHaveAttribute("href", "/which-way");
+    expect(screen.queryByText("Best")).toBeNull();
+    fireEvent.click(point(truth(0)));
+    await screen.findByRole("button", { name: "Travel on" });
+    expect(JSON.parse(localStorage.getItem(WAY_DAILY_KEY)!)[DAY]).toMatchObject({
+      streak: 1,
+      ended: null,
+      at: order[1],
+    });
+    first.unmount();
+
+    // A reload carries on from where the right pick took you, with the streak so far.
+    play();
+    await waitFor(() => expect(point("north")).toBeEnabled());
+    expect(photo(1)).toHaveAttribute("data-photo", order[1]);
+    expect(photo(2)).toHaveAttribute("data-photo", order[2]);
+    expect(screen.getByText("Streak").nextElementSibling).toHaveTextContent("1");
+
+    fireEvent.click(point(wrong(1)));
+    const region = await screen.findByRole("region");
+    expect(within(region).getByRole("heading")).toHaveTextContent("Wrong");
+    expect(region).toHaveTextContent("Today's run is over: 1 stop in a row.");
+    expect(within(region).queryByRole("button", { name: "Start a new run" })).toBeNull();
+    expect(within(region).getByRole("link", { name: "Play a free run" })).toHaveAttribute(
+      "href",
+      "/which-way",
+    );
+    const kept = JSON.parse(localStorage.getItem(WAY_DAILY_KEY)!)[DAY];
+    expect(kept).toMatchObject({ streak: 1, atlasPlayed: 2, ended: "miss" });
+    // Today's run keeps its own result, apart from the free runs' best.
+    expect(localStorage.getItem(BEST_WAY_KEY)).toBeNull();
+
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    fireEvent.click(within(region).getByRole("button", { name: "Share today's run" }));
+    expect(await within(region).findByText("Result copied. Paste it anywhere.")).toBeVisible();
+    expect(writeText.mock.calls[0][0]).toMatch(
+      new RegExp(
+        `^Whereabout · Which way\\? · 2026-10-31\\n🧭 1 stop in a row\\n🟩🟥\\nAtlas: ${kept.atlasRight} of 2\\n`,
+      ),
+    );
+  });
+
+  it("shows the day's result instead of dealing it again once it has ended", async () => {
+    localStorage.setItem(
+      WAY_DAILY_KEY,
+      JSON.stringify({ [DAY]: { streak: 4, atlasRight: 1, atlasPlayed: 3, ended: "miss" } }),
+    );
+    play();
+    expect(await screen.findByRole("heading", { name: "4 stops in a row" })).toBeInTheDocument();
+    expect(
+      screen.getByText(/Atlas got 1 of the 3 stops it played\. The next run is dealt in 5h 12m\./),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Share today's run" })).toHaveFocus();
+    expect(screen.queryByRole("group", { name: /Which way from photo 1/ })).toBeNull();
+  });
+
+  it("links free runs to today's run", async () => {
+    await setup();
+    expect(screen.getByRole("link", { name: "Today's run" })).toHaveAttribute(
+      "href",
+      "/which-way/daily",
+    );
   });
 });

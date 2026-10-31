@@ -23,6 +23,11 @@ export interface DailyRun {
   atlasPlayed: number;
   /** Null while the run is still going; "miss" on a wrong pick; "cleared" after every photo. */
   ended: "miss" | "cleared" | null;
+  /**
+   * The photo a run still going picks up from, for a game whose deal skips photos it can't
+   * pair (Which way?), so the streak alone can't say where in the day's order it stands.
+   */
+  at?: string;
 }
 
 /** A run not yet started: nothing right, nothing played. */
@@ -42,12 +47,15 @@ export function parseDailyRun(value: unknown): DailyRun | null {
   if (!count(v.streak) || !count(v.atlasRight) || !count(v.atlasPlayed)) return null;
   if (v.atlasRight > v.atlasPlayed) return null;
   if (v.ended !== null && v.ended !== "miss" && v.ended !== "cleared") return null;
-  return {
+  if (v.at !== undefined && (typeof v.at !== "string" || v.at === "")) return null;
+  const run: DailyRun = {
     streak: v.streak,
     atlasRight: v.atlasRight,
     atlasPlayed: v.atlasPlayed,
     ended: v.ended,
   };
+  if (typeof v.at === "string") run.at = v.at;
+  return run;
 }
 
 function storage(): Storage | null {

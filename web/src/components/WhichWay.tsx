@@ -5,7 +5,16 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "r
 
 import { isShortcut } from "@/lib/controls";
 import { seededShuffle } from "@/lib/game/daily";
+import type { DailyRun } from "@/lib/game/dailyRuns";
+import { runToday } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
+import {
+  dailyWayOrder,
+  loadWayDay,
+  rememberWayDay,
+  resumeWayOrder,
+  wayDailyShare,
+} from "@/lib/game/wayDaily";
 import {
   POINTS,
   POINT_KEYS,
@@ -30,6 +39,7 @@ import type { Units } from "@/lib/units";
 import { useUnits } from "@/lib/useUnits";
 
 import ControlsHelp from "./ControlsHelp";
+import { DailyRunResult, ShareDay } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
 import Globe from "./Globe";
 import UnitsSwitch from "./UnitsSwitch";
@@ -40,6 +50,14 @@ type WhichWayProps = {
   loadRecords?: (ids: string[]) => Promise<GameRecord[]>;
   /** For tests: the randomness that shuffles each run. */
   random?: () => number;
+  /**
+   * Today's journey (src/lib/game/wayDaily.ts): dealt from the UTC date, one try a day, picked
+   * back up at the photo it stood at, with a share line at the end. Off, every run is a fresh
+   * shuffle.
+   */
+  daily?: boolean;
+  /** For tests: the clock that picks today's run. */
+  now?: () => Date;
 };
 
 /** The compass's buttons on a three-by-three grid, north at the top; the middle is where you stand. */
@@ -61,21 +79,46 @@ const atlasAt = (r: GameRecord): LngLat | null =>
  * headed; pick the compass point you'd set off in. The reveal draws the route on the globe. A
  * right pick travels on, photo 2 becoming where you stand; the first wrong pick ends the run.
  */
-export default function WhichWay({ deck, loadRecords, random }: WhichWayProps) {
+export default function WhichWay({
+  deck,
+  loadRecords,
+  random,
+  daily = false,
+  now,
+}: WhichWayProps) {
   const [state, dispatch] = useReducer(wayReducer, initialWay);
   const [best, setBest] = useState(0);
   const [bestBeforeRun, setBestBeforeRun] = useState(0);
   const [records, setRecords] = useState<ReadonlyMap<string, GameRecord>>(() => new Map());
   const [error, setError] = useState<string | null>(null);
   const units = useUnits();
+  // Today's run: the day it was dealt for (kept when the clock passes midnight mid-run) and,
+  // once it has ended, how it went, which shows instead of the game.
+  const [day, setDay] = useState<string | null>(null);
+  const [dayDone, setDayDone] = useState<DailyRun | null>(null);
 
   const start = useCallback(() => {
+    if (daily) {
+      const today = runToday(now?.());
+      const kept = loadWayDay(today);
+      setDay(today);
+      if (kept?.ended) {
+        setDayDone(kept);
+        return;
+      }
+      dispatch({
+        type: "start",
+        order: resumeWayOrder(dailyWayOrder(deck.ids, today), kept),
+        from: kept ?? undefined,
+      });
+      return;
+    }
     const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
     const stored = loadBestWay();
     setBest(stored);
     setBestBeforeRun(stored);
     dispatch({ type: "start", order: seededShuffle(deck.ids, seed) });
-  }, [deck.ids, random]);
+  }, [deck.ids, random, daily, now]);
 
   // The order is shuffled in the browser after hydration, never at build time.
   useEffect(() => {
@@ -143,12 +186,25 @@ export default function WhichWay({ deck, loadRecords, random }: WhichWayProps) {
         atlasFrom: atlasAt(from),
         atlasTo: atlasAt(to),
       } as const;
-      // Keep the run as the best after every right pick, so leaving mid-run keeps it.
       const after = wayReducer(state, action);
-      if (after.phase === "answered" && after.verdict.correct) setBest(rememberWay(after.streak));
+      if (after.phase === "answered" && day) {
+        // Today's run is kept after every pick, standing where a right pick takes you, so a
+        // reload resumes the journey there and never deals it again.
+        const right = after.verdict.correct;
+        rememberWayDay(day, {
+          streak: after.streak,
+          atlasRight: after.atlasRight,
+          atlasPlayed: after.atlasPlayed,
+          ended: !right ? "miss" : after.index + 2 >= after.order.length ? "cleared" : null,
+          at: right ? to.photo.id : from.photo.id,
+        });
+      } else if (after.phase === "answered" && after.verdict.correct) {
+        // Keep the run as the best after every right pick, so leaving mid-run keeps it.
+        setBest(rememberWay(after.streak));
+      }
       dispatch(action);
     },
-    [state, from, to, unfit],
+    [state, from, to, unfit, day],
   );
 
   // The number pad's layout picks a point: 8 is north, 9 north-east, 2 south.
@@ -174,6 +230,29 @@ export default function WhichWay({ deck, loadRecords, random }: WhichWayProps) {
   );
 
   const streak = state.phase === "idle" ? 0 : state.streak;
+
+  // Today's journey can also run out of stops when the last photos left make no fair question
+  // from where you stand: keep it as travelled to the end.
+  const dayCleared =
+    state.phase === "cleared" && day !== null && state.order.length >= 2 ? state : null;
+  useEffect(() => {
+    if (!dayCleared || !day) return;
+    const { streak, atlasRight, atlasPlayed } = dayCleared;
+    rememberWayDay(day, { streak, atlasRight, atlasPlayed, ended: "cleared" });
+  }, [dayCleared, day]);
+
+  if (dayDone && day) return <WayDayResult day={day} entry={dayDone} now={now} />;
+
+  if (dayCleared && day) {
+    const { streak, atlasRight, atlasPlayed } = dayCleared;
+    return (
+      <WayDayResult
+        day={day}
+        entry={{ streak, atlasRight, atlasPlayed, ended: "cleared" }}
+        now={now}
+      />
+    );
+  }
 
   if (state.phase === "cleared") {
     const none = state.order.length < 2;
@@ -234,8 +313,16 @@ export default function WhichWay({ deck, loadRecords, random }: WhichWayProps) {
             Whereabout
           </Link>
           <p className="mt-1 text-sm text-chalk-dim">
-            Which way?: set off from photo 1 toward photo 2
+            {day
+              ? `Which way?, today's run (${day}): set off from photo 1 toward photo 2`
+              : "Which way?: set off from photo 1 toward photo 2"}
           </p>
+          <Link
+            href={daily ? "/which-way" : "/which-way/daily"}
+            className="mt-0.5 inline-block text-sm text-gold underline underline-offset-2 hover:brightness-110"
+          >
+            {daily ? "Free runs" : "Today's run"}
+          </Link>
         </div>
         <div className="flex shrink-0 items-start gap-3">
           <GamesMenu screen="which-way" streakHref="/streak" />
@@ -245,10 +332,12 @@ export default function WhichWay({ deck, loadRecords, random }: WhichWayProps) {
             <dd className="font-sign tabular text-3xl font-bold leading-none" aria-live="polite">
               {streak}
             </dd>
-            <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
-              <dt>Best</dt>
-              <dd className="tabular">{best}</dd>
-            </div>
+            {!daily && (
+              <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
+                <dt>Best</dt>
+                <dd className="tabular">{best}</dd>
+              </div>
+            )}
           </dl>
         </div>
       </header>
@@ -284,6 +373,7 @@ export default function WhichWay({ deck, loadRecords, random }: WhichWayProps) {
             over={over}
             best={best}
             newBest={over && answered.streak > bestBeforeRun}
+            daily={day}
             onNext={over ? start : () => dispatch({ type: "next" })}
           />
         </div>
@@ -459,6 +549,7 @@ function WayCard({
   over,
   best,
   newBest,
+  daily,
   onNext,
 }: {
   verdict: WayVerdict;
@@ -472,6 +563,8 @@ function WayCard({
   over: boolean;
   best: number;
   newBest: boolean;
+  /** Today's run's day, when this is it: its end shares the day instead of starting again. */
+  daily: string | null;
   onNext: () => void;
 }) {
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -523,21 +616,35 @@ function WayCard({
           {`Atlas this run: ${atlasRight} of ${stops(atlasPlayed)}.`}
         </p>
       )}
-      {over && (
+      {over && daily && (
+        <p className="mt-2 text-chalk">{`Today's run is over: ${stops(streak)} in a row.`}</p>
+      )}
+      {over && !daily && (
         <p className="mt-2 text-chalk">
           {`Run over: ${stops(streak)} in a row. `}
           {newBest ? "That's your new best!" : best > 0 ? `Your best is ${stops(best)}.` : ""}
         </p>
       )}
+      {over && daily && (
+        <ShareDay
+          shareText={(href) =>
+            wayDailyShare(daily, { streak, atlasRight, atlasPlayed, ended: "miss" }, href)
+          }
+          freeHref="/which-way"
+          focus
+        />
+      )}
       <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <button
-          ref={nextRef}
-          type="button"
-          onClick={onNext}
-          className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
-        >
-          {over ? "Start a new run" : "Travel on"}
-        </button>
+        {!(over && daily) && (
+          <button
+            ref={nextRef}
+            type="button"
+            onClick={onNext}
+            className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
+          >
+            {over ? "Start a new run" : "Travel on"}
+          </button>
+        )}
         <p className="min-w-0 text-[11px] text-chalk-dim">
           {[from, to].map((r, i) => (
             <a
@@ -553,5 +660,28 @@ function WayCard({
         </p>
       </div>
     </section>
+  );
+}
+
+/** Today's Which way? once it has ended. */
+function WayDayResult({ day, entry, now }: { day: string; entry: DailyRun; now?: () => Date }) {
+  const cleared = entry.ended === "cleared";
+  return (
+    <DailyRunResult
+      game="Which way?"
+      day={day}
+      headline={cleared ? "You travelled the whole world" : `${stops(entry.streak)} in a row`}
+      summary={
+        (cleared
+          ? `${stops(entry.streak)} in a row, as far as today's photos go.`
+          : "That's today's journey travelled.") +
+        (entry.atlasPlayed > 0
+          ? ` Atlas got ${entry.atlasRight} of the ${stops(entry.atlasPlayed)} it played.`
+          : "")
+      }
+      shareText={(href) => wayDailyShare(day, entry, href)}
+      freeHref="/which-way"
+      now={now}
+    />
   );
 }
