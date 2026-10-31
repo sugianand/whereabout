@@ -17,8 +17,18 @@ import {
   type NorthVerdict,
   type Side,
 } from "@/lib/game/furtherNorth";
+import {
+  dailyNorthOrder,
+  loadNorthDay,
+  northDailyShare,
+  northToday,
+  rememberNorthDay,
+  untilNextNorth,
+  type NorthDay,
+} from "@/lib/game/northDaily";
 import { formatDistance } from "@/lib/geo";
 import { placeholderUrl, sources } from "@/lib/photoSources";
+import { sendShare, type ShareOutcome } from "@/lib/share";
 import type { Units } from "@/lib/units";
 import { useUnits } from "@/lib/useUnits";
 
@@ -32,6 +42,20 @@ type FurtherNorthProps = {
   loadRecords?: (ids: string[]) => Promise<GameRecord[]>;
   /** For tests: the randomness that shuffles each run. */
   random?: () => number;
+  /**
+   * Today's run (src/lib/game/northDaily.ts): dealt from the UTC date, one try a day, picked
+   * back up where it was left, with a share line at the end. Off, every run is a fresh shuffle.
+   */
+  daily?: boolean;
+  /** For tests: the clock that picks today's run. */
+  now?: () => Date;
+};
+
+const SHARE_NOTE: Record<ShareOutcome, string> = {
+  shared: "Result shared.",
+  copied: "Result copied. Paste it anywhere.",
+  cancelled: "",
+  failed: "Couldn't copy. Your browser blocked the clipboard.",
 };
 
 const SIDES: readonly Side[] = ["a", "b"];
@@ -47,7 +71,13 @@ function pairs(n: number): string {
  * A right pick keeps the second photo and deals a new one beside it; the first wrong pick ends
  * the run.
  */
-export default function FurtherNorth({ deck, loadRecords, random }: FurtherNorthProps) {
+export default function FurtherNorth({
+  deck,
+  loadRecords,
+  random,
+  daily = false,
+  now,
+}: FurtherNorthProps) {
   const [state, dispatch] = useReducer(northReducer, initialNorth);
   const [best, setBest] = useState(0);
   // The best before this run, so the end card can say when it was beaten.
@@ -55,14 +85,38 @@ export default function FurtherNorth({ deck, loadRecords, random }: FurtherNorth
   const [records, setRecords] = useState<ReadonlyMap<string, GameRecord>>(() => new Map());
   const [error, setError] = useState<string | null>(null);
   const units = useUnits();
+  // Today's run: the day it was dealt for (kept when the clock passes midnight mid-run) and,
+  // once it has ended, how it went, which shows instead of the game.
+  const [day, setDay] = useState<string | null>(null);
+  const [dayDone, setDayDone] = useState<NorthDay | null>(null);
 
   const start = useCallback(() => {
+    if (daily) {
+      const today = northToday(now?.());
+      const kept = loadNorthDay(today);
+      setDay(today);
+      if (kept?.ended) {
+        setDayDone(kept);
+        return;
+      }
+      const { streak, atlasRight, atlasPlayed } = kept ?? {
+        streak: 0,
+        atlasRight: 0,
+        atlasPlayed: 0,
+      };
+      dispatch({
+        type: "start",
+        order: dailyNorthOrder(deck.ids, today),
+        from: { streak, atlasRight, atlasPlayed },
+      });
+      return;
+    }
     const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
     const stored = loadBestNorth();
     setBest(stored);
     setBestBeforeRun(stored);
     dispatch({ type: "start", order: seededShuffle(deck.ids, seed) });
-  }, [deck.ids, random]);
+  }, [deck.ids, random, daily, now]);
 
   // The order is shuffled in the browser after hydration, never at build time.
   useEffect(() => {
@@ -130,12 +184,23 @@ export default function FurtherNorth({ deck, loadRecords, random }: FurtherNorth
         atlasA: recA.atlas?.lat ?? null,
         atlasB: recB.atlas?.lat ?? null,
       } as const;
-      // Keep the streak as the best after every right pick, so leaving mid-run keeps it.
       const after = northReducer(state, action);
-      if (after.phase === "answered" && after.verdict.correct) setBest(rememberNorth(after.streak));
+      if (after.phase === "answered" && day) {
+        // Today's run is kept after every pick, so a reload resumes it and never deals it again.
+        const cleared = after.verdict.correct && after.index + 2 >= after.order.length;
+        rememberNorthDay(day, {
+          streak: after.streak,
+          atlasRight: after.atlasRight,
+          atlasPlayed: after.atlasPlayed,
+          ended: !after.verdict.correct ? "miss" : cleared ? "cleared" : null,
+        });
+      } else if (after.phase === "answered" && after.verdict.correct) {
+        // Keep the streak as the best after every right pick, so leaving mid-run keeps it.
+        setBest(rememberNorth(after.streak));
+      }
       dispatch(action);
     },
-    [state, recA, recB],
+    [state, recA, recB, day],
   );
 
   // 1 and 2 pick a photo from the keyboard.
@@ -151,6 +216,23 @@ export default function FurtherNorth({ deck, loadRecords, random }: FurtherNorth
   }, [ready, choose]);
 
   const streak = state.phase === "idle" ? 0 : state.streak;
+
+  if (dayDone && day) return <NorthDayResult day={day} entry={dayDone} now={now} />;
+
+  if (state.phase === "cleared" && day && state.order.length >= 2) {
+    return (
+      <NorthDayResult
+        day={day}
+        entry={{
+          streak: state.streak,
+          atlasRight: state.atlasRight,
+          atlasPlayed: state.atlasPlayed,
+          ended: "cleared",
+        }}
+        now={now}
+      />
+    );
+  }
 
   if (state.phase === "cleared") {
     const none = state.order.length < 2;
@@ -199,8 +281,25 @@ export default function FurtherNorth({ deck, loadRecords, random }: FurtherNorth
             Whereabout
           </Link>
           <p className="mt-1 text-sm text-chalk-dim">
-            Further North: which photo was taken further north?
+            {day
+              ? `Further North, today's run (${day}): which photo was taken further north?`
+              : "Further North: which photo was taken further north?"}
           </p>
+          {daily ? (
+            <Link
+              href="/further-north"
+              className="mt-0.5 inline-block text-sm text-gold underline underline-offset-2 hover:brightness-110"
+            >
+              Free runs
+            </Link>
+          ) : (
+            <Link
+              href="/further-north/daily"
+              className="mt-0.5 inline-block text-sm text-gold underline underline-offset-2 hover:brightness-110"
+            >
+              {"Today's run"}
+            </Link>
+          )}
         </div>
         <div className="flex shrink-0 items-start gap-3">
           <GamesMenu screen="further-north" streakHref="/streak" />
@@ -210,10 +309,12 @@ export default function FurtherNorth({ deck, loadRecords, random }: FurtherNorth
             <dd className="font-sign tabular text-3xl font-bold leading-none" aria-live="polite">
               {streak}
             </dd>
-            <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
-              <dt>Best</dt>
-              <dd className="tabular">{best}</dd>
-            </div>
+            {!daily && (
+              <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
+                <dt>Best</dt>
+                <dd className="tabular">{best}</dd>
+              </div>
+            )}
           </dl>
         </div>
       </header>
@@ -251,6 +352,7 @@ export default function FurtherNorth({ deck, loadRecords, random }: FurtherNorth
             over={over}
             best={best}
             newBest={over && answered.streak > bestBeforeRun}
+            daily={day}
             onNext={over ? start : () => dispatch({ type: "next" })}
           />
         </div>
@@ -386,6 +488,7 @@ function NorthCard({
   over,
   best,
   newBest,
+  daily,
   onNext,
 }: {
   verdict: NorthVerdict;
@@ -398,6 +501,8 @@ function NorthCard({
   over: boolean;
   best: number;
   newBest: boolean;
+  /** Today's run's day, when this is it: its end shares the day instead of starting again. */
+  daily: string | null;
   onNext: () => void;
 }) {
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -435,20 +540,107 @@ function NorthCard({
           {`Atlas this run: ${atlasRight} of ${pairs(atlasPlayed)}.`}
         </p>
       )}
-      {over && (
+      {over && daily && (
+        <p className="mt-2 text-chalk">{`Today's run is over: ${pairs(streak)} in a row.`}</p>
+      )}
+      {over && !daily && (
         <p className="mt-2 text-chalk">
           {`Run over: ${pairs(streak)} in a row. `}
           {newBest ? "That's your new best!" : best > 0 ? `Your best is ${pairs(best)}.` : ""}
         </p>
       )}
-      <button
-        ref={nextRef}
-        type="button"
-        onClick={onNext}
-        className="mt-3 rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
-      >
-        {over ? "Start a new run" : "Next pair"}
-      </button>
+      {over && daily ? (
+        <ShareDay
+          day={daily}
+          entry={{
+            streak,
+            atlasRight,
+            atlasPlayed,
+            ended: "miss",
+          }}
+          focus
+        />
+      ) : (
+        <button
+          ref={nextRef}
+          type="button"
+          onClick={onNext}
+          className="mt-3 rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
+        >
+          {over ? "Start a new run" : "Next pair"}
+        </button>
+      )}
     </section>
+  );
+}
+
+/**
+ * Share today's run, and the way on to a free run. The share line is counts only
+ * (`northDailyShare`), so it spoils no pair for a friend who hasn't played.
+ */
+function ShareDay({
+  day,
+  entry,
+  focus = false,
+}: {
+  day: string;
+  entry: NorthDay;
+  focus?: boolean;
+}) {
+  const [note, setNote] = useState("");
+  const shareRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (focus) shareRef.current?.focus({ preventScroll: true });
+  }, [focus]);
+  async function share() {
+    const text = northDailyShare(day, entry, window.location.href);
+    setNote(SHARE_NOTE[await sendShare(text, navigator)]);
+  }
+  return (
+    <>
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <button
+          ref={shareRef}
+          type="button"
+          onClick={share}
+          className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
+        >
+          {"Share today's run"}
+        </button>
+        <Link
+          href="/further-north"
+          className="text-chalk-dim underline underline-offset-2 hover:text-chalk"
+        >
+          Play a free run
+        </Link>
+      </div>
+      <p className="mt-2 min-h-5 text-sm text-chalk-dim" role="status">
+        {note}
+      </p>
+    </>
+  );
+}
+
+/** Today's run once it has ended: how it went, the share, and when the next one is dealt. */
+function NorthDayResult({ day, entry, now }: { day: string; entry: NorthDay; now?: () => Date }) {
+  const cleared = entry.ended === "cleared";
+  return (
+    <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center px-6 py-16">
+      <p className="text-sm text-gold">{`Further North · today's run · ${day}`}</p>
+      <h1 className="mt-2 font-sign text-5xl font-extrabold leading-none tracking-tight">
+        {cleared ? "You called every pair" : `${pairs(entry.streak)} in a row`}
+      </h1>
+      <p className="mt-4 text-lg text-chalk-dim">
+        {cleared
+          ? `${pairs(entry.streak)} in a row, every photo the game has. `
+          : "That's today's run played. "}
+        {entry.atlasPlayed > 0 &&
+          `Atlas got ${entry.atlasRight} of the ${pairs(entry.atlasPlayed)} it played. `}
+        {`The next run is dealt in ${untilNextNorth(now?.())}.`}
+      </p>
+      <div className="mt-4">
+        <ShareDay day={day} entry={entry} focus />
+      </div>
+    </main>
   );
 }

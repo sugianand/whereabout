@@ -88,7 +88,15 @@ export type NorthState =
     });
 
 export type NorthAction =
-  | { type: "start"; order: readonly string[] }
+  | {
+      type: "start";
+      order: readonly string[];
+      /**
+       * Pick a run back up where it was left (today's run, src/lib/game/northDaily.ts): the
+       * pair on screen is `order[streak]` and `order[streak + 1]`.
+       */
+      from?: { streak: number; atlasRight: number; atlasPlayed: number };
+    }
   | {
       type: "picked";
       side: Side;
@@ -114,8 +122,12 @@ const blankRun = (order: readonly string[]): Run => ({
 export function northReducer(state: NorthState, action: NorthAction): NorthState {
   switch (action.type) {
     case "start": {
-      const run = blankRun(action.order);
-      return action.order.length < 2 ? { phase: "cleared", ...run } : { phase: "picking", ...run };
+      const run = action.from
+        ? { ...blankRun(action.order), ...action.from, index: action.from.streak }
+        : blankRun(action.order);
+      return run.index + 1 >= action.order.length
+        ? { phase: "cleared", ...run }
+        : { phase: "picking", ...run };
     }
     case "picked": {
       if (state.phase !== "picking") return state;

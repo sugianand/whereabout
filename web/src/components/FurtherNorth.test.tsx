@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GameRecord } from "@/lib/game/deck";
 import { BEST_NORTH_KEY } from "@/lib/game/furtherNorth";
+import { NORTH_DAILY_KEY, dailyNorthOrder } from "@/lib/game/northDaily";
 import type { CatalogPhoto } from "@/lib/game/types";
 import { gameFor } from "@/test/deck";
 
@@ -128,5 +129,85 @@ describe("FurtherNorth", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("4 pairs in a row, every photo the game has.")).toBeInTheDocument();
     expect(localStorage.getItem(BEST_NORTH_KEY)).toBe("4");
+  });
+});
+
+describe("FurtherNorth, today's run", () => {
+  // Every latitude a few degrees apart, so no pair is a dead heat whatever order the day deals.
+  const LATS: Record<string, number> = { d1: 60, d2: 40, d3: 20, d4: 0, d5: -20 };
+  const DAILY = Object.entries(LATS).map(([id, lat]) => record(id, lat, lat));
+  const DAY = "2026-10-31";
+  const now = () => new Date(`${DAY}T18:48:00Z`);
+  const order = dailyNorthOrder(Object.keys(LATS), DAY);
+  /** The photo (1 or 2) really further north in the pair starting at `index`. */
+  const north = (index: number) => (LATS[order[index]] > LATS[order[index + 1]] ? 1 : 2);
+
+  function play() {
+    const game = gameFor(DAILY);
+    return render(<FurtherNorth deck={game.deck} loadRecords={game.loadRecords} daily now={now} />);
+  }
+
+  it("deals the day's order, picks the run back up after a reload, and ends on a miss", async () => {
+    const first = play();
+    await waitFor(() => expect(pickButton(1)).toBeEnabled());
+    expect(screen.getByTestId("north-photo-1")).toHaveAttribute("data-photo", order[0]);
+    expect(screen.getByTestId("north-photo-2")).toHaveAttribute("data-photo", order[1]);
+    expect(screen.getByText(/today's run \(2026-10-31\)/)).toBeInTheDocument();
+    expect(screen.queryByText("Best")).toBeNull();
+    fireEvent.click(pickButton(north(0)));
+    await screen.findByRole("button", { name: "Next pair" });
+    first.unmount();
+
+    // A reload carries on at the next pair, with the streak so far: no fresh start.
+    play();
+    await waitFor(() => expect(pickButton(1)).toBeEnabled());
+    expect(screen.getByTestId("north-photo-1")).toHaveAttribute("data-photo", order[1]);
+    expect(streak()).toHaveTextContent("1");
+
+    fireEvent.click(pickButton(north(1) === 1 ? 2 : 1));
+    const card = await screen.findByRole("region");
+    expect(within(card).getByRole("heading")).toHaveTextContent("Wrong");
+    expect(card).toHaveTextContent("Today's run is over: 1 pair in a row.");
+    expect(within(card).queryByRole("button", { name: "Start a new run" })).toBeNull();
+    expect(within(card).getByRole("link", { name: "Play a free run" })).toHaveAttribute(
+      "href",
+      "/further-north",
+    );
+    expect(JSON.parse(localStorage.getItem(NORTH_DAILY_KEY)!)).toEqual({
+      [DAY]: { streak: 1, atlasRight: 2, atlasPlayed: 2, ended: "miss" },
+    });
+    // Today's run keeps its own result, apart from the free runs' best.
+    expect(localStorage.getItem(BEST_NORTH_KEY)).toBeNull();
+
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    fireEvent.click(within(card).getByRole("button", { name: "Share today's run" }));
+    expect(await within(card).findByText("Result copied. Paste it anywhere.")).toBeVisible();
+    expect(writeText.mock.calls[0][0]).toMatch(
+      /^Whereabout · Further North · 2026-10-31\n⬆️ 1 pair in a row\n🟩🟥\nAtlas: 2 of 2\n/,
+    );
+  });
+
+  it("shows the day's result instead of dealing it again once it has ended", async () => {
+    localStorage.setItem(
+      NORTH_DAILY_KEY,
+      JSON.stringify({ [DAY]: { streak: 4, atlasRight: 1, atlasPlayed: 3, ended: "miss" } }),
+    );
+    play();
+    expect(await screen.findByRole("heading", { name: "4 pairs in a row" })).toBeInTheDocument();
+    expect(
+      screen.getByText(/Atlas got 1 of the 3 pairs it played\. The next run is dealt in 5h 12m\./),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Share today's run" })).toHaveFocus();
+    expect(screen.queryByRole("button", { name: /was taken further north/ })).toBeNull();
+  });
+
+  it("links free runs and today's run to each other", async () => {
+    const game = gameFor(DAILY);
+    render(<FurtherNorth deck={game.deck} loadRecords={game.loadRecords} random={() => 0} />);
+    expect(await screen.findByRole("link", { name: "Today's run" })).toHaveAttribute(
+      "href",
+      "/further-north/daily",
+    );
   });
 });

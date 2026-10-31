@@ -30,7 +30,9 @@ misses empty a 5,000-point health bar: each round costs half the points it misse
 which was taken further north. A right pick keeps the second photo and deals a new one beside it;
 the first wrong pick ends the run. Photos under one degree of latitude apart count either way. The
 reveal names both places with their latitudes and says whether Atlas, going by its own guesses,
-would have got the pair; your best streak is kept in your browser.
+would have got the pair; your best streak is kept in your browser. **Today's run** (at
+`/further-north/daily`) deals everyone the same order on the same UTC day: one try a day, picked
+back up where you left it after a reload, with a spoiler-free share line (counts only) at the end.
 **Odd one out** (at `/odd-one-out`, linked from the results screen) deals four photos, three
 taken on one continent and one on another; tap the odd one (keys 1 to 4 on a keyboard). A right
 tap deals four more, the first miss ends the run, and your best run is kept in your browser. The
