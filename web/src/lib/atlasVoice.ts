@@ -108,7 +108,7 @@ export function atlasSay(result: RoundResult, units: Units, pick?: number): Atla
   if (!result.atlas) return null;
   const played = result as Played;
   const p = pick ?? seed(result.round.photo.id);
-  return { sure: surenessClause(played, p), outcome: outcomeClause(played, units, p >> 1) };
+  return { sure: surenessClause(played, p), outcome: outcomeClause(played, units, p >>> 1) };
 }
 
 /** Atlas's say as one line, or null when Atlas sat the photo out. */

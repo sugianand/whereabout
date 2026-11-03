@@ -230,12 +230,16 @@ export default function RevealCard({
       </div>
       <h2
         id="reveal-place"
-        className="font-sign text-3xl font-extrabold leading-tight text-chalk md:text-5xl"
+        className={`font-sign font-extrabold leading-tight text-chalk md:text-5xl ${replay ? "text-2xl" : "text-3xl"}`}
       >
         {reveal.answer.place}
       </h2>
+      {/* A replay carries its own heading and a row of buttons, so a phone gives up the note it
+          has already read and a line of the name, to leave the globe the top half of the screen. */}
       {reveal.answer.postcard && (
-        <PostcardNote postcard={reveal.answer.postcard} sourceUrl={credit?.sourceUrl ?? null} />
+        <div className={replay ? "hidden md:block" : undefined}>
+          <PostcardNote postcard={reveal.answer.postcard} sourceUrl={credit?.sourceUrl ?? null} />
+        </div>
       )}
 
       {/* Announced once, in full, for screen readers; the animated numbers are hidden from them. */}

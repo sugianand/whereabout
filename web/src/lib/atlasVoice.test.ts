@@ -186,3 +186,21 @@ describe("atlasLine", () => {
     }
   });
 });
+
+describe("every photo id", () => {
+  it("gets a whole line, whatever its id hashes to", () => {
+    // Long ids hash past 2^31: the phrasing must still come from a real option.
+    const ids = Array.from({ length: 300 }, (_, i) => `commons-photo-${i}`);
+    for (const id of ids) {
+      for (const [playerKm, atlasKm] of [
+        [5000, 10],
+        [10, 5000],
+      ]) {
+        const line = atlasLine(round({ id, playerKm, atlasKm }), "km");
+        expect(line).not.toContain("undefined");
+        expect(line).toMatch(/(closer|beat|edged).*[.]$/);
+        expect(line?.split(". ").length).toBeGreaterThanOrEqual(2);
+      }
+    }
+  });
+});
