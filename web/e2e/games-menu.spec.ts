@@ -88,7 +88,13 @@ test("every way to play is one menu away from round one and from each quick game
 test("on a 360px phone the Games button fits every quick game's header", async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 1000) >= 768, "a phone layout check");
   await page.setViewportSize({ width: 360, height: 740 });
-  for (const address of ["./survival", "./streak", "./further-north", "./odd-one-out"]) {
+  for (const address of [
+    "./survival",
+    "./streak",
+    "./further-north",
+    "./odd-one-out",
+    "./hot-cold",
+  ]) {
     await page.goto(address);
     const games = page.getByRole("button", { name: "Games" });
     await expect(games).toBeVisible();

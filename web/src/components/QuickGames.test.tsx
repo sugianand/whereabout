@@ -48,6 +48,10 @@ describe("QuickGames", () => {
       "href",
       "/which-way",
     );
+    expect(screen.getByRole("link", { name: /^Hot and cold/ })).toHaveAttribute(
+      "href",
+      "/hot-cold",
+    );
     fireEvent.click(screen.getByRole("button", { name: /^Blitz/ }));
     expect(onPlayBlitz).toHaveBeenCalledOnce();
   });

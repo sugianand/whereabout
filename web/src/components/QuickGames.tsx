@@ -68,6 +68,11 @@ const BLURBS: Record<QuickMode, { name: string; blurb: string }> = {
     blurb:
       "Two photos, eight compass points: which way would you set off from the first to reach the second? Travel on until your first miss.",
   },
+  "hot-cold": {
+    name: "Hot and cold",
+    blurb:
+      "One photo, three pins to find its country: every miss says how far off you were and which way to head. Five photos against Atlas's single pin.",
+  },
 };
 
 const CARD =
@@ -181,11 +186,11 @@ export default function QuickGames({
     <ul className={compact ? "space-y-2" : "mt-3 space-y-4"}>
       {offerBlitz && <li>{card("blitz", blitzHref, onPlayBlitz)}</li>}
       {offerStreak && <li>{card("streak", streakHref)}</li>}
-      {(["survival", "further-north", "odd-one-out", "how-far", "which-way"] as const).map(
-        (mode) => (
-          <li key={mode}>{card(mode, `/${mode}`)}</li>
-        ),
-      )}
+      {(
+        ["survival", "further-north", "odd-one-out", "how-far", "which-way", "hot-cold"] as const
+      ).map((mode) => (
+        <li key={mode}>{card(mode, `/${mode}`)}</li>
+      ))}
     </ul>
   );
 

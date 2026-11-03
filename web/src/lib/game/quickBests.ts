@@ -3,7 +3,7 @@
  * gathered for the results screen's mode cards so a player sees what to beat before opening one.
  *
  * Nothing new is stored here. Each mode keeps its own best under its own key (blitz.ts,
- * streak.ts, survival.ts, furtherNorth.ts, oddOneOut.ts, howFar.ts, whichWay.ts); this only reads them back through the
+ * streak.ts, survival.ts, furtherNorth.ts, oddOneOut.ts, howFar.ts, whichWay.ts, hotCold.ts); this only reads them back through the
  * same loaders, so a value a mode would refuse (a negative streak, junk JSON) is refused here too.
  */
 
@@ -12,6 +12,7 @@ import { formatPoints } from "@/lib/geo";
 
 import { loadBlitzBest } from "./blitz";
 import { loadBestNorth } from "./furtherNorth";
+import { loadBestHot } from "./hotCold";
 import { loadBestHowFar } from "./howFar";
 import { loadBestOdd } from "./oddOneOut";
 import { regionSlug } from "./regions";
@@ -28,6 +29,7 @@ export const QUICK_MODES = [
   "odd-one-out",
   "how-far",
   "which-way",
+  "hot-cold",
 ] as const;
 
 export type QuickMode = (typeof QUICK_MODES)[number];
@@ -53,6 +55,8 @@ export interface QuickBests {
   "how-far": number | null;
   /** The longest run of right compass picks. */
   "which-way": number | null;
+  /** The best whole game's points. */
+  "hot-cold": number | null;
 }
 
 export const NO_BESTS: QuickBests = {
@@ -63,6 +67,7 @@ export const NO_BESTS: QuickBests = {
   "odd-one-out": null,
   "how-far": null,
   "which-way": null,
+  "hot-cold": null,
 };
 
 /**
@@ -93,6 +98,7 @@ export function loadQuickBests(): QuickBests {
     "odd-one-out": positive(loadBestOdd()),
     "how-far": positive(loadBestHowFar()),
     "which-way": positive(loadBestWay()),
+    "hot-cold": positive(loadBestHot()),
   };
 }
 
@@ -124,8 +130,9 @@ export function bestLine(mode: QuickMode, bests: QuickBests): string | null {
       const n = bests[mode];
       return n === null ? null : `Best: ${inARow(n)}`;
     }
-    case "how-far": {
-      const n = bests["how-far"];
+    case "how-far":
+    case "hot-cold": {
+      const n = bests[mode];
       return n === null ? null : `Best: ${formatPoints(n)} points`;
     }
   }

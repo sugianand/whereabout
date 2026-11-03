@@ -28,7 +28,8 @@ export type ControlGroup = {
   controls: readonly Control[];
 };
 
-export type HelpScreen = "round" | "further-north" | "odd-one-out" | "how-far" | "which-way";
+export type HelpScreen =
+  "round" | "further-north" | "odd-one-out" | "how-far" | "which-way" | "hot-cold";
 
 const k = (label: string, press = label): Key => ({ label, press });
 
@@ -47,69 +48,73 @@ const HELP: Control = {
 /** Keys that work wherever focus is, as long as it isn't in a text field (`isTypingTarget`). */
 export const ROUND_KEYS = { hint: "h", guess: "g" } as const;
 
+const PHOTO_CONTROLS: ControlGroup = {
+  title: "The photo",
+  focus: "Tab to the photo first",
+  controls: [
+    {
+      id: "photo-zoom",
+      does: "Zoom in and out",
+      keys: [PLUS, MINUS],
+      mouse: "Click the photo, or scroll",
+      touch: "Tap the photo, or pinch",
+    },
+    {
+      id: "photo-pan",
+      does: "Look around a zoomed photo",
+      keys: ARROWS,
+      mouse: "Drag",
+      touch: "Drag",
+    },
+    {
+      id: "photo-reset",
+      does: "Back to the whole photo",
+      keys: [k("0"), k("Esc", "Escape")],
+      mouse: "Click again",
+      touch: "Tap again",
+    },
+  ],
+};
+
+const GLOBE_CONTROLS: ControlGroup = {
+  title: "The globe",
+  focus: "Tab to the globe first",
+  controls: [
+    {
+      id: "globe-pin",
+      does: "Drop your pin",
+      keys: [k("Enter")],
+      mouse: "Click the globe",
+      touch: "Tap the globe",
+    },
+    {
+      id: "globe-move",
+      does: "Move your pin (hold Shift for bigger steps)",
+      keys: ARROWS,
+      mouse: "Click somewhere else",
+      touch: "Tap somewhere else",
+    },
+    {
+      id: "globe-zoom",
+      does: "Zoom the globe",
+      keys: [PLUS, MINUS],
+      mouse: "Scroll, or the + and − buttons",
+      touch: "Pinch, or the + and − buttons",
+    },
+    {
+      id: "globe-spin",
+      does: "Spin the globe",
+      keys: [],
+      mouse: "Drag",
+      touch: "Drag with one finger",
+    },
+  ],
+};
+
 export const CONTROLS: Record<HelpScreen, readonly ControlGroup[]> = {
   round: [
-    {
-      title: "The photo",
-      focus: "Tab to the photo first",
-      controls: [
-        {
-          id: "photo-zoom",
-          does: "Zoom in and out",
-          keys: [PLUS, MINUS],
-          mouse: "Click the photo, or scroll",
-          touch: "Tap the photo, or pinch",
-        },
-        {
-          id: "photo-pan",
-          does: "Look around a zoomed photo",
-          keys: ARROWS,
-          mouse: "Drag",
-          touch: "Drag",
-        },
-        {
-          id: "photo-reset",
-          does: "Back to the whole photo",
-          keys: [k("0"), k("Esc", "Escape")],
-          mouse: "Click again",
-          touch: "Tap again",
-        },
-      ],
-    },
-    {
-      title: "The globe",
-      focus: "Tab to the globe first",
-      controls: [
-        {
-          id: "globe-pin",
-          does: "Drop your pin",
-          keys: [k("Enter")],
-          mouse: "Click the globe",
-          touch: "Tap the globe",
-        },
-        {
-          id: "globe-move",
-          does: "Move your pin (hold Shift for bigger steps)",
-          keys: ARROWS,
-          mouse: "Click somewhere else",
-          touch: "Tap somewhere else",
-        },
-        {
-          id: "globe-zoom",
-          does: "Zoom the globe",
-          keys: [PLUS, MINUS],
-          mouse: "Scroll, or the + and − buttons",
-          touch: "Pinch, or the + and − buttons",
-        },
-        {
-          id: "globe-spin",
-          does: "Spin the globe",
-          keys: [],
-          mouse: "Drag",
-          touch: "Drag with one finger",
-        },
-      ],
-    },
+    PHOTO_CONTROLS,
+    GLOBE_CONTROLS,
     {
       title: "The round",
       controls: [
@@ -239,6 +244,30 @@ export const CONTROLS: Record<HelpScreen, readonly ControlGroup[]> = {
       ],
     },
   ],
+  "hot-cold": [
+    PHOTO_CONTROLS,
+    GLOBE_CONTROLS,
+    {
+      title: "The photo's pins",
+      controls: [
+        {
+          id: "drop",
+          does: "Drop this pin: a miss says how far off it was and which way to head",
+          keys: [k("G", ROUND_KEYS.guess)],
+          mouse: "Drop pin",
+          touch: "Drop pin",
+        },
+        {
+          id: "next",
+          does: "Next photo, from the answer",
+          keys: [k("Enter")],
+          mouse: "Next photo",
+          touch: "Next photo",
+        },
+        HELP,
+      ],
+    },
+  ],
 };
 
 /** The sheet's title for each screen. */
@@ -248,6 +277,7 @@ export const SCREEN_TITLES: Record<HelpScreen, string> = {
   "odd-one-out": "Controls for Odd one out",
   "how-far": "Controls for How far apart?",
   "which-way": "Controls for Which way?",
+  "hot-cold": "Controls for Hot and cold",
 };
 
 /**

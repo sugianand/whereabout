@@ -59,6 +59,12 @@ first miss ends the run, and your best run is kept in your browser. Keys 1 to 9 
 pad's layout (8 is north).
 **Today's run** (at `/which-way/daily`) sets everyone off on the same journey on the same UTC day,
 one try a day, picked back up at the photo you stood at after a reload and shared as counts only.
+**Hot and cold** (at `/hot-cold`, in the Games menu) gives you three pins to find each photo's
+country. A pin that misses says how far off it was and points an arrow the way to head from it,
+without naming the place, and the second miss says warmer or colder; earlier pins stay numbered on
+the globe. A photo scores your closest pin on the usual curve, plus 1,000 points for finding the
+country on the first pin or 500 on the second. Five photos a game, against Atlas's single pin
+scored by the same rules; your best game is kept in your browser.
 **Today** (at `/today`, in the Games menu and on the results screen) puts every daily game on one
 page: the Daily Five, Further North, Odd one out, Which way? and How far apart?, each with where it
 stands in your browser (not started, under way or its result), the time to the next deal, and one

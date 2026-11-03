@@ -38,6 +38,8 @@ import {
 export type GlobeProps = {
   /** The player's pin, or null before they have placed one. */
   pin: LngLat | null;
+  /** Pins already dropped on this photo (Hot and cold), numbered and left on the globe. */
+  trail?: readonly LngLat[];
   /** Called with the new location whenever the player places or moves the pin. */
   onPinChange: (pin: LngLat) => void;
   /** Disable pin placement, e.g. while a guess is being scored. */
@@ -195,6 +197,7 @@ export function createPinElement(
  */
 export default function Globe({
   pin,
+  trail,
   onPinChange,
   disabled = false,
   reveal = null,
@@ -306,6 +309,21 @@ export default function Globe({
       markerRef.current.setLngLat([pin.lng, pin.lat]);
     }
   }, [pin, ready]);
+
+  // Earlier pins stay on the globe, numbered, so a clue can be read from where it was given.
+  useEffect(() => {
+    const map = mapRef.current;
+    const MarkerClass = markerClassRef.current;
+    if (!map || !MarkerClass || !ready || !trail?.length) return;
+    const markers = trail.map((at, i) => {
+      const element = createPinElement("player", String(i + 1));
+      element.classList.add("globe-pin--trail");
+      return new MarkerClass({ element, anchor: "bottom" }).setLngLat([at.lng, at.lat]).addTo(map);
+    });
+    return () => {
+      for (const m of markers) m.remove();
+    };
+  }, [trail, ready]);
 
   // The reveal: arcs draw from each guess to the truth, the camera frames them, and the gold
   // truth pin drops when the arcs land. Reduced motion jumps straight to the final frame.

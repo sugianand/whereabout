@@ -1,0 +1,177 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+import { expect, test, type Locator, type Page } from "@playwright/test";
+
+import { countryAt } from "../src/lib/countryHit";
+import { nudge, type LngLat } from "../src/lib/geo";
+
+const PHOTO = readFileSync(resolve(process.cwd(), "e2e/fixtures/photo.png"));
+const CATALOG = new Map(
+  (
+    JSON.parse(readFileSync(resolve(process.cwd(), "src/data/photos.json"), "utf8")) as {
+      id: string;
+      country: string;
+    }[]
+  ).map((p) => [p.id, p.country]),
+);
+
+test.use({ locale: "de-DE" });
+
+test.beforeEach(async ({ page }) => {
+  await page.route(/wikimedia\.org/, (route) =>
+    route.fulfill({ body: PHOTO, contentType: "image/png" }),
+  );
+});
+
+async function expectOnScreen(locator: Locator) {
+  const { width, height } = locator.page().viewportSize()!;
+  const box = (await locator.boundingBox())!;
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.y).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
+  expect(box.y + box.height).toBeLessThanOrEqual(height + 1);
+}
+
+const points = (text: string | null) => Number((text ?? "").replace(/[^\d]/g, ""));
+
+/** Arrow presses from `from`, with Shift moving 10°, to the nearest whole-degree point wanted. */
+function keysTo(from: LngLat, wanted: (country: string | null) => boolean): string[] {
+  let best: string[] | null = null;
+  for (let dy = Math.ceil(-85 - from.lat); dy <= Math.floor(85 - from.lat); dy++) {
+    for (let dx = -180; dx <= 180; dx++) {
+      const ax = Math.abs(dx);
+      const ay = Math.abs(dy);
+      const cost = Math.floor(ax / 10) + (ax % 10) + Math.floor(ay / 10) + (ay % 10);
+      if (best && cost >= best.length) continue;
+      const moves: [string, "east" | "west" | "north" | "south", number][] = [
+        [dx < 0 ? "Shift+ArrowLeft" : "Shift+ArrowRight", dx < 0 ? "west" : "east", 10],
+        [dx < 0 ? "ArrowLeft" : "ArrowRight", dx < 0 ? "west" : "east", 1],
+        [dy < 0 ? "Shift+ArrowDown" : "Shift+ArrowUp", dy < 0 ? "south" : "north", 10],
+        [dy < 0 ? "ArrowDown" : "ArrowUp", dy < 0 ? "south" : "north", 1],
+      ];
+      const counts = [Math.floor(ax / 10), ax % 10, Math.floor(ay / 10), ay % 10];
+      let at = from;
+      const keys: string[] = [];
+      moves.forEach(([key, direction, step], i) => {
+        for (let n = 0; n < counts[i]!; n++) {
+          at = nudge(at, direction, step);
+          keys.push(key);
+        }
+      });
+      if (wanted(countryAt(at))) best = keys;
+    }
+  }
+  if (!best) throw new Error("No point on the globe matches");
+  return best;
+}
+
+/** Drop this pin with the keyboard, walked into a country `wanted` accepts, with G. */
+async function pinWithKeyboard(page: Page, wanted: (country: string | null) => boolean) {
+  await page.getByRole("application", { name: /Globe/ }).focus();
+  await page.keyboard.press("Enter");
+  const status = await page.getByText(/^Your pin: /).innerText();
+  const m = status.match(/([\d.]+)° ([NS]), ([\d.]+)° ([EW])/)!;
+  const from = {
+    lat: Number(m[1]) * (m[2] === "S" ? -1 : 1),
+    lng: Number(m[3]) * (m[4] === "W" ? -1 : 1),
+  };
+  for (const key of keysTo(from, wanted)) await page.keyboard.press(key);
+  await page.keyboard.press("g");
+}
+
+async function photoCountry(page: Page): Promise<string> {
+  await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
+  const id = await page.locator("main[data-photo]").getAttribute("data-photo");
+  return CATALOG.get(id!)!;
+}
+
+test("Hot and cold gives three pins with a heading after each miss, against Atlas, and keeps the best", async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+
+  await page.goto("./");
+  await page.getByRole("button", { name: "Games" }).click();
+  await page
+    .getByRole("dialog", { name: "Ways to play" })
+    .getByRole("link", { name: /^Hot and cold/ })
+    .click();
+  await expect(page).toHaveURL(/\/hot-cold\/?$/, { timeout: 20_000 });
+  await expect(page.getByText("Hot and cold: photo 1 of 5")).toBeVisible();
+
+  const clue = page.getByTestId("hot-cold-clue");
+  const arrow = page.getByTestId("hot-cold-arrow");
+  const score = page.getByTestId("hot-cold-score");
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+
+  // Photo 1: three misses. Each clue fits the screen, and the misses stay on the globe.
+  let truth = await photoCountry(page);
+  const wrong = (c: string | null) => c !== truth;
+  await pinWithKeyboard(page, wrong);
+  await expect(clue).toHaveText(/^[\d,]+ km off\. Head [a-z-]+\.$/);
+  await expectOnScreen(clue);
+  await expectOnScreen(arrow);
+  await expect(page.locator(".globe-pin--trail")).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Tap the globe: pin 2 of 3" })).toBeDisabled();
+  await pinWithKeyboard(page, wrong);
+  await expect(clue).toHaveText(/^(Warmer|Colder)\. [\d,]+ km off\. Head [a-z-]+\.$/);
+  await expect(page.locator(".globe-pin--trail")).toHaveCount(2);
+  await pinWithKeyboard(page, wrong);
+  await expect(card).toContainText("Three pins, and it was ");
+  await expect(page.locator(".globe-pin--trail")).toHaveCount(0);
+  await expect(card.getByRole("link", { name: /^Photo: / })).toHaveAttribute(
+    "href",
+    /^https:\/\/commons\.wikimedia\.org\//,
+  );
+  await expectOnScreen(card.getByRole("button", { name: "Next photo" }));
+  await page.keyboard.press("Enter");
+
+  // Photo 2: a miss, then the country: the second pin's bonus.
+  await expect(page.getByText("Hot and cold: photo 2 of 5")).toBeVisible();
+  truth = await photoCountry(page);
+  await expect(clue).toHaveCount(0);
+  const before = points(await score.textContent());
+  await pinWithKeyboard(page, (c) => c !== truth);
+  await pinWithKeyboard(page, (c) => c === truth);
+  await expect(card).toContainText("on pin 2");
+  await expect(card).toContainText("+ 500 for 2 pins");
+  const earned = points(await card.getByRole("heading", { level: 2 }).textContent());
+  await expect(score).toHaveText(new Intl.NumberFormat("en-US").format(before + earned));
+  await page.keyboard.press("Enter");
+
+  // Photos 3 to 5: found on the first pin.
+  for (let i = 3; i <= 5; i++) {
+    await expect(page.getByText(`Hot and cold: photo ${i} of 5`)).toBeVisible();
+    truth = await photoCountry(page);
+    await pinWithKeyboard(page, (c) => c === truth);
+    await expect(card).toContainText("on pin 1");
+    await expect(card).toContainText("+ 1,000 for 1 pin");
+    if (i === 5) await expect(card.getByRole("button", { name: "See your score" })).toBeFocused();
+    await page.keyboard.press("Enter");
+  }
+
+  const heading = page.getByRole("heading", { level: 1 });
+  await expect(heading).toHaveText(/^[\d,]+ points$/);
+  const total = points(await heading.textContent());
+  await expect(page.getByText("That's your new best!")).toBeVisible();
+  await expect(page.getByRole("list", { name: "Your photos" }).getByRole("listitem")).toHaveCount(
+    5,
+  );
+  expect(await page.evaluate(() => localStorage.getItem("whereabout:hot-cold-best"))).toBe(
+    String(total),
+  );
+
+  // A new game starts at nothing, with the best on the board and in the menu.
+  await page.getByRole("button", { name: "Play again" }).click();
+  await expect(page.getByText("Hot and cold: photo 1 of 5")).toBeVisible();
+  await expect(score).toHaveText("0");
+  await page.getByRole("button", { name: "Games" }).click();
+  await expect(page.getByTestId("best-hot-cold")).toHaveText(
+    `Best: ${new Intl.NumberFormat("en-US").format(total)} points`,
+  );
+  await expect(page.getByRole("dialog").getByText("Playing now")).toBeVisible();
+  expect(errors).toEqual([]);
+});
