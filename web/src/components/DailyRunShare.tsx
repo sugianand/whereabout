@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
 import { untilNextRun } from "@/lib/game/dailyRuns";
 import { sendShare, type ShareOutcome } from "@/lib/share";
@@ -21,14 +21,18 @@ export function ShareDay({
   shareText,
   freeHref,
   focus = false,
+  label = "Share today's run",
 }: {
   shareText: (href: string) => string;
-  freeHref: string;
+  /** Where the way on to a free run goes; omitted, there is no such link. */
+  freeHref?: string;
   focus?: boolean;
+  label?: string;
 }) {
   const [note, setNote] = useState("");
   const shareRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
+  // Before paint, so a finished day never shows with focus still on nothing.
+  useLayoutEffect(() => {
     if (focus) shareRef.current?.focus({ preventScroll: true });
   }, [focus]);
   async function share() {
@@ -43,14 +47,16 @@ export function ShareDay({
           onClick={share}
           className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
         >
-          {"Share today's run"}
+          {label}
         </button>
-        <Link
-          href={freeHref}
-          className="text-chalk-dim underline underline-offset-2 hover:text-chalk"
-        >
-          Play a free run
-        </Link>
+        {freeHref && (
+          <Link
+            href={freeHref}
+            className="text-chalk-dim underline underline-offset-2 hover:text-chalk"
+          >
+            Play a free run
+          </Link>
+        )}
       </div>
       <p className="mt-2 min-h-5 text-sm text-chalk-dim" role="status">
         {note}

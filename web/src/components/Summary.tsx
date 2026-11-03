@@ -40,6 +40,7 @@ import {
 import { useCountUp } from "@/lib/useCountUp";
 
 import DailyArchive from "./DailyArchive";
+import TodayLink from "./TodayLink";
 import GameTour from "./GameTour";
 import QuickGames from "./QuickGames";
 import UnitsSwitch from "./UnitsSwitch";
@@ -680,6 +681,8 @@ export default function Summary({
           onPlay={onPlayDailyOn}
         />
       )}
+
+      <TodayLink />
 
       <QuickGames onPlayBlitz={onPlayBlitz} streakHref={streakHref} blitzBest={blitz?.best} />
 

@@ -6,9 +6,10 @@ import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } f
 import type { QuickMode } from "@/lib/game/quickBests";
 
 import QuickGames from "./QuickGames";
+import TodayLink from "./TodayLink";
 
-/** A screen the Games menu can be opened from: a five-round game or one of the quick modes. */
-export type GamesScreen = "round" | QuickMode;
+/** A screen the Games menu can be opened from: a five-round game, a quick mode or Today. */
+export type GamesScreen = "round" | "today" | QuickMode;
 
 type GamesMenuProps = {
   /** The screen the menu sits on: its own card reads "Playing now" and isn't a link. */
@@ -48,7 +49,8 @@ const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1
 
 /**
  * Every way to play, from any screen: the Games button opens one sheet listing the five-round
- * game, each quick mode with its best kept in this browser (`QuickGames`), and pass and play.
+ * game, today's daily games, each quick mode with its best kept in this browser (`QuickGames`),
+ * and pass and play.
  * Before it, a first-time player saw only Blitz and Country Streak until they finished a game.
  *
  * The sheet is a modal dialog: focus moves to its close button and Tab stays inside it, its key
@@ -110,7 +112,7 @@ export default function GamesMenu({
     }
   }
 
-  const current = screen === "round" ? undefined : screen;
+  const current = screen === "round" || screen === "today" ? undefined : screen;
 
   return (
     <>
@@ -179,6 +181,8 @@ export default function GamesMenu({
                 <RoundBody />
               </Link>
             )}
+
+            <TodayLink compact current={screen === "today"} />
 
             <h3 className="mt-4 text-sm font-semibold text-gold">Quick games</h3>
             <div className="mt-2">

@@ -1,0 +1,178 @@
+/**
+ * Today: every daily game on one page. Each game already keeps its own day in this browser, so
+ * this reads those records back and adds none of its own: the Daily Five's first score and the
+ * game in progress (./dailyArchive.ts, ./saved.ts), the three streak games' runs (./dailyRuns.ts)
+ * and How far apart?'s pairs (./farDaily.ts). What a game can't read back counts as not started.
+ *
+ * Like every share in the game, the combined line is scores and counts only, so it spoils no
+ * photo. Only finished games go in it: a run still going has no result yet.
+ */
+
+import { MAX_POINTS, formatPoints } from "@/lib/geo";
+
+import { loadDailyScores } from "./dailyArchive";
+import { dailyRunUrl, type DailyRun } from "./dailyRuns";
+import { loadFarDay } from "./farDaily";
+import { PAIRS, PAIR_POINTS, atlasTotal, totalPoints } from "./howFar";
+import { loadNorthDay } from "./northDaily";
+import { loadOddDay } from "./oddDaily";
+import { loadSaved } from "./saved";
+import { ROUNDS_PER_GAME } from "./state";
+import { loadWayDay } from "./wayDaily";
+
+export type TodayGameId = "daily-five" | "further-north" | "odd-one-out" | "which-way" | "how-far";
+
+/** One daily game: where it lives, whatever the browser holds. */
+export interface TodayGameInfo {
+  id: TodayGameId;
+  name: string;
+  /** Today's game, which says for itself when it is already played. */
+  href: string;
+  /** Marks the game's line in the share. */
+  icon: string;
+  blurb: string;
+}
+
+export const TODAY_GAMES: readonly TodayGameInfo[] = [
+  {
+    id: "daily-five",
+    name: "Daily Five",
+    href: "/?daily",
+    icon: "🌍",
+    blurb: "The same five photos for everyone: pin each one on the globe.",
+  },
+  {
+    id: "further-north",
+    name: "Further North",
+    href: "/further-north/daily",
+    icon: "⬆️",
+    blurb: "Pick the photo taken further north, until your first miss.",
+  },
+  {
+    id: "odd-one-out",
+    name: "Odd one out",
+    href: "/odd-one-out/daily",
+    icon: "🧩",
+    blurb: "Four photos, one from another continent, until your first miss.",
+  },
+  {
+    id: "which-way",
+    name: "Which way?",
+    href: "/which-way/daily",
+    icon: "🧭",
+    blurb: "Pick the compass point to the next photo and travel on.",
+  },
+  {
+    id: "how-far",
+    name: "How far apart?",
+    href: "/how-far/daily",
+    icon: "📏",
+    blurb: "Five pairs of photos, one slider: how far apart were they taken?",
+  },
+];
+
+export type TodayStatus = "new" | "going" | "done";
+
+/** How one daily game stands in this browser today. */
+export interface TodayGame extends TodayGameInfo {
+  status: TodayStatus;
+  /** Where it stands in words, for the card; a finished game's is also its line in the share. */
+  line: string;
+  /** Atlas's result on the same photos, when the game keeps one. */
+  atlas: string | null;
+}
+
+const NOT_STARTED = "Not started";
+
+const plural = (n: number, noun: string) => `${n} ${noun}${n === 1 ? "" : "s"}`;
+
+function streakGame(
+  run: DailyRun | null,
+  noun: string,
+): Pick<TodayGame, "status" | "line" | "atlas"> {
+  // A run writes itself after its first answer, so a run with nothing to show isn't started.
+  if (!run || (run.ended === null && run.streak === 0)) {
+    return { status: "new", line: NOT_STARTED, atlas: null };
+  }
+  const inARow = `${plural(run.streak, noun)} in a row`;
+  const atlas = run.atlasPlayed > 0 ? `${run.atlasRight} of ${run.atlasPlayed}` : null;
+  if (run.ended === null) return { status: "going", line: `${inARow} so far`, atlas };
+  return {
+    status: "done",
+    line: run.ended === "cleared" ? `${inARow}, every photo` : inARow,
+    atlas,
+  };
+}
+
+function dailyFive(day: string, deckIds: readonly string[], now: Date) {
+  const score = loadDailyScores(day)[day];
+  if (score !== undefined) {
+    const of = formatPoints(MAX_POINTS * ROUNDS_PER_GAME);
+    return { status: "done" as const, line: `${formatPoints(score)} of ${of}`, atlas: null };
+  }
+  const saved = loadSaved(deckIds, now.getTime());
+  if (saved?.mode.kind === "daily" && !saved.mode.archive && saved.mode.day === day) {
+    const photo = Math.min(saved.results.length + 1, ROUNDS_PER_GAME);
+    return {
+      status: "going" as const,
+      line: `Photo ${photo} of ${ROUNDS_PER_GAME}`,
+      atlas: null,
+    };
+  }
+  return { status: "new" as const, line: NOT_STARTED, atlas: null };
+}
+
+function howFar(day: string) {
+  const results = loadFarDay(day)?.results ?? [];
+  if (results.length === 0) return { status: "new" as const, line: NOT_STARTED, atlas: null };
+  const points = formatPoints(totalPoints(results));
+  const atlas = atlasTotal(results);
+  const rival = atlas.played > 0 ? `${formatPoints(atlas.points)} points` : null;
+  if (results.length < PAIRS) {
+    const line = `${results.length} of ${PAIRS} pairs, ${points} points`;
+    return { status: "going" as const, line, atlas: rival };
+  }
+  const line = `${points} of ${formatPoints(PAIRS * PAIR_POINTS)}`;
+  return { status: "done" as const, line, atlas: rival };
+}
+
+/** Every daily game's standing in this browser on `day`. */
+export function todayGames(
+  day: string,
+  deckIds: readonly string[],
+  now: Date = new Date(),
+): TodayGame[] {
+  return TODAY_GAMES.map((info) => {
+    switch (info.id) {
+      case "daily-five":
+        return { ...info, ...dailyFive(day, deckIds, now) };
+      case "further-north":
+        return { ...info, ...streakGame(loadNorthDay(day), "pair") };
+      case "odd-one-out":
+        return { ...info, ...streakGame(loadOddDay(day), "quad") };
+      case "which-way":
+        return { ...info, ...streakGame(loadWayDay(day), "stop") };
+      case "how-far":
+        return { ...info, ...howFar(day) };
+    }
+  });
+}
+
+/** How many of the day's games are finished. */
+export function gamesDone(games: readonly TodayGame[]): number {
+  return games.filter((g) => g.status === "done").length;
+}
+
+/**
+ * The share line: the day, how many games are finished, one line per finished game and the
+ * address of this page. Scores and counts only, so it can never name a place or a photo.
+ */
+export function todayShare(day: string, games: readonly TodayGame[], href: string): string {
+  const done = games.filter((g) => g.status === "done");
+  return [
+    `Whereabout · Today · ${day}`,
+    `${done.length} of ${games.length} daily games`,
+    ...done.map((g) => `${g.icon} ${g.name}: ${g.line}`),
+    dailyRunUrl(href),
+  ].join("\n");
+}

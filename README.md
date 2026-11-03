@@ -59,6 +59,11 @@ first miss ends the run, and your best run is kept in your browser. Keys 1 to 9 
 pad's layout (8 is north).
 **Today's run** (at `/which-way/daily`) sets everyone off on the same journey on the same UTC day,
 one try a day, picked back up at the photo you stood at after a reload and shared as counts only.
+**Today** (at `/today`, in the Games menu and on the results screen) puts every daily game on one
+page: the Daily Five, Further North, Odd one out, Which way? and How far apart?, each with where it
+stands in your browser (not started, under way or its result), the time to the next deal, and one
+share line gathering every finished game, as scores and counts only.
+
 The results screen gathers these quick games (Blitz, Country Streak, Survival, Further North, Odd
 one out, How far apart? and Which way?) in one list, each with your best from this browser beside its name, so you see what
 to beat before you open one; Blitz starts straight from its card. The same list, with the

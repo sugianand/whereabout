@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { BEST_NORTH_KEY } from "@/lib/game/furtherNorth";
+import { rememberNorthDay } from "@/lib/game/northDaily";
 
 import GamesMenu from "./GamesMenu";
 
@@ -13,6 +14,22 @@ function openMenu() {
 }
 
 describe("GamesMenu", () => {
+  it("leads to Today, counting the day's games already played", async () => {
+    const day = new Date().toISOString().slice(0, 10);
+    rememberNorthDay(day, { streak: 2, atlasRight: 0, atlasPlayed: 0, ended: "miss" });
+    render(<GamesMenu screen="round" streakHref="/streak" />);
+    const link = within(openMenu()).getByRole("link", { name: /^Today/ });
+    expect(link).toHaveAttribute("href", "/today");
+    expect(link).toHaveTextContent("1 of 5 played");
+  });
+
+  it("marks Today as the current screen when opened from it", () => {
+    render(<GamesMenu screen="today" streakHref="/streak" />);
+    const sheet = openMenu();
+    expect(within(sheet).queryByRole("link", { name: /^Today/ })).toBeNull();
+    expect(within(sheet).getByText("You're here")).toBeVisible();
+  });
+
   it("lists every way to play from a quick game, marking the one being played", async () => {
     localStorage.setItem(BEST_NORTH_KEY, "7");
     render(<GamesMenu screen="further-north" streakHref="/streak" />);
