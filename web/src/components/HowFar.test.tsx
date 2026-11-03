@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { seededShuffle } from "@/lib/game/daily";
 import type { GameRecord } from "@/lib/game/deck";
+import { FAR_DAILY_KEY, dailyFarPairs, loadFarDay, rememberFarDay } from "@/lib/game/farDaily";
 import {
   BEST_HOW_FAR_KEY,
   SLIDER_STEPS,
@@ -141,4 +142,69 @@ describe("HowFar", () => {
     fireEvent.keyDown(slider(), { key: "Enter" });
     expect(await screen.findByRole("button", { name: "Next pair" })).toBeVisible();
   });
+});
+
+describe("HowFar, today's game", () => {
+  const DAY = "2026-11-03";
+  const now = () => new Date(`${DAY}T12:00:00Z`);
+  const game = gameFor(RECORDS);
+  const pairs = dailyFarPairs(game.deck.ids, game.deck.regions, DAY);
+  const answer = (i: number) => {
+    const [a, b] = [byId.get(pairs[i][0])!, byId.get(pairs[i][1])!];
+    const actualKm = haversineKm(a.photo, b.photo);
+    return { actualKm, you: judgeEstimate(1000, actualKm), atlas: null };
+  };
+  const openDay = () =>
+    render(<HowFar deck={game.deck} loadRecords={game.loadRecords} daily now={now} />);
+
+  it("deals the day's pairs and keeps each answer, apart from the free games' best", async () => {
+    openDay();
+    await waitFor(() => expect(lockButton()).toBeEnabled());
+    expect(screen.getByText(`How far apart?, today's game (${DAY}): pair 1 of 5`)).toBeVisible();
+    expect(screen.getByRole("link", { name: "Free games" })).toHaveAttribute("href", "/how-far");
+    expect(screen.queryByText("Best")).toBeNull();
+    expect(screen.getByTestId("how-far-photo-1")).toHaveAttribute("data-photo", pairs[0][0]);
+    expect(screen.getByTestId("how-far-photo-2")).toHaveAttribute("data-photo", pairs[0][1]);
+
+    fireEvent.click(lockButton());
+    await screen.findByRole("button", { name: "Next pair" });
+    expect(loadFarDay(DAY)?.results).toHaveLength(1);
+    expect(localStorage.getItem(BEST_HOW_FAR_KEY)).toBeNull();
+  });
+
+  it("picks up at the next pair with the score so far", async () => {
+    const results = [answer(0), answer(1)];
+    rememberFarDay(DAY, { results });
+    openDay();
+    await waitFor(() => expect(lockButton()).toBeEnabled());
+    expect(screen.getByText(`How far apart?, today's game (${DAY}): pair 3 of 5`)).toBeVisible();
+    expect(screen.getByTestId("how-far-photo-1")).toHaveAttribute("data-photo", pairs[2][0]);
+    expect(screen.getByText("Score").nextElementSibling).toHaveTextContent(
+      formatPoints(results[0].you.points + results[1].you.points),
+    );
+  });
+
+  it("shows a finished day's result, never its pairs again", async () => {
+    const results = pairs.map((_, i) => answer(i));
+    rememberFarDay(DAY, { results });
+    openDay();
+    const total = results.reduce((sum, r) => sum + r.you.points, 0);
+    expect(
+      await screen.findByRole("heading", { level: 1, name: `${formatPoints(total)} points` }),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Share today's run" })).toBeVisible();
+    expect(screen.getByText(/The next run is dealt in 12h 0m/)).toBeVisible();
+    expect(screen.getAllByRole("listitem")).toHaveLength(5);
+    expect(screen.queryByRole("button", { name: "Play again" })).toBeNull();
+    expect(screen.queryByRole("slider")).toBeNull();
+    expect(localStorage.getItem(FAR_DAILY_KEY)).toContain(DAY);
+  });
+});
+
+it("links the free game to today's", async () => {
+  await setup();
+  expect(screen.getByRole("link", { name: "Today's game" })).toHaveAttribute(
+    "href",
+    "/how-far/daily",
+  );
 });

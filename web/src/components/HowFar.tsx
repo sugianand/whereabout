@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
 import { seededShuffle } from "@/lib/game/daily";
+import { runToday } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
+import { dailyFarPairs, farDailyShare, loadFarDay, rememberFarDay } from "@/lib/game/farDaily";
 import {
   MAX_KM,
   PAIRS,
@@ -17,6 +19,7 @@ import {
   howFarReducer,
   initialHowFar,
   loadBestHowFar,
+  pairGrade,
   rememberHowFar,
   scalePosition,
   stepToKm,
@@ -30,6 +33,7 @@ import { KM_PER_MILE, type Units } from "@/lib/units";
 import { useUnits } from "@/lib/useUnits";
 
 import ControlsHelp from "./ControlsHelp";
+import { DailyRunResult } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
 import UnitsSwitch from "./UnitsSwitch";
 
@@ -39,6 +43,13 @@ type HowFarProps = {
   loadRecords?: (ids: string[]) => Promise<GameRecord[]>;
   /** For tests: the randomness that shuffles each game. */
   random?: () => number;
+  /**
+   * Today's game (src/lib/game/farDaily.ts): the day's pairs, one try a day, picked back up after
+   * a reload, kept apart from the free games' best.
+   */
+  daily?: boolean;
+  /** For tests: the clock that picks today's game. */
+  now?: () => Date;
 };
 
 /** The slider starts halfway along the scale, about 450 km, on every pair. */
@@ -55,7 +66,13 @@ function ticks(units: Units): number[] {
  * far apart they were taken, scored by how many times off the estimate was. Five pairs a game,
  * with Atlas's estimate from its own two guesses beside the player's at each reveal.
  */
-export default function HowFar({ deck, loadRecords, random }: HowFarProps) {
+export default function HowFar({
+  deck,
+  loadRecords,
+  random,
+  daily = false,
+  now,
+}: HowFarProps) {
   const [state, dispatch] = useReducer(howFarReducer, initialHowFar);
   const [step, setStep] = useState(START_STEP);
   const [best, setBest] = useState(0);
@@ -66,7 +83,21 @@ export default function HowFar({ deck, loadRecords, random }: HowFarProps) {
   const units = useUnits();
   const sliderRef = useRef<HTMLInputElement>(null);
 
+  // The day today's game was dealt for, kept when the clock passes midnight mid-game.
+  const [day, setDay] = useState<string | null>(null);
+
   const start = useCallback(() => {
+    if (daily) {
+      const today = runToday(now?.());
+      setDay(today);
+      setStep(START_STEP);
+      dispatch({
+        type: "start",
+        pairs: dailyFarPairs(deck.ids, deck.regions, today),
+        results: loadFarDay(today)?.results,
+      });
+      return;
+    }
     const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
     const stored = loadBestHowFar();
     setBest(stored);
@@ -76,7 +107,7 @@ export default function HowFar({ deck, loadRecords, random }: HowFarProps) {
       type: "start",
       pairs: dealPairs(seededShuffle(deck.ids, seed), continentLookup(deck.regions)),
     });
-  }, [deck.ids, deck.regions, random]);
+  }, [deck.ids, deck.regions, random, daily, now]);
 
   // The pairs are shuffled in the browser after hydration, never at build time.
   useEffect(() => {
@@ -143,8 +174,11 @@ export default function HowFar({ deck, loadRecords, random }: HowFarProps) {
       atlasB: recB.atlas,
     } as const;
     const after = howFarReducer(state, action);
-    // The best is a whole game's points, kept as soon as its last pair is answered.
-    if (
+    if (after.phase === "answered" && day) {
+      // Today's game is kept after every pair, so a reload picks up at the next one.
+      rememberFarDay(day, { results: after.results });
+    } else if (
+      // The best is a whole game's points, kept as soon as its last pair is answered.
       after.phase === "answered" &&
       after.pairs.length === PAIRS &&
       after.index === after.pairs.length - 1
@@ -152,7 +186,7 @@ export default function HowFar({ deck, loadRecords, random }: HowFarProps) {
       setBest(rememberHowFar(totalPoints(after.results)));
     }
     dispatch(action);
-  }, [state, recA, recB, step]);
+  }, [state, recA, recB, step, day]);
 
   const next = useCallback(() => {
     setStep(START_STEP);
@@ -166,6 +200,9 @@ export default function HowFar({ deck, loadRecords, random }: HowFarProps) {
   }, [settingIndex]);
 
   if (state.phase === "finished") {
+    if (day && state.results.length > 0) {
+      return <FarDayResult day={day} results={state.results} units={units} now={now} />;
+    }
     return (
       <Finished
         results={state.results}
@@ -187,7 +224,7 @@ export default function HowFar({ deck, loadRecords, random }: HowFarProps) {
       className="relative flex h-dvh w-full flex-col overflow-hidden bg-ocean-deep"
       data-phase={result ? "revealed" : "setting"}
     >
-      <h1 className="sr-only">{`Whereabout: How far apart?, pair ${index + 1} of ${pairCount}`}</h1>
+      <h1 className="sr-only">{`Whereabout: How far apart?${day ? ", today's game" : ""}, pair ${index + 1} of ${pairCount}`}</h1>
 
       <header className="flex items-start justify-between gap-4 px-4 pb-2 pt-4 md:px-6">
         <div className="min-w-0">
@@ -198,8 +235,16 @@ export default function HowFar({ deck, loadRecords, random }: HowFarProps) {
             Whereabout
           </Link>
           <p className="mt-1 text-sm text-chalk-dim">
-            {`How far apart? Pair ${index + 1} of ${pairCount}`}
+            {day
+              ? `How far apart?, today's game (${day}): pair ${index + 1} of ${pairCount}`
+              : `How far apart? Pair ${index + 1} of ${pairCount}`}
           </p>
+          <Link
+            href={daily ? "/how-far" : "/how-far/daily"}
+            className="mt-0.5 inline-block text-sm text-gold underline underline-offset-2 hover:brightness-110"
+          >
+            {daily ? "Free games" : "Today's game"}
+          </Link>
         </div>
         <div className="flex shrink-0 items-start gap-3">
           <GamesMenu screen="how-far" streakHref="/streak" />
@@ -209,10 +254,12 @@ export default function HowFar({ deck, loadRecords, random }: HowFarProps) {
             <dd className="font-sign tabular text-3xl font-bold leading-none" aria-live="polite">
               {formatPoints(score)}
             </dd>
-            <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
-              <dt>Best</dt>
-              <dd className="tabular">{formatPoints(best)}</dd>
-            </div>
+            {!daily && (
+              <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
+                <dt>Best</dt>
+                <dd className="tabular">{formatPoints(best)}</dd>
+              </div>
+            )}
           </dl>
         </div>
       </header>
@@ -434,7 +481,7 @@ function RevealScale({ result, units }: { result: PairResult; units: Units }) {
 }
 
 function verdictColour(e: Estimate): string {
-  return e.points >= PAIR_POINTS * 0.8 ? "text-sonar" : e.points > 0 ? "text-gold" : "text-flare";
+  return { close: "text-sonar", off: "text-gold", miss: "text-flare" }[pairGrade(e.points)];
 }
 
 function HowFarCard({
@@ -495,6 +542,64 @@ function HowFarCard({
   );
 }
 
+/** Every pair of a game: the real distance, what you said and its points. */
+function PairList({ results, units }: { results: readonly PairResult[]; units: Units }) {
+  return (
+    <ol className="mt-6 space-y-2" aria-label="Your pairs">
+      {results.map((r, i) => (
+        <li
+          key={i}
+          className="flex items-baseline justify-between gap-3 rounded-xl border border-graticule/70 px-4 py-2"
+        >
+          <span className="min-w-0">
+            <span className="text-chalk">{`${formatDistance(r.actualKm, units)} apart`}</span>
+            <span className="block text-sm text-chalk-dim">
+              {`You said ${formatDistance(r.you.km, units)}: ${describeEstimate(r.you).toLowerCase()}`}
+            </span>
+          </span>
+          <span className="tabular font-semibold">{formatPoints(r.you.points)}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** Atlas's game against yours, once its pairs are in: "Atlas scored 3,100 on the same pairs." */
+function atlasLine(results: readonly PairResult[]): string | null {
+  const atlas = atlasTotal(results);
+  if (atlas.played === 0) return null;
+  const pairs = atlas.played === results.length ? "same pairs" : `${atlas.played} of them it played`;
+  return `Atlas scored ${formatPoints(atlas.points)} on the ${pairs}.`;
+}
+
+/** Today's How far apart? once its last pair is in. */
+function FarDayResult({
+  day,
+  results,
+  units,
+  now,
+}: {
+  day: string;
+  results: readonly PairResult[];
+  units: Units;
+  now?: () => Date;
+}) {
+  const line = atlasLine(results);
+  return (
+    <DailyRunResult
+      game="How far apart?"
+      day={day}
+      headline={`${formatPoints(totalPoints(results))} points`}
+      summary={`Out of ${formatPoints(results.length * PAIR_POINTS)}.${line ? ` ${line}` : ""}`}
+      shareText={(href) => farDailyShare(day, results, href)}
+      freeHref="/how-far"
+      now={now}
+    >
+      <PairList results={results} units={units} />
+    </DailyRunResult>
+  );
+}
+
 function Finished({
   results,
   whole,
@@ -512,7 +617,7 @@ function Finished({
 }) {
   const none = results.length === 0;
   const total = totalPoints(results);
-  const atlas = atlasTotal(results);
+  const atlas = atlasLine(results);
   const max = results.length * PAIR_POINTS;
 
   return (
@@ -535,27 +640,12 @@ function Finished({
                 ? `Your best is ${formatPoints(best)}.`
                 : ""}
           </p>
-          {atlas.played > 0 && (
+          {atlas && (
             <p className="mt-2 text-chalk" data-testid="how-far-atlas-total">
-              {`Atlas scored ${formatPoints(atlas.points)} on the ${atlas.played === results.length ? "same pairs" : `${atlas.played} of them it played`}.`}
+              {atlas}
             </p>
           )}
-          <ol className="mt-6 space-y-2" aria-label="Your pairs">
-            {results.map((r, i) => (
-              <li
-                key={i}
-                className="flex items-baseline justify-between gap-3 rounded-xl border border-graticule/70 px-4 py-2"
-              >
-                <span className="min-w-0">
-                  <span className="text-chalk">{`${formatDistance(r.actualKm, units)} apart`}</span>
-                  <span className="block text-sm text-chalk-dim">
-                    {`You said ${formatDistance(r.you.km, units)}: ${describeEstimate(r.you).toLowerCase()}`}
-                  </span>
-                </span>
-                <span className="tabular font-semibold">{formatPoints(r.you.points)}</span>
-              </li>
-            ))}
-          </ol>
+          <PairList results={results} units={units} />
         </>
       )}
       <div className="mt-8 flex flex-wrap items-center gap-4">

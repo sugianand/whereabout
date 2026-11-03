@@ -46,6 +46,9 @@ up to 1,000 points by how many times off you were (all of them when exact, none 
 the deal mixes pairs from one continent with pairs from two, so the whole slider matters. The
 reveal places the truth, your estimate and Atlas's (the distance between its own two guesses) on
 the scale; your best game is kept in your browser.
+**Today's game** (at `/how-far/daily`) deals everyone the same five pairs on the same UTC day, one
+try a day, picked back up at the next pair after a reload and shared as each pair's points in
+coloured squares with the total.
 **Which way?** (at `/which-way`, in the Games menu) shows where you stand and where you're headed:
 pick which of eight compass points you'd set off in, by the great-circle starting bearing (the
 heading of the shortest route, so Paris to Tokyo sets off north-east, not east). The reveal draws

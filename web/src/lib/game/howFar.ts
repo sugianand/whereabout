@@ -87,6 +87,11 @@ export function judgeEstimate(estimateKm: number, actualKm: number): Estimate {
   };
 }
 
+/** How a pair's points read: most of them, some of them, or none. */
+export function pairGrade(points: number): "close" | "off" | "miss" {
+  return points >= PAIR_POINTS * 0.8 ? "close" : points > 0 ? "off" : "miss";
+}
+
 /** "Spot on", "1.6× too far", "12× too close". */
 export function describeEstimate(estimate: Estimate): string {
   if (estimate.ratio < SPOT_ON) return "Spot on";
@@ -163,7 +168,12 @@ export type HowFarState =
   | (Game & { phase: "finished" });
 
 export type HowFarAction =
-  | { type: "start"; pairs: readonly Pair[] }
+  | {
+      type: "start";
+      pairs: readonly Pair[];
+      /** The pairs already answered, in order, when picking a game back up (today's game). */
+      results?: readonly PairResult[];
+    }
   | {
       type: "estimated";
       km: number;
@@ -181,8 +191,9 @@ export const initialHowFar: HowFarState = { phase: "idle" };
 export function howFarReducer(state: HowFarState, action: HowFarAction): HowFarState {
   switch (action.type) {
     case "start": {
-      const game: Game = { pairs: action.pairs, index: 0, results: [] };
-      return action.pairs.length === 0
+      const results = (action.results ?? []).slice(0, action.pairs.length);
+      const game: Game = { pairs: action.pairs, index: results.length, results };
+      return results.length === action.pairs.length
         ? { phase: "finished", ...game }
         : { phase: "setting", ...game };
     }

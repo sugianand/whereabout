@@ -66,16 +66,19 @@ function storage(): Storage | null {
   }
 }
 
-/** Every day kept under `key` in this browser, by day; anything malformed is skipped. */
-export function loadDailyRuns(key: string): Record<string, DailyRun> {
+/**
+ * Every day kept under `key` in this browser, by day, for any game's daily entry: what `parse`
+ * can't read back is skipped.
+ */
+export function loadKeptDays<T>(key: string, parse: (value: unknown) => T | null): Record<string, T> {
   try {
     const raw = storage()?.getItem(key);
     if (!raw) return {};
     const value: unknown = JSON.parse(raw);
     if (typeof value !== "object" || value === null || Array.isArray(value)) return {};
-    const days: Record<string, DailyRun> = {};
+    const days: Record<string, T> = {};
     for (const [day, entry] of Object.entries(value)) {
-      const parsed = isDayKey(day) ? parseDailyRun(entry) : null;
+      const parsed = isDayKey(day) ? parse(entry) : null;
       if (parsed) days[day] = parsed;
     }
     return days;
@@ -84,20 +87,35 @@ export function loadDailyRuns(key: string): Record<string, DailyRun> {
   }
 }
 
-/** The run kept under `key` for `day`, or null when it hasn't been started in this browser. */
-export function loadDailyRun(key: string, day: string): DailyRun | null {
-  return loadDailyRuns(key)[day] ?? null;
-}
-
-/** Keep `entry` as the run for `day` under `key`, holding only the latest `DAYS_KEPT` days. */
-export function rememberDailyRun(key: string, day: string, entry: DailyRun): void {
-  const days = { ...loadDailyRuns(key), [day]: entry };
+/** Keep `entry` for `day` under `key`, holding only the latest `DAYS_KEPT` days. */
+export function rememberKeptDay<T>(
+  key: string,
+  day: string,
+  entry: T,
+  parse: (value: unknown) => T | null,
+): void {
+  const days = { ...loadKeptDays(key, parse), [day]: entry };
   const kept = Object.keys(days).sort().slice(-DAYS_KEPT);
   try {
     storage()?.setItem(key, JSON.stringify(Object.fromEntries(kept.map((d) => [d, days[d]]))));
   } catch {
     // Private mode or full storage.
   }
+}
+
+/** Every run kept under `key` in this browser, by day. */
+export function loadDailyRuns(key: string): Record<string, DailyRun> {
+  return loadKeptDays(key, parseDailyRun);
+}
+
+/** The run kept under `key` for `day`, or null when it hasn't been started in this browser. */
+export function loadDailyRun(key: string, day: string): DailyRun | null {
+  return loadDailyRuns(key)[day] ?? null;
+}
+
+/** Keep `entry` as the run for `day` under `key`. */
+export function rememberDailyRun(key: string, day: string, entry: DailyRun): void {
+  rememberKeptDay(key, day, entry, parseDailyRun);
 }
 
 /** The address to share: today's run's own page, with any query or hash dropped. */

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { untilNextRun } from "@/lib/game/dailyRuns";
 import { sendShare, type ShareOutcome } from "@/lib/share";
@@ -68,6 +68,7 @@ export function DailyRunResult({
   shareText,
   freeHref,
   now,
+  children,
 }: {
   game: string;
   day: string;
@@ -77,6 +78,8 @@ export function DailyRunResult({
   shareText: (href: string) => string;
   freeHref: string;
   now?: () => Date;
+  /** The day's detail, under the share. */
+  children?: ReactNode;
 }) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center px-6 py-16">
@@ -90,6 +93,7 @@ export function DailyRunResult({
       <div className="mt-4">
         <ShareDay shareText={shareText} freeHref={freeHref} focus />
       </div>
+      {children}
     </main>
   );
 }
