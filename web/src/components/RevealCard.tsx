@@ -237,9 +237,11 @@ export default function RevealCard({
       {/* A replay carries its own heading and a row of buttons, so a phone gives up the note it
           has already read and a line of the name, to leave the globe the top half of the screen. */}
       {reveal.answer.postcard && (
-        <div className={replay ? "hidden md:block" : undefined}>
-          <PostcardNote postcard={reveal.answer.postcard} sourceUrl={credit?.sourceUrl ?? null} />
-        </div>
+        <PostcardNote
+          postcard={reveal.answer.postcard}
+          sourceUrl={credit?.sourceUrl ?? null}
+          className={replay ? "hidden md:block" : ""}
+        />
       )}
 
       {/* Announced once, in full, for screen readers; the animated numbers are hidden from them. */}

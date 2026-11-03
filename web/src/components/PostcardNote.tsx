@@ -19,10 +19,12 @@ const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLa
 export default function PostcardNote({
   postcard,
   sourceUrl,
+  className = "",
 }: {
   postcard: Postcard;
   /** The photo's Commons file page, where the description comes from. */
   sourceUrl: string | null;
+  className?: string;
 }) {
   const { description } = postcard;
   // Only an English Wikipedia address is ever linked, whatever was stored.
@@ -54,7 +56,7 @@ export default function PostcardNote({
 
   const toggle = cut || expanded;
   return (
-    <div className="mt-1.5 md:mt-2" data-testid="postcard">
+    <div className={`mt-1.5 md:mt-2 ${className}`.trim()} data-testid="postcard">
       {description && (
         <p
           ref={textRef}
