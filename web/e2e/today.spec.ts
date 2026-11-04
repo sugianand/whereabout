@@ -32,10 +32,10 @@ test("Today lists every daily game from the Games menu, follows a real run, and 
     .click();
   await expect(page.getByRole("heading", { level: 1, name: "Today" })).toBeVisible();
   await expect(page.getByTestId("today-standing")).toContainText(
-    /^0 of 5 played\. The next deal is in \d/,
+    /^0 of 6 played\. The next deal is in \d/,
   );
   const games = page.getByRole("list", { name: "Today's games" }).getByRole("listitem");
-  await expect(games).toHaveCount(5);
+  await expect(games).toHaveCount(6);
   await expect(page.getByRole("button", { name: "Share your day" })).toHaveCount(0);
 
   // Fits a phone, whole.
@@ -78,7 +78,7 @@ test("Today lists every daily game from the Games menu, follows a real run, and 
     );
   }, today);
   await page.reload();
-  await expect(page.getByTestId("today-standing")).toContainText(/^2 of 5 played/);
+  await expect(page.getByTestId("today-standing")).toContainText(/^2 of 6 played/);
   await expect(page.getByTestId("today-daily-five")).toContainText("18,240 of 25,000");
   await expect(page.getByTestId("today-further-north")).toContainText("Atlas: 3 of 5");
   await expect(page.getByTestId("today-odd-one-out")).toHaveAttribute("data-status", "going");
@@ -96,7 +96,7 @@ test("Today lists every daily game from the Games menu, follows a real run, and 
   await page.getByRole("button", { name: "Share your day" }).click();
   await expect(page.getByText("Result copied. Paste it anywhere.")).toBeVisible();
   const sent = await page.evaluate(() => (window as unknown as { sent: string }).sent);
-  expect(sent).toContain(`Whereabout · Today · ${today}\n2 of 5 daily games\n`);
+  expect(sent).toContain(`Whereabout · Today · ${today}\n2 of 6 daily games\n`);
   expect(sent).toContain("🌍 Daily Five: 18,240 of 25,000\n");
   expect(sent).toContain("⬆️ Further North: 6 pairs in a row\n");
   expect(sent).not.toContain("Odd one out");
@@ -125,7 +125,7 @@ test("the results screen leads to Today, already counting the game just finished
   await expect(page.getByText("out of 25,000 points")).toBeVisible();
 
   const link = page.getByRole("link", { name: /^Today/ });
-  await expect(link).toContainText("1 of 5 played");
+  await expect(link).toContainText("1 of 6 played");
   await link.click();
   // The summary's globe is still working on a software renderer, so the page can take a while.
   await expect(page.getByTestId("today-daily-five")).toHaveAttribute("data-status", "done", {

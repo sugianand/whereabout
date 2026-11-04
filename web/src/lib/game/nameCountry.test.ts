@@ -178,6 +178,20 @@ describe("the run", () => {
   });
 });
 
+describe("a run picked back up", () => {
+  const from = { streak: 2, atlasRight: 1, atlasPlayed: 2 };
+
+  it("stands at the photo after the right taps, with the tally so far", () => {
+    const state = nameReducer(initialName, { type: "start", order: ["a", "b", "c"], seed: 7, from });
+    expect(state).toMatchObject({ phase: "guessing", index: 2, seed: 7, ...from });
+  });
+
+  it("is cleared when it stands past the end of the deck", () => {
+    const state = nameReducer(initialName, { type: "start", order: ["a", "b"], seed: 7, from });
+    expect(state).toMatchObject({ phase: "cleared", index: 1, ...from });
+  });
+});
+
 describe("the best run", () => {
   beforeEach(() => localStorage.clear());
 

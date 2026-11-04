@@ -68,10 +68,12 @@ scored by the same rules; your best game is kept in your browser.
 **Name the country** (at `/name-country`, in the Games menu) shows one photo and four countries from
 the same continent, drawn from the countries the globe draws: tap the right one, or press 1 to 4,
 and go on until your first miss. Atlas picks too, the name it gave the most of the four, and the
-reveal names the place and its continent. Your best run is kept in your browser.
+reveal names the place and its continent. Your best run is kept in your browser. **Today's run**
+(at `/name-country/daily`) deals everyone the same photos and names on the same UTC day, one try a
+day, resumed after a reload and shared as counts only.
 **Today** (at `/today`, in the Games menu and on the results screen) puts every daily game on one
-page: the Daily Five, Further North, Odd one out, Which way? and How far apart?, each with where it
-stands in your browser (not started, under way or its result), the time to the next deal, and one
+page: the Daily Five, Further North, Odd one out, Which way?, How far apart? and Name the country,
+each with where it stands in your browser (not started, under way or its result), the time to the next deal, and one
 share line gathering every finished game, as scores and counts only.
 
 The results screen gathers these quick games (Blitz, Country Streak, Survival, Further North, Odd

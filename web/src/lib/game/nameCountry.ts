@@ -142,7 +142,13 @@ export type NameState =
   | (Run & { phase: "cleared" });
 
 export type NameAction =
-  | { type: "start"; order: readonly string[]; seed: number }
+  | {
+      type: "start";
+      order: readonly string[];
+      seed: number;
+      /** Pick a run back up: the tally so far, with `order[streak]` the photo it stands at. */
+      from?: { streak: number; atlasRight: number; atlasPlayed: number };
+    }
   | {
       type: "picked";
       /** The country tapped; ignored unless it is one of `options`. */
@@ -157,18 +163,27 @@ export const initialName: NameState = { phase: "idle" };
 
 export function nameReducer(state: NameState, action: NameAction): NameState {
   switch (action.type) {
-    case "start":
-      return action.order.length === 0
-        ? { phase: "none" }
-        : {
-            phase: "guessing",
-            order: action.order,
-            index: 0,
-            seed: action.seed,
-            streak: 0,
-            atlasRight: 0,
-            atlasPlayed: 0,
-          };
+    case "start": {
+      if (action.order.length === 0) return { phase: "none" };
+      const { order, seed } = action;
+      const { streak, atlasRight, atlasPlayed } = action.from ?? {
+        streak: 0,
+        atlasRight: 0,
+        atlasPlayed: 0,
+      };
+      // A kept run can stand past a deck that has since shrunk: it has named every photo.
+      return streak >= order.length
+        ? {
+            phase: "cleared",
+            order,
+            seed,
+            index: order.length - 1,
+            streak,
+            atlasRight,
+            atlasPlayed,
+          }
+        : { phase: "guessing", order, seed, index: streak, streak, atlasRight, atlasPlayed };
+    }
     case "picked": {
       if (state.phase !== "guessing" || !action.options.includes(action.country)) return state;
       const correct = action.country === action.truth;

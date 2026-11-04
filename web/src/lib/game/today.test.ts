@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { DAILY_SCORES_KEY } from "./dailyArchive";
 import { rememberFarDay } from "./farDaily";
 import { type PairResult } from "./howFar";
+import { rememberNameDay } from "./nameDaily";
 import { rememberNorthDay } from "./northDaily";
 import { rememberOddDay } from "./oddDaily";
 import { SAVED_GAME_KEY } from "./saved";
@@ -42,7 +43,7 @@ const byId = (id: TodayGameId) => todayGames(DAY, IDS, NOW).find((g) => g.id ===
 beforeEach(() => localStorage.clear());
 
 describe("todayGames", () => {
-  it("lists all five daily games, none started in a new browser", () => {
+  it("lists all six daily games, none started in a new browser", () => {
     const games = todayGames(DAY, IDS, NOW);
     expect(games.map((g) => g.id)).toEqual([
       "daily-five",
@@ -50,6 +51,7 @@ describe("todayGames", () => {
       "odd-one-out",
       "which-way",
       "how-far",
+      "name-country",
     ]);
     expect(games.every((g) => g.status === "new" && g.line === "Not started")).toBe(true);
     expect(gamesDone(games)).toBe(0);
@@ -87,6 +89,17 @@ describe("todayGames", () => {
       line: "9 stops in a row, every photo",
       atlas: "4 of 9",
     });
+  });
+
+  it("reads today's Name the country, with its own plural", () => {
+    rememberNameDay(DAY, { streak: 3, atlasRight: 2, atlasPlayed: 3, ended: "miss" });
+    expect(byId("name-country")).toMatchObject({
+      status: "done",
+      line: "3 countries in a row",
+      atlas: "2 of 3",
+    });
+    rememberNameDay(DAY, { streak: 1, atlasRight: 0, atlasPlayed: 0, ended: null });
+    expect(byId("name-country").line).toBe("1 country in a row so far");
   });
 
   it("counts an empty run as not started, and a first-pick miss as played", () => {
@@ -127,7 +140,7 @@ describe("todayShare", () => {
     expect(todayShare(DAY, todayGames(DAY, IDS, NOW), HREF)).toBe(
       [
         "Whereabout · Today · 2026-11-03",
-        "2 of 5 daily games",
+        "2 of 6 daily games",
         "⬆️ Further North: 6 pairs in a row",
         "📏 How far apart?: 3,500 of 5,000",
         "https://example.test/whereabout/today/",

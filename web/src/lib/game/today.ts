@@ -1,7 +1,7 @@
 /**
  * Today: every daily game on one page. Each game already keeps its own day in this browser, so
  * this reads those records back and adds none of its own: the Daily Five's first score and the
- * game in progress (./dailyArchive.ts, ./saved.ts), the three streak games' runs (./dailyRuns.ts)
+ * game in progress (./dailyArchive.ts, ./saved.ts), the streak games' runs (./dailyRuns.ts)
  * and How far apart?'s pairs (./farDaily.ts). What a game can't read back counts as not started.
  *
  * Like every share in the game, the combined line is scores and counts only, so it spoils no
@@ -14,13 +14,20 @@ import { loadDailyScores } from "./dailyArchive";
 import { dailyRunUrl, type DailyRun } from "./dailyRuns";
 import { loadFarDay } from "./farDaily";
 import { PAIRS, PAIR_POINTS, atlasTotal, totalPoints } from "./howFar";
+import { loadNameDay } from "./nameDaily";
 import { loadNorthDay } from "./northDaily";
 import { loadOddDay } from "./oddDaily";
 import { loadSaved } from "./saved";
 import { ROUNDS_PER_GAME } from "./state";
 import { loadWayDay } from "./wayDaily";
 
-export type TodayGameId = "daily-five" | "further-north" | "odd-one-out" | "which-way" | "how-far";
+export type TodayGameId =
+  | "daily-five"
+  | "further-north"
+  | "odd-one-out"
+  | "which-way"
+  | "how-far"
+  | "name-country";
 
 /** One daily game: where it lives, whatever the browser holds. */
 export interface TodayGameInfo {
@@ -69,6 +76,13 @@ export const TODAY_GAMES: readonly TodayGameInfo[] = [
     icon: "📏",
     blurb: "Five pairs of photos, one slider: how far apart were they taken?",
   },
+  {
+    id: "name-country",
+    name: "Name the country",
+    href: "/name-country/daily",
+    icon: "🗺️",
+    blurb: "One photo, four names from its continent, until your first miss.",
+  },
 ];
 
 export type TodayStatus = "new" | "going" | "done";
@@ -84,17 +98,16 @@ export interface TodayGame extends TodayGameInfo {
 
 const NOT_STARTED = "Not started";
 
-const plural = (n: number, noun: string) => `${n} ${noun}${n === 1 ? "" : "s"}`;
-
 function streakGame(
   run: DailyRun | null,
   noun: string,
+  nouns: string = `${noun}s`,
 ): Pick<TodayGame, "status" | "line" | "atlas"> {
   // A run writes itself after its first answer, so a run with nothing to show isn't started.
   if (!run || (run.ended === null && run.streak === 0)) {
     return { status: "new", line: NOT_STARTED, atlas: null };
   }
-  const inARow = `${plural(run.streak, noun)} in a row`;
+  const inARow = `${run.streak} ${run.streak === 1 ? noun : nouns} in a row`;
   const atlas = run.atlasPlayed > 0 ? `${run.atlasRight} of ${run.atlasPlayed}` : null;
   if (run.ended === null) return { status: "going", line: `${inARow} so far`, atlas };
   return {
@@ -154,6 +167,8 @@ export function todayGames(
         return { ...info, ...streakGame(loadWayDay(day), "stop") };
       case "how-far":
         return { ...info, ...howFar(day) };
+      case "name-country":
+        return { ...info, ...streakGame(loadNameDay(day), "country", "countries") };
     }
   });
 }

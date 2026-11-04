@@ -7,6 +7,7 @@ import { continentOf } from "@/lib/continents";
 import { countryName } from "@/lib/countries";
 import { isShortcut } from "@/lib/controls";
 import { seededShuffle } from "@/lib/game/daily";
+import { FRESH_RUN, runToday, type DailyRun } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import {
   atlasPercent,
@@ -20,8 +21,16 @@ import {
   rememberName,
   type AtlasName,
 } from "@/lib/game/nameCountry";
+import {
+  dailyNameOrder,
+  dailyNameSeed,
+  loadNameDay,
+  nameDailyShare,
+  rememberNameDay,
+} from "@/lib/game/nameDaily";
 
 import ControlsHelp from "./ControlsHelp";
+import { DailyRunResult, ShareDay } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
 import PhotoViewer from "./PhotoViewer";
 
@@ -31,6 +40,13 @@ type NameCountryProps = {
   loadRecords?: (ids: string[]) => Promise<GameRecord[]>;
   /** For tests: the randomness that deals each run. */
   random?: () => number;
+  /**
+   * Today's run (src/lib/game/nameDaily.ts): the day's photos and names, one try a day, picked
+   * back up where it was left, with a share line at the end. Off, every run is shuffled at random.
+   */
+  daily?: boolean;
+  /** For tests: the clock that picks today's run. */
+  now?: () => Date;
 };
 
 /** "1 country", "4 countries". */
@@ -48,15 +64,42 @@ function photos(n: number): string {
  * continent; tap the right one. Endless until the first miss, with Atlas picking from its own
  * country probabilities.
  */
-export default function NameCountry({ deck, loadRecords, random }: NameCountryProps) {
+export default function NameCountry({
+  deck,
+  loadRecords,
+  random,
+  daily = false,
+  now,
+}: NameCountryProps) {
   const [state, dispatch] = useReducer(nameReducer, initialName);
   const [best, setBest] = useState(0);
   // The best before this run, so its end can say when it was beaten.
   const [bestBefore, setBestBefore] = useState(0);
   const [records, setRecords] = useState<ReadonlyMap<string, GameRecord>>(() => new Map());
   const [error, setError] = useState<string | null>(null);
+  // Today's run: the day it was dealt for (kept when the clock passes midnight mid-run) and,
+  // once it has ended, how it went, which shows instead of the game.
+  const [day, setDay] = useState<string | null>(null);
+  const [dayDone, setDayDone] = useState<DailyRun | null>(null);
 
   const start = useCallback(() => {
+    if (daily) {
+      const today = runToday(now?.());
+      const kept = loadNameDay(today);
+      setDay(today);
+      if (kept?.ended) {
+        setDayDone(kept);
+        return;
+      }
+      const { streak, atlasRight, atlasPlayed } = kept ?? FRESH_RUN;
+      dispatch({
+        type: "start",
+        order: dailyNameOrder(nameIds(deck.streakIds, deck.regions), today),
+        seed: dailyNameSeed(today),
+        from: { streak, atlasRight, atlasPlayed },
+      });
+      return;
+    }
     const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
     const stored = loadBestName();
     setBest(stored);
@@ -66,7 +109,7 @@ export default function NameCountry({ deck, loadRecords, random }: NameCountryPr
       order: seededShuffle(nameIds(deck.streakIds, deck.regions), seed),
       seed,
     });
-  }, [deck.regions, deck.streakIds, random]);
+  }, [daily, deck.regions, deck.streakIds, now, random]);
 
   // The run is shuffled in the browser after hydration, never at build time.
   useEffect(() => {
@@ -136,11 +179,22 @@ export default function NameCountry({ deck, loadRecords, random }: NameCountryPr
         atlas: current.atlas,
       } as const;
       const after = nameReducer(state, action);
-      // Keep the run as the best after every right tap, so leaving mid-run keeps it.
-      if (after.phase === "answered" && after.correct) setBest(rememberName(after.streak));
+      if (after.phase === "answered" && day) {
+        // Today's run is kept after every tap, so a reload resumes it and never deals it again.
+        const cleared = after.correct && after.index + 1 >= after.order.length;
+        rememberNameDay(day, {
+          streak: after.streak,
+          atlasRight: after.atlasRight,
+          atlasPlayed: after.atlasPlayed,
+          ended: !after.correct ? "miss" : cleared ? "cleared" : null,
+        });
+      } else if (after.phase === "answered" && after.correct) {
+        // Keep the run as the best after every right tap, so leaving mid-run keeps it.
+        setBest(rememberName(after.streak));
+      }
       dispatch(action);
     },
-    [state, current, options],
+    [state, current, options, day],
   );
 
   // 1 to 4 pick a name from the keyboard.
@@ -154,6 +208,37 @@ export default function NameCountry({ deck, loadRecords, random }: NameCountryPr
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [state.phase, options, choose]);
+
+  // A day that has ended, on this visit or an earlier one, shows its result and never deals again.
+  const dayResult =
+    dayDone ??
+    (day && state.phase === "cleared"
+      ? {
+          streak: state.streak,
+          atlasRight: state.atlasRight,
+          atlasPlayed: state.atlasPlayed,
+          ended: "cleared" as const,
+        }
+      : null);
+  if (day && dayResult) {
+    const cleared = dayResult.ended === "cleared";
+    return (
+      <DailyRunResult
+        game="Name the country"
+        day={day}
+        headline={cleared ? "You named every photo" : `${countries(dayResult.streak)} in a row`}
+        summary={
+          "That's today's run played." +
+          (dayResult.atlasPlayed > 0
+            ? ` Atlas got ${dayResult.atlasRight} of the ${photos(dayResult.atlasPlayed)} it played.`
+            : "")
+        }
+        shareText={(href) => nameDailyShare(day, dayResult, href)}
+        freeHref="/name-country"
+        now={now}
+      />
+    );
+  }
 
   if (state.phase === "none" || state.phase === "cleared") {
     const cleared = state.phase === "cleared";
@@ -207,10 +292,18 @@ export default function NameCountry({ deck, loadRecords, random }: NameCountryPr
           >
             Whereabout
           </Link>
-          <p className="mt-1 text-sm text-chalk-dim">Name the country: which of these four?</p>
+          <p className="mt-1 text-sm text-chalk-dim">
+            {day ? `Today's run, ${day}` : "Name the country: which of these four?"}
+          </p>
           <div className="mt-2 flex items-center gap-2">
             <GamesMenu screen="name-country" streakHref="/streak" />
             <ControlsHelp screen="name-country" />
+            <Link
+              href={daily ? "/name-country" : "/name-country/daily"}
+              className="whitespace-nowrap text-sm text-gold underline underline-offset-2 hover:brightness-110"
+            >
+              {daily ? "Free runs" : "Today's run"}
+            </Link>
           </div>
         </div>
         <div className="shrink-0">
@@ -219,10 +312,12 @@ export default function NameCountry({ deck, loadRecords, random }: NameCountryPr
             <dd className="font-sign tabular text-3xl font-bold leading-none" aria-live="polite">
               {streak}
             </dd>
-            <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
-              <dt>Best</dt>
-              <dd className="tabular">{best}</dd>
-            </div>
+            {!daily && (
+              <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
+                <dt>Best</dt>
+                <dd className="tabular">{best}</dd>
+              </div>
+            )}
           </dl>
         </div>
       </header>
@@ -278,6 +373,7 @@ export default function NameCountry({ deck, loadRecords, random }: NameCountryPr
             over={over}
             best={best}
             newBest={over && answered.streak > bestBefore}
+            daily={day}
             onNext={over ? start : () => dispatch({ type: "next" })}
           />
         ) : (
@@ -361,6 +457,7 @@ function NameCard({
   over,
   best,
   newBest,
+  daily,
   onNext,
 }: {
   record: GameRecord;
@@ -373,6 +470,8 @@ function NameCard({
   over: boolean;
   best: number;
   newBest: boolean;
+  /** Today's run's day, when this is it: its end shares the day instead of starting again. */
+  daily: string | null;
   onNext: () => void;
 }) {
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -382,6 +481,16 @@ function NameCard({
   const { place, country, credit } = record.photo;
   const continent = continentOf(country);
   const [atlasRight, atlasPlayed] = atlasTally;
+  const photoCredit = (
+    <a
+      href={credit.sourceUrl}
+      target="_blank"
+      rel="noreferrer"
+      className="block min-w-0 truncate text-xs text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk"
+    >
+      Photo: {credit.author}, {credit.license}
+    </a>
+  );
 
   return (
     <section
@@ -405,30 +514,39 @@ function NameCard({
           Atlas gave none of these four a chance, so it sat this one out.
         </p>
       )}
-      {over && (
+      {over && daily && (
+        <p className="mt-1 text-chalk">{`Today's run is over: ${countries(streak)} in a row.`}</p>
+      )}
+      {over && !daily && (
         <p className="mt-1 text-chalk">
           {`Run over: ${countries(streak)} in a row. `}
           {newBest ? "That's your new best!" : best > 0 ? `Your best is ${countries(best)}.` : ""}
         </p>
       )}
-      <div className="mt-2 flex items-center gap-4 md:mt-3">
-        <button
-          ref={nextRef}
-          type="button"
-          onClick={onNext}
-          className="shrink-0 rounded-full bg-gold px-6 py-2.5 font-semibold text-ocean-deep transition hover:brightness-110"
-        >
-          {over ? "Start a new run" : "Next photo"}
-        </button>
-        <a
-          href={credit.sourceUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="min-w-0 truncate text-xs text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk"
-        >
-          Photo: {credit.author}, {credit.license}
-        </a>
-      </div>
+      {over && daily ? (
+        <>
+          <ShareDay
+            shareText={(href) =>
+              nameDailyShare(daily, { streak, atlasRight, atlasPlayed, ended: "miss" }, href)
+            }
+            freeHref="/name-country"
+            focus
+          />
+          {photoCredit}
+        </>
+      ) : (
+        <div className="mt-2 flex items-center gap-4 md:mt-3">
+          <button
+            ref={nextRef}
+            type="button"
+            onClick={onNext}
+            className="shrink-0 rounded-full bg-gold px-6 py-2.5 font-semibold text-ocean-deep transition hover:brightness-110"
+          >
+            {over ? "Start a new run" : "Next photo"}
+          </button>
+          {photoCredit}
+        </div>
+      )}
     </section>
   );
 }

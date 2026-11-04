@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { countryName } from "@/lib/countries";
 import type { GameRecord } from "@/lib/game/deck";
 import { BEST_NAME_KEY } from "@/lib/game/nameCountry";
+import { loadNameDay, rememberNameDay } from "@/lib/game/nameDaily";
 import type { AtlasGuess, CatalogPhoto } from "@/lib/game/types";
 import { gameFor } from "@/test/deck";
 
@@ -150,5 +151,75 @@ describe("NameCountry", () => {
     expect(
       await screen.findByRole("heading", { name: "No photos to play yet" }),
     ).toBeInTheDocument();
+  });
+
+  describe("today's run", () => {
+    const DAY = "2026-11-04";
+    const now = () => new Date(`${DAY}T12:00:00Z`);
+
+    async function daily() {
+      const game = gameFor(RECORDS);
+      const view = render(
+        <NameCountry deck={game.deck} loadRecords={game.loadRecords} daily now={now} />,
+      );
+      await waitFor(() => expect(screen.getByTestId("name-option-4")).toBeEnabled(), {
+        timeout: 5000,
+      });
+      const shown = () => ({
+        id: view.container.querySelector("main")!.getAttribute("data-photo")!,
+        names: [1, 2, 3, 4].map((n) =>
+          screen.getByTestId(`name-option-${n}`).getAttribute("data-country"),
+        ),
+      });
+      return { ...view, shown };
+    }
+    const right = (id: string) => BY_ID.get(id)!.photo.country;
+
+    it("deals the same photo and names again, and picks up after a right tap", async () => {
+      const first = await daily();
+      const opening = first.shown();
+      first.unmount();
+
+      const second = await daily();
+      expect(second.shown()).toEqual(opening);
+      fireEvent.click(option(right(opening.id)));
+      expect(loadNameDay(DAY)).toMatchObject({ streak: 1, ended: null });
+      second.unmount();
+
+      const third = await daily();
+      expect(streak()).toHaveTextContent("1");
+      expect(third.shown().id).not.toBe(opening.id);
+      expect(screen.queryByText("Best")).toBeNull();
+    });
+
+    it("ends on the first miss, keeps no free-run best, and offers the share", async () => {
+      rememberNameDay(DAY, { streak: 1, atlasRight: 0, atlasPlayed: 0, ended: null });
+      const { shown } = await daily();
+      fireEvent.click(option(wrongOf(right(shown().id))));
+      expect(await screen.findByText("Today's run is over: 1 country in a row.")).toBeVisible();
+      expect(screen.getByRole("button", { name: "Share today's run" })).toHaveFocus();
+      expect(screen.queryByRole("button", { name: "Start a new run" })).toBeNull();
+      expect(loadNameDay(DAY)?.ended).toBe("miss");
+      expect(localStorage.getItem(BEST_NAME_KEY)).toBeNull();
+    });
+
+    it("shows a finished day instead of dealing it again", async () => {
+      rememberNameDay(DAY, { streak: 4, atlasRight: 2, atlasPlayed: 3, ended: "miss" });
+      const game = gameFor(RECORDS);
+      render(<NameCountry deck={game.deck} loadRecords={game.loadRecords} daily now={now} />);
+      expect(await screen.findByRole("heading", { name: "4 countries in a row" })).toBeVisible();
+      expect(screen.getByText(/Atlas got 2 of the 3 photos it played/)).toBeVisible();
+      expect(screen.queryByTestId("name-option-1")).toBeNull();
+    });
+
+    it("marks a run that names the last photo as cleared, and shows the whole day", async () => {
+      const count = RECORDS.length - 1;
+      rememberNameDay(DAY, { streak: count, atlasRight: 0, atlasPlayed: 0, ended: null });
+      const { shown } = await daily();
+      fireEvent.click(option(right(shown().id)));
+      expect(loadNameDay(DAY)?.ended).toBe("cleared");
+      fireEvent.click(screen.getByRole("button", { name: "Next photo" }));
+      expect(await screen.findByRole("heading", { name: "You named every photo" })).toBeVisible();
+    });
   });
 });
