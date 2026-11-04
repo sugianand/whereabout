@@ -29,7 +29,7 @@ export type ControlGroup = {
 };
 
 export type HelpScreen =
-  "round" | "further-north" | "odd-one-out" | "how-far" | "which-way" | "hot-cold";
+  "round" | "further-north" | "odd-one-out" | "how-far" | "which-way" | "hot-cold" | "name-country";
 
 const k = (label: string, press = label): Key => ({ label, press });
 
@@ -268,6 +268,29 @@ export const CONTROLS: Record<HelpScreen, readonly ControlGroup[]> = {
       ],
     },
   ],
+  "name-country": [
+    PHOTO_CONTROLS,
+    {
+      title: "The names",
+      controls: [
+        {
+          id: "pick",
+          does: "Name the country",
+          keys: [k("1"), k("2"), k("3"), k("4")],
+          mouse: "Click a name",
+          touch: "Tap a name",
+        },
+        {
+          id: "next",
+          does: "Next photo, from the answer",
+          keys: [k("Enter")],
+          mouse: "Next photo",
+          touch: "Next photo",
+        },
+        HELP,
+      ],
+    },
+  ],
 };
 
 /** The sheet's title for each screen. */
@@ -278,6 +301,7 @@ export const SCREEN_TITLES: Record<HelpScreen, string> = {
   "how-far": "Controls for How far apart?",
   "which-way": "Controls for Which way?",
   "hot-cold": "Controls for Hot and cold",
+  "name-country": "Controls for Name the country",
 };
 
 /**

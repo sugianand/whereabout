@@ -13,6 +13,7 @@
 import { tappableCountries } from "@/lib/countryHit";
 
 import { hashSeed } from "./daily";
+import { buildCountryPool, type CountryPool } from "./nameCountry";
 import { playablePhotos } from "./playable";
 import { buildRegions, type Regions } from "./regions";
 import { surenessBands, type SurenessBand } from "./sureness";
@@ -40,6 +41,8 @@ export interface Deck {
    * is always something the player can tap (microstates and small islands are left out).
    */
   streakIds: string[];
+  /** The countries the globe draws, by continent: Name the country's wrong answers. */
+  countryPool: CountryPool;
   /** How often Atlas named the right country at each level of confidence (`sureness.ts`). */
   sureness: SurenessBand[];
 }
@@ -64,6 +67,7 @@ export function buildDeck(records: readonly GameRecord[]): Deck {
     tiers: buildTiers(records),
     regions: buildRegions(records),
     streakIds: streakIds(records),
+    countryPool: buildCountryPool(tappableCountries()),
     sureness: surenessBands(records),
   };
 }

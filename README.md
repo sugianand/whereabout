@@ -65,6 +65,10 @@ without naming the place, and the second miss says warmer or colder; earlier pin
 the globe. A photo scores your closest pin on the usual curve, plus 1,000 points for finding the
 country on the first pin or 500 on the second. Five photos a game, against Atlas's single pin
 scored by the same rules; your best game is kept in your browser.
+**Name the country** (at `/name-country`, in the Games menu) shows one photo and four countries from
+the same continent, drawn from the countries the globe draws: tap the right one, or press 1 to 4,
+and go on until your first miss. Atlas picks too, the name it gave the most of the four, and the
+reveal names the place and its continent. Your best run is kept in your browser.
 **Today** (at `/today`, in the Games menu and on the results screen) puts every daily game on one
 page: the Daily Five, Further North, Odd one out, Which way? and How far apart?, each with where it
 stands in your browser (not started, under way or its result), the time to the next deal, and one

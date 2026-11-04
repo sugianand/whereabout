@@ -3,7 +3,8 @@
  * gathered for the results screen's mode cards so a player sees what to beat before opening one.
  *
  * Nothing new is stored here. Each mode keeps its own best under its own key (blitz.ts,
- * streak.ts, survival.ts, furtherNorth.ts, oddOneOut.ts, howFar.ts, whichWay.ts, hotCold.ts); this only reads them back through the
+ * streak.ts, survival.ts, furtherNorth.ts, oddOneOut.ts, howFar.ts, whichWay.ts, hotCold.ts,
+ * nameCountry.ts); this only reads them back through the
  * same loaders, so a value a mode would refuse (a negative streak, junk JSON) is refused here too.
  */
 
@@ -14,6 +15,7 @@ import { loadBlitzBest } from "./blitz";
 import { loadBestNorth } from "./furtherNorth";
 import { loadBestHot } from "./hotCold";
 import { loadBestHowFar } from "./howFar";
+import { loadBestName } from "./nameCountry";
 import { loadBestOdd } from "./oddOneOut";
 import { regionSlug } from "./regions";
 import { loadBestStreak } from "./streak";
@@ -30,6 +32,7 @@ export const QUICK_MODES = [
   "how-far",
   "which-way",
   "hot-cold",
+  "name-country",
 ] as const;
 
 export type QuickMode = (typeof QUICK_MODES)[number];
@@ -57,6 +60,8 @@ export interface QuickBests {
   "which-way": number | null;
   /** The best whole game's points. */
   "hot-cold": number | null;
+  /** The longest run of countries named. */
+  "name-country": number | null;
 }
 
 export const NO_BESTS: QuickBests = {
@@ -68,6 +73,7 @@ export const NO_BESTS: QuickBests = {
   "how-far": null,
   "which-way": null,
   "hot-cold": null,
+  "name-country": null,
 };
 
 /**
@@ -99,6 +105,7 @@ export function loadQuickBests(): QuickBests {
     "how-far": positive(loadBestHowFar()),
     "which-way": positive(loadBestWay()),
     "hot-cold": positive(loadBestHot()),
+    "name-country": positive(loadBestName()),
   };
 }
 
@@ -126,7 +133,8 @@ export function bestLine(mode: QuickMode, bests: QuickBests): string | null {
     }
     case "further-north":
     case "odd-one-out":
-    case "which-way": {
+    case "which-way":
+    case "name-country": {
       const n = bests[mode];
       return n === null ? null : `Best: ${inARow(n)}`;
     }

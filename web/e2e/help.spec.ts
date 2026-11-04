@@ -191,6 +191,32 @@ test.describe("on a keyboard", () => {
       }
     });
   }
+  test("? lists Name the country's controls, and every pick key works", async ({ page }) => {
+    await page.goto("./name-country");
+    const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
+    const picks = keysOf("name-country", "pick");
+
+    await expect(page.getByTestId("name-option-4")).toBeEnabled();
+    const sheet = await openWithKey(page, "Controls for Name the country");
+    await expectSheetLists(sheet, "name-country", false);
+    // A pick key pressed in the sheet doesn't pick behind it.
+    await page.keyboard.press(picks[0]);
+    await expect(card).toBeHidden();
+    await page.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+
+    for (const pick of picks) {
+      // A key only picks once the photo on screen has loaded its record.
+      await expect(page.getByTestId(`name-option-${pick}`)).toBeEnabled();
+      await page.keyboard.press(pick);
+      await expect(card).toBeVisible();
+      await expect(
+        card.getByRole("button", { name: /^(Next photo|Start a new run)$/ }),
+      ).toBeFocused();
+      await page.keyboard.press(keysOf("name-country", "next")[0]);
+      await expect(card).toBeHidden();
+    }
+  });
   test("? lists Which way?'s controls, and every compass key works", async ({ page }) => {
     test.setTimeout(150_000);
     await page.goto("./which-way");
@@ -280,6 +306,7 @@ test.describe("on a touch screen", () => {
     ["round", "./?daily", "Controls for a round"],
     ["further-north", "./further-north", "Controls for Further North"],
     ["odd-one-out", "./odd-one-out", "Controls for Odd one out"],
+    ["name-country", "./name-country", "Controls for Name the country"],
     ["how-far", "./how-far", "Controls for How far apart?"],
     ["which-way", "./which-way", "Controls for Which way?"],
   ] as const) {

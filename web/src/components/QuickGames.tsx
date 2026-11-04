@@ -73,6 +73,11 @@ const BLURBS: Record<QuickMode, { name: string; blurb: string }> = {
     blurb:
       "One photo, three pins to find its country: every miss says how far off you were and which way to head. Five photos against Atlas's single pin.",
   },
+  "name-country": {
+    name: "Name the country",
+    blurb:
+      "One photo, four countries from the same continent: tap the right one, and keep going until your first miss. Atlas picks too.",
+  },
 };
 
 const CARD =
@@ -187,7 +192,15 @@ export default function QuickGames({
       {offerBlitz && <li>{card("blitz", blitzHref, onPlayBlitz)}</li>}
       {offerStreak && <li>{card("streak", streakHref)}</li>}
       {(
-        ["survival", "further-north", "odd-one-out", "how-far", "which-way", "hot-cold"] as const
+        [
+          "survival",
+          "further-north",
+          "odd-one-out",
+          "how-far",
+          "which-way",
+          "hot-cold",
+          "name-country",
+        ] as const
       ).map((mode) => (
         <li key={mode}>{card(mode, `/${mode}`)}</li>
       ))}
