@@ -87,7 +87,7 @@ export interface AtlasName {
 }
 
 /** The probability Atlas gave `country`: from its whole belief, or its top countries. */
-function atlasP(guess: AtlasGuess, country: string): number {
+export function atlasP(guess: AtlasGuess, country: string): number {
   const top = guess.topCountries.find((t) => t.country === country)?.p ?? 0;
   return Math.max(guess.belief?.[country] ?? 0, top);
 }

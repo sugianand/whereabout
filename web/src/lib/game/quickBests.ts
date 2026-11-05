@@ -4,7 +4,7 @@
  *
  * Nothing new is stored here. Each mode keeps its own best under its own key (blitz.ts,
  * streak.ts, survival.ts, furtherNorth.ts, oddOneOut.ts, howFar.ts, whichWay.ts, hotCold.ts,
- * nameCountry.ts, lineUp.ts); this only reads them back through the
+ * nameCountry.ts, lineUp.ts, closeUp.ts); this only reads them back through the
  * same loaders, so a value a mode would refuse (a negative streak, junk JSON) is refused here too.
  */
 
@@ -16,6 +16,7 @@ import { loadBestNorth } from "./furtherNorth";
 import { loadBestHot } from "./hotCold";
 import { loadBestHowFar } from "./howFar";
 import { ROW, ROWS, loadBestLine } from "./lineUp";
+import { CLOSE_MAX, loadBestClose } from "./closeUp";
 import { loadBestName } from "./nameCountry";
 import { loadBestOdd } from "./oddOneOut";
 import { regionSlug } from "./regions";
@@ -35,6 +36,7 @@ export const QUICK_MODES = [
   "hot-cold",
   "name-country",
   "line-up",
+  "close-up",
 ] as const;
 
 export type QuickMode = (typeof QUICK_MODES)[number];
@@ -66,6 +68,8 @@ export interface QuickBests {
   "name-country": number | null;
   /** The most photos put in place in a whole game. */
   "line-up": number | null;
+  /** The most points in a whole game. */
+  "close-up": number | null;
 }
 
 export const NO_BESTS: QuickBests = {
@@ -79,6 +83,7 @@ export const NO_BESTS: QuickBests = {
   "hot-cold": null,
   "name-country": null,
   "line-up": null,
+  "close-up": null,
 };
 
 /**
@@ -112,6 +117,7 @@ export function loadQuickBests(): QuickBests {
     "hot-cold": positive(loadBestHot()),
     "name-country": positive(loadBestName()),
     "line-up": positive(loadBestLine()),
+    "close-up": positive(loadBestClose()),
   };
 }
 
@@ -140,6 +146,10 @@ export function bestLine(mode: QuickMode, bests: QuickBests): string | null {
     case "line-up": {
       const n = bests[mode];
       return n === null ? null : `Best: ${n} of ${ROW * ROWS} in place`;
+    }
+    case "close-up": {
+      const n = bests[mode];
+      return n === null ? null : `Best: ${n} of ${CLOSE_MAX} points`;
     }
     case "further-north":
     case "odd-one-out":

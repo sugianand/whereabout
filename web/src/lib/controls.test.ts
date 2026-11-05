@@ -62,6 +62,7 @@ describe("CONTROLS", () => {
     expect(picks("odd-one-out")).toEqual(["1", "2", "3", "4"]);
     expect(picks("name-country")).toEqual(["1", "2", "3", "4"]);
     expect(picks("line-up")).toEqual(["1", "2", "3", "4"]);
+    expect(picks("close-up")).toEqual(["1", "2", "3", "4"]);
     // Which way? picks one of eight points, on the number pad's layout from north clockwise.
     expect(picks("which-way")).toEqual(["8", "9", "6", "3", "2", "1", "4", "7"]);
   });

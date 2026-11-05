@@ -60,6 +60,7 @@ describe("QuickGames", () => {
       "href",
       "/line-up",
     );
+    expect(screen.getByRole("link", { name: /^Close-up/ })).toHaveAttribute("href", "/close-up");
     fireEvent.click(screen.getByRole("button", { name: /^Blitz/ }));
     expect(onPlayBlitz).toHaveBeenCalledOnce();
   });

@@ -36,7 +36,8 @@ export type HelpScreen =
   | "which-way"
   | "hot-cold"
   | "name-country"
-  | "line-up";
+  | "line-up"
+  | "close-up";
 
 const k = (label: string, press = label): Key => ({ label, press });
 
@@ -327,6 +328,28 @@ export const CONTROLS: Record<HelpScreen, readonly ControlGroup[]> = {
       ],
     },
   ],
+  "close-up": [
+    {
+      title: "The names",
+      controls: [
+        {
+          id: "pick",
+          does: "Name the country",
+          keys: [k("1"), k("2"), k("3"), k("4")],
+          mouse: "Click a name",
+          touch: "Tap a name",
+        },
+        {
+          id: "next",
+          does: "Next photo, from the answer",
+          keys: [k("Enter")],
+          mouse: "Next photo",
+          touch: "Next photo",
+        },
+        HELP,
+      ],
+    },
+  ],
 };
 
 /** The sheet's title for each screen. */
@@ -339,6 +362,7 @@ export const SCREEN_TITLES: Record<HelpScreen, string> = {
   "hot-cold": "Controls for Hot and cold",
   "name-country": "Controls for Name the country",
   "line-up": "Controls for Line them up",
+  "close-up": "Controls for Close-up",
 };
 
 /**

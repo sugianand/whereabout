@@ -217,6 +217,29 @@ test.describe("on a keyboard", () => {
       await expect(card).toBeHidden();
     }
   });
+  test("? lists Close-up's controls, and every one of its keys works", async ({ page }) => {
+    await page.goto("./close-up");
+    const names = () => page.locator('[data-testid^="close-option-"]');
+    await expect(names()).toHaveCount(4);
+    await expect(names().nth(3)).toBeEnabled();
+    const sheet = await openWithKey(page, "Controls for Close-up");
+    await expectSheetLists(sheet, "close-up", false);
+    // A pick key pressed in the sheet doesn't pick behind it.
+    await page.keyboard.press("1");
+    await expect(page.locator('[data-testid^="close-option-"]:disabled')).toHaveCount(0);
+    await page.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+
+    const next = page.getByRole("button", { name: "Next photo" });
+    for (const pick of keysOf("close-up", "pick")) {
+      await page.keyboard.press(pick);
+      if (await next.isVisible()) break;
+    }
+    await expect(next).toBeFocused();
+    await page.keyboard.press(keysOf("close-up", "next")[0]);
+    await expect(page.getByText("Photo 2 of 5")).toBeVisible();
+  });
+
   test("? lists Line them up's controls, and every one of its keys works", async ({ page }) => {
     await page.goto("./line-up");
     const lock = page.getByRole("button", { name: "Lock it in" });
@@ -340,6 +363,7 @@ test.describe("on a touch screen", () => {
     ["odd-one-out", "./odd-one-out", "Controls for Odd one out"],
     ["name-country", "./name-country", "Controls for Name the country"],
     ["line-up", "./line-up", "Controls for Line them up"],
+    ["close-up", "./close-up", "Controls for Close-up"],
     ["how-far", "./how-far", "Controls for How far apart?"],
     ["which-way", "./which-way", "Controls for Which way?"],
   ] as const) {
