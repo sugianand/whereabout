@@ -78,6 +78,11 @@ const BLURBS: Record<QuickMode, { name: string; blurb: string }> = {
     blurb:
       "One photo, four countries from the same continent: tap the right one, and keep going until your first miss. Atlas picks too.",
   },
+  "line-up": {
+    name: "Line them up",
+    blurb:
+      "Four photos to put in order from west to east, by drag or by tap. Five rows against the order of Atlas's own pins.",
+  },
 };
 
 const CARD =
@@ -200,6 +205,7 @@ export default function QuickGames({
           "which-way",
           "hot-cold",
           "name-country",
+          "line-up",
         ] as const
       ).map((mode) => (
         <li key={mode}>{card(mode, `/${mode}`)}</li>

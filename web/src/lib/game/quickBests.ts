@@ -4,7 +4,7 @@
  *
  * Nothing new is stored here. Each mode keeps its own best under its own key (blitz.ts,
  * streak.ts, survival.ts, furtherNorth.ts, oddOneOut.ts, howFar.ts, whichWay.ts, hotCold.ts,
- * nameCountry.ts); this only reads them back through the
+ * nameCountry.ts, lineUp.ts); this only reads them back through the
  * same loaders, so a value a mode would refuse (a negative streak, junk JSON) is refused here too.
  */
 
@@ -15,6 +15,7 @@ import { loadBlitzBest } from "./blitz";
 import { loadBestNorth } from "./furtherNorth";
 import { loadBestHot } from "./hotCold";
 import { loadBestHowFar } from "./howFar";
+import { ROW, ROWS, loadBestLine } from "./lineUp";
 import { loadBestName } from "./nameCountry";
 import { loadBestOdd } from "./oddOneOut";
 import { regionSlug } from "./regions";
@@ -33,6 +34,7 @@ export const QUICK_MODES = [
   "which-way",
   "hot-cold",
   "name-country",
+  "line-up",
 ] as const;
 
 export type QuickMode = (typeof QUICK_MODES)[number];
@@ -62,6 +64,8 @@ export interface QuickBests {
   "hot-cold": number | null;
   /** The longest run of countries named. */
   "name-country": number | null;
+  /** The most photos put in place in a whole game. */
+  "line-up": number | null;
 }
 
 export const NO_BESTS: QuickBests = {
@@ -74,6 +78,7 @@ export const NO_BESTS: QuickBests = {
   "which-way": null,
   "hot-cold": null,
   "name-country": null,
+  "line-up": null,
 };
 
 /**
@@ -106,6 +111,7 @@ export function loadQuickBests(): QuickBests {
     "which-way": positive(loadBestWay()),
     "hot-cold": positive(loadBestHot()),
     "name-country": positive(loadBestName()),
+    "line-up": positive(loadBestLine()),
   };
 }
 
@@ -130,6 +136,10 @@ export function bestLine(mode: QuickMode, bests: QuickBests): string | null {
       const s = bests.survival;
       if (!s) return null;
       return `Best: ${s.survived} ${s.survived === 1 ? "photo" : "photos"}, ${formatPoints(s.total)} points`;
+    }
+    case "line-up": {
+      const n = bests[mode];
+      return n === null ? null : `Best: ${n} of ${ROW * ROWS} in place`;
     }
     case "further-north":
     case "odd-one-out":

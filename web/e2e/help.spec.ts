@@ -217,6 +217,38 @@ test.describe("on a keyboard", () => {
       await expect(card).toBeHidden();
     }
   });
+  test("? lists Line them up's controls, and every one of its keys works", async ({ page }) => {
+    await page.goto("./line-up");
+    const lock = page.getByRole("button", { name: "Lock it in" });
+    await expect(lock).toBeEnabled();
+    const sheet = await openWithKey(page, "Controls for Line them up");
+    await expectSheetLists(sheet, "line-up", false);
+    const row = () =>
+      Promise.all(
+        [1, 2, 3, 4].map((n) => page.getByTestId(`line-photo-${n}`).getAttribute("data-photo")),
+      );
+    const before = await row();
+    // A pick key pressed in the sheet doesn't pick behind it.
+    await page.keyboard.press("1");
+    await expect(page.getByRole("button", { name: /picked up$/ })).toHaveCount(0);
+    await page.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+
+    for (const pick of keysOf("line-up", "pick")) {
+      await page.keyboard.press(pick);
+      await expect(page.getByRole("button", { name: /picked up$/ })).toHaveCount(1);
+      await page.keyboard.press(keysOf("line-up", "drop")[0]);
+      await expect(page.getByRole("button", { name: /picked up$/ })).toHaveCount(0);
+    }
+    expect(await row()).toEqual(before);
+
+    await lock.focus();
+    await page.keyboard.press(keysOf("line-up", "next")[0]);
+    const next = page.getByRole("button", { name: "Next row" });
+    await expect(next).toBeFocused();
+    await page.keyboard.press(keysOf("line-up", "next")[0]);
+    await expect(lock).toBeEnabled();
+  });
   test("? lists Which way?'s controls, and every compass key works", async ({ page }) => {
     test.setTimeout(150_000);
     await page.goto("./which-way");
@@ -307,6 +339,7 @@ test.describe("on a touch screen", () => {
     ["further-north", "./further-north", "Controls for Further North"],
     ["odd-one-out", "./odd-one-out", "Controls for Odd one out"],
     ["name-country", "./name-country", "Controls for Name the country"],
+    ["line-up", "./line-up", "Controls for Line them up"],
     ["how-far", "./how-far", "Controls for How far apart?"],
     ["which-way", "./which-way", "Controls for Which way?"],
   ] as const) {

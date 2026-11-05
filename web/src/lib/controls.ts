@@ -29,7 +29,14 @@ export type ControlGroup = {
 };
 
 export type HelpScreen =
-  "round" | "further-north" | "odd-one-out" | "how-far" | "which-way" | "hot-cold" | "name-country";
+  | "round"
+  | "further-north"
+  | "odd-one-out"
+  | "how-far"
+  | "which-way"
+  | "hot-cold"
+  | "name-country"
+  | "line-up";
 
 const k = (label: string, press = label): Key => ({ label, press });
 
@@ -291,6 +298,35 @@ export const CONTROLS: Record<HelpScreen, readonly ControlGroup[]> = {
       ],
     },
   ],
+  "line-up": [
+    {
+      title: "The row",
+      controls: [
+        {
+          id: "pick",
+          does: "Pick a place up, then put it on another to swap the two",
+          keys: [k("1"), k("2"), k("3"), k("4")],
+          mouse: "Click two photos, or drag one",
+          touch: "Tap two photos, or drag one",
+        },
+        {
+          id: "drop",
+          does: "Put the picked place back down",
+          keys: [k("Esc", "Escape")],
+          mouse: "Click it again",
+          touch: "Tap it again",
+        },
+        {
+          id: "next",
+          does: "Lock the row in, then go to the next",
+          keys: [k("Enter")],
+          mouse: "Lock it in, Next row",
+          touch: "Lock it in, Next row",
+        },
+        HELP,
+      ],
+    },
+  ],
 };
 
 /** The sheet's title for each screen. */
@@ -302,6 +338,7 @@ export const SCREEN_TITLES: Record<HelpScreen, string> = {
   "which-way": "Controls for Which way?",
   "hot-cold": "Controls for Hot and cold",
   "name-country": "Controls for Name the country",
+  "line-up": "Controls for Line them up",
 };
 
 /**

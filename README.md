@@ -74,6 +74,12 @@ and go on until your first miss. Atlas picks too, the name it gave the most of t
 reveal names the place and its continent. Your best run is kept in your browser. **Today's run**
 (at `/name-country/daily`) deals everyone the same photos and names on the same UTC day, one try a
 day, resumed after a reload and shared as counts only.
+**Line them up** (at `/line-up`, in the Games menu) deals four photos, each from its own continent
+where it can, to put in order from west to east as on a flat world map from the date line: tap two
+to swap them, drag one into place, or press their numbers, and open any photo to look closer. A
+point for each photo in its place, with photos within 2° of longitude counted as level, over five
+rows against the order of Atlas's own pins; the reveal stands the row in its true order with every
+longitude. Your best game is kept in your browser.
 **Today** (at `/today`, in the Games menu and on the results screen) puts every daily game on one
 page: the Daily Five, Further North, Odd one out, Which way?, How far apart?, Name the country
 and Hot and cold, each with where it stands in your browser (not started, under way or its result), the time to the next deal, and one
