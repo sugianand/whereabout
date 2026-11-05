@@ -7,11 +7,12 @@ import { ROUND_KEYS, isShortcut } from "@/lib/controls";
 import { countryAt } from "@/lib/countryHit";
 import { countryName } from "@/lib/countries";
 import { seededShuffle } from "@/lib/game/daily";
+import { runToday } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import {
   HOT_PHOTOS,
   MAX_PINS,
-  PIN_BONUS,
+  PHOTO_POINTS,
   atlasTotal,
   hotAtlas,
   hotAtlasLine,
@@ -24,12 +25,14 @@ import {
   type HotClue,
   type HotRound,
 } from "@/lib/game/hotCold";
+import { dailyHotOrder, hotDailyShare, loadHotDay, rememberHotDay } from "@/lib/game/hotDaily";
 import { formatDistance, formatPoints, haversineKm, type LngLat } from "@/lib/geo";
 import type { RevealView } from "@/lib/reveal";
 import type { Units } from "@/lib/units";
 import { useUnits } from "@/lib/useUnits";
 
 import ControlsHelp from "./ControlsHelp";
+import { DailyRunResult } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
 import Globe from "./Globe";
 import PhotoViewer from "./PhotoViewer";
@@ -41,6 +44,13 @@ type HotColdProps = {
   loadRecords?: (ids: string[]) => Promise<GameRecord[]>;
   /** For tests: the randomness that shuffles each game. */
   random?: () => number;
+  /**
+   * Today's game (src/lib/game/hotDaily.ts): the day's five photos, one try a day, picked back up
+   * at the very pin it was left on, with a share line at the end. Off, every game is shuffled.
+   */
+  daily?: boolean;
+  /** For tests: the clock that picks today's game. */
+  now?: () => Date;
 };
 
 /** "1 pin", "3 pins". */
@@ -83,17 +93,29 @@ function Clue({ clue, units }: { clue: HotClue; units: Units }) {
  * Hot and cold (src/lib/game/hotCold.ts): up to three pins to find a photo's country, each miss
  * saying how far off it was and which way to head, five photos a game against Atlas's one pin.
  */
-export default function HotCold({ deck, loadRecords, random }: HotColdProps) {
+export default function HotCold({ deck, loadRecords, random, daily = false, now }: HotColdProps) {
   const [state, dispatch] = useReducer(hotReducer, initialHot);
   const [best, setBest] = useState(0);
   // The best before this game, so the end screen can say when it was beaten.
   const [bestBefore, setBestBefore] = useState(0);
   const [records, setRecords] = useState<ReadonlyMap<string, GameRecord>>(() => new Map());
   const [error, setError] = useState<string | null>(null);
+  // The day today's game was dealt for, kept when the clock passes midnight mid-game.
+  const [day, setDay] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const units = useUnits();
 
   const start = useCallback(() => {
+    if (daily) {
+      const today = runToday(now?.());
+      setDay(today);
+      dispatch({
+        type: "start",
+        order: dailyHotOrder(deck.streakIds, today),
+        from: loadHotDay(today) ?? undefined,
+      });
+      return;
+    }
     const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
     const stored = loadBestHot();
     setBest(stored);
@@ -102,7 +124,7 @@ export default function HotCold({ deck, loadRecords, random }: HotColdProps) {
       type: "start",
       order: seededShuffle(deck.streakIds, seed).slice(0, HOT_PHOTOS),
     });
-  }, [deck.streakIds, random]);
+  }, [daily, deck.streakIds, now, random]);
 
   // The order is shuffled in the browser after hydration, never at build time.
   useEffect(() => {
@@ -156,24 +178,33 @@ export default function HotCold({ deck, loadRecords, random }: HotColdProps) {
   const guess = useCallback(() => {
     if (!guessing?.pin || !current) return;
     const { photo, atlas } = current;
-    dispatch({
+    const action = {
       type: "dropped",
       truth: photo,
       found: countryAt(guessing.pin) === photo.country,
       atlas: atlas ? hotAtlas(haversineKm(atlas, photo), countryAt(atlas) === photo.country) : null,
-    });
+    } as const;
+    if (day) {
+      // Kept after every pin, so a reload can't take back a miss and its clue.
+      const after = hotReducer(guessing, action);
+      if (after.phase === "guessing" || after.phase === "answered") {
+        const pins = after.phase === "guessing" ? after.pins : [];
+        rememberHotDay(day, { results: after.results, pins });
+      }
+    }
+    dispatch(action);
     // The button goes dead until the next pin, so focus moves on to the globe for it. A photo
     // that's over moves focus to its card's button instead.
     panelRef.current?.querySelector<HTMLElement>('[role="application"]')?.focus({
       preventScroll: true,
     });
-  }, [current, guessing]);
+  }, [current, day, guessing]);
 
   const next = useCallback(() => {
     const after = hotReducer(state, { type: "next" });
-    if (after.phase === "finished") setBest(rememberHot(hotTotal(after.results)));
+    if (after.phase === "finished" && !day) setBest(rememberHot(hotTotal(after.results)));
     dispatch({ type: "next" });
-  }, [state]);
+  }, [day, state]);
 
   // G guesses from anywhere on the screen, like a round's; the card's button takes Enter.
   useEffect(() => {
@@ -198,6 +229,10 @@ export default function HotCold({ deck, loadRecords, random }: HotColdProps) {
     if (current.atlas) guesses.push({ actor: "atlas", at: current.atlas });
     return { truth: current.photo, guesses };
   }, [answered, current]);
+
+  if (state.phase === "finished" && day && state.results.length > 0) {
+    return <DayResult day={day} results={state.results} units={units} now={now} />;
+  }
 
   if (state.phase === "finished") {
     const total = hotTotal(state.results);
@@ -252,11 +287,17 @@ export default function HotCold({ deck, loadRecords, random }: HotColdProps) {
             Whereabout
           </Link>
           <p className="mt-1 text-sm text-chalk-dim">
-            {`Hot and cold: photo ${(playing?.index ?? 0) + 1} of ${of}`}
+            {`Hot and cold${daily ? ", today" : ""}: photo ${(playing?.index ?? 0) + 1} of ${of}`}
           </p>
           <div className="pointer-events-auto mt-2 flex items-center gap-2">
             <GamesMenu screen="hot-cold" streakHref="/streak" />
             <ControlsHelp screen="hot-cold" />
+            <Link
+              href={daily ? "/hot-cold" : "/hot-cold/daily"}
+              className="whitespace-nowrap text-sm text-gold underline underline-offset-2 hover:brightness-110"
+            >
+              {daily ? "Free games" : "Today's game"}
+            </Link>
           </div>
         </div>
         <div className="pointer-events-auto text-right">
@@ -277,10 +318,12 @@ export default function HotCold({ deck, loadRecords, random }: HotColdProps) {
                 <dd className="tabular text-sonar">{formatPoints(atlas.total)}</dd>
               </div>
             )}
-            <div className="flex justify-end gap-1.5">
-              <dt>Best</dt>
-              <dd className="tabular">{formatPoints(best)}</dd>
-            </div>
+            {!daily && (
+              <div className="flex justify-end gap-1.5">
+                <dt>Best</dt>
+                <dd className="tabular">{formatPoints(best)}</dd>
+              </div>
+            )}
           </dl>
         </div>
       </header>
@@ -411,6 +454,52 @@ function HotCard({
   );
 }
 
+/** Each photo of a game: how it went and its points. */
+function PhotoList({ results, units }: { results: readonly HotRound[]; units: Units }) {
+  return (
+    <ol className="mt-6 space-y-2" aria-label="Your photos">
+      {results.map((r, i) => (
+        <li key={r.id} className="flex items-baseline justify-between gap-4 text-sm">
+          <span className="text-chalk-dim">
+            {`Photo ${i + 1}: ${
+              r.foundOn ? `found on pin ${r.foundOn}` : "not found"
+            }, ${formatDistance(r.bestKm, units)} at closest`}
+          </span>
+          <span className="tabular font-semibold">{formatPoints(r.score)}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** Today's Hot and cold once its last photo is over, on this visit or an earlier one. */
+function DayResult({
+  day,
+  results,
+  units,
+  now,
+}: {
+  day: string;
+  results: readonly HotRound[];
+  units: Units;
+  now?: () => Date;
+}) {
+  const atlas = hotAtlasLine(results);
+  return (
+    <DailyRunResult
+      game="Hot and cold"
+      day={day}
+      headline={`${formatPoints(hotTotal(results))} points`}
+      summary={`Out of ${formatPoints(results.length * PHOTO_POINTS)}.${atlas ? ` ${atlas}` : ""}`}
+      shareText={(href) => hotDailyShare(day, results, href)}
+      freeHref="/hot-cold"
+      now={now}
+    >
+      <PhotoList results={results} units={units} />
+    </DailyRunResult>
+  );
+}
+
 function Finished({
   results,
   best,
@@ -426,7 +515,7 @@ function Finished({
 }) {
   const none = results.length === 0;
   const atlas = hotAtlasLine(results);
-  const most = results.length * (5000 + PIN_BONUS[0]);
+  const most = results.length * PHOTO_POINTS;
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center px-6 py-16">
@@ -453,18 +542,7 @@ function Finished({
               {atlas}
             </p>
           )}
-          <ol className="mt-6 space-y-2" aria-label="Your photos">
-            {results.map((r, i) => (
-              <li key={r.id} className="flex items-baseline justify-between gap-4 text-sm">
-                <span className="text-chalk-dim">
-                  {`Photo ${i + 1}: ${
-                    r.foundOn ? `found on pin ${r.foundOn}` : "not found"
-                  }, ${formatDistance(r.bestKm, units)} at closest`}
-                </span>
-                <span className="tabular font-semibold">{formatPoints(r.score)}</span>
-              </li>
-            ))}
-          </ol>
+          <PhotoList results={results} units={units} />
         </>
       )}
       <div className="mt-8 flex flex-wrap items-center gap-4">

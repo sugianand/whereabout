@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { DAILY_SCORES_KEY } from "./dailyArchive";
 import { rememberFarDay } from "./farDaily";
+import { hotAtlas, hotPin, hotRound } from "./hotCold";
+import { rememberHotDay } from "./hotDaily";
 import { type PairResult } from "./howFar";
 import { rememberNameDay } from "./nameDaily";
 import { rememberNorthDay } from "./northDaily";
@@ -43,7 +45,7 @@ const byId = (id: TodayGameId) => todayGames(DAY, IDS, NOW).find((g) => g.id ===
 beforeEach(() => localStorage.clear());
 
 describe("todayGames", () => {
-  it("lists all six daily games, none started in a new browser", () => {
+  it("lists all seven daily games, none started in a new browser", () => {
     const games = todayGames(DAY, IDS, NOW);
     expect(games.map((g) => g.id)).toEqual([
       "daily-five",
@@ -52,6 +54,7 @@ describe("todayGames", () => {
       "which-way",
       "how-far",
       "name-country",
+      "hot-cold",
     ]);
     expect(games.every((g) => g.status === "new" && g.line === "Not started")).toBe(true);
     expect(gamesDone(games)).toBe(0);
@@ -102,6 +105,30 @@ describe("todayGames", () => {
     expect(byId("name-country").line).toBe("1 country in a row so far");
   });
 
+  it("reads today's Hot and cold, under way from its first pin", () => {
+    const truth = { lng: 2.35, lat: 48.86 };
+    const pin = hotPin(truth, truth, true);
+    const miss = hotPin({ lng: -150, lat: -5 }, truth, false);
+    const round = hotRound("p1", [pin], hotAtlas(0, true));
+
+    rememberHotDay(DAY, { results: [], pins: [] });
+    expect(byId("hot-cold").status).toBe("new");
+    rememberHotDay(DAY, { results: [], pins: [miss] });
+    expect(byId("hot-cold")).toMatchObject({ status: "going", line: "0 of 5 photos, 0 points" });
+    rememberHotDay(DAY, { results: [round], pins: [] });
+    expect(byId("hot-cold")).toMatchObject({
+      status: "going",
+      line: "1 of 5 photos, 6,000 points",
+      atlas: "6,000 points",
+    });
+    rememberHotDay(DAY, { results: Array<typeof round>(5).fill(round), pins: [] });
+    expect(byId("hot-cold")).toMatchObject({
+      status: "done",
+      line: "30,000 of 30,000",
+      atlas: "30,000 points",
+    });
+  });
+
   it("counts an empty run as not started, and a first-pick miss as played", () => {
     rememberNorthDay(DAY, { streak: 0, atlasRight: 0, atlasPlayed: 0, ended: null });
     expect(byId("further-north").status).toBe("new");
@@ -140,7 +167,7 @@ describe("todayShare", () => {
     expect(todayShare(DAY, todayGames(DAY, IDS, NOW), HREF)).toBe(
       [
         "Whereabout · Today · 2026-11-03",
-        "2 of 6 daily games",
+        "2 of 7 daily games",
         "⬆️ Further North: 6 pairs in a row",
         "📏 How far apart?: 3,500 of 5,000",
         "https://example.test/whereabout/today/",

@@ -175,3 +175,97 @@ test("Hot and cold gives three pins with a heading after each miss, against Atla
   await expect(page.getByRole("dialog").getByText("Playing now")).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("today's Hot and cold deals the day's photos once, keeps a miss through a reload, and shares pins", async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const today = new Date().toISOString().slice(0, 10);
+
+  // The free game links to today's.
+  await page.goto("./hot-cold");
+  await page.getByRole("link", { name: "Today's game" }).click();
+  await expect(page.getByText("Hot and cold, today: photo 1 of 5")).toBeVisible();
+  const first = await page.locator("main[data-photo]").getAttribute("data-photo");
+
+  // Everyone on one day gets the same photo: a fresh player is dealt it too.
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await expect(page.locator("main[data-photo]")).toHaveAttribute("data-photo", first!);
+
+  // A miss can't be taken back: the reload keeps its clue and its pin on the globe.
+  const clue = page.getByTestId("hot-cold-clue");
+  const truth = await photoCountry(page);
+  await pinWithKeyboard(page, (c) => c !== truth);
+  const said = (await clue.textContent())!;
+  await page.reload();
+  await expect(clue).toHaveText(said);
+  await expect(page.locator(".globe-pin--trail")).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Tap the globe: pin 2 of 3" })).toBeDisabled();
+
+  // Found on the second pin; the next reload picks up at photo 2.
+  await pinWithKeyboard(page, (c) => c === truth);
+  await expect(page.getByRole("button", { name: "Next photo" })).toBeFocused();
+  await page.reload();
+  await expect(page.getByText("Hot and cold, today: photo 2 of 5")).toBeVisible();
+
+  for (let i = 2; i <= 5; i++) {
+    await expect(page.getByText(`Hot and cold, today: photo ${i} of 5`)).toBeVisible();
+    const country = await photoCountry(page);
+    await pinWithKeyboard(page, (c) => c === country);
+    await expect(
+      page.getByRole("button", { name: i === 5 ? "See your score" : "Next photo" }),
+    ).toBeFocused();
+    await page.keyboard.press("Enter");
+  }
+
+  // The day's result, again after a reload: never the photos.
+  const heading = page.getByRole("heading", { level: 1 });
+  await expect(heading).toHaveText(/^[\d,]+ points$/);
+  const total = await heading.textContent();
+  await page.reload();
+  await expect(heading).toHaveText(total!);
+  await expect(page.getByText(/The next run is dealt in \d+/)).toBeVisible();
+  await expect(page.getByRole("application")).toHaveCount(0);
+
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  await page.getByRole("button", { name: "Share today's run" }).click();
+  await expect(page.getByText("Result copied. Paste it anywhere.")).toBeVisible();
+  const sent = await page.evaluate(() => (window as unknown as { sent: string }).sent);
+  expect(sent).toContain(
+    `Whereabout · Hot and cold · ${today}\n🔥 ${total!.replace(" points", "")} of 30,000\n🟥🟩 🟩 🟩 🟩 🟩\n`,
+  );
+  expect(sent).toMatch(/\/whereabout\/hot-cold\/daily\/?$/);
+  expect(sent).not.toContain(first!);
+
+  // The free game's best is its own, and Today counts the day.
+  expect(await page.evaluate(() => localStorage.getItem("whereabout:hot-cold-best"))).toBe(null);
+  await page.goto("./today");
+  const card = page.getByTestId("today-hot-cold");
+  await expect(card).toHaveAttribute("data-status", "done");
+  await expect(card).toContainText(`${total!.replace(" points", "")} of 30,000`);
+  expect(errors).toEqual([]);
+});
+
+test("today's game keeps its header and clue on a 320px phone", async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 1000) >= 768, "a phone layout check");
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto("./hot-cold/daily");
+  const truth = await photoCountry(page);
+  await expectOnScreen(page.getByRole("link", { name: "Free games" }));
+  await expectOnScreen(page.getByTestId("hot-cold-score"));
+  await pinWithKeyboard(page, (c) => c !== truth);
+  await expectOnScreen(page.getByTestId("hot-cold-clue"));
+  await expectOnScreen(page.getByRole("link", { name: "Free games" }));
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+});

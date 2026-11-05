@@ -17,7 +17,7 @@
  * browser only, best effort.
  */
 
-import { formatPoints, haversineKm, scoreDistance, type LngLat } from "@/lib/geo";
+import { MAX_POINTS, formatPoints, haversineKm, scoreDistance, type LngLat } from "@/lib/geo";
 
 import { POINT_NAMES, initialBearing, pointOf } from "./whichWay";
 
@@ -25,6 +25,8 @@ export const HOT_PHOTOS = 5;
 export const MAX_PINS = 3;
 /** Points for finding the country on the first, second and third pin. */
 export const PIN_BONUS = [1000, 500, 0] as const;
+/** The most one photo can score: the pin on the place, first time. */
+export const PHOTO_POINTS = MAX_POINTS + PIN_BONUS[0];
 export const BEST_HOT_KEY = "whereabout:hot-cold-best";
 
 export interface HotPin {
@@ -132,7 +134,12 @@ export type HotState =
   | { phase: "finished"; order: readonly string[]; results: readonly HotRound[] };
 
 export type HotAction =
-  | { type: "start"; order: readonly string[] }
+  | {
+      type: "start";
+      order: readonly string[];
+      /** A game picked back up: the photos finished, and the pins already on the next one. */
+      from?: { results: readonly HotRound[]; pins: readonly HotPin[] };
+    }
   | { type: "pinned"; pin: LngLat }
   | {
       type: "dropped";
@@ -147,10 +154,13 @@ export const initialHot: HotState = { phase: "idle" };
 
 export function hotReducer(state: HotState, action: HotAction): HotState {
   switch (action.type) {
-    case "start":
-      return action.order.length === 0
-        ? { phase: "finished", order: [], results: [] }
-        : { phase: "guessing", order: action.order, index: 0, results: [], pins: [], pin: null };
+    case "start": {
+      const { order, from } = action;
+      const results = from?.results ?? [];
+      if (results.length >= order.length) return { phase: "finished", order, results };
+      const pins = from?.pins ?? [];
+      return { phase: "guessing", order, index: results.length, results, pins, pin: null };
+    }
     case "pinned":
       return state.phase === "guessing" ? { ...state, pin: action.pin } : state;
     case "dropped": {

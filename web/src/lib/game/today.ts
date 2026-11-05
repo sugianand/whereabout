@@ -2,7 +2,7 @@
  * Today: every daily game on one page. Each game already keeps its own day in this browser, so
  * this reads those records back and adds none of its own: the Daily Five's first score and the
  * game in progress (./dailyArchive.ts, ./saved.ts), the streak games' runs (./dailyRuns.ts)
- * and How far apart?'s pairs (./farDaily.ts). What a game can't read back counts as not started.
+ * and the photos of How far apart? and Hot and cold (./farDaily.ts, ./hotDaily.ts). What a game can't read back counts as not started.
  *
  * Like every share in the game, the combined line is scores and counts only, so it spoils no
  * photo. Only finished games go in it: a run still going has no result yet.
@@ -13,6 +13,8 @@ import { MAX_POINTS, formatPoints } from "@/lib/geo";
 import { loadDailyScores } from "./dailyArchive";
 import { dailyRunUrl, type DailyRun } from "./dailyRuns";
 import { loadFarDay } from "./farDaily";
+import { HOT_PHOTOS, PHOTO_POINTS, atlasTotal as hotAtlasTotal, hotTotal } from "./hotCold";
+import { loadHotDay } from "./hotDaily";
 import { PAIRS, PAIR_POINTS, atlasTotal, totalPoints } from "./howFar";
 import { loadNameDay } from "./nameDaily";
 import { loadNorthDay } from "./northDaily";
@@ -27,7 +29,8 @@ export type TodayGameId =
   | "odd-one-out"
   | "which-way"
   | "how-far"
-  | "name-country";
+  | "name-country"
+  | "hot-cold";
 
 /** One daily game: where it lives, whatever the browser holds. */
 export interface TodayGameInfo {
@@ -82,6 +85,13 @@ export const TODAY_GAMES: readonly TodayGameInfo[] = [
     href: "/name-country/daily",
     icon: "🗺️",
     blurb: "One photo, four names from its continent, until your first miss.",
+  },
+  {
+    id: "hot-cold",
+    name: "Hot and cold",
+    href: "/hot-cold/daily",
+    icon: "🔥",
+    blurb: "Three pins to find each of five countries, an arrow after every miss.",
   },
 ];
 
@@ -149,6 +159,23 @@ function howFar(day: string) {
   return { status: "done" as const, line, atlas: rival };
 }
 
+function hotCold(day: string) {
+  const kept = loadHotDay(day);
+  if (!kept || (kept.results.length === 0 && kept.pins.length === 0)) {
+    return { status: "new" as const, line: NOT_STARTED, atlas: null };
+  }
+  const { results } = kept;
+  const points = formatPoints(hotTotal(results));
+  const atlas = hotAtlasTotal(results);
+  const rival = atlas.played > 0 ? `${formatPoints(atlas.total)} points` : null;
+  if (results.length < HOT_PHOTOS) {
+    const line = `${results.length} of ${HOT_PHOTOS} photos, ${points} points`;
+    return { status: "going" as const, line, atlas: rival };
+  }
+  const line = `${points} of ${formatPoints(HOT_PHOTOS * PHOTO_POINTS)}`;
+  return { status: "done" as const, line, atlas: rival };
+}
+
 /** Every daily game's standing in this browser on `day`. */
 export function todayGames(
   day: string,
@@ -169,6 +196,8 @@ export function todayGames(
         return { ...info, ...howFar(day) };
       case "name-country":
         return { ...info, ...streakGame(loadNameDay(day), "country", "countries") };
+      case "hot-cold":
+        return { ...info, ...hotCold(day) };
     }
   });
 }

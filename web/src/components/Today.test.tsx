@@ -26,9 +26,10 @@ describe("Today", () => {
       "/which-way/daily",
       "/how-far/daily",
       "/name-country/daily",
+      "/hot-cold/daily",
     ]);
     expect(screen.getByRole("status")).toHaveTextContent(
-      "0 of 6 played. The next deal is in 2h 12m.",
+      "0 of 7 played. The next deal is in 2h 12m.",
     );
     expect(screen.queryByRole("button", { name: "Share your day" })).toBeNull();
   });
@@ -50,7 +51,7 @@ describe("Today", () => {
     });
     expect(writeText).toHaveBeenCalledOnce();
     expect(writeText.mock.calls[0]).toEqual([
-      expect.stringContaining("1 of 6 daily games\n⬆️ Further North: 4 pairs in a row\n"),
+      expect.stringContaining("1 of 7 daily games\n⬆️ Further North: 4 pairs in a row\n"),
     ]);
   });
 
