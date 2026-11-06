@@ -37,7 +37,8 @@ concurrency:
 
 jobs:
   run:
-    runs-on: ubuntu-latest
+    # Playwright 1.56 has no browser build for ubuntu-latest (26.04).
+    runs-on: ubuntu-24.04
     # Occlusion maps cost ~50 forward passes per new photo; cached ones are free. The first run
     # on the 238-photo catalog spent 116 minutes in "Run Atlas v0" alone, so new maps now get a
     # time budget (below) and the rest wait for the next run. Image embeddings are cached too:
