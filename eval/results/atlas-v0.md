@@ -1,6 +1,6 @@
 # Atlas v0 results
 
-Generated 2026-10-30T07:32:37+00:00 by `.github/workflows/atlas.yml` on 388 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
+Generated 2026-11-06T03:50:05+00:00 by `.github/workflows/atlas.yml` on 388 photos from `data/curation/photos.csv`. Every number below comes from that run; nothing is typed in by hand.
 
 **Playing in the game:** ViT-L-14/openai, country then city (lowest median error).
 
@@ -12,11 +12,11 @@ Generated 2026-10-30T07:32:37+00:00 by `.github/workflows/atlas.yml` on 388 phot
 | ViT-B-32/laion2b_s34b_b79k, country then city | 388 | 5.7% | 11.6% | 29.9% | 53.6% | 2,139 (1,561–2,604) | 25.5% | 1,814 |
 | ViT-B-32/openai, country only | 388 | 3.1% | 7.0% | 25.8% | 44.6% | 2,900 (2,520–3,928) | 20.4% | 1,539 |
 | ViT-B-32/openai, country then city | 388 | 4.9% | 12.1% | 27.1% | 45.6% | 2,961 (2,481–4,448) | 17.0% | 1,572 |
-| ViT-L-14/openai, country only | 388 | 9.5% | 18.8% | 45.1% | 68.0% | 896 (746–1,080) | 46.9% | 2,457 |
-| ViT-L-14/openai, country then city | 388 | 11.6% | 26.8% | 50.0% | 68.3% | 758 (517–973) | 44.1% | 2,621 |
-| ViT-L-14/openai, country then city, then nearest reference photos | 388 | 6.4% | 18.8% | 42.3% | 68.6% | 1,021 (827–1,331) | 44.1% | 2,393 |
+| ViT-L-14/openai, country only | 388 | 9.5% | 18.8% | 45.1% | 68.0% | 897 (746–1,080) | 46.9% | 2,457 |
+| ViT-L-14/openai, country then city | 388 | 11.6% | 26.8% | 50.0% | 68.3% | 758 (517–973) | 44.1% | 2,623 |
+| ViT-L-14/openai, country then city, then nearest reference photos | 388 | 6.4% | 18.8% | 42.3% | 68.6% | 1,021 (827–1,280) | 44.1% | 2,396 |
 | ViT-B-32/laion2b_s34b_b79k geocell head, alone | 388 | 0.0% | 2.6% | 21.4% | 53.1% | 2,402 (1,911–2,659) | 23.7% | 1,502 |
-| ViT-L-14/openai, country then city, then geocell head | 388 | 2.3% | 18.0% | 46.9% | 69.8% | 857 (670–1,174) | 44.1% | 2,444 |
+| ViT-L-14/openai, country then city, then geocell head | 388 | 2.3% | 18.0% | 46.9% | 70.1% | 857 (670–1,174) | 44.1% | 2,449 |
 | ViT-B-32/openai, country then city, then nearest reference photos (Pocket Atlas) | 388 | 2.6% | 8.2% | 23.2% | 44.6% | 3,237 (2,550–4,301) | 17.0% | 1,440 |
 | ViT-B-32/openai, country then city, distilled country head (Pocket Atlas) | 388 | 5.4% | 10.3% | 25.8% | 48.2% | 2,795 (2,215–3,843) | 19.1% | 1,568 |
 
@@ -34,10 +34,10 @@ Paired bootstrap on the same photos: the winner's median error minus each other 
 | ViT-B-32/laion2b_s34b_b79k, country then city | -1,381 | -1,827 to -896 |
 | ViT-B-32/openai, country only | -2,142 | -3,195 to -1,721 |
 | ViT-B-32/openai, country then city | -2,203 | -3,579 to -1,758 |
-| ViT-L-14/openai, country only | -138 | -330 to 18 |
-| ViT-L-14/openai, country then city, then nearest reference photos | -263 | -462 to -108 |
+| ViT-L-14/openai, country only | -139 | -330 to 18 |
+| ViT-L-14/openai, country then city, then nearest reference photos | -263 | -455 to -108 |
 | ViT-B-32/laion2b_s34b_b79k geocell head, alone | -1,644 | -1,915 to -1,176 |
-| ViT-L-14/openai, country then city, then geocell head | -98 | -287 to 12 |
+| ViT-L-14/openai, country then city, then geocell head | -98 | -286 to 12 |
 | ViT-B-32/openai, country then city, then nearest reference photos (Pocket Atlas) | -2,479 | -3,522 to -1,844 |
 | ViT-B-32/openai, country then city, distilled country head (Pocket Atlas) | -2,037 | -3,115 to -1,454 |
 
@@ -48,7 +48,7 @@ Occlusion saliency on a 7×7 grid over the square CLIP sees, for 388 photos. Del
 | Cells hidden | Mean drop in p(country) |
 | --- | ---: |
 | Top 5 by saliency | 58.1% |
-| 5 random (mean of 3 draws) | 24.6% |
+| 5 random (mean of 3 draws) | 24.5% |
 
 Hiding the top cells hurt more than hiding random ones on 94% of photos.
 
@@ -58,7 +58,7 @@ ViT-L-14/openai, country then city refined by searching 4,322 geotagged referenc
 
 | Refined minus unrefined | Median km difference | 95% CI | Plays in the game |
 | --- | ---: | ---: | --- |
-| ViT-L-14/openai, country then city | 263 | 108 to 462 | no |
+| ViT-L-14/openai, country then city | 263 | 108 to 455 | no |
 
 It plays only if the whole interval is below zero.
 
@@ -78,7 +78,7 @@ A linear classifier over 93 adaptive geocells, on frozen ViT-B-32/laion2b_s34b_b
 
 | Within the country, minus without | Median km difference | 95% CI | Plays in the game |
 | --- | ---: | ---: | --- |
-| ViT-L-14/openai, country then city | 98 | -12 to 287 | no |
+| ViT-L-14/openai, country then city | 98 | -12 to 286 | no |
 
 It plays only if the whole interval is below zero.
 
