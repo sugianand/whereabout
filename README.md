@@ -79,7 +79,8 @@ where it can, to put in order from west to east as on a flat world map from the 
 to swap them, drag one into place, or press their numbers, and open any photo to look closer. A
 point for each photo in its place, with photos within 2° of longitude counted as level, over five
 rows against the order of Atlas's own pins; the reveal stands the row in its true order with every
-longitude. Your best game is kept in your browser.
+longitude. Your best game is kept in your browser. Today's rows (`/line-up/daily`) are the same for
+everyone: one try a day, picked up at the next row after a reload, and shared as squares and counts.
 **Close-up** (at `/close-up`, in the Games menu) opens on a tight crop of a photo, its busiest
 corner where the photo can be read, with four countries from the same continent. Each wrong name
 zooms out and costs a point: three on the tightest crop, then two, then one, and none after a third
@@ -87,8 +88,8 @@ wrong name. The answer shows the whole photo. Five photos a game; Atlas sees eac
 scores by how far down its own list of the four the answer stands, and your best game is kept in
 your browser.
 **Today** (at `/today`, in the Games menu and on the results screen) puts every daily game on one
-page: the Daily Five, Further North, Odd one out, Which way?, How far apart?, Name the country
-and Hot and cold, each with where it stands in your browser (not started, under way or its result), the time to the next deal, and one
+page: the Daily Five, Further North, Odd one out, Which way?, How far apart?, Name the country,
+Hot and cold and Line them up, each with where it stands in your browser (not started, under way or its result), the time to the next deal, and one
 share line gathering every finished game, as scores and counts only. Below them, **Full days**
 counts your run of days with every daily game finished and shows the last four weeks as a calendar.
 

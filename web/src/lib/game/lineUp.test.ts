@@ -236,3 +236,18 @@ describe("the best game", () => {
     expect(loadBestLine()).toBe(0);
   });
 });
+
+describe("picking a game back up", () => {
+  const rows = [EAST, [...EAST].reverse()];
+  const locked = judgeRow(EAST, SPOTS);
+
+  it("deals the row after the ones already locked", () => {
+    const state = play([{ type: "start", rows, results: [locked] }]);
+    expect(state).toMatchObject({ phase: "placing", index: 1, results: [locked], spots: null });
+  });
+
+  it("ends a game with every row locked, without dealing again", () => {
+    const state = play([{ type: "start", rows, results: [locked, locked] }]);
+    expect(state).toMatchObject({ phase: "finished", results: [locked, locked] });
+  });
+});

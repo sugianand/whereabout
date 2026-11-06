@@ -156,3 +156,85 @@ test("fits a 320px phone, placing and at the reveal", async ({ page }) => {
   ]);
   expect(scroll[0]).toBeLessThanOrEqual(scroll[1]);
 });
+
+test("today's Line them up deals the day's rows once, resumes after a reload, and shares squares", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const today = new Date().toISOString().slice(0, 10);
+  const { width, height } = page.viewportSize()!;
+
+  // The free game links to today's.
+  await page.goto("./line-up");
+  await page.getByRole("link", { name: "Today's game" }).click();
+  await expect(page.getByText(`Today's rows (${today}): west to east`)).toBeVisible();
+
+  // A fresh player (nothing kept) is dealt the same photos.
+  await expect(lock(page)).toBeEnabled();
+  const first = [...(await row(page))].sort();
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await expect(lock(page)).toBeEnabled();
+  expect([...(await row(page))].sort()).toEqual(first);
+
+  // Everything fits with the header's extra link, down to a 320px phone.
+  for (const w of [width, 320]) {
+    await page.setViewportSize({ width: w, height: Math.min(height, 700) });
+    const box = (await lock(page).boundingBox())!;
+    expect(box.y + box.height).toBeLessThanOrEqual(Math.min(height, 700) + 1);
+    expect((await tile(page, 1).boundingBox())!.height).toBeGreaterThan(70);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(w);
+  }
+  await page.setViewportSize({ width, height });
+
+  for (let i = 1; i <= 5; i++) {
+    await expect(lock(page)).toBeEnabled();
+    await expect(page.getByText(`Row ${i} of 5`, { exact: true })).toBeVisible();
+    await lock(page).click();
+    if (i === 2) {
+      // A reload on the reveal picks up at the next row, the score kept.
+      const kept = await page.getByText("Row 2 of 5", { exact: true }).locator("+ dd").textContent();
+      await page.reload();
+      await expect(page.getByText("Row 3 of 5", { exact: true })).toBeVisible();
+      await expect(page.getByText("Row 3 of 5", { exact: true }).locator("+ dd")).toHaveText(kept!);
+      continue;
+    }
+    await page.getByRole("button", { name: i === 5 ? "See your score" : "Next row" }).click();
+  }
+
+  const headline = page.getByRole("heading", { level: 1 });
+  await expect(headline).toHaveText(/^\d+ in place$/);
+  const total = await headline.textContent();
+  await expect(page.getByRole("list", { name: "Your rows" }).getByRole("listitem")).toHaveCount(5);
+
+  // A reload shows the day's result, never the rows again.
+  await page.reload();
+  await expect(headline).toHaveText(total!);
+  await expect(page.getByText(/The next run is dealt in \d+/)).toBeVisible();
+  await expect(lock(page)).toHaveCount(0);
+
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  await page.getByRole("button", { name: "Share today's run" }).click();
+  await expect(page.getByText("Result copied. Paste it anywhere.")).toBeVisible();
+  const sent = await page.evaluate(() => (window as unknown as { sent: string }).sent);
+  const points = total!.replace(" in place", "");
+  expect(sent).toContain(`Whereabout · Line them up · ${today}\n↔️ ${points} of 20 in place\n`);
+  expect(sent).toMatch(/(\n[🟩🟥]{4}){5}\n/u);
+  expect(sent).toMatch(/\/whereabout\/line-up\/daily\/?$/);
+
+  // Today counts it, and the free games' best is its own.
+  expect(await page.evaluate(() => localStorage.getItem("whereabout:line-up-best"))).toBe(null);
+  await page.goto("./today");
+  await expect(page.getByTestId("today-line-up")).toHaveAttribute("data-status", "done");
+  expect(errors).toEqual([]);
+});

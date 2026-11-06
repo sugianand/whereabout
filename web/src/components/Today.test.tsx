@@ -35,6 +35,14 @@ describe("Today", () => {
     expect(screen.queryByRole("button", { name: "Share your day" })).toBeNull();
   });
 
+  it("lists a game that has joined the day, and counts it", async () => {
+    render(<Today deckIds={IDS} now={at("2026-11-06T21:48:00Z")} />);
+    expect(await screen.findByTestId("today-line-up")).toHaveAttribute("href", "/line-up/daily");
+    expect(screen.getByRole("status")).toHaveTextContent(/^0 of 8 played/);
+    expect(screen.getByLabelText("Today: 0 of 8 finished")).toBeInTheDocument();
+    expect(screen.getByLabelText("November 5: 0 of 7 finished")).toBeInTheDocument();
+  });
+
   it("shows a finished run's result and shares the day", async () => {
     rememberNorthDay("2026-11-03", { streak: 4, atlasRight: 2, atlasPlayed: 3, ended: "miss" });
     const writeText = vi.fn(async () => undefined);

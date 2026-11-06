@@ -12,7 +12,14 @@ import {
 } from "react";
 
 import { isShortcut } from "@/lib/controls";
+import { runToday } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
+import {
+  dailyLineRows,
+  lineDailyShare,
+  loadLineDay,
+  rememberLineDay,
+} from "@/lib/game/lineDaily";
 import {
   ROW,
   ROWS,
@@ -31,11 +38,19 @@ import {
 import { placeholderUrl, sources } from "@/lib/photoSources";
 
 import ControlsHelp from "./ControlsHelp";
+import { DailyRunResult } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
 import PhotoViewer from "./PhotoViewer";
 
 type LineUpProps = {
   deck: Deck;
+  /**
+   * Today's game (src/lib/game/lineDaily.ts): the day's rows, one try a day, picked back up after
+   * a reload, kept apart from the free games' best.
+   */
+  daily?: boolean;
+  /** For tests: the clock that says what today is. Defaults to the system clock. */
+  now?: () => Date;
   /** For tests: load records without the network. Defaults to fetching the static files. */
   loadRecords?: (ids: string[]) => Promise<GameRecord[]>;
   /** For tests: the randomness that deals each game. */
@@ -63,7 +78,7 @@ function atlasLine(results: readonly RowResult[]): string | null {
  * The tiles keep their place in the DOM and are moved on screen by CSS `order`, because moving a
  * node in the DOM mid-drag would drop its pointer capture.
  */
-export default function LineUp({ deck, loadRecords, random }: LineUpProps) {
+export default function LineUp({ deck, daily = false, now, loadRecords, random }: LineUpProps) {
   const [state, dispatch] = useReducer(lineReducer, initialLine);
   const [best, setBest] = useState(0);
   // The best before this game, so its end can say when it was beaten.
@@ -77,13 +92,26 @@ export default function LineUp({ deck, loadRecords, random }: LineUpProps) {
   // The tile under a finger or the mouse, and how far it hangs from its place.
   const [dragged, setDragged] = useState<{ id: string; x: number; y: number } | null>(null);
 
+  // The day today's game was dealt for, kept when the clock passes midnight mid-game.
+  const [day, setDay] = useState<string | null>(null);
+
   const start = useCallback(() => {
+    setPicked(null);
+    if (daily) {
+      const today = runToday(now?.());
+      setDay(today);
+      dispatch({
+        type: "start",
+        rows: dailyLineRows(deck.regions, today),
+        results: loadLineDay(today)?.results,
+      });
+      return;
+    }
     const stored = loadBestLine();
     setBest(stored);
     setBestBefore(stored);
-    setPicked(null);
     dispatch({ type: "start", rows: dealRows(deck.regions, random) });
-  }, [deck.regions, random]);
+  }, [deck.regions, random, daily, now]);
 
   // The game is dealt in the browser after hydration, never at build time.
   useEffect(() => {
@@ -168,16 +196,19 @@ export default function LineUp({ deck, loadRecords, random }: LineUpProps) {
 
   const lock = useCallback(() => {
     setPicked(null);
+    const after = lineReducer(state, { type: "lock" });
+    // Today's game is kept as each row locks, so a reload picks up at the next one.
+    if (after.phase === "revealed" && day) rememberLineDay(day, { results: after.results });
     dispatch({ type: "lock" });
-  }, []);
+  }, [state, day]);
 
   const next = useCallback(() => {
     if (state.phase !== "revealed") return;
-    if (state.index + 1 >= state.rows.length && state.rows.length === ROWS) {
+    if (!daily && state.index + 1 >= state.rows.length && state.rows.length === ROWS) {
       setBest(rememberLine(linePoints(state.results)));
     }
     dispatch({ type: "next" });
-  }, [state]);
+  }, [state, daily]);
 
   // 1 to 4 pick a place up and put it down on another; Escape lets go.
   useEffect(() => {
@@ -266,6 +297,10 @@ export default function LineUp({ deck, loadRecords, random }: LineUpProps) {
     else tap(place);
   };
 
+  if (state.phase === "finished" && day) {
+    return <LineDayResult day={day} results={state.results} now={now} />;
+  }
+
   if (state.phase === "finished" || state.phase === "none") {
     const results = state.phase === "finished" ? state.results : [];
     return (
@@ -290,7 +325,7 @@ export default function LineUp({ deck, loadRecords, random }: LineUpProps) {
       className="relative flex h-dvh w-full flex-col overflow-hidden bg-ocean-deep"
       data-phase={revealed ? "revealed" : "placing"}
     >
-      <h1 className="sr-only">{`Whereabout: Line them up, row ${index + 1} of ${rowCount}`}</h1>
+      <h1 className="sr-only">{`Whereabout: Line them up${day ? ", today's game" : ""}, row ${index + 1} of ${rowCount}`}</h1>
 
       <header className="flex items-start justify-between gap-4 px-4 pb-2 pt-4 md:px-6">
         <div className="min-w-0">
@@ -300,10 +335,18 @@ export default function LineUp({ deck, loadRecords, random }: LineUpProps) {
           >
             Whereabout
           </Link>
-          <p className="mt-1 text-sm text-chalk-dim">Line them up: west to east</p>
-          <div className="mt-2 flex items-center gap-2">
+          <p className="mt-1 text-sm text-chalk-dim">
+            {day ? `Today's rows (${day}): west to east` : "Line them up: west to east"}
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
             <GamesMenu screen="line-up" streakHref="/streak" />
             <ControlsHelp screen="line-up" />
+            <Link
+              href={daily ? "/line-up" : "/line-up/daily"}
+              className="text-sm text-gold underline underline-offset-2 hover:brightness-110"
+            >
+              {daily ? "Free games" : "Today's game"}
+            </Link>
           </div>
         </div>
         <dl className="shrink-0 text-right">
@@ -311,10 +354,12 @@ export default function LineUp({ deck, loadRecords, random }: LineUpProps) {
           <dd className="font-sign tabular text-3xl font-bold leading-none" aria-live="polite">
             {score}
           </dd>
-          <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
-            <dt>Best</dt>
-            <dd className="tabular">{best}</dd>
-          </div>
+          {!daily && (
+            <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
+              <dt>Best</dt>
+              <dd className="tabular">{best}</dd>
+            </div>
+          )}
         </dl>
       </header>
 
@@ -625,6 +670,48 @@ function RowCard({
   );
 }
 
+/** Each row's points, yours and Atlas's. */
+function RowList({ results }: { results: readonly RowResult[] }) {
+  return (
+    <ol aria-label="Your rows" className="mt-4 space-y-1 text-chalk-dim">
+      {results.map((r, i) => (
+        <li key={r.order.join()} className="flex justify-between gap-4">
+          <span>{`Row ${i + 1}`}</span>
+          <span className="tabular">
+            {`You ${r.points}${r.atlas ? `, Atlas ${r.atlas.points}` : ""}`}
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** Today's Line them up once its last row is locked. */
+function LineDayResult({
+  day,
+  results,
+  now,
+}: {
+  day: string;
+  results: readonly RowResult[];
+  now?: () => Date;
+}) {
+  const atlas = atlasLine(results);
+  return (
+    <DailyRunResult
+      game="Line them up"
+      day={day}
+      headline={`${linePoints(results)} in place`}
+      summary={`Out of ${results.length * ROW_POINTS}.${atlas ? ` ${atlas}` : ""}`}
+      shareText={(href) => lineDailyShare(day, results, href)}
+      freeHref="/line-up"
+      now={now}
+    >
+      <RowList results={results} />
+    </DailyRunResult>
+  );
+}
+
 function Finished({
   results,
   whole,
@@ -660,16 +747,7 @@ function Finished({
               {atlas}
             </p>
           )}
-          <ol aria-label="Your rows" className="mt-4 space-y-1 text-chalk-dim">
-            {results.map((r, i) => (
-              <li key={r.order.join()} className="flex justify-between gap-4">
-                <span>{`Row ${i + 1}`}</span>
-                <span className="tabular">
-                  {`You ${r.points}${r.atlas ? `, Atlas ${r.atlas.points}` : ""}`}
-                </span>
-              </li>
-            ))}
-          </ol>
+          <RowList results={results} />
         </>
       )}
       <div className="mt-8 flex flex-wrap items-center gap-4">

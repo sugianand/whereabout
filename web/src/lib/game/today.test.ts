@@ -5,6 +5,8 @@ import { rememberFarDay } from "./farDaily";
 import { hotAtlas, hotPin, hotRound } from "./hotCold";
 import { rememberHotDay } from "./hotDaily";
 import { type PairResult } from "./howFar";
+import { rememberLineDay } from "./lineDaily";
+import { type RowResult } from "./lineUp";
 import { rememberNameDay } from "./nameDaily";
 import { rememberNorthDay } from "./northDaily";
 import { rememberOddDay } from "./oddDaily";
@@ -171,12 +173,14 @@ describe("todayGames", () => {
   });
 });
 
-const ALL = TODAY_GAMES.length;
+/** The games dealt on DAY, before Line them up joined. */
+const ALL = todayGames(DAY, IDS, NOW).length;
 /** Tallies newest first from DAY: one count per day, nothing after them. */
 const tallies = (...done: number[]): DayTally[] =>
   Array.from({ length: ARCHIVE_DAYS }, (_, i) => ({
     day: daysBefore(DAY, i),
     done: done[i] ?? 0,
+    of: ALL,
   }));
 
 /** Every daily game finished on `day`, each in its own store, as the games write them. */
@@ -207,17 +211,72 @@ describe("dayTallies", () => {
     const kept = dayTallies(DAY, IDS, NOW);
     expect(kept).toHaveLength(ARCHIVE_DAYS);
     expect(kept.slice(0, 4)).toEqual([
-      { day: DAY, done: ALL },
-      { day: "2026-11-02", done: 1 },
-      { day: "2026-11-01", done: ALL },
-      { day: "2026-10-31", done: 0 },
+      { day: DAY, done: ALL, of: ALL },
+      { day: "2026-11-02", done: 1, of: ALL },
+      { day: "2026-11-01", done: ALL, of: ALL },
+      { day: "2026-10-31", done: 0, of: ALL },
     ]);
   });
 
   it("gives every game the whole window: a day at its far end still reads full", () => {
     const oldest = daysBefore(DAY, ARCHIVE_DAYS - 1);
     finishDay(oldest);
-    expect(dayTallies(DAY, IDS, NOW).at(-1)).toEqual({ day: oldest, done: ALL });
+    expect(dayTallies(DAY, IDS, NOW).at(-1)).toEqual({ day: oldest, done: ALL, of: ALL });
+  });
+});
+
+describe("a game joining Today", () => {
+  const JOINED = TODAY_GAMES.find((g) => g.id === "line-up")!.since!;
+  const AFTER = daysBefore(JOINED, -1);
+  const AT = new Date(`${AFTER}T12:00:00Z`);
+  const row: RowResult = {
+    order: ["a", "b", "c", "d"],
+    east: ["a", "b", "c", "d"],
+    right: [true, true, false, false],
+    points: 2,
+    atlas: { order: ["b", "a", "c", "d"], points: 1 },
+  };
+  const games = () => todayGames(AFTER, IDS, AT);
+  const lineUp = () => games().find((g) => g.id === "line-up")!;
+
+  it("is dealt from its first day on, and not before", () => {
+    expect(games()).toHaveLength(TODAY_GAMES.length);
+    expect(todayGames(JOINED, IDS, AT)).toHaveLength(TODAY_GAMES.length);
+    expect(todayGames(daysBefore(JOINED, 1), IDS, AT)).toHaveLength(TODAY_GAMES.length - 1);
+  });
+
+  it("reads today's Line them up, under way from its first row", () => {
+    expect(lineUp()).toMatchObject({ status: "new", line: "Not started" });
+    rememberLineDay(AFTER, { results: [row] });
+    expect(lineUp()).toMatchObject({
+      status: "going",
+      line: "1 of 5 rows, 2 in place",
+      atlas: "1 of 4",
+    });
+    rememberLineDay(AFTER, { results: Array<RowResult>(5).fill(row) });
+    expect(lineUp()).toMatchObject({
+      status: "done",
+      line: "10 of 20 in place",
+      atlas: "5 of 20",
+    });
+  });
+
+  it("doesn't undo a run of full days from before it was dealt", () => {
+    const kept = dayTallies(JOINED, IDS, AT);
+    finishDay(daysBefore(JOINED, 1));
+    finishDay(daysBefore(JOINED, 2));
+    const run = dayTallies(JOINED, IDS, AT);
+    expect(kept[1].of).toBe(TODAY_GAMES.length - 1);
+    expect(run[1]).toMatchObject({ done: TODAY_GAMES.length - 1 });
+    // An unfinished first day hasn't broken it, and the old days stay full.
+    expect(fullDayStreak(run)).toEqual({ days: 2, orMore: false, today: false });
+  });
+
+  it("counts towards a full day from then on", () => {
+    finishDay(JOINED);
+    expect(fullDayStreak(dayTallies(JOINED, IDS, AT)).today).toBe(false);
+    rememberLineDay(JOINED, { results: Array<RowResult>(5).fill(row) });
+    expect(fullDayStreak(dayTallies(JOINED, IDS, AT)).today).toBe(true);
   });
 });
 
@@ -282,7 +341,7 @@ describe("calendarWeeks", () => {
     ["2026-11-01", 0], // A Sunday, the week's last day.
     ["2026-11-02", 6], // A Monday, the week's first.
   ])("fills whole weeks ending on %s", (day, toCome) => {
-    const cells = calendarWeeks([{ day, done: 0 }, ...tallies().slice(0, 29)]).flat();
+    const cells = calendarWeeks([{ day, done: 0, of: ALL }, ...tallies().slice(0, 29)]).flat();
     expect(cells.filter((c) => c === null)).toHaveLength(toCome);
     expect(cells).toHaveLength(CALENDAR_WEEKS * 7);
   });

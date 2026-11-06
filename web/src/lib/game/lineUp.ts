@@ -139,7 +139,8 @@ export type LineState =
   | (Game & { phase: "finished" });
 
 export type LineAction =
-  | { type: "start"; rows: readonly (readonly string[])[] }
+  /** `results` picks a game up after the rows already locked (today's game, after a reload). */
+  | { type: "start"; rows: readonly (readonly string[])[]; results?: readonly RowResult[] }
   | { type: "ready"; spots: Spots }
   /** Swap the photos at two places. */
   | { type: "swap"; a: number; b: number }
@@ -156,10 +157,14 @@ function deal(game: Game): LineState {
 
 export function lineReducer(state: LineState, action: LineAction): LineState {
   switch (action.type) {
-    case "start":
-      return action.rows.length === 0
-        ? { phase: "none" }
-        : deal({ rows: action.rows, index: 0, results: [] });
+    case "start": {
+      const { rows, results = [] } = action;
+      if (rows.length === 0) return { phase: "none" };
+      if (results.length >= rows.length) {
+        return { rows, results, index: rows.length - 1, phase: "finished" };
+      }
+      return deal({ rows, index: results.length, results });
+    }
     case "ready":
       if (state.phase !== "placing" || state.spots) return state;
       return { ...state, spots: action.spots, order: unsorted(state.order, action.spots) };

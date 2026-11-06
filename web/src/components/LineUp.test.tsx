@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GameRecord } from "@/lib/game/deck";
+import { LINE_DAILY_KEY, dailyLineRows, loadLineDay } from "@/lib/game/lineDaily";
 import { BEST_LINE_KEY } from "@/lib/game/lineUp";
 import type { AtlasGuess, CatalogPhoto } from "@/lib/game/types";
 import { gameFor } from "@/test/deck";
@@ -155,5 +156,68 @@ describe("LineUp", () => {
     const game = gameFor(RECORDS.slice(0, 3));
     render(<LineUp deck={{ ...game.deck, regions: {} }} loadRecords={vi.fn()} />);
     expect(await screen.findByText("No photos to play yet")).toBeVisible();
+  });
+});
+
+describe("today's Line them up", () => {
+  const DAY = "2026-11-06";
+  const now = () => new Date(`${DAY}T10:30:00Z`);
+
+  async function today() {
+    const game = gameFor(RECORDS);
+    const view = render(
+      <LineUp deck={game.deck} loadRecords={game.loadRecords} daily now={now} />,
+    );
+    await waitFor(() => expect(screen.getByRole("button", { name: "Lock it in" })).toBeEnabled(), {
+      timeout: 5000,
+    });
+    return { ...view, deck: game.deck };
+  }
+
+  const lockRow = () => {
+    solve();
+    fireEvent.click(screen.getByRole("button", { name: "Lock it in" }));
+  };
+
+  it("deals the day's first row, and links to the free games", async () => {
+    const { deck } = await today();
+    expect([...row()].sort()).toEqual([...dailyLineRows(deck.regions, DAY)[0]].sort());
+    expect(screen.getByRole("link", { name: "Free games" })).toHaveAttribute("href", "/line-up");
+    expect(screen.queryByText("Best")).toBeNull();
+  });
+
+  it("keeps a locked row, so a reload picks up at the next with the score", async () => {
+    const { unmount, deck } = await today();
+    lockRow();
+    expect(loadLineDay(DAY)?.results).toHaveLength(1);
+    unmount();
+    await today();
+    expect(screen.getByText("Row 2 of 5")).toBeInTheDocument();
+    expect(screen.getByText(String(4))).toBeInTheDocument();
+    expect([...row()].sort()).toEqual([...dailyLineRows(deck.regions, DAY)[1]].sort());
+  });
+
+  it("ends on the day's result, kept from the free games' best, and never deals it again", async () => {
+    const { unmount } = await today();
+    for (let i = 0; i < 5; i++) {
+      await waitFor(() => expect(screen.getByRole("button", { name: "Lock it in" })).toBeEnabled());
+      lockRow();
+      fireEvent.click(
+        screen.getByRole("button", { name: i < 4 ? "Next row" : "See your score" }),
+      );
+    }
+    const headline = await screen.findByRole("heading", { level: 1, name: "20 in place" });
+    expect(headline).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Share today's run" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Play again" })).toBeNull();
+    expect(screen.getAllByRole("listitem")).toHaveLength(5);
+    expect(localStorage.getItem(BEST_LINE_KEY)).toBeNull();
+    expect(localStorage.getItem(LINE_DAILY_KEY)).not.toBeNull();
+
+    unmount();
+    const game = gameFor(RECORDS);
+    render(<LineUp deck={game.deck} loadRecords={game.loadRecords} daily now={now} />);
+    expect(await screen.findByRole("heading", { level: 1, name: "20 in place" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Lock it in" })).toBeNull();
   });
 });

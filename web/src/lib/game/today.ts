@@ -2,7 +2,7 @@
  * Today: every daily game on one page. Each game already keeps its own day in this browser, so
  * this reads those records back and adds none of its own: the Daily Five's first score and the
  * game in progress (./dailyArchive.ts, ./saved.ts), the streak games' runs (./dailyRuns.ts)
- * and the photos of How far apart? and Hot and cold (./farDaily.ts, ./hotDaily.ts). What a game can't read back counts as not started.
+ * and the photos and rows of How far apart?, Hot and cold and Line them up (./farDaily.ts, ./hotDaily.ts, ./lineDaily.ts). What a game can't read back counts as not started.
  *
  * Like every share in the game, the combined line is scores and counts only, so it spoils no
  * photo. Only finished games go in it: a run still going has no result yet.
@@ -22,6 +22,8 @@ import { loadFarDay } from "./farDaily";
 import { HOT_PHOTOS, PHOTO_POINTS, atlasTotal as hotAtlasTotal, hotTotal } from "./hotCold";
 import { loadHotDay } from "./hotDaily";
 import { PAIRS, PAIR_POINTS, atlasTotal, totalPoints } from "./howFar";
+import { loadLineDay } from "./lineDaily";
+import { ROW, ROWS, atlasLinePoints, linePoints } from "./lineUp";
 import { loadNameDay } from "./nameDaily";
 import { loadNorthDay } from "./northDaily";
 import { loadOddDay } from "./oddDaily";
@@ -36,7 +38,8 @@ export type TodayGameId =
   | "which-way"
   | "how-far"
   | "name-country"
-  | "hot-cold";
+  | "hot-cold"
+  | "line-up";
 
 /** One daily game: where it lives, whatever the browser holds. */
 export interface TodayGameInfo {
@@ -47,6 +50,11 @@ export interface TodayGameInfo {
   /** Marks the game's line in the share. */
   icon: string;
   blurb: string;
+  /**
+   * The first day it was dealt, for a game added to Today later: earlier days never had it, so a
+   * full day from before it still counts as full and a run of them isn't broken by its arrival.
+   */
+  since?: string;
 }
 
 export const TODAY_GAMES: readonly TodayGameInfo[] = [
@@ -98,6 +106,14 @@ export const TODAY_GAMES: readonly TodayGameInfo[] = [
     href: "/hot-cold/daily",
     icon: "🔥",
     blurb: "Three pins to find each of five countries, an arrow after every miss.",
+  },
+  {
+    id: "line-up",
+    name: "Line them up",
+    href: "/line-up/daily",
+    icon: "↔️",
+    blurb: "Five rows of four photos to put in order from west to east.",
+    since: "2026-11-06",
   },
 ];
 
@@ -182,13 +198,27 @@ function hotCold(day: string) {
   return { status: "done" as const, line, atlas: rival };
 }
 
-/** Every daily game's standing in this browser on `day`. */
+function lineUp(day: string) {
+  const results = loadLineDay(day)?.results ?? [];
+  if (results.length === 0) return { status: "new" as const, line: NOT_STARTED, atlas: null };
+  const points = linePoints(results);
+  const { points: atlasPoints, rows } = atlasLinePoints(results);
+  const atlas = rows > 0 ? `${atlasPoints} of ${rows * ROW}` : null;
+  if (results.length < ROWS) {
+    const line = `${results.length} of ${ROWS} rows, ${points} in place`;
+    return { status: "going" as const, line, atlas };
+  }
+  return { status: "done" as const, line: `${points} of ${ROWS * ROW} in place`, atlas };
+}
+
+/** Every daily game dealt on `day`, with its standing in this browser. */
 export function todayGames(
   day: string,
   deckIds: readonly string[],
   now: Date = new Date(),
 ): TodayGame[] {
-  return TODAY_GAMES.map((info) => {
+  const dealt = TODAY_GAMES.filter((info) => !info.since || day >= info.since);
+  return dealt.map((info) => {
     switch (info.id) {
       case "daily-five":
         return { ...info, ...dailyFive(day, deckIds, now) };
@@ -204,6 +234,8 @@ export function todayGames(
         return { ...info, ...streakGame(loadNameDay(day), "country", "countries") };
       case "hot-cold":
         return { ...info, ...hotCold(day) };
+      case "line-up":
+        return { ...info, ...lineUp(day) };
     }
   });
 }
@@ -217,6 +249,8 @@ export function gamesDone(games: readonly TodayGame[]): number {
 export interface DayTally {
   day: string;
   done: number;
+  /** The daily games dealt that day. */
+  of: number;
 }
 
 /** Weeks the calendar shows, this one included; all of them lie within what every game keeps. */
@@ -228,10 +262,10 @@ export function dayTallies(
   deckIds: readonly string[],
   now: Date = new Date(),
 ): DayTally[] {
-  return archiveDays(today).map((day) => ({
-    day,
-    done: gamesDone(todayGames(day, deckIds, now)),
-  }));
+  return archiveDays(today).map((day) => {
+    const games = todayGames(day, deckIds, now);
+    return { day, done: gamesDone(games), of: games.length };
+  });
 }
 
 /** Days in a row with every daily game finished. */
@@ -245,7 +279,7 @@ export interface FullDayStreak {
 
 /** The run of full days up to today, or up to yesterday while today can still be finished. */
 export function fullDayStreak(tallies: readonly DayTally[]): FullDayStreak {
-  const full = (t: DayTally) => t.done >= TODAY_GAMES.length;
+  const full = (t: DayTally) => t.done >= t.of;
   const today = tallies.length > 0 && full(tallies[0]);
   let days = 0;
   for (let i = today ? 0 : 1; i < tallies.length && full(tallies[i]); i++) days++;

@@ -86,8 +86,7 @@ function dayName(day: string, opts: Intl.DateTimeFormatOptions): string {
   return new Date(`${day}T12:00:00Z`).toLocaleDateString("en-US", { ...opts, timeZone: "UTC" });
 }
 
-function streakLine(streak: FullDayStreak, left: number): string {
-  const total = TODAY_GAMES.length;
+function streakLine(streak: FullDayStreak, left: number, total: number): string {
   if (streak.days === 0) return `Finish all ${total} in one day to start a run of full days.`;
   const run = `${fullDaysWords(streak)} in a row.`;
   if (streak.today || streak.orMore) return run;
@@ -96,27 +95,27 @@ function streakLine(streak: FullDayStreak, left: number): string {
 
 /** One day on the calendar: gold when every game was finished, else how many were. */
 function DayCell({ tally, today, first }: { tally: DayTally; today: boolean; first: boolean }) {
-  const total = TODAY_GAMES.length;
-  const full = tally.done >= total;
+  const { done, of: total } = tally;
+  const full = done >= total;
   const name = today ? "Today" : dayName(tally.day, { month: "long", day: "numeric" });
   const month = first || tally.day.endsWith("-01");
   const style = full
     ? "border-gold bg-gold font-semibold text-ocean-deep"
-    : tally.done > 0
+    : done > 0
       ? "border-gold/40 text-chalk"
       : "border-chalk/15 text-chalk-dim";
   return (
     <li
       data-testid={`day-${tally.day}`}
-      data-done={tally.done}
+      data-done={done}
       aria-current={today ? "date" : undefined}
-      aria-label={`${name}: ${full ? "every game finished" : `${tally.done} of ${total} finished`}`}
+      aria-label={`${name}: ${full ? "every game finished" : `${done} of ${total} finished`}`}
       className={`flex h-12 flex-col items-center justify-center rounded-lg border text-xs leading-tight ${style} ${
         today ? "ring-2 ring-flare" : ""
       }`}
     >
       <span>{dayName(tally.day, month ? { month: "short", day: "numeric" } : { day: "numeric" })}</span>
-      <span className="tabular mt-0.5">{full ? "All" : tally.done > 0 ? tally.done : ""}</span>
+      <span className="tabular mt-0.5">{full ? "All" : done > 0 ? done : ""}</span>
     </li>
   );
 }
@@ -124,7 +123,8 @@ function DayCell({ tally, today, first }: { tally: DayTally; today: boolean; fir
 /** The run of full days, and the last weeks with how much of each day was finished. */
 function FullDays({ tallies, today }: { tallies: readonly DayTally[]; today: string }) {
   const streak = fullDayStreak(tallies);
-  const left = TODAY_GAMES.length - (tallies[0]?.done ?? 0);
+  const total = tallies[0]?.of ?? TODAY_GAMES.length;
+  const left = total - (tallies[0]?.done ?? 0);
   const cells = calendarWeeks(tallies).flat();
   return (
     <section aria-labelledby="full-days" className="mt-10">
@@ -132,7 +132,7 @@ function FullDays({ tallies, today }: { tallies: readonly DayTally[]; today: str
         Full days
       </h2>
       <p className="mt-1 text-chalk-dim" data-testid="full-day-streak">
-        {streakLine(streak, left)}
+        {streakLine(streak, left, total)}
       </p>
       <div aria-hidden="true" className="mt-4 grid grid-cols-7 gap-1.5 text-center text-xs text-chalk-dim">
         {WEEKDAYS.map((d, i) => (
@@ -200,7 +200,7 @@ export default function Today({
     };
   }, [read]);
 
-  const total = TODAY_GAMES.length;
+  const total = view?.games.length ?? TODAY_GAMES.length;
   const done = view ? gamesDone(view.games) : 0;
 
   return (
@@ -222,7 +222,7 @@ export default function Today({
       </p>
 
       <ul className="mt-6 space-y-3" aria-label="Today's games">
-        {TODAY_GAMES.map((info) => (
+        {(view?.games ?? TODAY_GAMES).map((info) => (
           <GameCard key={info.id} info={info} game={view?.games.find((g) => g.id === info.id)} />
         ))}
       </ul>

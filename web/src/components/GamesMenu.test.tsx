@@ -20,7 +20,7 @@ describe("GamesMenu", () => {
     render(<GamesMenu screen="round" streakHref="/streak" />);
     const link = within(openMenu()).getByRole("link", { name: /^Today/ });
     expect(link).toHaveAttribute("href", "/today");
-    expect(link).toHaveTextContent("1 of 7 played");
+    expect(link).toHaveTextContent("1 of 8 played");
   });
 
   it("marks Today as the current screen when opened from it", () => {
