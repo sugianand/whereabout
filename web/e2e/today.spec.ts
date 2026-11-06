@@ -108,6 +108,56 @@ test("Today lists every daily game from the Games menu, follows a real run, and 
   expect(errors).toEqual([]);
 });
 
+test("full days count up on a calendar that fits the screen", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("./today");
+  await expect(page.getByTestId("full-day-streak")).toContainText(/^Finish all 7/);
+
+  // The last two days finished, as each game keeps them, and the day before that partly.
+  const before = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
+  await page.evaluate(
+    ({ full, partly }) => {
+      const run = { streak: 3, atlasRight: 1, atlasPlayed: 2, ended: "miss" };
+      const estimate = { km: 100, ratio: 1.5, points: 700, tooFar: false };
+      const pair = { actualKm: 100, you: estimate, atlas: null };
+      const pin = { at: { lng: 0, lat: 0 }, km: 10, bearing: 0, found: true };
+      const hot = { id: "a", pins: [pin], atlas: null };
+      const keep = (key: string, entry: unknown, also: string[] = []) =>
+        localStorage.setItem(
+          key,
+          JSON.stringify(Object.fromEntries([...full, ...also].map((d) => [d, entry]))),
+        );
+      keep("whereabout:daily-scores", 18240);
+      keep("whereabout:further-north-daily", run, [partly]);
+      keep("whereabout:odd-one-out-daily", run, [partly]);
+      keep("whereabout:which-way-daily", run);
+      keep("whereabout:name-country-daily", run);
+      keep("whereabout:how-far-daily", { results: Array(5).fill(pair) });
+      keep("whereabout:hot-cold-daily", { results: Array(5).fill(hot), pins: [] });
+    },
+    { full: [before(1), before(2)], partly: before(3) },
+  );
+  await page.reload();
+  await expect(page.getByTestId("full-day-streak")).toHaveText(
+    "2 full days in a row. Finish today's 7 to make it 3.",
+  );
+  await expect(page.getByTestId(`day-${before(1)}`)).toHaveAttribute("data-done", "7");
+  await expect(page.getByTestId(`day-${before(1)}`)).toContainText("All");
+  await expect(page.getByTestId(`day-${before(3)}`)).toHaveAttribute("data-done", "2");
+  await expect(page.getByTestId(`day-${before(0)}`)).toHaveAttribute("aria-current", "date");
+
+  // Seven columns inside the page, down to a 320px phone.
+  for (const width of [page.viewportSize()!.width, 320]) {
+    await page.setViewportSize({ width, height: 700 });
+    const scroll = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(scroll).toBeLessThanOrEqual(width);
+    const cell = await page.getByTestId(`day-${before(1)}`).boundingBox();
+    expect(cell!.width).toBeGreaterThanOrEqual(30);
+  }
+  expect(errors).toEqual([]);
+});
+
 test("the results screen leads to Today, already counting the game just finished", async ({
   page,
 }) => {

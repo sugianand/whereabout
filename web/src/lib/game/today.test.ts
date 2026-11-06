@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { DAILY_SCORES_KEY } from "./dailyArchive";
+import { ARCHIVE_DAYS, DAILY_SCORES_KEY, daysBefore } from "./dailyArchive";
 import { rememberFarDay } from "./farDaily";
 import { hotAtlas, hotPin, hotRound } from "./hotCold";
 import { rememberHotDay } from "./hotDaily";
@@ -9,7 +9,19 @@ import { rememberNameDay } from "./nameDaily";
 import { rememberNorthDay } from "./northDaily";
 import { rememberOddDay } from "./oddDaily";
 import { SAVED_GAME_KEY } from "./saved";
-import { gamesDone, todayGames, todayShare, type TodayGameId } from "./today";
+import {
+  CALENDAR_WEEKS,
+  TODAY_GAMES,
+  calendarWeeks,
+  dayTallies,
+  fullDayStreak,
+  fullDaysWords,
+  gamesDone,
+  todayGames,
+  todayShare,
+  type DayTally,
+  type TodayGameId,
+} from "./today";
 import { rememberWayDay } from "./wayDaily";
 
 const DAY = "2026-11-03";
@@ -159,7 +171,133 @@ describe("todayGames", () => {
   });
 });
 
+const ALL = TODAY_GAMES.length;
+/** Tallies newest first from DAY: one count per day, nothing after them. */
+const tallies = (...done: number[]): DayTally[] =>
+  Array.from({ length: ARCHIVE_DAYS }, (_, i) => ({
+    day: daysBefore(DAY, i),
+    done: done[i] ?? 0,
+  }));
+
+/** Every daily game finished on `day`, each in its own store, as the games write them. */
+function finishDay(day: string) {
+  const run = { streak: 3, atlasRight: 1, atlasPlayed: 2, ended: "miss" as const };
+  const scores = JSON.parse(localStorage.getItem(DAILY_SCORES_KEY) ?? "{}") as object;
+  localStorage.setItem(DAILY_SCORES_KEY, JSON.stringify({ ...scores, [day]: 18240 }));
+  rememberNorthDay(day, run);
+  rememberOddDay(day, run);
+  rememberWayDay(day, run);
+  rememberNameDay(day, run);
+  rememberFarDay(day, { results: [1, 2, 3, 4, 5].map(() => pair(700)) });
+  const photo = hotRound("a", [hotPin({ lng: 0, lat: 0 }, { lng: 0, lat: 1 }, true)], null);
+  rememberHotDay(day, { results: [1, 2, 3, 4, 5].map(() => photo), pins: [] });
+}
+
+describe("dayTallies", () => {
+  it("reads each kept day back through the games' own stores, newest first", () => {
+    finishDay(DAY);
+    finishDay(daysBefore(DAY, 2));
+    rememberNorthDay(daysBefore(DAY, 1), {
+      streak: 1,
+      atlasRight: 0,
+      atlasPlayed: 0,
+      ended: "miss",
+    });
+    rememberOddDay(daysBefore(DAY, 1), { streak: 1, atlasRight: 0, atlasPlayed: 0, ended: null });
+    const kept = dayTallies(DAY, IDS, NOW);
+    expect(kept).toHaveLength(ARCHIVE_DAYS);
+    expect(kept.slice(0, 4)).toEqual([
+      { day: DAY, done: ALL },
+      { day: "2026-11-02", done: 1 },
+      { day: "2026-11-01", done: ALL },
+      { day: "2026-10-31", done: 0 },
+    ]);
+  });
+
+  it("gives every game the whole window: a day at its far end still reads full", () => {
+    const oldest = daysBefore(DAY, ARCHIVE_DAYS - 1);
+    finishDay(oldest);
+    expect(dayTallies(DAY, IDS, NOW).at(-1)).toEqual({ day: oldest, done: ALL });
+  });
+});
+
+describe("fullDayStreak", () => {
+  it("counts days in a row with every game finished, up to today", () => {
+    expect(fullDayStreak(tallies(ALL, ALL, ALL, ALL - 1, ALL))).toEqual({
+      days: 3,
+      orMore: false,
+      today: true,
+    });
+  });
+
+  it("isn't broken by a today that can still be finished, and doesn't count it", () => {
+    expect(fullDayStreak(tallies(2, ALL, ALL))).toEqual({ days: 2, orMore: false, today: false });
+    expect(fullDayStreak(tallies(0, ALL))).toEqual({ days: 1, orMore: false, today: false });
+  });
+
+  it("is broken by a day missed, and six of seven is a miss", () => {
+    expect(fullDayStreak(tallies(0, ALL - 1, ALL)).days).toBe(0);
+    expect(fullDayStreak(tallies()).days).toBe(0);
+  });
+
+  it("says when the run reaches further back than the games keep", () => {
+    const every = Array.from({ length: ARCHIVE_DAYS }, () => ALL);
+    expect(fullDayStreak(tallies(...every))).toEqual({
+      days: ARCHIVE_DAYS,
+      orMore: true,
+      today: true,
+    });
+    // The morning after: a day has left the window, but the run hasn't shrunk.
+    const morning = fullDayStreak(tallies(0, ...every.slice(1)));
+    expect(morning).toMatchObject({ days: ARCHIVE_DAYS - 1, orMore: true, today: false });
+    expect(fullDaysWords(morning)).toBe("29+ full days");
+  });
+
+  it("words the count", () => {
+    expect(fullDaysWords({ days: 1, orMore: false })).toBe("1 full day");
+    expect(fullDaysWords({ days: 2, orMore: false })).toBe("2 full days");
+  });
+});
+
+describe("calendarWeeks", () => {
+  // DAY, 2026-11-03, is a Tuesday.
+  it("runs Monday to Sunday, oldest first, leaving the days to come empty", () => {
+    const weeks = calendarWeeks(tallies(ALL));
+    expect(weeks).toHaveLength(CALENDAR_WEEKS);
+    expect(weeks.every((w) => w.length === 7)).toBe(true);
+    expect(weeks[0][0]?.day).toBe("2026-10-12");
+    expect(new Date("2026-10-12T12:00:00Z").getUTCDay()).toBe(1);
+    expect(weeks[3].map((d) => d?.day ?? null)).toEqual([
+      "2026-11-02",
+      DAY,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ]);
+  });
+
+  it.each([
+    ["2026-11-01", 0], // A Sunday, the week's last day.
+    ["2026-11-02", 6], // A Monday, the week's first.
+  ])("fills whole weeks ending on %s", (day, toCome) => {
+    const cells = calendarWeeks([{ day, done: 0 }, ...tallies().slice(0, 29)]).flat();
+    expect(cells.filter((c) => c === null)).toHaveLength(toCome);
+    expect(cells).toHaveLength(CALENDAR_WEEKS * 7);
+  });
+});
+
 describe("todayShare", () => {
+  it("adds the run of full days once today is one of two or more", () => {
+    const games = todayGames(DAY, IDS, NOW);
+    const line = (done: number[]) =>
+      todayShare(DAY, games, HREF, fullDayStreak(tallies(...done)));
+    expect(line([ALL, ALL, ALL])).toContain("🔥 3 full days in a row\n");
+    expect(line([ALL])).not.toContain("🔥");
+    expect(line([1, ALL, ALL])).not.toContain("🔥");
+  });
+
   it("gathers finished games only, with the page's clean address", () => {
     rememberNorthDay(DAY, { streak: 6, atlasRight: 3, atlasPlayed: 4, ended: "miss" });
     rememberFarDay(DAY, { results: [1, 2, 3, 4, 5].map(() => pair(700)) });

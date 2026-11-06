@@ -5,10 +5,17 @@ import { useCallback, useEffect, useState } from "react";
 
 import { runToday, untilNextRun } from "@/lib/game/dailyRuns";
 import {
+  CALENDAR_WEEKS,
   TODAY_GAMES,
+  calendarWeeks,
+  dayTallies,
+  fullDayStreak,
+  fullDaysWords,
   gamesDone,
   todayGames,
   todayShare,
+  type DayTally,
+  type FullDayStreak,
   type TodayGame,
   type TodayGameInfo,
   type TodayStatus,
@@ -73,9 +80,85 @@ function GameCard({ info, game }: { info: TodayGameInfo; game?: TodayGame }) {
   );
 }
 
+const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
+
+function dayName(day: string, opts: Intl.DateTimeFormatOptions): string {
+  return new Date(`${day}T12:00:00Z`).toLocaleDateString("en-US", { ...opts, timeZone: "UTC" });
+}
+
+function streakLine(streak: FullDayStreak, left: number): string {
+  const total = TODAY_GAMES.length;
+  if (streak.days === 0) return `Finish all ${total} in one day to start a run of full days.`;
+  const run = `${fullDaysWords(streak)} in a row.`;
+  if (streak.today || streak.orMore) return run;
+  return `${run} Finish today's ${left} to make it ${streak.days + 1}.`;
+}
+
+/** One day on the calendar: gold when every game was finished, else how many were. */
+function DayCell({ tally, today, first }: { tally: DayTally; today: boolean; first: boolean }) {
+  const total = TODAY_GAMES.length;
+  const full = tally.done >= total;
+  const name = today ? "Today" : dayName(tally.day, { month: "long", day: "numeric" });
+  const month = first || tally.day.endsWith("-01");
+  const style = full
+    ? "border-gold bg-gold font-semibold text-ocean-deep"
+    : tally.done > 0
+      ? "border-gold/40 text-chalk"
+      : "border-chalk/15 text-chalk-dim";
+  return (
+    <li
+      data-testid={`day-${tally.day}`}
+      data-done={tally.done}
+      aria-current={today ? "date" : undefined}
+      aria-label={`${name}: ${full ? "every game finished" : `${tally.done} of ${total} finished`}`}
+      className={`flex h-12 flex-col items-center justify-center rounded-lg border text-xs leading-tight ${style} ${
+        today ? "ring-2 ring-flare" : ""
+      }`}
+    >
+      <span>{dayName(tally.day, month ? { month: "short", day: "numeric" } : { day: "numeric" })}</span>
+      <span className="tabular mt-0.5">{full ? "All" : tally.done > 0 ? tally.done : ""}</span>
+    </li>
+  );
+}
+
+/** The run of full days, and the last weeks with how much of each day was finished. */
+function FullDays({ tallies, today }: { tallies: readonly DayTally[]; today: string }) {
+  const streak = fullDayStreak(tallies);
+  const left = TODAY_GAMES.length - (tallies[0]?.done ?? 0);
+  const cells = calendarWeeks(tallies).flat();
+  return (
+    <section aria-labelledby="full-days" className="mt-10">
+      <h2 id="full-days" className="font-sign text-2xl font-bold">
+        Full days
+      </h2>
+      <p className="mt-1 text-chalk-dim" data-testid="full-day-streak">
+        {streakLine(streak, left)}
+      </p>
+      <div aria-hidden="true" className="mt-4 grid grid-cols-7 gap-1.5 text-center text-xs text-chalk-dim">
+        {WEEKDAYS.map((d, i) => (
+          <span key={i}>{d}</span>
+        ))}
+      </div>
+      <ol
+        aria-label={`The last ${CALENDAR_WEEKS} weeks`}
+        className="mt-1.5 grid grid-cols-7 gap-1.5"
+      >
+        {cells.map((tally, i) =>
+          tally ? (
+            <DayCell key={tally.day} tally={tally} today={tally.day === today} first={i === 0} />
+          ) : (
+            <li key={`to-come-${i}`} aria-hidden="true" />
+          ),
+        )}
+      </ol>
+    </section>
+  );
+}
+
 /**
  * Today: every daily game on one page, each showing how it stands in this browser, with the time
- * to the next deal and one share line for the whole day (`lib/game/today.ts`). Read after mount,
+ * to the next deal, one share line for the whole day and the run of days with every game finished
+ * (`lib/game/today.ts`). Read after mount,
  * so the static page never guesses at it, and again when a page comes back into view or the
  * clock passes midnight UTC.
  */
@@ -86,12 +169,18 @@ export default function Today({
   deckIds: readonly string[];
   now?: () => Date;
 }) {
-  const [view, setView] = useState<{ day: string; games: TodayGame[]; until: string } | null>(null);
+  const [view, setView] = useState<{
+    day: string;
+    games: TodayGame[];
+    tallies: DayTally[];
+    until: string;
+  } | null>(null);
 
   const read = useCallback(() => {
     const at = now();
     const day = runToday(at);
-    setView({ day, games: todayGames(day, deckIds, at), until: untilNextRun(at) });
+    const tallies = dayTallies(day, deckIds, at);
+    setView({ day, games: todayGames(day, deckIds, at), tallies, until: untilNextRun(at) });
   }, [deckIds, now]);
 
   useEffect(() => {
@@ -129,7 +218,7 @@ export default function Today({
           ? done === total
             ? `All ${total} played. The next deal is in ${view.until}.`
             : `${done} of ${total} played. The next deal is in ${view.until}.`
-          : "Five games, the same deal for everyone."}
+          : `${total} games, the same deal for everyone.`}
       </p>
 
       <ul className="mt-6 space-y-3" aria-label="Today's games">
@@ -142,14 +231,16 @@ export default function Today({
         <div className="mt-6">
           <ShareDay
             label="Share your day"
-            shareText={(href) => todayShare(view.day, view.games, href)}
+            shareText={(href) => todayShare(view.day, view.games, href, fullDayStreak(view.tallies))}
           />
         </div>
       )}
 
+      {view && <FullDays tallies={view.tallies} today={view.day} />}
+
       <p className="mt-8 text-sm text-chalk-dim">
         Each game deals once a day at midnight UTC, the same for everyone. What you&apos;ve played
-        is kept in this browser.
+        is kept in this browser. A Daily Five played later from its archive counts for its own day.
       </p>
     </main>
   );

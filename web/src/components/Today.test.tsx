@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { rememberNorthDay } from "@/lib/game/northDaily";
+import { rememberOddDay } from "@/lib/game/oddDaily";
 
 import Today from "./Today";
 
@@ -53,6 +54,27 @@ describe("Today", () => {
     expect(writeText.mock.calls[0]).toEqual([
       expect.stringContaining("1 of 7 daily games\n⬆️ Further North: 4 pairs in a row\n"),
     ]);
+  });
+
+  it("starts with an empty calendar and how to fill it", async () => {
+    render(<Today deckIds={IDS} now={at("2026-11-03T12:00:00Z")} />);
+    expect(await screen.findByTestId("full-day-streak")).toHaveTextContent(
+      "Finish all 7 in one day to start a run of full days.",
+    );
+    const calendar = screen.getByRole("list", { name: "The last 4 weeks" });
+    expect(within(calendar).getAllByRole("listitem")).toHaveLength(23);
+    const today = screen.getByLabelText("Today: 0 of 7 finished");
+    expect(today).toHaveAttribute("aria-current", "date");
+  });
+
+  it("marks how much of each past day was finished, and what a run needs today", async () => {
+    const run = { streak: 2, atlasRight: 0, atlasPlayed: 0, ended: "miss" as const };
+    rememberNorthDay("2026-11-02", run);
+    rememberOddDay("2026-11-02", run);
+    render(<Today deckIds={IDS} now={at("2026-11-03T12:00:00Z")} />);
+    const cell = await screen.findByLabelText("November 2: 2 of 7 finished");
+    expect(cell).toHaveTextContent("2");
+    expect(screen.getByTestId("full-day-streak")).toHaveTextContent(/^Finish all 7/);
   });
 
   it("moves on to the new day's deal when the clock passes midnight UTC", async () => {

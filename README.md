@@ -89,7 +89,8 @@ your browser.
 **Today** (at `/today`, in the Games menu and on the results screen) puts every daily game on one
 page: the Daily Five, Further North, Odd one out, Which way?, How far apart?, Name the country
 and Hot and cold, each with where it stands in your browser (not started, under way or its result), the time to the next deal, and one
-share line gathering every finished game, as scores and counts only.
+share line gathering every finished game, as scores and counts only. Below them, **Full days**
+counts your run of days with every daily game finished and shows the last four weeks as a calendar.
 
 The results screen gathers these quick games (Blitz, Country Streak, Survival, Further North, Odd
 one out, How far apart? and Which way?) in one list, each with your best from this browser beside its name, so you see what
