@@ -41,10 +41,19 @@ import {
   loadCloseDay,
   rememberCloseDay,
 } from "@/lib/game/closeDaily";
+import {
+  CLOSE_CHALLENGE_PARAM,
+  challengeTotal,
+  closeChallengeLine,
+  closeChallengeText,
+  parseCloseChallenge,
+  type CloseChallenge,
+} from "@/lib/game/closeChallenge";
 import { runToday } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import { nameIds, nameOptions, nameSeed } from "@/lib/game/nameCountry";
 import { thumbUrl } from "@/lib/photoSources";
+import { sendShare, type ShareOutcome } from "@/lib/share";
 
 import ControlsHelp from "./ControlsHelp";
 import { DailyRunResult } from "./DailyRunShare";
@@ -71,6 +80,26 @@ type CloseUpProps = {
   /** For tests: find a photo's busiest spot without the network. */
   loadFocus?: (imageUrl: string) => Promise<Focus | null>;
 };
+
+/** Why a challenge link was set aside for a fresh game. */
+export const CLOSE_CHALLENGE_NOTICE = {
+  malformed: "That challenge link was cut short, so here's a fresh game instead.",
+  missing: "That challenge's photos aren't in the game any more, so here's a fresh game instead.",
+} as const;
+
+/** The challenge the address carries, read once as the page opens; null without one. */
+function linkedChallenge(dealable: readonly string[]) {
+  const value = new URLSearchParams(window.location.search).get(CLOSE_CHALLENGE_PARAM);
+  return value === null ? null : parseCloseChallenge(value, dealable);
+}
+
+/** Take the challenge out of the address, so a reload deals a fresh game, not the old link. */
+function dropChallengeParam() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has(CLOSE_CHALLENGE_PARAM)) return;
+  url.searchParams.delete(CLOSE_CHALLENGE_PARAM);
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
 
 function points(n: number): string {
   return `${n} point${n === 1 ? "" : "s"}`;
@@ -119,33 +148,50 @@ export default function CloseUp({
   const size = useSize(frame);
   // The day today's game was dealt for, kept when the clock passes midnight mid-game.
   const [day, setDay] = useState<string | null>(null);
+  // A friend's challenge this game answers: their photos, names and points to beat.
+  const [challenge, setChallenge] = useState<CloseChallenge | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  const start = useCallback(() => {
-    const ids = nameIds(deck.streakIds, deck.regions);
-    if (daily) {
-      const today = runToday(now?.());
-      const seed = dailyCloseSeed(today);
-      const kept = loadCloseDay(today);
-      setDay(today);
-      dispatch({
-        type: "start",
-        order: dealClose(ids, seed),
-        seed,
-        results: kept?.results,
-        wrong: kept?.wrong,
-      });
-      return;
-    }
-    const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
-    const stored = loadBestClose();
-    setBest(stored);
-    setBestBefore(stored);
-    dispatch({ type: "start", order: dealClose(ids, seed), seed });
-  }, [deck.regions, deck.streakIds, random, daily, now]);
+  /** Deal a game; `fromLink` takes up a challenge the address carries, as the page opens. */
+  const start = useCallback(
+    (fromLink = false) => {
+      const ids = nameIds(deck.streakIds, deck.regions);
+      if (daily) {
+        const today = runToday(now?.());
+        const seed = dailyCloseSeed(today);
+        const kept = loadCloseDay(today);
+        setDay(today);
+        dispatch({
+          type: "start",
+          order: dealClose(ids, seed),
+          seed,
+          results: kept?.results,
+          wrong: kept?.wrong,
+        });
+        return;
+      }
+      const stored = loadBestClose();
+      setBest(stored);
+      setBestBefore(stored);
+      const linked = fromLink ? linkedChallenge(ids) : null;
+      setNotice(linked && !linked.ok ? CLOSE_CHALLENGE_NOTICE[linked.reason] : null);
+      if (linked?.ok) {
+        const { challenge: c } = linked;
+        setChallenge(c);
+        dispatch({ type: "start", order: c.ids, seed: c.seed });
+        return;
+      }
+      setChallenge(null);
+      dropChallengeParam();
+      const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
+      dispatch({ type: "start", order: dealClose(ids, seed), seed });
+    },
+    [deck.regions, deck.streakIds, random, daily, now],
+  );
 
   // The game is shuffled in the browser after hydration, never at build time.
   useEffect(() => {
-    const id = requestAnimationFrame(start);
+    const id = requestAnimationFrame(() => start(true));
     return () => cancelAnimationFrame(id);
   }, [start]);
 
@@ -232,13 +278,14 @@ export default function CloseUp({
         // Today's game is kept as each name is tapped: a wider crop is a clue a reload can't undo.
         const wrong = after.phase === "guessing" ? after.wrong : [];
         rememberCloseDay(day, { results: after.results, wrong });
-      } else if (after.phase === "answered") {
-        // Keep the game as the best as it goes, so leaving at the last photo keeps it.
+      } else if (after.phase === "answered" && !challenge) {
+        // Keep the game as the best as it goes, so leaving at the last photo keeps it. A
+        // challenge's photos may have been seen before, so it is played for the friend only.
         setBest(rememberClose(closeTotals(after.results).you));
       }
       dispatch(action);
     },
-    [state, current, options, day],
+    [state, current, options, day, challenge],
   );
 
   // 1 to 4 pick a name from the keyboard.
@@ -281,10 +328,12 @@ export default function CloseUp({
     return (
       <CloseEnd
         results={state.results}
+        seed={state.seed}
         records={records}
         best={best}
         bestBefore={bestBefore}
-        onAgain={start}
+        challenge={challenge}
+        onAgain={() => start()}
       />
     );
   }
@@ -311,7 +360,11 @@ export default function CloseUp({
             Whereabout
           </Link>
           <p className="mt-1 text-sm text-chalk-dim">
-            {day ? `Today's close-ups (${day})` : "Close-up: which country is this?"}
+            {day
+              ? `Today's close-ups (${day})`
+              : challenge
+                ? `A friend's challenge: ${points(challengeTotal(challenge))} to beat`
+                : "Close-up: which country is this?"}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
             <GamesMenu screen="close-up" streakHref="/streak" />
@@ -386,6 +439,12 @@ export default function CloseUp({
         ))}
       </div>
 
+      {notice && !answered && wrong.length === 0 && playing?.index === 0 && (
+        <p role="status" className="px-4 pt-2 text-center text-sm text-chalk-dim">
+          {notice}
+        </p>
+      )}
+
       {error && (
         <p role="alert" className="px-4 pt-2 text-center text-sm text-flare">
           {error}
@@ -400,6 +459,7 @@ export default function CloseUp({
             found={answered.found}
             result={answered.result}
             wrong={wrong.length}
+            friend={challenge?.points[answered.index]}
             last={answered.index + 1 >= answered.order.length}
             onNext={() => dispatch({ type: "next" })}
           />
@@ -528,6 +588,7 @@ function CloseCard({
   found,
   result,
   wrong,
+  friend,
   last,
   onNext,
 }: {
@@ -535,6 +596,8 @@ function CloseCard({
   found: boolean;
   result: CloseResult;
   wrong: number;
+  /** In a friend's challenge, their points on this photo. */
+  friend?: number;
   last: boolean;
   onNext: () => void;
 }) {
@@ -561,6 +624,7 @@ function CloseCard({
       <p className="mt-1 text-sm text-chalk-dim">
         {found ? `${points(result.points)}, ${clues}. ` : "No points on this one. "}
         {result.atlas ? atlasLine(result.atlas) : "Atlas sat this one out."}
+        {friend !== undefined && ` Your friend: ${points(friend)}.`}
       </p>
       <div className="mt-2 flex items-center gap-4 md:mt-3">
         <button
@@ -584,17 +648,29 @@ function CloseCard({
   );
 }
 
+const CHALLENGE_NOTE: Record<ShareOutcome, string> = {
+  shared: "Challenge sent.",
+  copied: "Challenge link copied. Whoever opens it plays these five crops.",
+  cancelled: "",
+  failed: "Couldn't copy the link. Your browser blocked the clipboard.",
+};
+
 function CloseEnd({
   results,
+  seed,
   records,
   best,
   bestBefore,
+  challenge,
   onAgain,
 }: {
   results: readonly CloseResult[];
+  seed: number;
   records: ReadonlyMap<string, GameRecord>;
   best: number;
   bestBefore: number;
+  /** The friend's challenge this game answered, if it was one. */
+  challenge: CloseChallenge | null;
   onAgain: () => void;
 }) {
   const { you, youOnPlayed, atlas, atlasPlayed } = closeTotals(results);
@@ -602,6 +678,11 @@ function CloseEnd({
   useEffect(() => {
     againRef.current?.focus({ preventScroll: true });
   }, []);
+  const [sent, setSent] = useState("");
+  async function sendChallenge() {
+    const text = closeChallengeText(results, seed, window.location.href, challenge ?? undefined);
+    setSent(CHALLENGE_NOTE[await sendShare(text, navigator)]);
+  }
   const most = CLOSE_POINTS[0];
 
   return (
@@ -610,21 +691,29 @@ function CloseEnd({
       <h1 className="mt-2 font-sign text-5xl font-extrabold leading-none tracking-tight">
         {`${you} of ${CLOSE_MAX} points`}
       </h1>
-      <p className="mt-4 text-lg text-chalk-dim">
-        {you > bestBefore ? "That's your new best!" : `Your best is ${points(best)}.`}
-      </p>
+      {challenge ? (
+        <p className="mt-4 text-lg text-chalk-dim">
+          {`${closeChallengeLine(results, challenge)} Your friend scored ${challengeTotal(challenge)}. A challenge doesn't count toward your best.`}
+        </p>
+      ) : (
+        <p className="mt-4 text-lg text-chalk-dim">
+          {you > bestBefore ? "That's your new best!" : `Your best is ${points(best)}.`}
+        </p>
+      )}
       {atlasPlayed > 0 && (
         <p className="mt-2 text-chalk-dim">
           {`On the ${atlasPlayed === 1 ? "photo" : `${atlasPlayed} photos`} Atlas played, with the whole photo in front of it: Atlas ${atlas}, you ${youOnPlayed}.`}
         </p>
       )}
       <ol className="mt-6 space-y-1">
-        {results.map((r) => {
+        {results.map((r, i) => {
           const photo = records.get(r.id)?.photo;
           return (
             <li key={r.id} className="flex items-baseline justify-between gap-4">
               <span className="min-w-0 truncate text-chalk">{photo?.place ?? r.id}</span>
-              <span className="tabular shrink-0 text-sm text-chalk-dim">{`${r.points} of ${most}`}</span>
+              <span className="tabular shrink-0 text-sm text-chalk-dim">
+                {`${r.points} of ${most}${challenge ? `, friend ${challenge.points[i]}` : ""}`}
+              </span>
             </li>
           );
         })}
@@ -636,10 +725,20 @@ function CloseEnd({
           onClick={onAgain}
           className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
         >
-          Play again
+          {challenge ? "Play a fresh game" : "Play again"}
+        </button>
+        <button
+          type="button"
+          onClick={sendChallenge}
+          className="rounded-full border-2 border-gold px-5 py-2.5 font-semibold text-gold transition hover:bg-gold/10"
+        >
+          {challenge ? "Send yours back" : "Challenge a friend"}
         </button>
         <GamesMenu screen="close-up" streakHref="/streak" />
       </div>
+      <p className="mt-2 min-h-5 text-sm text-chalk-dim" role="status">
+        {sent}
+      </p>
     </main>
   );
 }

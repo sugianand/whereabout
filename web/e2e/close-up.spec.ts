@@ -234,3 +234,86 @@ test("today's Close-up deals the day's photos once, keeps a wrong name through a
   await expect(page.getByTestId("today-close-up")).toContainText("14 of 15 points");
   expect(errors).toEqual([]);
 });
+
+test("a challenge link deals a friend the same crops and names, with the points to beat", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+
+  // The sender plays a game: one wrong name on the first photo, then right every time.
+  await page.goto("./close-up");
+  const dealt: { id: string; names: string[] }[] = [];
+  for (let i = 1; i <= 5; i++) {
+    await expect(page.getByText(`Photo ${i} of 5`)).toBeVisible();
+    const { right, wrong } = await shown(page);
+    await expect(option(page, right)).toBeEnabled();
+    dealt.push({
+      id: (await page.locator("main").getAttribute("data-photo"))!,
+      names: await Promise.all(
+        [1, 2, 3, 4].map(async (n) => (await option(page, n).getAttribute("data-country"))!),
+      ),
+    });
+    if (i === 1) await option(page, wrong[0]).click();
+    await option(page, right).click();
+    await page.getByRole("button", { name: i === 5 ? "See the score" : "Next photo" }).click();
+  }
+  await expect(page.getByRole("heading", { name: "14 of 15 points" })).toBeVisible();
+  await page.getByRole("button", { name: "Challenge a friend" }).click();
+  await expect(page.getByText(/^Challenge (sent|link copied)/)).toBeVisible();
+  const sent = await page.evaluate(() => (window as unknown as { sent: string }).sent);
+  expect(sent).toContain("I named these five crops for 14 of 15 points.");
+  for (const p of CATALOG) expect(sent).not.toContain(p.place);
+  const link = sent.split("\n").at(-1)!;
+  expect(link).toMatch(/\/whereabout\/close-up\/?\?challenge=[\w.-]+_[0-9a-z]+_2\.3\.3\.3\.3$/);
+
+  // The friend opens it in a browser of their own, with no best and nothing kept.
+  await page.evaluate(() => localStorage.clear());
+  await page.goto(link);
+  await expect(page.getByText("A friend's challenge: 14 points to beat")).toBeVisible();
+  for (let i = 0; i < 5; i++) {
+    await expect(page.getByText(`Photo ${i + 1} of 5`)).toBeVisible();
+    const { right, wrong } = await shown(page);
+    await expect(page.locator("main")).toHaveAttribute("data-photo", dealt[i].id);
+    for (const [n, country] of dealt[i].names.entries()) {
+      await expect(option(page, n + 1)).toHaveAttribute("data-country", country);
+    }
+    // Two wrong names on the last photo: one point there, 13 in all.
+    if (i === 4) for (const n of wrong.slice(0, 2)) await option(page, n).click();
+    await option(page, right).click();
+    await expect(page.getByText(`Your friend: ${i === 0 ? 2 : 3} points.`)).toBeVisible();
+    await page.getByRole("button", { name: i === 4 ? "See the score" : "Next photo" }).click();
+  }
+  await expect(page.getByRole("heading", { name: "13 of 15 points" })).toBeVisible();
+  await expect(page.getByText(/^Your friend won by 1 point\. Your friend scored 14\./)).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("whereabout:close-up-best"))).toBe(null);
+
+  const back = page.getByRole("button", { name: "Send yours back" });
+  await inView(page, back);
+  await back.click();
+  const reply = await page.evaluate(() => (window as unknown as { sent: string }).sent);
+  expect(reply).toContain("Your 14 wins this time. Try them again?");
+  expect(reply).toMatch(/_3\.3\.3\.3\.1$/);
+
+  // A fresh game drops the link, so a reload doesn't deal the challenge again.
+  await page.getByRole("button", { name: "Play a fresh game" }).click();
+  await expect(page.getByText("Close-up: which country is this?")).toBeVisible();
+  expect(new URL(page.url()).search).toBe("");
+  expect(errors).toEqual([]);
+});
+
+test("a broken challenge link says so and deals a fresh game", async ({ page }) => {
+  await page.goto("./close-up?challenge=wm001.wm002_zz_3.3");
+  await expect(page.getByText(/That challenge link was cut short/)).toBeVisible();
+  await expect(page.getByText("Close-up: which country is this?")).toBeVisible();
+  await expect(option(page, 4)).toBeEnabled();
+});

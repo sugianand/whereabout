@@ -1,12 +1,13 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { countryName } from "@/lib/countries";
 import { CLOSE_DAILY_KEY, dailyCloseSeed, loadCloseDay } from "@/lib/game/closeDaily";
+import { encodeCloseChallenge } from "@/lib/game/closeChallenge";
 import { BEST_CLOSE_KEY, dealClose } from "@/lib/game/closeUp";
 import type { GameRecord } from "@/lib/game/deck";
 import type { AtlasGuess, CatalogPhoto } from "@/lib/game/types";
-import { nameIds } from "@/lib/game/nameCountry";
+import { nameIds, nameOptions, nameSeed } from "@/lib/game/nameCountry";
 import { gameFor } from "@/test/deck";
 
 import CloseUp from "./CloseUp";
@@ -67,7 +68,7 @@ async function setup(loadFocus: (url: string) => Promise<null | { x: number; y: 
   });
   const photoId = () => container.querySelector("main")!.getAttribute("data-photo")!;
   const truth = () => BY_ID.get(photoId())!.photo.country;
-  return { truth };
+  return { truth, photoId };
 }
 
 const noFocus = async () => null;
@@ -220,5 +221,113 @@ describe("today's Close-up", () => {
       await screen.findByRole("heading", { level: 1, name: "15 of 15 points" }),
     ).toBeInTheDocument();
     expect(screen.queryByTestId("close-option-1")).toBeNull();
+  });
+});
+
+describe("a friend's Close-up challenge", () => {
+  const IDS = ["j3", "e1", "j1", "e4", "e2"];
+  const SEED = 987_654_321;
+  const FRIEND = [3, 2, 0, 1, 3];
+
+  afterEach(() => window.history.replaceState(null, "", "/"));
+
+  async function linked(value: string) {
+    window.history.replaceState(null, "", `/close-up?challenge=${value}&x=1`);
+    const game = gameFor(RECORDS);
+    const view = render(
+      <CloseUp
+        deck={game.deck}
+        loadRecords={game.loadRecords}
+        random={() => 0.5}
+        loadFocus={noFocus}
+      />,
+    );
+    await waitFor(() => expect(screen.getByTestId("close-option-4")).toBeEnabled(), {
+      timeout: 5000,
+    });
+    const photoId = () => view.container.querySelector("main")!.getAttribute("data-photo")!;
+    return { game, photoId, truth: () => BY_ID.get(photoId())!.photo.country };
+  }
+
+  it("deals the friend's photos and names, says the points to beat, and answers with yours", async () => {
+    const value = encodeCloseChallenge({ ids: IDS, seed: SEED, points: FRIEND });
+    const { game, photoId, truth } = await linked(value);
+    expect(screen.getByText("A friend's challenge: 9 points to beat")).toBeInTheDocument();
+
+    for (let i = 0; i < 5; i++) {
+      await waitFor(() => expect(screen.getByTestId("close-option-4")).toBeEnabled());
+      expect(photoId()).toBe(IDS[i]);
+      // The very names the friend had: the link's seed settles them.
+      const want = nameOptions(truth(), game.deck.countryPool, nameSeed(SEED, IDS[i]));
+      expect(names()).toEqual(want);
+      if (i === 0) fireEvent.click(option(names().find((c) => c !== truth())!));
+      fireEvent.click(option(truth()));
+      expect(screen.getByText(new RegExp(`Your friend: ${FRIEND[i]} points?\\.`))).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: i === 4 ? "See the score" : "Next photo" }));
+    }
+
+    // 14 to the friend's 9; a challenge's photos may be known, so it isn't a best.
+    expect(screen.getByRole("heading", { name: "14 of 15 points" })).toBeInTheDocument();
+    expect(screen.getByText(/^You won the challenge by 5 points\. Your friend scored 9\./)).toBeInTheDocument();
+    expect(screen.getByText("2 of 3, friend 3")).toBeInTheDocument();
+    expect(localStorage.getItem(BEST_CLOSE_KEY)).toBeNull();
+
+    let sent = "";
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: async (t: string) => void (sent = t) },
+      configurable: true,
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Send yours back" }));
+    await waitFor(() =>
+      expect(
+        screen.getByText("Challenge link copied. Whoever opens it plays these five crops."),
+      ).toBeInTheDocument(),
+    );
+    expect(sent.split("\n")).toEqual([
+      "Whereabout · Close-up: I named these five crops for 14 of 15 points.",
+      "That beats your 9. Your turn to beat mine.",
+      `http://localhost:3000/close-up?challenge=${IDS.join(".")}_${SEED.toString(36)}_2.3.3.3.3`,
+    ]);
+
+    // A fresh game leaves the link behind.
+    fireEvent.click(screen.getByRole("button", { name: "Play a fresh game" }));
+    await waitFor(() => expect(screen.getByText("Close-up: which country is this?")).toBeInTheDocument());
+    expect(window.location.search).toBe("?x=1");
+  });
+
+  it("deals a fresh game, and says why, when the link is cut short or its photos have gone", async () => {
+    await linked("j3.e1.j1_1z_3.2.0");
+    expect(screen.getByText(/That challenge link was cut short/)).toBeInTheDocument();
+    expect(screen.getByText("Close-up: which country is this?")).toBeInTheDocument();
+    expect(window.location.search).toBe("?x=1");
+    cleanup();
+
+    await linked(encodeCloseChallenge({ ids: ["j3", "e1", "j1", "e4", "gone"], seed: 1, points: FRIEND }));
+    expect(screen.getByText(/That challenge's photos aren't in the game any more/)).toBeInTheDocument();
+  });
+
+  it("offers a challenge from the end of a free game, carrying its photos and points", async () => {
+    const { photoId, truth } = await setup(noFocus);
+    const ids: string[] = [];
+    for (let i = 1; i <= 5; i++) {
+      await waitFor(() => expect(screen.getByTestId("close-option-4")).toBeEnabled());
+      ids.push(photoId());
+      fireEvent.click(option(truth()));
+      fireEvent.click(screen.getByRole("button", { name: i === 5 ? "See the score" : "Next photo" }));
+    }
+    let sent = "";
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: async (t: string) => void (sent = t) },
+      configurable: true,
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Challenge a friend" }));
+    await waitFor(() => expect(sent).not.toBe(""));
+    const seed = Math.floor(0.5 * 2 ** 32);
+    expect(sent).toContain("Same photos, same names: can you beat me?");
+    expect(sent).toMatch(
+      new RegExp(`/\\?challenge=${ids.join("\\.")}_${seed.toString(36)}_3\\.3\\.3\\.3\\.3$`),
+    );
   });
 });

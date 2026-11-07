@@ -88,7 +88,9 @@ wrong name. The answer shows the whole photo. Five photos a game; Atlas sees eac
 scores by how far down its own list of the four the answer stands, and your best game is kept in
 your browser. Today's photos (`/close-up/daily`) and their names are the same for everyone: one try
 a day, a wrong name kept as it is tapped so a reload opens on the same wider crop, and shared as
-squares for the tries on each photo.
+squares for the tries on each photo. After a free game, *Challenge a friend* sends a link that deals the
+very same five crops and names, carrying your points on each and nothing else: the friend sees the
+points to beat, yours beside theirs on every photo, and can send theirs back.
 **Today** (at `/today`, in the Games menu and on the results screen) puts every daily game on one
 page: the Daily Five, Further North, Odd one out, Which way?, How far apart?, Name the country,
 Hot and cold, Line them up and Close-up, each with where it stands in your browser (not started, under way or its result), the time to the next deal, and one
