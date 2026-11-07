@@ -68,6 +68,8 @@ export function atlasTries(
 /** One photo's outcome. */
 export interface CloseResult {
   id: string;
+  /** The wrong names tapped on it, in order: three when it ended without the answer. */
+  wrong: readonly string[];
   points: number;
   atlas: AtlasTries | null;
 }
@@ -92,7 +94,15 @@ export type CloseState =
   | (Run & { phase: "over" });
 
 export type CloseAction =
-  | { type: "start"; order: readonly string[]; seed: number }
+  | {
+      type: "start";
+      order: readonly string[];
+      seed: number;
+      /** A game picked back up (today's, after a reload): the photos already over. */
+      results?: readonly CloseResult[];
+      /** And the wrong names already tapped on the photo after them. */
+      wrong?: readonly string[];
+    }
   | {
       type: "picked";
       /** The country tapped; ignored unless it is one of `options` and not yet ruled out. */
@@ -110,7 +120,12 @@ export function closeReducer(state: CloseState, action: CloseAction): CloseState
     case "start": {
       if (action.order.length === 0) return { phase: "none" };
       const { order, seed } = action;
-      return { phase: "guessing", order, seed, index: 0, wrong: [], results: [] };
+      const results = (action.results ?? []).slice(0, order.length);
+      if (results.length >= order.length) {
+        return { phase: "over", order, seed, index: order.length - 1, wrong: [], results };
+      }
+      const wrong = (action.wrong ?? []).slice(0, CLOSE_POINTS.length - 1);
+      return { phase: "guessing", order, seed, index: results.length, wrong, results };
     }
     case "picked": {
       const { country, options, truth, atlas } = action;
@@ -121,6 +136,7 @@ export function closeReducer(state: CloseState, action: CloseAction): CloseState
       if (!found && wrong.length < CLOSE_POINTS.length) return { ...state, wrong };
       const result: CloseResult = {
         id: state.order[state.index],
+        wrong,
         points: found ? closePoints(wrong.length) : 0,
         atlas: atlasTries(atlas, options, truth),
       };

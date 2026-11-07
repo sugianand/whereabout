@@ -43,6 +43,14 @@ describe("Today", () => {
     expect(screen.getByLabelText("November 5: 0 of 7 finished")).toBeInTheDocument();
   });
 
+  it("lists Close-up from its first day, after Line them up", async () => {
+    render(<Today deckIds={IDS} now={at("2026-11-07T09:00:00Z")} />);
+    expect(await screen.findByTestId("today-close-up")).toHaveAttribute("href", "/close-up/daily");
+    expect(screen.getByRole("status")).toHaveTextContent(/^0 of 9 played/);
+    expect(screen.getByLabelText("Today: 0 of 9 finished")).toBeInTheDocument();
+    expect(screen.getByLabelText("November 6: 0 of 8 finished")).toBeInTheDocument();
+  });
+
   it("shows a finished run's result and shares the day", async () => {
     rememberNorthDay("2026-11-03", { streak: 4, atlasRight: 2, atlasPlayed: 3, ended: "miss" });
     const writeText = vi.fn(async () => undefined);

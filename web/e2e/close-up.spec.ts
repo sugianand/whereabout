@@ -131,3 +131,106 @@ test("on a 320px phone the crop, the names and the answer stay on screen", async
   await inView(page, next);
   await expect((await page.getByTestId("close-frame").boundingBox())!.height).toBeGreaterThan(40);
 });
+
+test("today's Close-up deals the day's photos once, keeps a wrong name through a reload, and shares tries", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const today = new Date().toISOString().slice(0, 10);
+  const { width, height } = page.viewportSize()!;
+  const current = () => page.locator("main").getAttribute("data-photo");
+
+  // The free game links to today's.
+  await page.goto("./close-up");
+  await page.getByRole("link", { name: "Today's game" }).click();
+  await expect(page.getByText(`Today's close-ups (${today})`)).toBeVisible();
+  await expect(page.locator("header dl")).not.toContainText("Best");
+
+  // A fresh player (nothing kept) is dealt the same photo and names.
+  const dealt = await shown(page);
+  let { right } = dealt;
+  const { wrong } = dealt;
+  const first = await current();
+  const firstNames = await page.locator("[data-country]").evaluateAll((els) =>
+    els.map((el) => el.getAttribute("data-country")),
+  );
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await expect(option(page, 4)).toBeEnabled();
+  expect(await current()).toBe(first);
+  expect(
+    await page.locator("[data-country]").evaluateAll((els) =>
+      els.map((el) => el.getAttribute("data-country")),
+    ),
+  ).toEqual(firstNames);
+
+  // The header's extra link leaves the names and the crop on screen, down to a 320px phone.
+  for (const w of [width, 320]) {
+    await page.setViewportSize({ width: w, height: Math.min(height, 568) });
+    for (const n of [1, 2, 3, 4]) await inView(page, option(page, n));
+    expect((await page.getByTestId("close-frame").boundingBox())!.height).toBeGreaterThan(100);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(w);
+  }
+  await page.setViewportSize({ width, height });
+
+  // A wrong name can't be taken back by a reload: the crop opens wider, the name ruled out.
+  await option(page, wrong[0]).click();
+  await expect(page.getByText("Worth 2 points")).toBeVisible();
+  await page.reload();
+  await expect(option(page, wrong[0])).toBeDisabled();
+  await expect(page.getByText("Worth 2 points")).toBeVisible();
+  await expect(photo(page)).toHaveAttribute("data-stage", "1");
+  expect(await current()).toBe(first);
+  await option(page, right).click();
+  await expect(page.getByText(/^2 points, after 1 wrong\./)).toBeVisible();
+
+  // A reload on the reveal picks up at the next photo, the score kept.
+  await page.reload();
+  await expect(page.getByText("Photo 2 of 5")).toBeVisible();
+  await expect(page.locator("header dl dd").first()).toHaveText("2");
+
+  for (const i of [2, 3, 4, 5]) {
+    await expect(page.getByText(`Photo ${i} of 5`)).toBeVisible();
+    ({ right } = await shown(page));
+    await expect(option(page, right)).toBeEnabled();
+    await option(page, right).click();
+    await page.getByRole("button", { name: i === 5 ? "See the score" : "Next photo" }).click();
+  }
+
+  const headline = page.getByRole("heading", { level: 1 });
+  await expect(headline).toHaveText("14 of 15 points");
+  await expect(page.getByRole("list", { name: "Your photos" }).getByRole("listitem")).toHaveCount(5);
+
+  // A reload shows the day's result, never the photos again.
+  await page.reload();
+  await expect(headline).toHaveText("14 of 15 points");
+  await expect(page.getByText(/The next run is dealt in \d+/)).toBeVisible();
+  await expect(option(page, 1)).toHaveCount(0);
+
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  await page.getByRole("button", { name: "Share today's run" }).click();
+  await expect(page.getByText("Result copied. Paste it anywhere.")).toBeVisible();
+  const sent = await page.evaluate(() => (window as unknown as { sent: string }).sent);
+  expect(sent).toContain(
+    `Whereabout · Close-up · ${today}\n🔍 14 of 15 points\n🟥🟩 🟩 🟩 🟩 🟩\n`,
+  );
+  expect(sent).toMatch(/\/whereabout\/close-up\/daily\/?$/);
+  for (const p of CATALOG) expect(sent).not.toContain(p.place);
+
+  // Today counts it, and the free games' best is its own.
+  expect(await page.evaluate(() => localStorage.getItem("whereabout:close-up-best"))).toBe(null);
+  await page.goto("./today");
+  await expect(page.getByTestId("today-close-up")).toHaveAttribute("data-status", "done");
+  await expect(page.getByTestId("today-close-up")).toContainText("14 of 15 points");
+  expect(errors).toEqual([]);
+});

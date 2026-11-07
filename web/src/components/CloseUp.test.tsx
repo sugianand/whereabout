@@ -2,9 +2,11 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { countryName } from "@/lib/countries";
-import { BEST_CLOSE_KEY } from "@/lib/game/closeUp";
+import { CLOSE_DAILY_KEY, dailyCloseSeed, loadCloseDay } from "@/lib/game/closeDaily";
+import { BEST_CLOSE_KEY, dealClose } from "@/lib/game/closeUp";
 import type { GameRecord } from "@/lib/game/deck";
 import type { AtlasGuess, CatalogPhoto } from "@/lib/game/types";
+import { nameIds } from "@/lib/game/nameCountry";
 import { gameFor } from "@/test/deck";
 
 import CloseUp from "./CloseUp";
@@ -143,5 +145,80 @@ describe("Close-up", () => {
   it("still deals when the spot can't be read", async () => {
     await setup(() => Promise.reject(new Error("no CORS")));
     expect(screen.getByTestId("close-photo")).toBeInTheDocument();
+  });
+});
+
+describe("today's Close-up", () => {
+  const DAY = "2026-11-07";
+  const now = () => new Date(`${DAY}T10:30:00Z`);
+
+  async function today() {
+    const game = gameFor(RECORDS);
+    const view = render(
+      <CloseUp
+        deck={game.deck}
+        loadRecords={game.loadRecords}
+        loadFocus={noFocus}
+        daily
+        now={now}
+      />,
+    );
+    const photoId = () => view.container.querySelector("main")!.getAttribute("data-photo");
+    const truth = () => BY_ID.get(photoId()!)!.photo.country;
+    const hand = dealClose(nameIds(game.deck.streakIds, game.deck.regions), dailyCloseSeed(DAY));
+    return { ...view, photoId, truth, hand };
+  }
+
+  const ready = () =>
+    waitFor(() => expect(screen.getByTestId("close-option-4")).toBeEnabled(), { timeout: 5000 });
+
+  it("deals the day's first photo, and links to the free games", async () => {
+    const { photoId, hand } = await today();
+    await ready();
+    expect(photoId()).toBe(hand[0]);
+    expect(screen.getByRole("link", { name: "Free games" })).toHaveAttribute("href", "/close-up");
+    expect(screen.queryByText("Best")).toBeNull();
+  });
+
+  it("keeps a wrong name as it is tapped, so a reload opens on the wider crop", async () => {
+    const first = await today();
+    await ready();
+    const wrong = names().find((c) => c !== first.truth())!;
+    fireEvent.click(option(wrong));
+    expect(loadCloseDay(DAY)).toEqual({ results: [], wrong: [wrong] });
+    first.unmount();
+
+    const again = await today();
+    await ready();
+    expect(again.photoId()).toBe(again.hand[0]);
+    expect(option(wrong)).toBeDisabled();
+    expect(screen.getByText("Worth 2 points")).toBeInTheDocument();
+    expect(screen.getByTestId("close-photo")).toHaveAttribute("data-stage", "1");
+  });
+
+  it("ends on the day's result, kept from the free games' best, and never deals it again", async () => {
+    const { unmount, truth } = await today();
+    for (let i = 1; i <= 5; i++) {
+      await ready();
+      fireEvent.click(option(truth()));
+      expect(loadCloseDay(DAY)?.results).toHaveLength(i);
+      fireEvent.click(screen.getByRole("button", { name: i === 5 ? "See the score" : "Next photo" }));
+    }
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "15 of 15 points" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/^5 of 5 named from the tightest crop\./)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Share today's run" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Play again" })).toBeNull();
+    expect(screen.getAllByRole("listitem")).toHaveLength(5);
+    expect(localStorage.getItem(BEST_CLOSE_KEY)).toBeNull();
+    expect(localStorage.getItem(CLOSE_DAILY_KEY)).not.toBeNull();
+
+    unmount();
+    await today();
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "15 of 15 points" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("close-option-1")).toBeNull();
   });
 });

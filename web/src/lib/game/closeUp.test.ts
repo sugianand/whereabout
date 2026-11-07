@@ -127,6 +127,36 @@ describe("closeReducer", () => {
     expect(over.phase === "over" && over.results.map((r) => r.points)).toEqual([2, 3]);
   });
 
+  it("keeps the wrong names on the photo's result", () => {
+    const state = pick(pick(start(), "DE"), "FR");
+    expect(state.phase === "answered" && state.result.wrong).toEqual(["DE"]);
+  });
+
+  it("picks a game back up at the next photo, with its wrong names", () => {
+    const done: CloseResult = { id: "a", wrong: [], points: 3, atlas: null };
+    const state = closeReducer(initialClose, {
+      type: "start",
+      order: ["a", "b"],
+      seed: 1,
+      results: [done],
+      wrong: ["DE"],
+    });
+    expect(state).toMatchObject({ phase: "guessing", index: 1, wrong: ["DE"], results: [done] });
+    const found = pick(state, "FR");
+    expect(found.phase === "answered" && found.result.points).toBe(2);
+  });
+
+  it("starts a game with every photo over on its end", () => {
+    const done = (id: string): CloseResult => ({ id, wrong: [], points: 3, atlas: null });
+    const state = closeReducer(initialClose, {
+      type: "start",
+      order: ["a", "b"],
+      seed: 1,
+      results: [done("a"), done("b")],
+    });
+    expect(state.phase).toBe("over");
+  });
+
   it("does nothing out of turn", () => {
     expect(closeReducer(initialClose, { type: "next" })).toBe(initialClose);
     expect(closeReducer(start(), { type: "next" }).phase).toBe("guessing");
@@ -137,8 +167,8 @@ describe("closeTotals", () => {
   it("sets Atlas against your points on only the photos it played", () => {
     const tried = { order: ["FR"], rank: 0, points: 3 };
     const results: CloseResult[] = [
-      { id: "a", points: 2, atlas: tried },
-      { id: "b", points: 3, atlas: null },
+      { id: "a", wrong: ["DE"], points: 2, atlas: tried },
+      { id: "b", wrong: [], points: 3, atlas: null },
     ];
     expect(closeTotals(results)).toEqual({ you: 5, youOnPlayed: 2, atlas: 3, atlasPlayed: 1 });
   });

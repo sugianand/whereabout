@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { BEST_NORTH_KEY } from "@/lib/game/furtherNorth";
 import { rememberNorthDay } from "@/lib/game/northDaily";
+import { todayGames } from "@/lib/game/today";
 
 import GamesMenu from "./GamesMenu";
 
@@ -20,7 +21,7 @@ describe("GamesMenu", () => {
     render(<GamesMenu screen="round" streakHref="/streak" />);
     const link = within(openMenu()).getByRole("link", { name: /^Today/ });
     expect(link).toHaveAttribute("href", "/today");
-    expect(link).toHaveTextContent("1 of 8 played");
+    expect(link).toHaveTextContent(`1 of ${todayGames(day, []).length} played`);
   });
 
   it("marks Today as the current screen when opened from it", () => {

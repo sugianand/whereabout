@@ -35,11 +35,19 @@ import {
   type Focus,
   type Size,
 } from "@/lib/game/closeUpCrop";
+import {
+  closeDailyShare,
+  dailyCloseSeed,
+  loadCloseDay,
+  rememberCloseDay,
+} from "@/lib/game/closeDaily";
+import { runToday } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import { nameIds, nameOptions, nameSeed } from "@/lib/game/nameCountry";
 import { thumbUrl } from "@/lib/photoSources";
 
 import ControlsHelp from "./ControlsHelp";
+import { DailyRunResult } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
 
 /** How long a photo waits for its busiest spot before opening on the fallback. */
@@ -49,6 +57,13 @@ const CROP_WIDTH = 1920;
 
 type CloseUpProps = {
   deck: Deck;
+  /**
+   * Today's game (src/lib/game/closeDaily.ts): the day's photos and names, one try a day, picked
+   * back up after a reload at the very crop it was left on, kept apart from the free games' best.
+   */
+  daily?: boolean;
+  /** For tests: the clock that says what today is. Defaults to the system clock. */
+  now?: () => Date;
   /** For tests: load records without the network. Defaults to fetching the static files. */
   loadRecords?: (ids: string[]) => Promise<GameRecord[]>;
   /** For tests: the randomness that deals each game. */
@@ -83,7 +98,14 @@ function useSize(element: HTMLElement | null): Size | null {
  * Close-up (src/lib/game/closeUp.ts): a tight crop of a photo and four country names; each wrong
  * name zooms out and costs a point. Five photos a game against Atlas, which sees the whole photo.
  */
-export default function CloseUp({ deck, loadRecords, random, loadFocus }: CloseUpProps) {
+export default function CloseUp({
+  deck,
+  daily = false,
+  now,
+  loadRecords,
+  random,
+  loadFocus,
+}: CloseUpProps) {
   const [state, dispatch] = useReducer(closeReducer, initialClose);
   const [best, setBest] = useState(0);
   // The best before this game, so its end can say when it was beaten.
@@ -95,14 +117,31 @@ export default function CloseUp({ deck, loadRecords, random, loadFocus }: CloseU
   const [loaded, setLoaded] = useState<string | null>(null);
   const [frame, setFrame] = useState<HTMLDivElement | null>(null);
   const size = useSize(frame);
+  // The day today's game was dealt for, kept when the clock passes midnight mid-game.
+  const [day, setDay] = useState<string | null>(null);
 
   const start = useCallback(() => {
+    const ids = nameIds(deck.streakIds, deck.regions);
+    if (daily) {
+      const today = runToday(now?.());
+      const seed = dailyCloseSeed(today);
+      const kept = loadCloseDay(today);
+      setDay(today);
+      dispatch({
+        type: "start",
+        order: dealClose(ids, seed),
+        seed,
+        results: kept?.results,
+        wrong: kept?.wrong,
+      });
+      return;
+    }
     const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
     const stored = loadBestClose();
     setBest(stored);
     setBestBefore(stored);
-    dispatch({ type: "start", order: dealClose(nameIds(deck.streakIds, deck.regions), seed), seed });
-  }, [deck.regions, deck.streakIds, random]);
+    dispatch({ type: "start", order: dealClose(ids, seed), seed });
+  }, [deck.regions, deck.streakIds, random, daily, now]);
 
   // The game is shuffled in the browser after hydration, never at build time.
   useEffect(() => {
@@ -187,13 +226,19 @@ export default function CloseUp({ deck, loadRecords, random, loadFocus }: CloseU
         atlas: current.atlas,
       } as const;
       const after = closeReducer(state, action);
-      if (after.phase === "answered") {
+      if (after.phase !== "guessing" && after.phase !== "answered") return;
+      if (after === state) return;
+      if (day) {
+        // Today's game is kept as each name is tapped: a wider crop is a clue a reload can't undo.
+        const wrong = after.phase === "guessing" ? after.wrong : [];
+        rememberCloseDay(day, { results: after.results, wrong });
+      } else if (after.phase === "answered") {
         // Keep the game as the best as it goes, so leaving at the last photo keeps it.
         setBest(rememberClose(closeTotals(after.results).you));
       }
       dispatch(action);
     },
-    [state, current, options],
+    [state, current, options, day],
   );
 
   // 1 to 4 pick a name from the keyboard.
@@ -228,6 +273,10 @@ export default function CloseUp({ deck, loadRecords, random, loadFocus }: CloseU
     );
   }
 
+  if (state.phase === "over" && day) {
+    return <CloseDayResult day={day} results={state.results} now={now} />;
+  }
+
   if (state.phase === "over") {
     return (
       <CloseEnd
@@ -251,7 +300,7 @@ export default function CloseUp({ deck, loadRecords, random, loadFocus }: CloseU
       data-phase={answered ? "revealed" : "guessing"}
       data-photo={current?.photo.id}
     >
-      <h1 className="sr-only">{`Whereabout: Close-up, ${points(total)}`}</h1>
+      <h1 className="sr-only">{`Whereabout: Close-up${day ? ", today's game" : ""}, ${points(total)}`}</h1>
 
       <header className="flex items-start justify-between gap-4 px-4 pb-2 pt-4 md:px-6">
         <div className="min-w-0">
@@ -261,10 +310,18 @@ export default function CloseUp({ deck, loadRecords, random, loadFocus }: CloseU
           >
             Whereabout
           </Link>
-          <p className="mt-1 text-sm text-chalk-dim">Close-up: which country is this?</p>
-          <div className="mt-2 flex items-center gap-2">
+          <p className="mt-1 text-sm text-chalk-dim">
+            {day ? `Today's close-ups (${day})` : "Close-up: which country is this?"}
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
             <GamesMenu screen="close-up" streakHref="/streak" />
             <ControlsHelp screen="close-up" />
+            <Link
+              href={daily ? "/close-up" : "/close-up/daily"}
+              className="text-sm text-gold underline underline-offset-2 hover:brightness-110"
+            >
+              {daily ? "Free games" : "Today's game"}
+            </Link>
           </div>
         </div>
         <dl className="shrink-0 text-right">
@@ -274,10 +331,12 @@ export default function CloseUp({ deck, loadRecords, random, loadFocus }: CloseU
           <dd className="font-sign tabular text-3xl font-bold leading-none" aria-live="polite">
             {total}
           </dd>
-          <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
-            <dt>Best</dt>
-            <dd className="tabular">{best}</dd>
-          </div>
+          {!daily && (
+            <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
+              <dt>Best</dt>
+              <dd className="tabular">{best}</dd>
+            </div>
+          )}
         </dl>
       </header>
 
@@ -582,5 +641,45 @@ function CloseEnd({
         <GamesMenu screen="close-up" streakHref="/streak" />
       </div>
     </main>
+  );
+}
+
+/** Today's Close-up once its last photo is over. */
+function CloseDayResult({
+  day,
+  results,
+  now,
+}: {
+  day: string;
+  results: readonly CloseResult[];
+  now?: () => Date;
+}) {
+  const { you, youOnPlayed, atlas, atlasPlayed } = closeTotals(results);
+  const most = CLOSE_POINTS[0];
+  const rival =
+    atlasPlayed > 0
+      ? ` On the ${atlasPlayed === 1 ? "photo" : `${atlasPlayed} photos`} Atlas played, with the whole photo: Atlas ${atlas}, you ${youOnPlayed}.`
+      : "";
+  return (
+    <DailyRunResult
+      game="Close-up"
+      day={day}
+      headline={`${you} of ${results.length * most} points`}
+      summary={`${results.filter((r) => r.wrong.length === 0).length} of ${results.length} named from the tightest crop.${rival}`}
+      shareText={(href) => closeDailyShare(day, results, href)}
+      freeHref="/close-up"
+      now={now}
+    >
+      <ol aria-label="Your photos" className="mt-4 space-y-1 text-chalk-dim">
+        {results.map((r, i) => (
+          <li key={r.id} className="flex justify-between gap-4">
+            <span>{`Photo ${i + 1}`}</span>
+            <span className="tabular">
+              {`You ${r.points}${r.atlas ? `, Atlas ${r.atlas.points}` : ""}`}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </DailyRunResult>
   );
 }

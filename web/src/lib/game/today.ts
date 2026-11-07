@@ -2,7 +2,8 @@
  * Today: every daily game on one page. Each game already keeps its own day in this browser, so
  * this reads those records back and adds none of its own: the Daily Five's first score and the
  * game in progress (./dailyArchive.ts, ./saved.ts), the streak games' runs (./dailyRuns.ts)
- * and the photos and rows of How far apart?, Hot and cold and Line them up (./farDaily.ts, ./hotDaily.ts, ./lineDaily.ts). What a game can't read back counts as not started.
+ * and the photos and rows of How far apart?, Hot and cold, Line them up and Close-up (./farDaily.ts, ./hotDaily.ts,
+ * ./lineDaily.ts, ./closeDaily.ts). What a game can't read back counts as not started.
  *
  * Like every share in the game, the combined line is scores and counts only, so it spoils no
  * photo. Only finished games go in it: a run still going has no result yet.
@@ -16,6 +17,8 @@
 
 import { MAX_POINTS, formatPoints } from "@/lib/geo";
 
+import { loadCloseDay } from "./closeDaily";
+import { CLOSE_PHOTOS, CLOSE_POINTS, closeTotals } from "./closeUp";
 import { ARCHIVE_DAYS, archiveDays, loadDailyScores } from "./dailyArchive";
 import { dailyRunUrl, type DailyRun } from "./dailyRuns";
 import { loadFarDay } from "./farDaily";
@@ -39,7 +42,8 @@ export type TodayGameId =
   | "how-far"
   | "name-country"
   | "hot-cold"
-  | "line-up";
+  | "line-up"
+  | "close-up";
 
 /** One daily game: where it lives, whatever the browser holds. */
 export interface TodayGameInfo {
@@ -114,6 +118,14 @@ export const TODAY_GAMES: readonly TodayGameInfo[] = [
     icon: "↔️",
     blurb: "Five rows of four photos to put in order from west to east.",
     since: "2026-11-06",
+  },
+  {
+    id: "close-up",
+    name: "Close-up",
+    href: "/close-up/daily",
+    icon: "🔍",
+    blurb: "Five tight crops and four names each: every wrong name zooms out.",
+    since: "2026-11-07",
   },
 ];
 
@@ -211,6 +223,22 @@ function lineUp(day: string) {
   return { status: "done" as const, line: `${points} of ${ROWS * ROW} in place`, atlas };
 }
 
+function closeUp(day: string) {
+  const kept = loadCloseDay(day);
+  if (!kept || (kept.results.length === 0 && kept.wrong.length === 0)) {
+    return { status: "new" as const, line: NOT_STARTED, atlas: null };
+  }
+  const { results } = kept;
+  const { you, atlas, atlasPlayed } = closeTotals(results);
+  const rival = atlasPlayed > 0 ? `${atlas} of ${atlasPlayed * CLOSE_POINTS[0]}` : null;
+  if (results.length < CLOSE_PHOTOS) {
+    const line = `${results.length} of ${CLOSE_PHOTOS} photos, ${you} points`;
+    return { status: "going" as const, line, atlas: rival };
+  }
+  const line = `${you} of ${CLOSE_PHOTOS * CLOSE_POINTS[0]} points`;
+  return { status: "done" as const, line, atlas: rival };
+}
+
 /** Every daily game dealt on `day`, with its standing in this browser. */
 export function todayGames(
   day: string,
@@ -236,6 +264,8 @@ export function todayGames(
         return { ...info, ...hotCold(day) };
       case "line-up":
         return { ...info, ...lineUp(day) };
+      case "close-up":
+        return { ...info, ...closeUp(day) };
     }
   });
 }

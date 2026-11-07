@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { rememberCloseDay } from "./closeDaily";
+import { type CloseResult } from "./closeUp";
 import { ARCHIVE_DAYS, DAILY_SCORES_KEY, daysBefore } from "./dailyArchive";
 import { rememberFarDay } from "./farDaily";
 import { hotAtlas, hotPin, hotRound } from "./hotCold";
@@ -225,58 +227,107 @@ describe("dayTallies", () => {
   });
 });
 
-describe("a game joining Today", () => {
-  const JOINED = TODAY_GAMES.find((g) => g.id === "line-up")!.since!;
-  const AFTER = daysBefore(JOINED, -1);
-  const AT = new Date(`${AFTER}T12:00:00Z`);
-  const row: RowResult = {
-    order: ["a", "b", "c", "d"],
-    east: ["a", "b", "c", "d"],
-    right: [true, true, false, false],
-    points: 2,
-    atlas: { order: ["b", "a", "c", "d"], points: 1 },
-  };
-  const games = () => todayGames(AFTER, IDS, AT);
-  const lineUp = () => games().find((g) => g.id === "line-up")!;
+const ROW: RowResult = {
+  order: ["a", "b", "c", "d"],
+  east: ["a", "b", "c", "d"],
+  right: [true, true, false, false],
+  points: 2,
+  atlas: { order: ["b", "a", "c", "d"], points: 1 },
+};
+const CLOSE: CloseResult = {
+  id: "a",
+  wrong: ["DE"],
+  points: 2,
+  atlas: { order: ["DE", "FR"], rank: 1, points: 2 },
+};
 
-  it("is dealt from its first day on, and not before", () => {
-    expect(games()).toHaveLength(TODAY_GAMES.length);
-    expect(todayGames(JOINED, IDS, AT)).toHaveLength(TODAY_GAMES.length);
-    expect(todayGames(daysBefore(JOINED, 1), IDS, AT)).toHaveLength(TODAY_GAMES.length - 1);
+/** Finish one game joined later on `day`, as it writes its own store. */
+const finishJoined: Partial<Record<TodayGameId, (day: string) => void>> = {
+  "line-up": (day) => rememberLineDay(day, { results: Array<RowResult>(5).fill(ROW) }),
+  "close-up": (day) =>
+    rememberCloseDay(day, {
+      results: ["a", "b", "c", "d", "e"].map((id) => ({ ...CLOSE, id })),
+      wrong: [],
+    }),
+};
+
+/** Every daily game finished on `day` but `except`, each as it writes its own store. */
+function finishAll(day: string, except?: TodayGameId) {
+  finishDay(day);
+  for (const [id, finish] of Object.entries(finishJoined)) if (id !== except) finish(day);
+}
+
+const JOINERS = TODAY_GAMES.filter((g) => g.since).map((g) => [g.id, g.since!] as const);
+
+describe.each(JOINERS)("%s joining Today", (id, joined) => {
+  const at = new Date(`${joined}T12:00:00Z`);
+  const dealt = (day: string) => todayGames(day, IDS, at).some((g) => g.id === id);
+
+  it("has a way to be finished in these tests", () => {
+    expect(finishJoined[id]).toBeDefined();
   });
 
+  it("is dealt from its first day on, and not before", () => {
+    expect(dealt(joined)).toBe(true);
+    expect(dealt(daysBefore(joined, -1))).toBe(true);
+    expect(dealt(daysBefore(joined, 1))).toBe(false);
+  });
+
+  it("doesn't undo a run of full days from before it was dealt", () => {
+    finishAll(daysBefore(joined, 1));
+    finishAll(daysBefore(joined, 2));
+    const run = dayTallies(joined, IDS, at);
+    expect(run[1].of).toBe(run[0].of - 1);
+    expect(run[1].done).toBe(run[1].of);
+    // An unfinished first day hasn't broken it, and the old days stay full.
+    expect(fullDayStreak(run)).toEqual({ days: 2, orMore: false, today: false });
+  });
+
+  it("counts towards a full day from then on", () => {
+    finishAll(joined, id);
+    expect(fullDayStreak(dayTallies(joined, IDS, at)).today).toBe(false);
+    finishJoined[id]!(joined);
+    expect(fullDayStreak(dayTallies(joined, IDS, at)).today).toBe(true);
+  });
+});
+
+describe("the later games on Today", () => {
+  const DAY_AFTER = "2026-11-08";
+  const AT = new Date(`${DAY_AFTER}T12:00:00Z`);
+  const game = (id: TodayGameId) => todayGames(DAY_AFTER, IDS, AT).find((g) => g.id === id)!;
+
   it("reads today's Line them up, under way from its first row", () => {
-    expect(lineUp()).toMatchObject({ status: "new", line: "Not started" });
-    rememberLineDay(AFTER, { results: [row] });
-    expect(lineUp()).toMatchObject({
+    expect(game("line-up")).toMatchObject({ status: "new", line: "Not started" });
+    rememberLineDay(DAY_AFTER, { results: [ROW] });
+    expect(game("line-up")).toMatchObject({
       status: "going",
       line: "1 of 5 rows, 2 in place",
       atlas: "1 of 4",
     });
-    rememberLineDay(AFTER, { results: Array<RowResult>(5).fill(row) });
-    expect(lineUp()).toMatchObject({
+    finishJoined["line-up"]!(DAY_AFTER);
+    expect(game("line-up")).toMatchObject({
       status: "done",
       line: "10 of 20 in place",
       atlas: "5 of 20",
     });
   });
 
-  it("doesn't undo a run of full days from before it was dealt", () => {
-    const kept = dayTallies(JOINED, IDS, AT);
-    finishDay(daysBefore(JOINED, 1));
-    finishDay(daysBefore(JOINED, 2));
-    const run = dayTallies(JOINED, IDS, AT);
-    expect(kept[1].of).toBe(TODAY_GAMES.length - 1);
-    expect(run[1]).toMatchObject({ done: TODAY_GAMES.length - 1 });
-    // An unfinished first day hasn't broken it, and the old days stay full.
-    expect(fullDayStreak(run)).toEqual({ days: 2, orMore: false, today: false });
-  });
-
-  it("counts towards a full day from then on", () => {
-    finishDay(JOINED);
-    expect(fullDayStreak(dayTallies(JOINED, IDS, AT)).today).toBe(false);
-    rememberLineDay(JOINED, { results: Array<RowResult>(5).fill(row) });
-    expect(fullDayStreak(dayTallies(JOINED, IDS, AT)).today).toBe(true);
+  it("reads today's Close-up, under way from its first wrong name", () => {
+    expect(game("close-up")).toMatchObject({ status: "new", line: "Not started" });
+    rememberCloseDay(DAY_AFTER, { results: [], wrong: ["DE"] });
+    expect(game("close-up")).toMatchObject({ status: "going", line: "0 of 5 photos, 0 points" });
+    rememberCloseDay(DAY_AFTER, { results: [CLOSE, { ...CLOSE, id: "b", atlas: null }], wrong: [] });
+    expect(game("close-up")).toMatchObject({
+      status: "going",
+      line: "2 of 5 photos, 4 points",
+      atlas: "2 of 3",
+    });
+    finishJoined["close-up"]!(DAY_AFTER);
+    expect(game("close-up")).toMatchObject({
+      status: "done",
+      line: "10 of 15 points",
+      atlas: "10 of 15",
+    });
   });
 });
 

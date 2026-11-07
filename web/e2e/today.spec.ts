@@ -32,10 +32,10 @@ test("Today lists every daily game from the Games menu, follows a real run, and 
     .click();
   await expect(page.getByRole("heading", { level: 1, name: "Today" })).toBeVisible();
   await expect(page.getByTestId("today-standing")).toContainText(
-    /^0 of 8 played\. The next deal is in \d/,
+    /^0 of 9 played\. The next deal is in \d/,
   );
   const games = page.getByRole("list", { name: "Today's games" }).getByRole("listitem");
-  await expect(games).toHaveCount(8);
+  await expect(games).toHaveCount(9);
   await expect(page.getByRole("button", { name: "Share your day" })).toHaveCount(0);
 
   // Fits a phone, whole.
@@ -78,7 +78,7 @@ test("Today lists every daily game from the Games menu, follows a real run, and 
     );
   }, today);
   await page.reload();
-  await expect(page.getByTestId("today-standing")).toContainText(/^2 of 8 played/);
+  await expect(page.getByTestId("today-standing")).toContainText(/^2 of 9 played/);
   await expect(page.getByTestId("today-daily-five")).toContainText("18,240 of 25,000");
   await expect(page.getByTestId("today-further-north")).toContainText("Atlas: 3 of 5");
   await expect(page.getByTestId("today-odd-one-out")).toHaveAttribute("data-status", "going");
@@ -96,7 +96,7 @@ test("Today lists every daily game from the Games menu, follows a real run, and 
   await page.getByRole("button", { name: "Share your day" }).click();
   await expect(page.getByText("Result copied. Paste it anywhere.")).toBeVisible();
   const sent = await page.evaluate(() => (window as unknown as { sent: string }).sent);
-  expect(sent).toContain(`Whereabout · Today · ${today}\n2 of 8 daily games\n`);
+  expect(sent).toContain(`Whereabout · Today · ${today}\n2 of 9 daily games\n`);
   expect(sent).toContain("🌍 Daily Five: 18,240 of 25,000\n");
   expect(sent).toContain("⬆️ Further North: 6 pairs in a row\n");
   expect(sent).not.toContain("Odd one out");
@@ -112,7 +112,7 @@ test("full days count up on a calendar that fits the screen", async ({ page }) =
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("./today");
-  await expect(page.getByTestId("full-day-streak")).toContainText(/^Finish all 8/);
+  await expect(page.getByTestId("full-day-streak")).toContainText(/^Finish all 9/);
 
   // The last two days finished, as each game keeps them, and the day before that partly.
   const before = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
@@ -142,14 +142,16 @@ test("full days count up on a calendar that fits the screen", async ({ page }) =
       keep("whereabout:how-far-daily", { results: Array(5).fill(pair) });
       keep("whereabout:hot-cold-daily", { results: Array(5).fill(hot), pins: [] });
       keep("whereabout:line-up-daily", { results: Array(5).fill(row) });
+      const close = (id: string) => ({ id, wrong: [], atlas: null });
+      keep("whereabout:close-up-daily", { results: ["a", "b", "c", "d", "e"].map(close), wrong: [] });
     },
     { full: [before(1), before(2)], partly: before(3) },
   );
   await page.reload();
   await expect(page.getByTestId("full-day-streak")).toHaveText(
-    "2 full days in a row. Finish today's 8 to make it 3.",
+    "2 full days in a row. Finish today's 9 to make it 3.",
   );
-  await expect(page.getByTestId(`day-${before(1)}`)).toHaveAttribute("data-done", /^[78]$/);
+  await expect(page.getByTestId(`day-${before(1)}`)).toHaveAttribute("data-done", /^[89]$/);
   await expect(page.getByTestId(`day-${before(1)}`)).toContainText("All");
   await expect(page.getByTestId(`day-${before(3)}`)).toHaveAttribute("data-done", "2");
   await expect(page.getByTestId(`day-${before(0)}`)).toHaveAttribute("aria-current", "date");
@@ -182,7 +184,7 @@ test("the results screen leads to Today, already counting the game just finished
   await expect(page.getByText("out of 25,000 points")).toBeVisible();
 
   const link = page.getByRole("link", { name: /^Today/ });
-  await expect(link).toContainText("1 of 8 played");
+  await expect(link).toContainText("1 of 9 played");
   await link.click();
   // The summary's globe is still working on a software renderer, so the page can take a while.
   await expect(page.getByTestId("today-daily-five")).toHaveAttribute("data-status", "done", {
