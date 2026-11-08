@@ -1,9 +1,10 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { countryName } from "@/lib/countries";
 import type { GameRecord } from "@/lib/game/deck";
-import { BEST_NAME_KEY } from "@/lib/game/nameCountry";
+import { encodeNameChallenge } from "@/lib/game/nameChallenge";
+import { BEST_NAME_KEY, nameOptions, nameSeed } from "@/lib/game/nameCountry";
 import { loadNameDay, rememberNameDay } from "@/lib/game/nameDaily";
 import type { AtlasGuess, CatalogPhoto } from "@/lib/game/types";
 import { gameFor } from "@/test/deck";
@@ -221,5 +222,155 @@ describe("NameCountry", () => {
       fireEvent.click(screen.getByRole("button", { name: "Next photo" }));
       expect(await screen.findByRole("heading", { name: "You named every photo" })).toBeVisible();
     });
+  });
+});
+
+describe("a friend's Name the country challenge", () => {
+  const SEED = 987_654_321;
+  // The friend named e3 and j2, and missed on e1.
+  const FRIEND = { ids: ["e3", "j2", "e1"], seed: SEED, streak: 2 };
+
+  afterEach(() => window.history.replaceState(null, "", "/"));
+
+  function clipboard() {
+    const box = { sent: "" };
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: async (t: string) => void (box.sent = t) },
+      configurable: true,
+    });
+    return box;
+  }
+
+  async function linked(value: string) {
+    window.history.replaceState(null, "", `/name-country?challenge=${value}&x=1`);
+    const game = gameFor(RECORDS);
+    const view = render(
+      <NameCountry deck={game.deck} loadRecords={game.loadRecords} random={() => 0.5} />,
+    );
+    await waitFor(() => expect(screen.getByTestId("name-option-4")).toBeEnabled(), {
+      timeout: 5000,
+    });
+    const photoId = () => view.container.querySelector("main")!.getAttribute("data-photo")!;
+    const names = () =>
+      [1, 2, 3, 4].map((n) => screen.getByTestId(`name-option-${n}`).getAttribute("data-country"));
+    return { game, photoId, names, truth: () => BY_ID.get(photoId())!.photo.country };
+  }
+
+  it("deals the friend's photos and names, plays on past them, and answers with yours", async () => {
+    const { game, photoId, names, truth } = await linked(encodeNameChallenge(FRIEND));
+    expect(screen.getByText("A friend's challenge: 2 countries in a row to beat")).toBeVisible();
+    expect(screen.queryByText("Best")).not.toBeNull();
+
+    const played: string[] = [];
+    for (let i = 0; i < 4; i++) {
+      await waitFor(() => expect(screen.getByTestId("name-option-4")).toBeEnabled());
+      played.push(photoId());
+      if (i < 3) {
+        expect(photoId()).toBe(FRIEND.ids[i]);
+        // The very names the friend had: the link's seed settles them.
+        expect(names()).toEqual(
+          nameOptions(truth(), game.deck.countryPool, nameSeed(SEED, FRIEND.ids[i])),
+        );
+      } else {
+        // Past the friend's miss, the run goes on to photos the friend never saw.
+        expect(FRIEND.ids).not.toContain(photoId());
+      }
+      if (i < 3) {
+        fireEvent.click(option(truth()));
+        const card = screen.getByRole("region");
+        if (i === 2) expect(card).toHaveTextContent("That beats your friend's 2 in a row!");
+        else expect(card).not.toHaveTextContent("That beats");
+        fireEvent.click(within(card).getByRole("button", { name: "Next photo" }));
+      } else {
+        fireEvent.click(option(wrongOf(truth())));
+      }
+    }
+
+    const card = screen.getByRole("region");
+    expect(card).toHaveTextContent(
+      "Run over: 3 countries in a row. You beat your friend's 2 in a row by 1.",
+    );
+    // A challenge's photos may have been seen, so it is played for the friend only.
+    expect(localStorage.getItem(BEST_NAME_KEY)).toBeNull();
+
+    const box = clipboard();
+    fireEvent.click(within(card).getByRole("button", { name: "Send yours back" }));
+    await waitFor(() =>
+      expect(
+        screen.getByText(
+          "Challenge link copied. Whoever opens it plays these photos, with these names.",
+        ),
+      ).toBeInTheDocument(),
+    );
+    expect(box.sent.split("\n")).toEqual([
+      "Whereabout · Name the country: I named 3 countries in a row.",
+      "That beats your 2. Your turn to go further.",
+      `http://localhost:3000/name-country?challenge=${played.join(".")}_${SEED.toString(36)}_3`,
+    ]);
+
+    // A fresh run leaves the link behind.
+    fireEvent.click(within(card).getByRole("button", { name: "Play a fresh run" }));
+    await waitFor(() =>
+      expect(screen.getByText("Name the country: which of these four?")).toBeInTheDocument(),
+    );
+    expect(window.location.search).toBe("?x=1");
+  });
+
+  it("says when the friend's streak still wins", async () => {
+    const { truth } = await linked(encodeNameChallenge(FRIEND));
+    fireEvent.click(option(wrongOf(truth())));
+    expect(screen.getByRole("region")).toHaveTextContent(
+      "Run over: 0 countries in a row. Your friend's 2 in a row wins, by 2.",
+    );
+  });
+
+  it("deals a fresh run, and says why, when the link is cut short or its photos have gone", async () => {
+    await linked("e3.j2.e1_1z_7");
+    expect(screen.getByText(/That challenge link was cut short/)).toBeInTheDocument();
+    expect(screen.getByText("Name the country: which of these four?")).toBeInTheDocument();
+    expect(window.location.search).toBe("?x=1");
+    cleanup();
+
+    await linked(encodeNameChallenge({ ...FRIEND, ids: ["e3", "j2", "gone"] }));
+    expect(screen.getByText(/That challenge's photos aren't in the game any more/)).toBeVisible();
+  });
+
+  it("offers a challenge from the end of a free run, carrying the photos up to the miss", async () => {
+    const { photoId, truth } = await setup();
+    const ids: string[] = [];
+    for (let i = 0; i < 2; i++) {
+      ids.push(photoId());
+      fireEvent.click(option(truth()));
+      fireEvent.click(screen.getByRole("button", { name: "Next photo" }));
+      await waitFor(() => expect(screen.getByTestId("name-option-4")).toBeEnabled());
+    }
+    ids.push(photoId());
+    fireEvent.click(option(wrongOf(truth())));
+    const box = clipboard();
+    fireEvent.click(screen.getByRole("button", { name: "Challenge a friend" }));
+    await waitFor(() => expect(box.sent).not.toBe(""));
+    const seed = Math.floor(0.5 * 2 ** 32);
+    expect(box.sent).toContain("Same photos, same names: can you go further?");
+    expect(box.sent).toMatch(
+      new RegExp(`/\\?challenge=${ids.join("\\.")}_${seed.toString(36)}_2$`),
+    );
+    // The new run stays the focused way on.
+    expect(screen.getByRole("button", { name: "Start a new run" })).toBeInTheDocument();
+  });
+
+  it("offers a challenge from a run that named every photo", async () => {
+    const game = gameFor(RECORDS.slice(0, 5));
+    render(<NameCountry deck={game.deck} loadRecords={game.loadRecords} random={() => 0.5} />);
+    for (let i = 0; i < 5; i++) {
+      await waitFor(() => expect(screen.getByTestId("name-option-4")).toBeEnabled());
+      fireEvent.click(option("FR"));
+      fireEvent.click(screen.getByRole("button", { name: "Next photo" }));
+    }
+    await screen.findByRole("heading", { name: "All 5 named" });
+    const box = clipboard();
+    fireEvent.click(screen.getByRole("button", { name: "Challenge a friend" }));
+    await waitFor(() => expect(box.sent).toMatch(/_5$/));
+    expect(box.sent.split("\n").at(-1)!.split("=")[1].split("_")[0].split(".")).toHaveLength(5);
   });
 });

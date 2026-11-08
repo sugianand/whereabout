@@ -73,7 +73,10 @@ the same continent, drawn from the countries the globe draws: tap the right one,
 and go on until your first miss. Atlas picks too, the name it gave the most of the four, and the
 reveal names the place and its continent. Your best run is kept in your browser. **Today's run**
 (at `/name-country/daily`) deals everyone the same photos and names on the same UTC day, one try a
-day, resumed after a reload and shared as counts only.
+day, resumed after a reload and shared as counts only. After a free run, *Challenge a friend*
+sends a link to the very photos you were shown, with the same four names on each and your streak
+to beat; a friend who gets past your miss plays on through photos you never saw, and can send
+theirs back.
 **Line them up** (at `/line-up`, in the Games menu) deals four photos, each from its own continent
 where it can, to put in order from west to east as on a flat world map from the date line: tap two
 to swap them, drag one into place, or press their numbers, and open any photo to look closer. A

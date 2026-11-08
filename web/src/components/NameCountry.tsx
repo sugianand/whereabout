@@ -22,12 +22,22 @@ import {
   type AtlasName,
 } from "@/lib/game/nameCountry";
 import {
+  NAME_CHALLENGE_PARAM,
+  nameChallengeLine,
+  nameChallengeOrder,
+  nameChallengeText,
+  parseNameChallenge,
+  type NameChallenge,
+} from "@/lib/game/nameChallenge";
+import {
   dailyNameOrder,
   dailyNameSeed,
   loadNameDay,
   nameDailyShare,
   rememberNameDay,
 } from "@/lib/game/nameDaily";
+
+import { sendShare, type ShareOutcome } from "@/lib/share";
 
 import ControlsHelp from "./ControlsHelp";
 import { DailyRunResult, ShareDay } from "./DailyRunShare";
@@ -53,6 +63,33 @@ type NameCountryProps = {
 function countries(n: number): string {
   return `${n} ${n === 1 ? "country" : "countries"}`;
 }
+
+/** Why a challenge link was set aside for a fresh run. */
+export const NAME_CHALLENGE_NOTICE = {
+  malformed: "That challenge link was cut short, so here's a fresh run instead.",
+  missing: "That challenge's photos aren't in the game any more, so here's a fresh run instead.",
+} as const;
+
+/** The challenge the address carries, read once as the page opens; null without one. */
+function linkedChallenge(dealable: readonly string[]) {
+  const value = new URLSearchParams(window.location.search).get(NAME_CHALLENGE_PARAM);
+  return value === null ? null : parseNameChallenge(value, dealable);
+}
+
+/** Take the challenge out of the address, so a reload deals a fresh run, not the old link. */
+function dropChallengeParam() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has(NAME_CHALLENGE_PARAM)) return;
+  url.searchParams.delete(NAME_CHALLENGE_PARAM);
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+const CHALLENGE_NOTE: Record<ShareOutcome, string> = {
+  shared: "Challenge sent.",
+  copied: "Challenge link copied. Whoever opens it plays these photos, with these names.",
+  cancelled: "",
+  failed: "Couldn't copy the link. Your browser blocked the clipboard.",
+};
 
 /** "1 photo", "4 photos". */
 function photos(n: number): string {
@@ -81,39 +118,53 @@ export default function NameCountry({
   // once it has ended, how it went, which shows instead of the game.
   const [day, setDay] = useState<string | null>(null);
   const [dayDone, setDayDone] = useState<DailyRun | null>(null);
+  // A friend's challenge this run answers: their photos, names and streak to beat.
+  const [challenge, setChallenge] = useState<NameChallenge | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  const start = useCallback(() => {
-    if (daily) {
-      const today = runToday(now?.());
-      const kept = loadNameDay(today);
-      setDay(today);
-      if (kept?.ended) {
-        setDayDone(kept);
+  /** Deal a run; `fromLink` takes up a challenge the address carries, as the page opens. */
+  const start = useCallback(
+    (fromLink = false) => {
+      if (daily) {
+        const today = runToday(now?.());
+        const kept = loadNameDay(today);
+        setDay(today);
+        if (kept?.ended) {
+          setDayDone(kept);
+          return;
+        }
+        const { streak, atlasRight, atlasPlayed } = kept ?? FRESH_RUN;
+        dispatch({
+          type: "start",
+          order: dailyNameOrder(nameIds(deck.streakIds, deck.regions), today),
+          seed: dailyNameSeed(today),
+          from: { streak, atlasRight, atlasPlayed },
+        });
         return;
       }
-      const { streak, atlasRight, atlasPlayed } = kept ?? FRESH_RUN;
-      dispatch({
-        type: "start",
-        order: dailyNameOrder(nameIds(deck.streakIds, deck.regions), today),
-        seed: dailyNameSeed(today),
-        from: { streak, atlasRight, atlasPlayed },
-      });
-      return;
-    }
-    const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
-    const stored = loadBestName();
-    setBest(stored);
-    setBestBefore(stored);
-    dispatch({
-      type: "start",
-      order: seededShuffle(nameIds(deck.streakIds, deck.regions), seed),
-      seed,
-    });
-  }, [daily, deck.regions, deck.streakIds, now, random]);
+      const ids = nameIds(deck.streakIds, deck.regions);
+      const stored = loadBestName();
+      setBest(stored);
+      setBestBefore(stored);
+      const linked = fromLink ? linkedChallenge(ids) : null;
+      setNotice(linked && !linked.ok ? NAME_CHALLENGE_NOTICE[linked.reason] : null);
+      if (linked?.ok) {
+        const { challenge: c } = linked;
+        setChallenge(c);
+        dispatch({ type: "start", order: nameChallengeOrder(c, ids), seed: c.seed });
+        return;
+      }
+      setChallenge(null);
+      dropChallengeParam();
+      const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
+      dispatch({ type: "start", order: seededShuffle(ids, seed), seed });
+    },
+    [daily, deck.regions, deck.streakIds, now, random],
+  );
 
   // The run is shuffled in the browser after hydration, never at build time.
   useEffect(() => {
-    const id = requestAnimationFrame(start);
+    const id = requestAnimationFrame(() => start(true));
     return () => cancelAnimationFrame(id);
   }, [start]);
 
@@ -188,13 +239,14 @@ export default function NameCountry({
           atlasPlayed: after.atlasPlayed,
           ended: !after.correct ? "miss" : cleared ? "cleared" : null,
         });
-      } else if (after.phase === "answered" && after.correct) {
-        // Keep the run as the best after every right tap, so leaving mid-run keeps it.
+      } else if (after.phase === "answered" && after.correct && !challenge) {
+        // Keep the run as the best after every right tap, so leaving mid-run keeps it. A
+        // challenge's photos may have been seen before, so it is played for the friend only.
         setBest(rememberName(after.streak));
       }
       dispatch(action);
     },
-    [state, current, options, day],
+    [state, current, options, day, challenge],
   );
 
   // 1 to 4 pick a name from the keyboard.
@@ -252,17 +304,19 @@ export default function NameCountry({
           {cleared
             ? "You named the country of every photo in the game without a miss."
             : "Name the country needs photos taken in countries the globe draws."}
+          {cleared && challenge && ` ${nameChallengeLine(state.streak, challenge)}`}
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-4">
           {cleared && (
             <button
               type="button"
-              onClick={start}
+              onClick={() => start()}
               className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
             >
-              Start a new run
+              {challenge ? "Play a fresh run" : "Start a new run"}
             </button>
           )}
+          {cleared && <ChallengeButton run={state} answering={challenge} />}
           <Link href="/" className="text-chalk-dim underline underline-offset-2 hover:text-chalk">
             Back to the main game
           </Link>
@@ -293,7 +347,11 @@ export default function NameCountry({
             Whereabout
           </Link>
           <p className="mt-1 text-sm text-chalk-dim">
-            {day ? `Today's run, ${day}` : "Name the country: which of these four?"}
+            {day
+              ? `Today's run, ${day}`
+              : challenge
+                ? `A friend's challenge: ${countries(challenge.streak)} in a row to beat`
+                : "Name the country: which of these four?"}
           </p>
           <div className="mt-2 flex items-center gap-2">
             <GamesMenu screen="name-country" streakHref="/streak" />
@@ -354,6 +412,12 @@ export default function NameCountry({
         ))}
       </div>
 
+      {notice && !answered && playing?.index === 0 && (
+        <p role="status" className="px-4 pt-2 text-center text-sm text-chalk-dim">
+          {notice}
+        </p>
+      )}
+
       {error && (
         <p role="alert" className="px-4 pt-2 text-center text-sm text-flare">
           {error}
@@ -374,7 +438,9 @@ export default function NameCountry({
             best={best}
             newBest={over && answered.streak > bestBefore}
             daily={day}
-            onNext={over ? start : () => dispatch({ type: "next" })}
+            run={answered}
+            challenge={challenge}
+            onNext={over ? () => start() : () => dispatch({ type: "next" })}
           />
         ) : (
           current && (
@@ -458,6 +524,8 @@ function NameCard({
   best,
   newBest,
   daily,
+  run,
+  challenge,
   onNext,
 }: {
   record: GameRecord;
@@ -472,6 +540,10 @@ function NameCard({
   newBest: boolean;
   /** Today's run's day, when this is it: its end shares the day instead of starting again. */
   daily: string | null;
+  /** The run as it stands, for the challenge link its end can send. */
+  run: { order: readonly string[]; index: number; seed: number; streak: number };
+  /** The friend's challenge this run answers, if it is one. */
+  challenge: NameChallenge | null;
   onNext: () => void;
 }) {
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -517,10 +589,21 @@ function NameCard({
       {over && daily && (
         <p className="mt-1 text-chalk">{`Today's run is over: ${countries(streak)} in a row.`}</p>
       )}
+      {challenge && correct && streak === challenge.streak + 1 && (
+        <p className="mt-1 font-semibold text-sonar">
+          {`That beats your friend's ${challenge.streak} in a row!`}
+        </p>
+      )}
       {over && !daily && (
         <p className="mt-1 text-chalk">
           {`Run over: ${countries(streak)} in a row. `}
-          {newBest ? "That's your new best!" : best > 0 ? `Your best is ${countries(best)}.` : ""}
+          {challenge
+            ? nameChallengeLine(streak, challenge)
+            : newBest
+              ? "That's your new best!"
+              : best > 0
+                ? `Your best is ${countries(best)}.`
+                : ""}
         </p>
       )}
       {over && daily ? (
@@ -535,18 +618,56 @@ function NameCard({
           {photoCredit}
         </>
       ) : (
-        <div className="mt-2 flex items-center gap-4 md:mt-3">
-          <button
-            ref={nextRef}
-            type="button"
-            onClick={onNext}
-            className="shrink-0 rounded-full bg-gold px-6 py-2.5 font-semibold text-ocean-deep transition hover:brightness-110"
-          >
-            {over ? "Start a new run" : "Next photo"}
-          </button>
-          {photoCredit}
-        </div>
+        <>
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 md:mt-3">
+            <button
+              ref={nextRef}
+              type="button"
+              onClick={onNext}
+              className="shrink-0 rounded-full bg-gold px-6 py-2.5 font-semibold text-ocean-deep transition hover:brightness-110"
+            >
+              {over ? (challenge ? "Play a fresh run" : "Start a new run") : "Next photo"}
+            </button>
+            {over ? <ChallengeButton run={run} answering={challenge} compact /> : photoCredit}
+          </div>
+          {over && photoCredit}
+        </>
       )}
     </section>
+  );
+}
+
+/**
+ * Challenge a friend from a finished run (src/lib/game/nameChallenge.ts): a link to the same
+ * photos and names, and the streak to beat. Answering a challenge, it sends the reply back.
+ */
+function ChallengeButton({
+  run,
+  answering,
+  compact = false,
+}: {
+  run: { order: readonly string[]; index: number; seed: number; streak: number };
+  answering: NameChallenge | null;
+  /** On the answer card, where it shares a row with the button for a new run. */
+  compact?: boolean;
+}) {
+  const [sent, setSent] = useState("");
+  async function send() {
+    const text = nameChallengeText(run, window.location.href, answering ?? undefined);
+    setSent(CHALLENGE_NOTE[await sendShare(text, navigator)]);
+  }
+  return (
+    <span className={compact ? "flex min-w-0 flex-col" : "flex flex-col"}>
+      <button
+        type="button"
+        onClick={send}
+        className={`rounded-full border-2 border-gold font-semibold text-gold transition hover:bg-gold/10 ${compact ? "px-4 py-2" : "px-5 py-2.5"}`}
+      >
+        {answering ? "Send yours back" : "Challenge a friend"}
+      </button>
+      <span role="status" className={sent ? "mt-1 text-xs text-chalk-dim" : "sr-only"}>
+        {sent}
+      </span>
+    </span>
   );
 }
