@@ -288,8 +288,9 @@ export default function CloseUp({
     [state, current, options, day, challenge],
   );
 
-  // 1 to 4 pick a name from the keyboard.
-  useEffect(() => {
+  // 1 to 4 pick a name from the keyboard. Attached before paint, so a key pressed the moment the
+  // names appear is never lost to a listener that hasn't caught up.
+  useLayoutEffect(() => {
     if (state.phase !== "guessing" || shown.length === 0) return;
     const onKey = (e: KeyboardEvent) => {
       if (!isShortcut(e)) return;

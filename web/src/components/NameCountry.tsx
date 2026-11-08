@@ -1,7 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 
 import { continentOf } from "@/lib/continents";
 import { countryName } from "@/lib/countries";
@@ -249,8 +257,9 @@ export default function NameCountry({
     [state, current, options, day, challenge],
   );
 
-  // 1 to 4 pick a name from the keyboard.
-  useEffect(() => {
+  // 1 to 4 pick a name from the keyboard. Attached before paint, so a key pressed the moment the
+  // names appear is never lost to a listener that hasn't caught up.
+  useLayoutEffect(() => {
     if (state.phase !== "guessing" || options.length === 0) return;
     const onKey = (e: KeyboardEvent) => {
       if (!isShortcut(e)) return;
