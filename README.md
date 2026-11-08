@@ -81,6 +81,9 @@ point for each photo in its place, with photos within 2° of longitude counted a
 rows against the order of Atlas's own pins; the reveal stands the row in its true order with every
 longitude. Your best game is kept in your browser. Today's rows (`/line-up/daily`) are the same for
 everyone: one try a day, picked up at the next row after a reload, and shared as squares and counts.
+After a free game, *Challenge a friend* sends a link that deals the very same rows, each opening in
+the very order it opened for you, carrying how many you had in place on each and nothing else: the
+friend sees the count to beat, yours on every row, and can send theirs back.
 **Close-up** (at `/close-up`, in the Games menu) opens on a tight crop of a photo, its busiest
 corner where the photo can be read, with four countries from the same continent. Each wrong name
 zooms out and costs a point: three on the tightest crop, then two, then one, and none after a third

@@ -238,3 +238,95 @@ test("today's Line them up deals the day's rows once, resumes after a reload, an
   await expect(page.getByTestId("today-line-up")).toHaveAttribute("data-status", "done");
   expect(errors).toEqual([]);
 });
+
+/** Tap each photo of the row to its place, west first. */
+async function solve(page: Page) {
+  const want = [...(await row(page))].sort(west);
+  for (let place = 0; place < want.length; place++) {
+    const at = (await row(page)).indexOf(want[place]);
+    if (at === place) continue;
+    await tile(page, place + 1).getByRole("button", { name: /^Photo in place/ }).click();
+    await tile(page, at + 1).getByRole("button", { name: /^Photo in place/ }).click();
+  }
+}
+
+test("a challenge link deals a friend the same rows, opening as they did, with the count to beat", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
+
+  // The sender lines every row up.
+  await page.goto("./line-up");
+  const opened: string[][] = [];
+  for (let i = 1; i <= 5; i++) {
+    await expect(lock(page)).toBeEnabled();
+    await expect(page.getByText(`Row ${i} of 5`, { exact: true })).toBeVisible();
+    opened.push(await row(page));
+    await solve(page);
+    await lock(page).click();
+    await card.getByRole("button", { name: i < 5 ? "Next row" : "See your score" }).click();
+  }
+  await expect(page.getByRole("heading", { name: "20 in place" })).toBeVisible();
+  await page.getByRole("button", { name: "Challenge a friend" }).click();
+  await expect(page.getByText(/^Challenge (sent|link copied)/)).toBeVisible();
+  const sent = await page.evaluate(() => (window as unknown as { sent: string }).sent);
+  expect(sent).toContain("I put 20 of 20 photos in place, west to east.");
+  for (const p of CATALOG) expect(sent).not.toContain(p.place);
+  const link = sent.split("\n").at(-1)!;
+  expect(link).toMatch(/\/whereabout\/line-up\/?\?challenge=[\w.-]+_4\.4\.4\.4\.4$/);
+
+  // The friend opens it with nothing kept, and locks each row just as it opens.
+  await page.evaluate(() => localStorage.clear());
+  await page.goto(link);
+  await expect(page.getByText("A friend's challenge: 20 in place to beat")).toBeVisible();
+  const theirs: number[] = [];
+  for (let i = 0; i < 5; i++) {
+    await expect(lock(page)).toBeEnabled();
+    await expect(page.getByText(`Row ${i + 1} of 5`, { exact: true })).toBeVisible();
+    expect(await row(page)).toEqual(opened[i]);
+    await lock(page).click();
+    const verdict = (await card.getByRole("heading").textContent())!;
+    theirs.push(Number(verdict.match(/^(\d) of 4 in place$/)![1]));
+    await expect(card).toContainText("Your friend: 4 in place.");
+    await card.getByRole("button", { name: i < 4 ? "Next row" : "See your score" }).click();
+  }
+  const total = theirs.reduce((a, b) => a + b, 0);
+  // A row never opens already in order, so the friend's 20 can't be matched by leaving them.
+  expect(total).toBeLessThan(20);
+  await expect(page.getByRole("heading", { name: `${total} in place` })).toBeVisible();
+  await expect(
+    page.getByText(new RegExp(`Your friend won by ${20 - total} in place\\. Your friend had 20\\.`)),
+  ).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("whereabout:line-up-best"))).toBe(null);
+
+  await page.getByRole("button", { name: "Send yours back" }).click();
+  await expect(page.getByText(/^Challenge (sent|link copied)/)).toBeVisible();
+  const reply = await page.evaluate(() => (window as unknown as { sent: string }).sent);
+  expect(reply).toContain("Your 20 wins this time. Try them again?");
+  expect(reply.endsWith(`_${theirs.join(".")}`)).toBe(true);
+
+  // A fresh game drops the link, so a reload doesn't deal the challenge again.
+  await page.getByRole("button", { name: "Play a fresh game" }).click();
+  await expect(page.getByText("Line them up: west to east")).toBeVisible();
+  expect(new URL(page.url()).search).toBe("");
+  expect(errors).toEqual([]);
+});
+
+test("a broken Line them up challenge says so and deals a fresh game", async ({ page }) => {
+  await page.goto("./line-up?challenge=wm001.wm002_3");
+  await expect(page.getByText(/That challenge link was cut short/)).toBeVisible();
+  await expect(page.getByText("Line them up: west to east")).toBeVisible();
+  await expect(lock(page)).toBeEnabled();
+});

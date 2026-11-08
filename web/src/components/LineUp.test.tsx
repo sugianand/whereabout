@@ -1,7 +1,8 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GameRecord } from "@/lib/game/deck";
+import { encodeLineChallenge } from "@/lib/game/lineChallenge";
 import { LINE_DAILY_KEY, dailyLineRows, loadLineDay } from "@/lib/game/lineDaily";
 import { BEST_LINE_KEY } from "@/lib/game/lineUp";
 import type { AtlasGuess, CatalogPhoto } from "@/lib/game/types";
@@ -219,5 +220,127 @@ describe("today's Line them up", () => {
     render(<LineUp deck={game.deck} loadRecords={game.loadRecords} daily now={now} />);
     expect(await screen.findByRole("heading", { level: 1, name: "20 in place" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Lock it in" })).toBeNull();
+  });
+});
+
+describe("a friend's Line them up challenge", () => {
+  // Five rows in a dealt order that isn't already west to east, so each opens just as listed.
+  const ROWS_DEALT = [
+    ["jp0", "fr0", "us0", "eg0"],
+    ["jp1", "fr1", "us1", "eg1"],
+    ["jp2", "fr2", "us2", "eg2"],
+    ["jp3", "fr3", "us3", "eg3"],
+    ["jp4", "fr4", "us4", "eg4"],
+  ];
+  const FRIEND = [4, 2, 0, 1, 3];
+
+  afterEach(() => window.history.replaceState(null, "", "/"));
+
+  function mockClipboard() {
+    const box = { sent: "" };
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: async (t: string) => void (box.sent = t) },
+      configurable: true,
+    });
+    return box;
+  }
+
+  /** Play every row, solving it, and return each row as it opened. */
+  async function playAll() {
+    const opened: string[][] = [];
+    for (let i = 1; i <= 5; i++) {
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: "Lock it in" })).toBeEnabled(),
+      );
+      opened.push(row());
+      solve();
+      fireEvent.click(screen.getByRole("button", { name: "Lock it in" }));
+      fireEvent.click(screen.getByRole("button", { name: i < 5 ? "Next row" : "See your score" }));
+    }
+    return opened;
+  }
+
+  it("deals the friend's rows as they opened for them, says the count to beat, and answers", async () => {
+    const value = encodeLineChallenge({ rows: ROWS_DEALT, points: FRIEND });
+    window.history.replaceState(null, "", `/line-up?challenge=${value}&x=1`);
+    await setup();
+    expect(screen.getByText("A friend's challenge: 10 in place to beat")).toBeInTheDocument();
+    const box = mockClipboard();
+
+    const opened: string[][] = [];
+    for (let i = 0; i < 5; i++) {
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: "Lock it in" })).toBeEnabled(),
+      );
+      opened.push(row());
+      solve();
+      fireEvent.click(screen.getByRole("button", { name: "Lock it in" }));
+      expect(screen.getByText(new RegExp(`Your friend: ${FRIEND[i]} in place\\.`))).toBeVisible();
+      fireEvent.click(screen.getByRole("button", { name: i < 4 ? "Next row" : "See your score" }));
+    }
+    expect(opened).toEqual(ROWS_DEALT);
+
+    // 20 to the friend's 10; a challenge's rows may be known, so it isn't a best.
+    expect(screen.getByRole("heading", { name: "20 in place" })).toBeVisible();
+    expect(
+      screen.getByText(/You won the challenge by 10 in place\. Your friend had 10\./),
+    ).toBeVisible();
+    expect(screen.getByText("You 4, Atlas 4, friend 2")).toBeVisible();
+    expect(screen.queryByText(/new best/)).toBeNull();
+    expect(localStorage.getItem(BEST_LINE_KEY)).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Send yours back" }));
+    await waitFor(() =>
+      expect(
+        screen.getByText("Challenge link copied. Whoever opens it plays these rows."),
+      ).toBeVisible(),
+    );
+    const rows = ROWS_DEALT.map((r) => r.join(".")).join("-");
+    expect(box.sent.split("\n")).toEqual([
+      "Whereabout · Line them up: I put 20 of 20 photos in place, west to east.",
+      "That beats your 10. Your turn to beat mine.",
+      `http://localhost:3000/line-up?challenge=${rows}_4.4.4.4.4`,
+    ]);
+
+    // A fresh game leaves the link behind.
+    fireEvent.click(screen.getByRole("button", { name: "Play a fresh game" }));
+    await waitFor(() => expect(screen.getByText("Line them up: west to east")).toBeVisible());
+    expect(window.location.search).toBe("?x=1");
+  });
+
+  it("sends a free game's rows so a friend's open exactly as the sender's did", async () => {
+    await setup();
+    const box = mockClipboard();
+    const mine = await playAll();
+    fireEvent.click(screen.getByRole("button", { name: "Challenge a friend" }));
+    await waitFor(() => expect(box.sent).not.toBe(""));
+    expect(box.sent).toContain("Same rows, same start: can you beat me?");
+    const link = new URL(box.sent.split("\n")[2]);
+    expect(link.searchParams.get("challenge")).toMatch(/_4\.4\.4\.4\.4$/);
+    cleanup();
+
+    window.history.replaceState(null, "", `${link.pathname}${link.search}`);
+    await setup();
+    expect(screen.getByText("A friend's challenge: 20 in place to beat")).toBeInTheDocument();
+    expect(await playAll()).toEqual(mine);
+  });
+
+  it("deals a fresh game, and says why, when the link is cut short or its photos have gone", async () => {
+    window.history.replaceState(null, "", "/line-up?challenge=jp0.fr0.us0_4&x=1");
+    await setup();
+    expect(screen.getByText(/That challenge link was cut short/)).toBeVisible();
+    expect(screen.getByText("Line them up: west to east")).toBeVisible();
+    expect(window.location.search).toBe("?x=1");
+    cleanup();
+
+    const gone = ROWS_DEALT.map((r, i) => (i === 4 ? [...r.slice(0, 3), "gone"] : r));
+    window.history.replaceState(
+      null,
+      "",
+      `/line-up?challenge=${encodeLineChallenge({ rows: gone, points: FRIEND })}`,
+    );
+    await setup();
+    expect(screen.getByText(/That challenge's photos aren't in the game any more/)).toBeVisible();
   });
 });

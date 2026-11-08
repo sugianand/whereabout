@@ -13,6 +13,14 @@ import {
 
 import { isShortcut } from "@/lib/controls";
 import { runToday } from "@/lib/game/dailyRuns";
+import {
+  LINE_CHALLENGE_PARAM,
+  lineChallengeLine,
+  lineChallengeText,
+  lineChallengeTotal,
+  parseLineChallenge,
+  type LineChallenge,
+} from "@/lib/game/lineChallenge";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import {
   dailyLineRows,
@@ -36,6 +44,7 @@ import {
   type Spots,
 } from "@/lib/game/lineUp";
 import { placeholderUrl, sources } from "@/lib/photoSources";
+import { sendShare, type ShareOutcome } from "@/lib/share";
 
 import ControlsHelp from "./ControlsHelp";
 import { DailyRunResult } from "./DailyRunShare";
@@ -56,6 +65,31 @@ type LineUpProps = {
   /** For tests: the randomness that deals each game. */
   random?: () => number;
 };
+
+/** Why a challenge link was set aside for a fresh game. */
+export const LINE_CHALLENGE_NOTICE = {
+  malformed: "That challenge link was cut short, so here's a fresh game instead.",
+  missing: "That challenge's photos aren't in the game any more, so here's a fresh game instead.",
+} as const;
+
+/** The challenge the address carries, read once as the page opens; null without one. */
+function linkedChallenge(dealable: readonly string[]) {
+  const value = new URLSearchParams(window.location.search).get(LINE_CHALLENGE_PARAM);
+  return value === null ? null : parseLineChallenge(value, dealable);
+}
+
+/** Take the challenge out of the address, so a reload deals a fresh game, not the old link. */
+function dropChallengeParam() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has(LINE_CHALLENGE_PARAM)) return;
+  url.searchParams.delete(LINE_CHALLENGE_PARAM);
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+/** "1 in place", "3 in place". */
+function inPlaceCount(n: number): string {
+  return `${n} in place`;
+}
 
 /** A press that has moved less than this, in pixels, is a tap rather than a drag. */
 const DRAG_START = 8;
@@ -95,27 +129,44 @@ export default function LineUp({ deck, daily = false, now, loadRecords, random }
   // The day today's game was dealt for, kept when the clock passes midnight mid-game.
   const [day, setDay] = useState<string | null>(null);
 
-  const start = useCallback(() => {
-    setPicked(null);
-    if (daily) {
-      const today = runToday(now?.());
-      setDay(today);
-      dispatch({
-        type: "start",
-        rows: dailyLineRows(deck.regions, today),
-        results: loadLineDay(today)?.results,
-      });
-      return;
-    }
-    const stored = loadBestLine();
-    setBest(stored);
-    setBestBefore(stored);
-    dispatch({ type: "start", rows: dealRows(deck.regions, random) });
-  }, [deck.regions, random, daily, now]);
+  // A friend's challenge this game answers: their rows, as dealt, and their points to beat.
+  const [challenge, setChallenge] = useState<LineChallenge | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  /** Deal a game; `fromLink` takes up a challenge the address carries, as the page opens. */
+  const start = useCallback(
+    (fromLink = false) => {
+      setPicked(null);
+      if (daily) {
+        const today = runToday(now?.());
+        setDay(today);
+        dispatch({
+          type: "start",
+          rows: dailyLineRows(deck.regions, today),
+          results: loadLineDay(today)?.results,
+        });
+        return;
+      }
+      const stored = loadBestLine();
+      setBest(stored);
+      setBestBefore(stored);
+      const linked = fromLink ? linkedChallenge(Object.values(deck.regions).flat()) : null;
+      setNotice(linked && !linked.ok ? LINE_CHALLENGE_NOTICE[linked.reason] : null);
+      if (linked?.ok) {
+        setChallenge(linked.challenge);
+        dispatch({ type: "start", rows: linked.challenge.rows });
+        return;
+      }
+      setChallenge(null);
+      dropChallengeParam();
+      dispatch({ type: "start", rows: dealRows(deck.regions, random) });
+    },
+    [deck.regions, random, daily, now],
+  );
 
   // The game is dealt in the browser after hydration, never at build time.
   useEffect(() => {
-    const id = requestAnimationFrame(start);
+    const id = requestAnimationFrame(() => start(true));
     return () => cancelAnimationFrame(id);
   }, [start]);
 
@@ -204,11 +255,13 @@ export default function LineUp({ deck, daily = false, now, loadRecords, random }
 
   const next = useCallback(() => {
     if (state.phase !== "revealed") return;
-    if (!daily && state.index + 1 >= state.rows.length && state.rows.length === ROWS) {
+    // A challenge's photos may have been seen before, so it is played for the friend only.
+    const last = state.index + 1 >= state.rows.length;
+    if (!daily && !challenge && last && state.rows.length === ROWS) {
       setBest(rememberLine(linePoints(state.results)));
     }
     dispatch({ type: "next" });
-  }, [state, daily]);
+  }, [state, daily, challenge]);
 
   // 1 to 4 pick a place up and put it down on another; Escape lets go.
   useEffect(() => {
@@ -305,11 +358,13 @@ export default function LineUp({ deck, daily = false, now, loadRecords, random }
     const results = state.phase === "finished" ? state.results : [];
     return (
       <Finished
+        rows={state.phase === "finished" ? state.rows : []}
         results={results}
         whole={results.length === ROWS}
         best={best}
-        newBest={linePoints(results) > bestBefore && results.length === ROWS}
-        onAgain={start}
+        newBest={!challenge && linePoints(results) > bestBefore && results.length === ROWS}
+        challenge={challenge}
+        onAgain={() => start()}
       />
     );
   }
@@ -336,7 +391,11 @@ export default function LineUp({ deck, daily = false, now, loadRecords, random }
             Whereabout
           </Link>
           <p className="mt-1 text-sm text-chalk-dim">
-            {day ? `Today's rows (${day}): west to east` : "Line them up: west to east"}
+            {day
+              ? `Today's rows (${day}): west to east`
+              : challenge
+                ? `A friend's challenge: ${inPlaceCount(lineChallengeTotal(challenge))} to beat`
+                : "Line them up: west to east"}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
             <GamesMenu screen="line-up" streakHref="/streak" />
@@ -390,6 +449,12 @@ export default function LineUp({ deck, daily = false, now, loadRecords, random }
         })}
       </div>
 
+      {notice && placing && index === 0 && (
+        <p role="status" className="px-4 pt-2 text-center text-sm text-chalk-dim">
+          {notice}
+        </p>
+      )}
+
       {error && (
         <p role="alert" className="px-4 pt-2 text-center text-sm text-flare">
           {error}
@@ -402,6 +467,7 @@ export default function LineUp({ deck, daily = false, now, loadRecords, random }
             key={index}
             result={revealed.result}
             results={revealed.results}
+            friend={challenge?.points[index]}
             last={index + 1 >= rowCount}
             onNext={next}
           />
@@ -625,11 +691,14 @@ function Closer({ photo, onClose }: { photo: GameRecord["photo"]; onClose: () =>
 function RowCard({
   result,
   results,
+  friend,
   last,
   onNext,
 }: {
   result: RowResult;
   results: readonly RowResult[];
+  /** In a friend's challenge, how many they had in place on this row. */
+  friend?: number;
   last: boolean;
   onNext: () => void;
 }) {
@@ -656,6 +725,7 @@ function RowCard({
           {result.atlas
             ? `Atlas put ${result.atlas.points} in place: ${atlasPoints} of ${rows * ROW_POINTS} so far.`
             : "Atlas hasn't guessed every photo here, so it sat this row out."}
+          {friend !== undefined && ` Your friend: ${inPlaceCount(friend)}.`}
         </p>
       </div>
       <button
@@ -670,15 +740,21 @@ function RowCard({
   );
 }
 
-/** Each row's points, yours and Atlas's. */
-function RowList({ results }: { results: readonly RowResult[] }) {
+/** Each row's points, yours and Atlas's, and the friend's in a challenge. */
+function RowList({
+  results,
+  friend,
+}: {
+  results: readonly RowResult[];
+  friend?: readonly number[];
+}) {
   return (
     <ol aria-label="Your rows" className="mt-4 space-y-1 text-chalk-dim">
       {results.map((r, i) => (
         <li key={r.order.join()} className="flex justify-between gap-4">
           <span>{`Row ${i + 1}`}</span>
           <span className="tabular">
-            {`You ${r.points}${r.atlas ? `, Atlas ${r.atlas.points}` : ""}`}
+            {`You ${r.points}${r.atlas ? `, Atlas ${r.atlas.points}` : ""}${friend ? `, friend ${friend[i]}` : ""}`}
           </span>
         </li>
       ))}
@@ -712,21 +788,39 @@ function LineDayResult({
   );
 }
 
+const CHALLENGE_NOTE: Record<ShareOutcome, string> = {
+  shared: "Challenge sent.",
+  copied: "Challenge link copied. Whoever opens it plays these rows.",
+  cancelled: "",
+  failed: "Couldn't copy the link. Your browser blocked the clipboard.",
+};
+
 function Finished({
+  rows,
   results,
   whole,
   best,
   newBest,
+  challenge,
   onAgain,
 }: {
+  /** The game's rows as they were dealt, for the link that challenges a friend. */
+  rows: readonly (readonly string[])[];
   results: readonly RowResult[];
   whole: boolean;
   best: number;
   newBest: boolean;
+  /** The friend's challenge this game answered, if it was one. */
+  challenge: LineChallenge | null;
   onAgain: () => void;
 }) {
   const none = results.length === 0;
   const atlas = atlasLine(results);
+  const [sent, setSent] = useState("");
+  async function sendChallenge() {
+    const text = lineChallengeText(rows, results, window.location.href, challenge ?? undefined);
+    setSent(CHALLENGE_NOTE[await sendShare(text, navigator)]);
+  }
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center px-6 py-16">
@@ -740,14 +834,20 @@ function Finished({
         <>
           <p className="mt-4 text-lg text-chalk-dim">
             {`Out of ${results.length * ROW_POINTS}. `}
-            {newBest ? "That's your new best!" : whole && best > 0 ? `Your best is ${best}.` : ""}
+            {challenge
+              ? `${lineChallengeLine(results, challenge)} Your friend had ${lineChallengeTotal(challenge)}. A challenge doesn't count toward your best.`
+              : newBest
+                ? "That's your new best!"
+                : whole && best > 0
+                  ? `Your best is ${best}.`
+                  : ""}
           </p>
           {atlas && (
             <p className="mt-2 text-chalk" data-testid="line-atlas-total">
               {atlas}
             </p>
           )}
-          <RowList results={results} />
+          <RowList results={results} friend={challenge?.points} />
         </>
       )}
       <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -757,13 +857,25 @@ function Finished({
             onClick={onAgain}
             className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
           >
-            Play again
+            {challenge ? "Play a fresh game" : "Play again"}
+          </button>
+        )}
+        {!none && (
+          <button
+            type="button"
+            onClick={sendChallenge}
+            className="rounded-full border-2 border-gold px-5 py-2.5 font-semibold text-gold transition hover:bg-gold/10"
+          >
+            {challenge ? "Send yours back" : "Challenge a friend"}
           </button>
         )}
         <Link href="/" className="text-chalk-dim underline underline-offset-2 hover:text-chalk">
           Back to the main game
         </Link>
       </div>
+      <p className="mt-2 min-h-5 text-sm text-chalk-dim" role="status">
+        {sent}
+      </p>
     </main>
   );
 }
