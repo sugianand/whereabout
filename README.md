@@ -106,8 +106,10 @@ the day, a line the share carries too. Below them, **Full days**
 counts your run of days with every daily game finished and shows the last four weeks as a calendar.
 **Stamps** (at `/stamps`, from Today and the results screen) collects what you've played in this
 browser: the record's badges, a continent cleared once you've pinned a photo from every country the
-game has there, a full day and a full week of daily games. Each says how it's earned and how close
-you are, the one nearest to done is named next, and a stamp once collected stays.
+game has there, a full day and a full week of daily games, and one for beating Atlas at each daily
+game (on a day it played every photo you did). Each says how it's earned and how close you are (for
+Atlas, your nearest miss on the days kept), the one nearest to done is named next, and a stamp once
+collected stays.
 
 The results screen gathers these quick games (Blitz, Country Streak, Survival, Further North, Odd
 one out, How far apart? and Which way?) in one list, each with your best from this browser beside its name, so you see what
