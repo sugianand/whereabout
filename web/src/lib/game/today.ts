@@ -369,12 +369,25 @@ export function atlasDayWords(day: AtlasDay): string | null {
   return day.level > 0 ? `${head}, ${day.level} level` : head;
 }
 
+/**
+ * The daily games that can be called against Atlas: every one but the Daily Five, whose score
+ * against Atlas isn't kept.
+ */
+export const VERSUS_GAMES: readonly TodayGameInfo[] = TODAY_GAMES.filter(
+  (g) => g.id !== "daily-five",
+);
+
 /** How many of a day's daily games this browser finished. */
 export interface DayTally {
   day: string;
   done: number;
   /** The daily games dealt that day. */
   of: number;
+  /**
+   * You against Atlas on each game finished that day that can be called (`TodayGame.versus`).
+   * Absent reads as none.
+   */
+  versus?: Partial<Record<TodayGameId, Versus>>;
 }
 
 /** Weeks the calendar shows, this one included; all of them lie within what every game keeps. */
@@ -388,7 +401,9 @@ export function dayTallies(
 ): DayTally[] {
   return archiveDays(today).map((day) => {
     const games = todayGames(day, deckIds, now);
-    return { day, done: gamesDone(games), of: games.length };
+    const versus: Partial<Record<TodayGameId, Versus>> = {};
+    for (const g of games) if (g.status === "done" && g.versus) versus[g.id] = g.versus;
+    return { day, done: gamesDone(games), of: games.length, versus };
   });
 }
 

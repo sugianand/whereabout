@@ -330,7 +330,8 @@ export default function Today({
       >
         <span className="block font-sign text-2xl font-bold text-gold">Stamps</span>
         <span className="mt-1 block text-chalk-dim">
-          A full day and a full week are stamps to collect, with badges and continents cleared.
+          A full day, a full week and beating Atlas at each game are stamps to collect, with badges
+          and continents cleared.
         </span>
       </Link>
 

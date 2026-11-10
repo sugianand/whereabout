@@ -90,3 +90,51 @@ test("stamps come from what the browser keeps, are marked new once, and fit a 32
   await expect(oceania.getByText("New")).toHaveCount(0);
   expect(errors).toEqual([]);
 });
+
+test("beating Atlas at a daily game earns its stamp, and a loss says how close it came", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+  await page.goto("./stamps");
+  await expect(page.getByTestId("stamp-beat-atlas-name-country")).toHaveAttribute(
+    "data-earned",
+    "false",
+  );
+  await page.evaluate((day) => {
+    const keep = (key: string, entry: unknown) =>
+      localStorage.setItem(key, JSON.stringify({ [day]: entry }));
+    // Three right and the miss, with Atlas on all four photos and two of them right.
+    keep("whereabout:name-country-daily", {
+      streak: 3,
+      atlasRight: 2,
+      atlasPlayed: 4,
+      ended: "miss",
+    });
+    // One right and the miss to Atlas's two.
+    keep("whereabout:further-north-daily", {
+      streak: 1,
+      atlasRight: 2,
+      atlasPlayed: 2,
+      ended: "miss",
+    });
+  }, yesterday);
+  await page.reload();
+
+  await expect(page.getByRole("heading", { name: "Beat Atlas", level: 2 })).toBeVisible();
+  const won = page.getByTestId("stamp-beat-atlas-name-country");
+  await expect(won).toHaveAttribute("data-earned", "true");
+  await expect(won.getByText("New")).toBeVisible();
+  await expect(page.getByTestId("stamp-beat-atlas-further-north")).toContainText(
+    "Closest so far: 1 right to Atlas's 2",
+  );
+  await page.setViewportSize({ width: 320, height: 700 });
+  await won.scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+
+  // The group leads to Atlas's day on Today.
+  await page.getByRole("link", { name: "Atlas's day on Today" }).click();
+  await expect(page.getByRole("heading", { name: "Today", level: 1 })).toBeVisible();
+  expect(errors).toEqual([]);
+});

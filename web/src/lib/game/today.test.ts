@@ -214,7 +214,7 @@ describe("dayTallies", () => {
     rememberOddDay(daysBefore(DAY, 1), { streak: 1, atlasRight: 0, atlasPlayed: 0, ended: null });
     const kept = dayTallies(DAY, IDS, NOW);
     expect(kept).toHaveLength(ARCHIVE_DAYS);
-    expect(kept.slice(0, 4)).toEqual([
+    expect(kept.slice(0, 4)).toMatchObject([
       { day: DAY, done: ALL, of: ALL },
       { day: "2026-11-02", done: 1, of: ALL },
       { day: "2026-11-01", done: ALL, of: ALL },
@@ -225,7 +225,21 @@ describe("dayTallies", () => {
   it("gives every game the whole window: a day at its far end still reads full", () => {
     const oldest = daysBefore(DAY, ARCHIVE_DAYS - 1);
     finishDay(oldest);
-    expect(dayTallies(DAY, IDS, NOW).at(-1)).toEqual({ day: oldest, done: ALL, of: ALL });
+    expect(dayTallies(DAY, IDS, NOW).at(-1)).toMatchObject({ day: oldest, done: ALL, of: ALL });
+  });
+
+  it("keeps each finished game's call against Atlas, and only those", () => {
+    const yesterday = daysBefore(DAY, 1);
+    rememberNameDay(yesterday, { streak: 3, atlasRight: 2, atlasPlayed: 4, ended: "miss" });
+    // Atlas sat out a photo: no call.
+    rememberNorthDay(yesterday, { streak: 3, atlasRight: 1, atlasPlayed: 3, ended: "miss" });
+    // Still going: no call yet.
+    rememberOddDay(yesterday, { streak: 2, atlasRight: 2, atlasPlayed: 2, ended: null });
+    const [today, before] = dayTallies(DAY, IDS, NOW);
+    expect(today.versus).toEqual({});
+    expect(before.versus).toEqual({
+      "name-country": { you: 3, atlas: 2, unit: "right", call: "you" },
+    });
   });
 });
 
@@ -318,7 +332,10 @@ describe("the later games on Today", () => {
     expect(game("close-up")).toMatchObject({ status: "new", line: "Not started" });
     rememberCloseDay(DAY_AFTER, { results: [], wrong: ["DE"] });
     expect(game("close-up")).toMatchObject({ status: "going", line: "0 of 5 photos, 0 points" });
-    rememberCloseDay(DAY_AFTER, { results: [CLOSE, { ...CLOSE, id: "b", atlas: null }], wrong: [] });
+    rememberCloseDay(DAY_AFTER, {
+      results: [CLOSE, { ...CLOSE, id: "b", atlas: null }],
+      wrong: [],
+    });
     expect(game("close-up")).toMatchObject({
       status: "going",
       line: "2 of 5 photos, 4 points",
@@ -403,8 +420,7 @@ describe("calendarWeeks", () => {
 describe("todayShare", () => {
   it("adds the run of full days once today is one of two or more", () => {
     const games = todayGames(DAY, IDS, NOW);
-    const line = (done: number[]) =>
-      todayShare(DAY, games, HREF, fullDayStreak(tallies(...done)));
+    const line = (done: number[]) => todayShare(DAY, games, HREF, fullDayStreak(tallies(...done)));
     expect(line([ALL, ALL, ALL])).toContain("🔥 3 full days in a row\n");
     expect(line([ALL])).not.toContain("🔥");
     expect(line([1, ALL, ALL])).not.toContain("🔥");

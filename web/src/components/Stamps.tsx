@@ -162,6 +162,15 @@ export default function Stamps({
               <h2 id={`stamps-${group.id}`} className="font-sign text-2xl font-bold">
                 {group.title}
               </h2>
+              {group.id === "atlas" && (
+                <p className="mt-1 text-sm text-chalk-dim" data-testid="stamps-atlas-intro">
+                  One for each daily game, on a day you beat Atlas on the same photos.{" "}
+                  <Link href="/today" className="underline underline-offset-2 hover:text-chalk">
+                    Atlas&apos;s day on Today
+                  </Link>{" "}
+                  shows how today&apos;s games stand.
+                </p>
+              )}
               <ul className="mt-3 grid gap-3 sm:grid-cols-2">
                 {stamps.map((s) => (
                   <StampCard key={s.id} stamp={s} fresh={view.fresh.includes(s.id)} />

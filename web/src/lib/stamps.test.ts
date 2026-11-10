@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { archiveDays } from "@/lib/game/dailyArchive";
-import type { DayTally } from "@/lib/game/today";
+import { VERSUS_GAMES, type DayTally, type Versus } from "@/lib/game/today";
 
 import { BADGE_IDS } from "./badges";
 import { EMPTY_RECORD, type PlayerRecord } from "./playerRecord";
@@ -10,6 +10,8 @@ import {
   FULL_WEEK,
   STAMPS_KEY,
   STAMP_IDS,
+  atlasStampId,
+  closestWords,
   collectStamps,
   countriesByContinent,
   keepStamps,
@@ -69,6 +71,14 @@ describe("readStamps", () => {
       "cleared-oceania",
       "full-day",
       "full-week",
+      "beat-atlas-further-north",
+      "beat-atlas-odd-one-out",
+      "beat-atlas-which-way",
+      "beat-atlas-how-far",
+      "beat-atlas-name-country",
+      "beat-atlas-hot-cold",
+      "beat-atlas-line-up",
+      "beat-atlas-close-up",
     ]);
     expect(stamps.every((s) => !s.earned)).toBe(true);
     // Every id read is one the store accepts.
@@ -162,6 +172,81 @@ describe("readStamps", () => {
     expect(byId(stamps, "full-week").progress).toMatchObject({ have: 3, need: FULL_WEEK });
     const withToday = readStamps(sources({ tallies: tallies((i) => i <= 3) }));
     expect(byId(withToday, "full-week").progress).toMatchObject({ have: 4 });
+  });
+});
+
+const vs = (you: number, atlas: number, unit = "right"): Versus => ({
+  you,
+  atlas,
+  unit,
+  call: you > atlas ? "you" : you < atlas ? "atlas" : "level",
+});
+
+/** The days kept with these calls against Atlas, by days ago. */
+function withCalls(calls: Record<number, DayTally["versus"]>): DayTally[] {
+  return tallies(() => false).map((t, i) => ({ ...t, versus: calls[i] }));
+}
+
+describe("beat Atlas stamps", () => {
+  it("has one per daily game Atlas can be called on, the Daily Five left out", () => {
+    const stamps = readStamps(sources()).filter((s) => s.group === "atlas");
+    expect(stamps.map((s) => s.id)).toEqual(VERSUS_GAMES.map((g) => atlasStampId(g.id)));
+    expect(stamps.map((s) => s.id)).not.toContain("beat-atlas-daily-five");
+    const close = byId(stamps, "beat-atlas-close-up");
+    expect(close).toMatchObject({ name: "Beat Atlas: Close-up", icon: "🔍", progress: null });
+    expect(close.note).toBeNull();
+  });
+
+  it("is earned on any day kept where you outscored Atlas at that game", () => {
+    const stamps = readStamps(
+      sources({
+        tallies: withCalls({
+          0: { "line-up": vs(14, 16, "in place") },
+          // Weeks ago, but still kept.
+          20: { "name-country": vs(4, 3), "line-up": vs(12, 12, "in place") },
+        }),
+      }),
+    );
+    expect(byId(stamps, "beat-atlas-name-country").earned).toBe(true);
+    expect(byId(stamps, "beat-atlas-name-country").note).toBeNull();
+    expect(byId(stamps, "beat-atlas-line-up").earned).toBe(false);
+    expect(byId(stamps, "beat-atlas-further-north").earned).toBe(false);
+  });
+
+  it("says how close you came: the smallest gap, a level day above any loss", () => {
+    const loss = readStamps(
+      sources({
+        tallies: withCalls({
+          1: { "how-far": vs(3100, 4200, "points") },
+          4: { "how-far": vs(3900, 4150, "points") },
+          6: { "how-far": vs(1000, 4800, "points") },
+        }),
+      }),
+    );
+    expect(byId(loss, "beat-atlas-how-far").note).toBe(
+      "Closest so far: 3,900 points to Atlas's 4,150",
+    );
+    const level = readStamps(
+      sources({
+        tallies: withCalls({ 0: { "which-way": vs(2, 3) }, 3: { "which-way": vs(4, 4) } }),
+      }),
+    );
+    expect(byId(level, "beat-atlas-which-way").note).toBe("Level with Atlas so far: 4 right each");
+  });
+
+  it("words each unit", () => {
+    expect(closestWords(vs(1, 2))).toBe("Closest so far: 1 right to Atlas's 2");
+    expect(closestWords(vs(14, 17, "in place"))).toBe("Closest so far: 14 in place to Atlas's 17");
+    expect(closestWords(vs(12, 12, "points"))).toBe("Level with Atlas so far: 12 points each");
+  });
+
+  it("stays once kept, after the day that earned it has aged out", () => {
+    const won = readStamps(sources({ tallies: withCalls({ 29: { "hot-cold": vs(9, 8) } }) }));
+    const first = collectStamps(won, {}, TODAY);
+    expect(first.fresh).toEqual(["beat-atlas-hot-cold"]);
+    const later = collectStamps(readStamps(sources()), first.kept, "2026-11-11");
+    expect(byId(later.stamps, "beat-atlas-hot-cold").earned).toBe(true);
+    expect(parseKeptStamps(JSON.stringify(first.kept))).toEqual(first.kept);
   });
 });
 

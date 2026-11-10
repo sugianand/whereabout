@@ -8,6 +8,9 @@
  *   one. The countries counted are the ones the game deals, so a stamp is always within reach.
  * - A full day and a full week of Today (`lib/game/today.ts`): every daily game finished in one
  *   day, and on seven days in a row, read from the days each game keeps.
+ * - Beat Atlas: one per daily game Atlas can be called on, earned on a day you outscored it there,
+ *   by the same rule as Atlas's day on Today (`DayTally.versus`). Until then, the note gives the
+ *   closest you came on the days kept.
  *
  * The days every game keeps are the last `ARCHIVE_DAYS`, and the map's history is capped, so a
  * stamp could otherwise fade once its proof is gone. Each stamp is therefore written down under
@@ -20,8 +23,8 @@ import { CONTINENT_OF, type Continent } from "@/lib/continents";
 import { countryName } from "@/lib/countries";
 import { isDayKey } from "@/lib/game/dailyArchive";
 import { regionSlug } from "@/lib/game/regions";
-import { formatDistance } from "@/lib/geo";
-import type { DayTally } from "@/lib/game/today";
+import { formatDistance, formatPoints } from "@/lib/geo";
+import { VERSUS_GAMES, type DayTally, type TodayGameId, type Versus } from "@/lib/game/today";
 import { currentStreak, type PlayerRecord } from "@/lib/playerRecord";
 import type { PlayedPhoto } from "@/lib/playedMap";
 import type { Units } from "@/lib/units";
@@ -35,14 +38,16 @@ export const FULL_WEEK = 7;
 export const NAME_LEFT = 3;
 
 export type ContinentStampId = `cleared-${string}`;
-export type StampId = BadgeId | ContinentStampId | "full-day" | "full-week";
+export type AtlasStampId = `beat-atlas-${TodayGameId}`;
+export type StampId = BadgeId | ContinentStampId | "full-day" | "full-week" | AtlasStampId;
 
-export type StampGroup = "badges" | "continents" | "days";
+export type StampGroup = "badges" | "continents" | "days" | "atlas";
 
 export const STAMP_GROUPS: readonly { id: StampGroup; title: string }[] = [
   { id: "badges", title: "Badges" },
   { id: "continents", title: "Continents cleared" },
   { id: "days", title: "Full days" },
+  { id: "atlas", title: "Beat Atlas" },
 ];
 
 /** How far along an unearned stamp is: `have` of `need`, counted in `unit`. */
@@ -102,12 +107,17 @@ export function continentStampId(c: Continent): ContinentStampId {
   return `cleared-${regionSlug(c)}`;
 }
 
+export function atlasStampId(game: TodayGameId): AtlasStampId {
+  return `beat-atlas-${game}`;
+}
+
 /** Every stamp id there can be, in the order the page lists them. */
 export const STAMP_IDS: readonly StampId[] = [
   ...BADGES.map((b) => b.id),
   ...GLOBETROTTER_CONTINENTS.map(continentStampId),
   "full-day",
   "full-week",
+  ...VERSUS_GAMES.map((g) => atlasStampId(g.id)),
 ];
 
 const KNOWN: ReadonlySet<string> = new Set(STAMP_IDS);
@@ -265,9 +275,54 @@ function dayStamps({ tallies }: StampSources): Stamp[] {
   ];
 }
 
+/** A tally in its unit: "4,200 points", "14 in place", "3 right". */
+export function versusTally(n: number, unit: string): string {
+  return `${unit === "points" ? formatPoints(n) : n} ${unit}`;
+}
+
+/** "Closest so far: 3 right to Atlas's 4" or "Level with Atlas so far: 3 right each". */
+export function closestWords(v: Pick<Versus, "you" | "atlas" | "unit">): string {
+  if (v.you === v.atlas) return `Level with Atlas so far: ${versusTally(v.you, v.unit)} each`;
+  const atlas = v.unit === "points" ? formatPoints(v.atlas) : String(v.atlas);
+  return `Closest so far: ${versusTally(v.you, v.unit)} to Atlas's ${atlas}`;
+}
+
+/**
+ * One stamp per game Atlas can be called on: earned on any day kept where you outscored it.
+ * Unearned, the note is the closest you came, the day with the smallest gap (ties to the newest),
+ * so a near miss shows how little is left; a game never finished against Atlas has no note.
+ */
+function atlasStamps({ tallies }: StampSources): Stamp[] {
+  return VERSUS_GAMES.map((game): Stamp => {
+    const calls = tallies
+      .map((t) => t.versus?.[game.id])
+      .filter((v): v is Versus => v !== undefined);
+    const earned = calls.some((v) => v.call === "you");
+    let closest: Versus | null = null;
+    for (const v of calls) {
+      if (!closest || v.you - v.atlas > closest.you - closest.atlas) closest = v;
+    }
+    return {
+      id: atlasStampId(game.id),
+      group: "atlas",
+      name: `Beat Atlas: ${game.name}`,
+      how: `Outscore Atlas at today's ${game.name}, with Atlas playing all of it too`,
+      icon: game.icon,
+      earned,
+      progress: null,
+      note: !earned && closest ? closestWords(closest) : null,
+    };
+  });
+}
+
 /** Every stamp as the browser's records stand, before what was kept is added in. */
 export function readStamps(sources: StampSources): Stamp[] {
-  return [...badgeStamps(sources), ...continentStamps(sources), ...dayStamps(sources)];
+  return [
+    ...badgeStamps(sources),
+    ...continentStamps(sources),
+    ...dayStamps(sources),
+    ...atlasStamps(sources),
+  ];
 }
 
 /** Stamp ids with the UTC day each was first seen earned. */
