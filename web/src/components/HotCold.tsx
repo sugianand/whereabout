@@ -25,9 +25,19 @@ import {
   type HotClue,
   type HotRound,
 } from "@/lib/game/hotCold";
+import {
+  HOT_CHALLENGE_PARAM,
+  friendPhotoLine,
+  hotChallengeLine,
+  hotChallengeText,
+  hotChallengeTotal,
+  parseHotChallenge,
+  type HotChallenge,
+} from "@/lib/game/hotChallenge";
 import { dailyHotOrder, hotDailyShare, loadHotDay, rememberHotDay } from "@/lib/game/hotDaily";
 import { formatDistance, formatPoints, haversineKm, type LngLat } from "@/lib/geo";
 import type { RevealView } from "@/lib/reveal";
+import { sendShare, type ShareOutcome } from "@/lib/share";
 import type { Units } from "@/lib/units";
 import { useUnits } from "@/lib/useUnits";
 
@@ -52,6 +62,26 @@ type HotColdProps = {
   /** For tests: the clock that picks today's game. */
   now?: () => Date;
 };
+
+/** Why a challenge link was set aside for a fresh game. */
+export const HOT_CHALLENGE_NOTICE = {
+  malformed: "That challenge link was cut short, so here's a fresh game instead.",
+  missing: "That challenge's photos aren't in the game any more, so here's a fresh game instead.",
+} as const;
+
+/** The challenge the address carries, read once as the page opens; null without one. */
+function linkedChallenge(dealable: readonly string[]) {
+  const value = new URLSearchParams(window.location.search).get(HOT_CHALLENGE_PARAM);
+  return value === null ? null : parseHotChallenge(value, dealable);
+}
+
+/** Take the challenge out of the address, so a reload deals a fresh game, not the old link. */
+function dropChallengeParam() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has(HOT_CHALLENGE_PARAM)) return;
+  url.searchParams.delete(HOT_CHALLENGE_PARAM);
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
 
 /** "1 pin", "3 pins". */
 function pinCount(n: number): string {
@@ -102,33 +132,49 @@ export default function HotCold({ deck, loadRecords, random, daily = false, now 
   const [error, setError] = useState<string | null>(null);
   // The day today's game was dealt for, kept when the clock passes midnight mid-game.
   const [day, setDay] = useState<string | null>(null);
+  // A friend's challenge this game answers: their photos, and their points and pins to beat.
+  const [challenge, setChallenge] = useState<HotChallenge | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const units = useUnits();
 
-  const start = useCallback(() => {
-    if (daily) {
-      const today = runToday(now?.());
-      setDay(today);
+  /** Deal a game; `fromLink` takes up a challenge the address carries, as the page opens. */
+  const start = useCallback(
+    (fromLink = false) => {
+      if (daily) {
+        const today = runToday(now?.());
+        setDay(today);
+        dispatch({
+          type: "start",
+          order: dailyHotOrder(deck.streakIds, today),
+          from: loadHotDay(today) ?? undefined,
+        });
+        return;
+      }
+      const stored = loadBestHot();
+      setBest(stored);
+      setBestBefore(stored);
+      const linked = fromLink ? linkedChallenge(deck.streakIds) : null;
+      setNotice(linked && !linked.ok ? HOT_CHALLENGE_NOTICE[linked.reason] : null);
+      if (linked?.ok) {
+        setChallenge(linked.challenge);
+        dispatch({ type: "start", order: linked.challenge.ids });
+        return;
+      }
+      setChallenge(null);
+      dropChallengeParam();
+      const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
       dispatch({
         type: "start",
-        order: dailyHotOrder(deck.streakIds, today),
-        from: loadHotDay(today) ?? undefined,
+        order: seededShuffle(deck.streakIds, seed).slice(0, HOT_PHOTOS),
       });
-      return;
-    }
-    const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
-    const stored = loadBestHot();
-    setBest(stored);
-    setBestBefore(stored);
-    dispatch({
-      type: "start",
-      order: seededShuffle(deck.streakIds, seed).slice(0, HOT_PHOTOS),
-    });
-  }, [daily, deck.streakIds, now, random]);
+    },
+    [daily, deck.streakIds, now, random],
+  );
 
   // The order is shuffled in the browser after hydration, never at build time.
   useEffect(() => {
-    const id = requestAnimationFrame(start);
+    const id = requestAnimationFrame(() => start(true));
     return () => cancelAnimationFrame(id);
   }, [start]);
 
@@ -202,9 +248,12 @@ export default function HotCold({ deck, loadRecords, random, daily = false, now 
 
   const next = useCallback(() => {
     const after = hotReducer(state, { type: "next" });
-    if (after.phase === "finished" && !day) setBest(rememberHot(hotTotal(after.results)));
+    // A challenge's photos may have been seen before, so it is played for the friend only.
+    if (after.phase === "finished" && !day && !challenge) {
+      setBest(rememberHot(hotTotal(after.results)));
+    }
     dispatch({ type: "next" });
-  }, [day, state]);
+  }, [challenge, day, state]);
 
   // G guesses from anywhere on the screen, like a round's; the card's button takes Enter.
   useEffect(() => {
@@ -242,7 +291,8 @@ export default function HotCold({ deck, loadRecords, random, daily = false, now 
         best={best}
         newBest={total > bestBefore}
         units={units}
-        onAgain={start}
+        challenge={challenge}
+        onAgain={() => start()}
       />
     );
   }
@@ -287,7 +337,9 @@ export default function HotCold({ deck, loadRecords, random, daily = false, now 
             Whereabout
           </Link>
           <p className="mt-1 text-sm text-chalk-dim">
-            {`Hot and cold${daily ? ", today" : ""}: photo ${(playing?.index ?? 0) + 1} of ${of}`}
+            {challenge
+              ? `A friend's challenge: ${formatPoints(hotChallengeTotal(challenge))} to beat, photo ${(playing?.index ?? 0) + 1} of ${of}`
+              : `Hot and cold${daily ? ", today" : ""}: photo ${(playing?.index ?? 0) + 1} of ${of}`}
           </p>
           <div className="pointer-events-auto mt-2 flex items-center gap-2">
             <GamesMenu screen="hot-cold" streakHref="/streak" />
@@ -346,6 +398,11 @@ export default function HotCold({ deck, loadRecords, random, daily = false, now 
         {!answered && (
           <div className="wb-guess-bar">
             {clue && <Clue clue={clue} units={units} />}
+            {notice && !clue && playing?.index === 0 && (
+              <p role="status" className="mb-2 text-center text-sm text-chalk-dim">
+                {notice}
+              </p>
+            )}
             <button
               type="button"
               onClick={guess}
@@ -372,6 +429,7 @@ export default function HotCold({ deck, loadRecords, random, daily = false, now 
             round={answered.round}
             record={current}
             units={units}
+            friend={challenge ? friendPhotoLine(challenge, answered.index) : undefined}
             last={answered.index + 1 >= answered.order.length}
             onNext={next}
           />
@@ -385,12 +443,15 @@ function HotCard({
   round,
   record,
   units,
+  friend,
   last,
   onNext,
 }: {
   round: HotRound;
   record: GameRecord;
   units: Units;
+  /** In a friend's challenge, how they did on this photo. */
+  friend?: string;
   last: boolean;
   onNext: () => void;
 }) {
@@ -432,6 +493,11 @@ function HotCard({
           {round.atlas.found ? ", in the country" : ""}: {formatPoints(round.atlas.score)} points.
         </p>
       )}
+      {friend && (
+        <p className="mt-1 text-sm text-chalk-dim" data-testid="hot-cold-friend">
+          {`Your friend: ${friend}.`}
+        </p>
+      )}
       <div className="mt-4 flex items-center gap-4 md:mt-5">
         <button
           ref={nextRef}
@@ -454,8 +520,16 @@ function HotCard({
   );
 }
 
-/** Each photo of a game: how it went and its points. */
-function PhotoList({ results, units }: { results: readonly HotRound[]; units: Units }) {
+/** Each photo of a game: how it went and its points, beside the friend's in a challenge. */
+function PhotoList({
+  results,
+  units,
+  challenge,
+}: {
+  results: readonly HotRound[];
+  units: Units;
+  challenge?: HotChallenge | null;
+}) {
   return (
     <ol className="mt-6 space-y-2" aria-label="Your photos">
       {results.map((r, i) => (
@@ -465,7 +539,12 @@ function PhotoList({ results, units }: { results: readonly HotRound[]; units: Un
               r.foundOn ? `found on pin ${r.foundOn}` : "not found"
             }, ${formatDistance(r.bestKm, units)} at closest`}
           </span>
-          <span className="tabular font-semibold">{formatPoints(r.score)}</span>
+          <span className="tabular shrink-0 font-semibold">
+            {formatPoints(r.score)}
+            {challenge && (
+              <span className="font-normal text-chalk-dim">{`, friend ${formatPoints(challenge.scores[i]!)}`}</span>
+            )}
+          </span>
         </li>
       ))}
     </ol>
@@ -500,19 +579,34 @@ function DayResult({
   );
 }
 
+const CHALLENGE_NOTE: Record<ShareOutcome, string> = {
+  shared: "Challenge sent.",
+  copied: "Challenge link copied. Whoever opens it plays these five photos.",
+  cancelled: "",
+  failed: "Couldn't copy the link. Your browser blocked the clipboard.",
+};
+
 function Finished({
   results,
   best,
   newBest,
   units,
+  challenge,
   onAgain,
 }: {
   results: readonly HotRound[];
   best: number;
   newBest: boolean;
   units: Units;
+  /** The friend's challenge this game answered, if it was one. */
+  challenge: HotChallenge | null;
   onAgain: () => void;
 }) {
+  const [sent, setSent] = useState("");
+  async function sendChallenge() {
+    const text = hotChallengeText(results, window.location.href, challenge ?? undefined);
+    setSent(CHALLENGE_NOTE[await sendShare(text, navigator)]);
+  }
   const none = results.length === 0;
   const atlas = hotAtlasLine(results);
   const most = results.length * PHOTO_POINTS;
@@ -531,18 +625,20 @@ function Finished({
         <>
           <p className="mt-4 text-lg text-chalk-dim">
             {`Out of ${formatPoints(most)}. `}
-            {newBest
-              ? "That's your new best!"
-              : best > 0
-                ? `Your best is ${formatPoints(best)}.`
-                : ""}
+            {challenge
+              ? `${hotChallengeLine(results, challenge)} Your friend scored ${formatPoints(hotChallengeTotal(challenge))}. A challenge doesn't count toward your best.`
+              : newBest
+                ? "That's your new best!"
+                : best > 0
+                  ? `Your best is ${formatPoints(best)}.`
+                  : ""}
           </p>
           {atlas && (
             <p className="mt-2 text-chalk" data-testid="hot-cold-atlas-total">
               {atlas}
             </p>
           )}
-          <PhotoList results={results} units={units} />
+          <PhotoList results={results} units={units} challenge={challenge} />
         </>
       )}
       <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -552,13 +648,27 @@ function Finished({
             onClick={onAgain}
             className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
           >
-            Play again
+            {challenge ? "Play a fresh game" : "Play again"}
+          </button>
+        )}
+        {!none && (
+          <button
+            type="button"
+            onClick={sendChallenge}
+            className="rounded-full border-2 border-gold px-5 py-2.5 font-semibold text-gold transition hover:bg-gold/10"
+          >
+            {challenge ? "Send yours back" : "Challenge a friend"}
           </button>
         )}
         <Link href="/" className="text-chalk-dim underline underline-offset-2 hover:text-chalk">
           Back to the main game
         </Link>
       </div>
+      {!none && (
+        <p className="mt-2 min-h-5 text-sm text-chalk-dim" role="status">
+          {sent}
+        </p>
+      )}
     </main>
   );
 }

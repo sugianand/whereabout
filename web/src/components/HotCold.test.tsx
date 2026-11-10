@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { seededShuffle } from "@/lib/game/daily";
 import type { GameRecord } from "@/lib/game/deck";
 import { BEST_HOT_KEY, PIN_BONUS } from "@/lib/game/hotCold";
+import { encodeHotChallenge, type HotChallenge } from "@/lib/game/hotChallenge";
 import { HOT_DAILY_KEY, dailyHotOrder, loadHotDay } from "@/lib/game/hotDaily";
 import type { CatalogPhoto } from "@/lib/game/types";
 import { formatPoints, scoreDistance } from "@/lib/geo";
@@ -160,6 +161,117 @@ describe("HotCold", () => {
     expect(
       await screen.findByRole("heading", { name: "No photos to play yet" }),
     ).toBeInTheDocument();
+  });
+});
+
+function useClipboard() {
+  const sent = { text: "" };
+  Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+  Object.defineProperty(navigator, "clipboard", {
+    value: { writeText: async (t: string) => void (sent.text = t) },
+    configurable: true,
+  });
+  return sent;
+}
+
+/** Play the five photos dealt, each found with the first pin. */
+async function playAll(map: FakeMap) {
+  for (let i = 0; i < 5; i++) {
+    const id = document.querySelector("main")!.getAttribute("data-photo")!;
+    pin(map, byId.get(id)!);
+    const card = await screen.findByRole("region");
+    fireEvent.click(
+      within(card).getByRole("button", { name: i === 4 ? "See your score" : "Next photo" }),
+    );
+  }
+}
+
+describe("a friend's Hot and cold challenge", () => {
+  // Not the order random() = 0 deals, so the game must come from the link.
+  const IDS = ["p6", "p4", "p2", "p5", "p3"];
+  const FRIEND: HotChallenge = {
+    ids: IDS,
+    scores: [6000, 5500, 0, 6000, 4000],
+    foundOn: [1, 2, 0, 1, 3],
+  };
+
+  async function linked(value: string) {
+    window.history.replaceState(null, "", `/hot-cold?challenge=${value}&x=1`);
+    return setup();
+  }
+
+  it("deals the friend's photos with their score to beat, and shows theirs on each", async () => {
+    const map = await linked(encodeHotChallenge(FRIEND));
+    expect(
+      screen.getByText("A friend's challenge: 21,500 to beat, photo 1 of 5"),
+    ).toBeInTheDocument();
+    expect(document.querySelector("main")!.getAttribute("data-photo")).toBe("p6");
+    pin(map, byId.get("p6")!);
+    expect(await screen.findByTestId("hot-cold-friend")).toHaveTextContent(
+      "Your friend: 6,000 points, found on pin 1.",
+    );
+  });
+
+  it("ends with who won, leaves the best alone, and sends one back", async () => {
+    const map = await linked(encodeHotChallenge(FRIEND));
+    await playAll(map);
+    expect(await screen.findByRole("heading", { name: "30,000 points" })).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /^Out of 30,000\. You won the challenge by 8,500 points\. Your friend scored 21,500\./,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText(", friend 5,500")).toBeInTheDocument();
+    expect(localStorage.getItem(BEST_HOT_KEY)).toBeNull();
+
+    const sent = useClipboard();
+    fireEvent.click(screen.getByRole("button", { name: "Send yours back" }));
+    await waitFor(() =>
+      expect(
+        screen.getByText("Challenge link copied. Whoever opens it plays these five photos."),
+      ).toBeInTheDocument(),
+    );
+    const lines = sent.text.split("\n");
+    expect(lines[1]).toBe("That beats your 21,500. Your turn to beat mine.");
+    expect(lines[2]).toBe(
+      `http://localhost:3000/hot-cold?challenge=${IDS.join(".")}_6000.6000.6000.6000.6000_1.1.1.1.1`,
+    );
+
+    // A fresh game is a normal one again, with its own address.
+    fireEvent.click(screen.getByRole("button", { name: "Play a fresh game" }));
+    expect(await screen.findByText("Hot and cold: photo 1 of 5")).toBeInTheDocument();
+    expect(window.location.search).toBe("?x=1");
+  });
+
+  it("sets a broken link aside for a fresh game, and says so", async () => {
+    await linked("p6.p4_1_1");
+    expect(screen.getByText(/That challenge link was cut short/)).toBeInTheDocument();
+    expect(screen.getByText("Hot and cold: photo 1 of 5")).toBeInTheDocument();
+    expect(document.querySelector("main")!.getAttribute("data-photo")).toBe(ORDER[0]!.id);
+    expect(window.location.search).toBe("?x=1");
+  });
+
+  it("says when the photos aren't dealt any more", async () => {
+    await linked(encodeHotChallenge({ ...FRIEND, ids: ["p6", "p4", "p2", "p5", "gone"] }));
+    expect(
+      screen.getByText(/That challenge's photos aren't in the game any more/),
+    ).toBeInTheDocument();
+  });
+
+  it("offers a challenge from the end of a free game, carrying its photos, points and pins", async () => {
+    const map = await setup();
+    await playAll(map);
+    expect(await screen.findByText(/That's your new best!/)).toBeInTheDocument();
+    const sent = useClipboard();
+    fireEvent.click(screen.getByRole("button", { name: "Challenge a friend" }));
+    await waitFor(() => expect(sent.text).not.toBe(""));
+    const ids = ORDER.map((p) => p.id).join("\\.");
+    expect(sent.text).toMatch(
+      new RegExp(
+        `/hot-cold\\?challenge=${ids}_6000\\.6000\\.6000\\.6000\\.6000_1\\.1\\.1\\.1\\.1$`,
+      ),
+    );
+    expect(sent.text).toContain("5 of 5 countries found with the first pin.");
   });
 });
 

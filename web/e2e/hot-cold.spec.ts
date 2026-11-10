@@ -269,3 +269,94 @@ test("today's game keeps its header and clue on a 320px phone", async ({ page })
   await expectOnScreen(page.getByRole("link", { name: "Free games" }));
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });
+
+test("a challenge link deals a friend the same five photos, with the points to beat on each", async ({
+  page,
+}) => {
+  test.setTimeout(240_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+
+  // The sender finds every country with the first pin.
+  await page.goto("./hot-cold");
+  const dealt: string[] = [];
+  for (let i = 1; i <= 5; i++) {
+    await expect(page.getByText(`Hot and cold: photo ${i} of 5`)).toBeVisible();
+    const truth = await photoCountry(page);
+    dealt.push((await page.locator("main[data-photo]").getAttribute("data-photo"))!);
+    await pinWithKeyboard(page, (c) => c === truth);
+    await expect(card).toContainText("on pin 1");
+    await page.keyboard.press("Enter");
+  }
+  const heading = page.getByRole("heading", { level: 1 });
+  await expect(heading).toHaveText(/^[\d,]+ points$/);
+  const total = (await heading.textContent())!.replace(" points", "");
+  await page.getByRole("button", { name: "Challenge a friend" }).click();
+  await expect(page.getByText(/^Challenge (sent|link copied)/)).toBeVisible();
+  const sent = await page.evaluate(() => (window as unknown as { sent: string }).sent);
+  expect(sent).toContain(`Hot and cold: ${total} of 30,000 points, 5 of 5 countries`);
+  const link = sent.split("\n").at(-1)!;
+  expect(link).toMatch(
+    new RegExp(
+      `/whereabout/hot-cold/?\\?challenge=${dealt.join("\\.")}_[\\d.]+_1\\.1\\.1\\.1\\.1$`,
+    ),
+  );
+
+  // The friend opens it in a browser of their own: the same photos, in order, with no best kept.
+  await page.evaluate(() => localStorage.clear());
+  await page.goto(link);
+  const subtitle = page.getByText(`A friend's challenge: ${total} to beat, photo 1 of 5`);
+  await expect(subtitle).toBeVisible();
+  await expectOnScreen(subtitle);
+  for (let i = 0; i < 5; i++) {
+    await expect(page.locator("main[data-photo]")).toHaveAttribute("data-photo", dealt[i]!);
+    const truth = await photoCountry(page);
+    // A miss first on the last photo, so the friend's game isn't the sender's.
+    if (i === 4) await pinWithKeyboard(page, (c) => c !== truth);
+    await pinWithKeyboard(page, (c) => c === truth);
+    await expect(page.getByTestId("hot-cold-friend")).toHaveText(
+      /^Your friend: [\d,]+ points, found on pin 1\.$/,
+    );
+    await expectOnScreen(page.getByTestId("hot-cold-friend"));
+    await page.keyboard.press("Enter");
+  }
+  await expect(heading).toHaveText(/^[\d,]+ points$/);
+  await expect(
+    page.getByText(
+      new RegExp(
+        `(You won the challenge|Your friend won) by [\\d,]+ points?\\. Your friend scored ${total}\\.`,
+      ),
+    ),
+  ).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("whereabout:hot-cold-best"))).toBe(null);
+
+  const back = page.getByRole("button", { name: "Send yours back" });
+  await back.scrollIntoViewIfNeeded();
+  await expectOnScreen(back);
+  await back.click();
+  const reply = await page.evaluate(() => (window as unknown as { sent: string }).sent);
+  expect(reply).toMatch(/_1\.1\.1\.1\.2$/);
+
+  // A fresh game drops the link, so a reload doesn't deal the challenge again.
+  await page.getByRole("button", { name: "Play a fresh game" }).click();
+  await expect(page.getByText("Hot and cold: photo 1 of 5")).toBeVisible();
+  expect(new URL(page.url()).search).toBe("");
+  expect(errors).toEqual([]);
+});
+
+test("a broken Hot and cold challenge says so and deals a fresh game", async ({ page }) => {
+  await page.goto("./hot-cold?challenge=wm001.wm002_1_1");
+  await expect(page.getByText(/That challenge link was cut short/)).toBeVisible();
+  await expect(page.getByText("Hot and cold: photo 1 of 5")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Tap the globe: pin 1 of 3" })).toBeVisible();
+});
