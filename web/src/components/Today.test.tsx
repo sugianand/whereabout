@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { rememberNorthDay } from "@/lib/game/northDaily";
 import { rememberOddDay } from "@/lib/game/oddDaily";
+import { rememberWayDay } from "@/lib/game/wayDaily";
 
 import Today from "./Today";
 
@@ -70,6 +71,45 @@ describe("Today", () => {
     expect(writeText.mock.calls[0]).toEqual([
       expect.stringContaining("1 of 7 daily games\n⬆️ Further North: 4 pairs in a row\n"),
     ]);
+  });
+
+  it("has no Atlas's day before a game is finished", async () => {
+    rememberOddDay("2026-11-03", { streak: 2, atlasRight: 2, atlasPlayed: 2, ended: null });
+    render(<Today deckIds={IDS} now={at("2026-11-03T12:00:00Z")} />);
+    await screen.findByTestId("today-odd-one-out");
+    expect(screen.queryByTestId("atlas-day")).toBeNull();
+  });
+
+  it("sets you against Atlas game by game, and says who took the day", async () => {
+    // Atlas played every pair and stop; on Odd one out it sat out two of the quads.
+    rememberNorthDay("2026-11-03", { streak: 4, atlasRight: 2, atlasPlayed: 5, ended: "miss" });
+    rememberWayDay("2026-11-03", { streak: 1, atlasRight: 2, atlasPlayed: 2, ended: "miss" });
+    rememberOddDay("2026-11-03", { streak: 3, atlasRight: 1, atlasPlayed: 2, ended: "miss" });
+    render(<Today deckIds={IDS} now={at("2026-11-03T12:00:00Z")} />);
+
+    const card = await screen.findByRole("region", { name: "Atlas's day" });
+    expect(within(card).getByTestId("atlas-day-call")).toHaveTextContent(
+      "Level with Atlas, 1–1.",
+    );
+    const rows = within(card).getByRole("list", { name: "Game by game" });
+    expect(within(rows).getAllByRole("listitem").map((li) => li.dataset.call)).toEqual([
+      "you",
+      "atlas",
+    ]);
+    expect(within(card).getByTestId("atlas-day-further-north")).toHaveTextContent(
+      "Further NorthYou 4 · Atlas 2 rightYou",
+    );
+    expect(within(card).getByTestId("atlas-day-uncalled")).toHaveTextContent(
+      "No call on Odd one out: Atlas played only some of the photos",
+    );
+  });
+
+  it("asks for a whole game against Atlas when none can be called yet", async () => {
+    rememberNorthDay("2026-11-03", { streak: 4, atlasRight: 2, atlasPlayed: 3, ended: "miss" });
+    render(<Today deckIds={IDS} now={at("2026-11-03T12:00:00Z")} />);
+    const card = await screen.findByTestId("atlas-day");
+    expect(card).not.toHaveAttribute("data-call");
+    expect(card).toHaveTextContent("Finish a game Atlas played all the way through");
   });
 
   it("starts with an empty calendar and how to fill it", async () => {

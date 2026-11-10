@@ -70,7 +70,7 @@ test("Today lists every daily game from the Games menu, follows a real run, and 
     localStorage.setItem("whereabout:daily-scores", JSON.stringify({ [day]: 18240 }));
     localStorage.setItem(
       "whereabout:further-north-daily",
-      JSON.stringify({ [day]: { streak: 6, atlasRight: 3, atlasPlayed: 5, ended: "miss" } }),
+      JSON.stringify({ [day]: { streak: 6, atlasRight: 3, atlasPlayed: 7, ended: "miss" } }),
     );
     localStorage.setItem(
       "whereabout:odd-one-out-daily",
@@ -80,9 +80,20 @@ test("Today lists every daily game from the Games menu, follows a real run, and 
   await page.reload();
   await expect(page.getByTestId("today-standing")).toContainText(/^2 of 9 played/);
   await expect(page.getByTestId("today-daily-five")).toContainText("18,240 of 25,000");
-  await expect(page.getByTestId("today-further-north")).toContainText("Atlas: 3 of 5");
+  await expect(page.getByTestId("today-further-north")).toContainText("Atlas: 3 of 7");
   await expect(page.getByTestId("today-odd-one-out")).toHaveAttribute("data-status", "going");
   await expect(page.getByTestId("today-which-way")).toHaveAttribute("data-status", "new");
+
+  // Atlas's day: Further North, which Atlas played all through, is yours; the Daily Five has no call.
+  const rival = page.getByRole("region", { name: "Atlas's day" });
+  await expect(rival.getByTestId("atlas-day-call")).toHaveText("You took the day from Atlas, 1–0.");
+  await expect(rival.getByTestId("atlas-day-further-north")).toContainText("You 6 · Atlas 3 right");
+  await expect(rival.getByTestId("atlas-day-uncalled")).toContainText("No call on Daily Five");
+  const box = (await rival.boundingBox())!;
+  expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    page.viewportSize()!.width,
+  );
 
   await page.evaluate(() => {
     Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
@@ -98,7 +109,7 @@ test("Today lists every daily game from the Games menu, follows a real run, and 
   const sent = await page.evaluate(() => (window as unknown as { sent: string }).sent);
   expect(sent).toContain(`Whereabout · Today · ${today}\n2 of 9 daily games\n`);
   expect(sent).toContain("🌍 Daily Five: 18,240 of 25,000\n");
-  expect(sent).toContain("⬆️ Further North: 6 pairs in a row\n");
+  expect(sent).toContain("⬆️ Further North: 6 pairs in a row\n🤖 You took the day from Atlas, 1–0\n");
   expect(sent).not.toContain("Odd one out");
   expect(sent).toMatch(/\/whereabout\/today\/?$/);
 

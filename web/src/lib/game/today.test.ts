@@ -16,6 +16,8 @@ import { SAVED_GAME_KEY } from "./saved";
 import {
   CALENDAR_WEEKS,
   TODAY_GAMES,
+  atlasDay,
+  atlasDayWords,
   calendarWeeks,
   dayTallies,
   fullDayStreak,
@@ -418,8 +420,104 @@ describe("todayShare", () => {
         "2 of 7 daily games",
         "⬆️ Further North: 6 pairs in a row",
         "📏 How far apart?: 3,500 of 5,000",
+        "🤖 You took the day from Atlas, 1–0",
         "https://example.test/whereabout/today/",
       ].join("\n"),
     );
+  });
+});
+
+describe("Atlas's day", () => {
+  const DAY_AFTER = "2026-11-08";
+  const AT = new Date(`${DAY_AFTER}T12:00:00Z`);
+  const games = () => todayGames(DAY_AFTER, IDS, AT);
+  const game = (id: TodayGameId) => games().find((g) => g.id === id)!;
+
+  it("calls a streak game only when Atlas played every photo you were shown", () => {
+    // Shown three right and the miss: four photos.
+    rememberNorthDay(DAY_AFTER, { streak: 3, atlasRight: 4, atlasPlayed: 4, ended: "miss" });
+    expect(game("further-north").versus).toEqual({
+      you: 3,
+      atlas: 4,
+      unit: "right",
+      call: "atlas",
+    });
+    rememberNorthDay(DAY_AFTER, { streak: 3, atlasRight: 1, atlasPlayed: 3, ended: "miss" });
+    expect(game("further-north").versus).toBeNull();
+    // A cleared run has no miss to count.
+    rememberWayDay(DAY_AFTER, { streak: 5, atlasRight: 5, atlasPlayed: 5, ended: "cleared" });
+    expect(game("which-way").versus).toMatchObject({ you: 5, atlas: 5, call: "level" });
+    // A run still going has no call yet.
+    rememberOddDay(DAY_AFTER, { streak: 2, atlasRight: 2, atlasPlayed: 2, ended: null });
+    expect(game("odd-one-out").versus).toBeNull();
+  });
+
+  it("calls the points games only over a whole game Atlas played", () => {
+    rememberFarDay(DAY_AFTER, { results: [1, 2, 3, 4, 5].map(() => pair(700)) });
+    expect(game("how-far").versus).toEqual({
+      you: 3500,
+      atlas: 2500,
+      unit: "points",
+      call: "you",
+    });
+    const sitOut = [1, 2, 3, 4, 5].map((i) => pair(700, i === 3 ? null : 900));
+    rememberFarDay(DAY_AFTER, { results: sitOut });
+    expect(game("how-far").versus).toBeNull();
+
+    const truth = { lng: 0, lat: 1 };
+    const hot = (atlas: boolean) =>
+      hotRound("a", [hotPin({ lng: 0, lat: 0 }, truth, true)], atlas ? hotAtlas(0, true) : null);
+    rememberHotDay(DAY_AFTER, { results: [1, 2, 3, 4, 5].map(() => hot(true)), pins: [] });
+    expect(game("hot-cold").versus?.call).toBe("atlas");
+    rememberHotDay(DAY_AFTER, { results: [1, 2, 3, 4, 5].map((i) => hot(i > 1)), pins: [] });
+    expect(game("hot-cold").versus).toBeNull();
+
+    finishJoined["line-up"]!(DAY_AFTER);
+    expect(game("line-up").versus).toEqual({ you: 10, atlas: 5, unit: "in place", call: "you" });
+    finishJoined["close-up"]!(DAY_AFTER);
+    expect(game("close-up").versus).toEqual({ you: 10, atlas: 10, unit: "points", call: "level" });
+  });
+
+  it("never calls the Daily Five, whose score against Atlas isn't kept", () => {
+    finishAll(DAY_AFTER);
+    expect(game("daily-five")).toMatchObject({ status: "done", versus: null });
+    expect(atlasDay(games()).uncalled.map((g) => g.id)).toContain("daily-five");
+  });
+
+  it("counts the games each side took, and who took the day", () => {
+    expect(atlasDay(games())).toMatchObject({ called: [], call: null });
+    expect(atlasDayWords(atlasDay(games()))).toBeNull();
+
+    // Further North: Atlas 2 to your 1 on two pairs; Line them up: you 10 to Atlas's 5.
+    rememberNorthDay(DAY_AFTER, { streak: 1, atlasRight: 2, atlasPlayed: 2, ended: "miss" });
+    finishJoined["line-up"]!(DAY_AFTER);
+    let day = atlasDay(games());
+    expect(day).toMatchObject({ you: 1, atlas: 1, level: 0, call: "level" });
+    expect(atlasDayWords(day)).toBe("Level with Atlas, 1–1");
+
+    finishJoined["close-up"]!(DAY_AFTER);
+    rememberFarDay(DAY_AFTER, { results: [1, 2, 3, 4, 5].map(() => pair(100)) });
+    day = atlasDay(games());
+    expect(day.called.map((g) => g.id)).toEqual([
+      "further-north",
+      "how-far",
+      "line-up",
+      "close-up",
+    ]);
+    expect(day).toMatchObject({ you: 1, atlas: 2, level: 1, call: "atlas" });
+    expect(atlasDayWords(day)).toBe("Atlas took the day, 2–1, 1 level");
+
+    // A game Atlas sat part of out is finished but uncalled.
+    rememberNameDay(DAY_AFTER, { streak: 6, atlasRight: 1, atlasPlayed: 2, ended: "miss" });
+    expect(atlasDay(games()).uncalled.map((g) => g.id)).toEqual(["name-country"]);
+  });
+
+  it("says who took the day in the share, after the games", () => {
+    rememberWayDay(DAY_AFTER, { streak: 4, atlasRight: 2, atlasPlayed: 5, ended: "miss" });
+    expect(todayShare(DAY_AFTER, games(), HREF)).toContain(
+      "🧭 Which way?: 4 stops in a row\n🤖 You took the day from Atlas, 1–0\nhttps://",
+    );
+    rememberWayDay(DAY_AFTER, { streak: 4, atlasRight: 2, atlasPlayed: 3, ended: "miss" });
+    expect(todayShare(DAY_AFTER, games(), HREF)).not.toContain("🤖");
   });
 });

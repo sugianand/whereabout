@@ -138,6 +138,27 @@ export interface TodayGame extends TodayGameInfo {
   line: string;
   /** Atlas's result on the same photos, when the game keeps one. */
   atlas: string | null;
+  /**
+   * You and Atlas side by side on a finished game, only when Atlas played every photo or row you
+   * did: on fewer, its tally isn't a score to set against yours (see `atlasDay`).
+   */
+  versus: Versus | null;
+}
+
+/** Who came out ahead on one game, or on the whole day. */
+export type AtlasCall = "you" | "atlas" | "level";
+
+/** One finished game's tally for you and for Atlas, in the game's own unit. */
+export interface Versus {
+  you: number;
+  atlas: number;
+  /** "right", "points" or "in place". */
+  unit: string;
+  call: AtlasCall;
+}
+
+function versus(you: number, atlas: number, unit: string): Versus {
+  return { you, atlas, unit, call: you > atlas ? "you" : you < atlas ? "atlas" : "level" };
 }
 
 const NOT_STARTED = "Not started";
@@ -146,18 +167,23 @@ function streakGame(
   run: DailyRun | null,
   noun: string,
   nouns: string = `${noun}s`,
-): Pick<TodayGame, "status" | "line" | "atlas"> {
+): Pick<TodayGame, "status" | "line" | "atlas" | "versus"> {
   // A run writes itself after its first answer, so a run with nothing to show isn't started.
   if (!run || (run.ended === null && run.streak === 0)) {
-    return { status: "new", line: NOT_STARTED, atlas: null };
+    return { status: "new", line: NOT_STARTED, atlas: null, versus: null };
   }
   const inARow = `${run.streak} ${run.streak === 1 ? noun : nouns} in a row`;
   const atlas = run.atlasPlayed > 0 ? `${run.atlasRight} of ${run.atlasPlayed}` : null;
-  if (run.ended === null) return { status: "going", line: `${inARow} so far`, atlas };
+  if (run.ended === null) {
+    return { status: "going", line: `${inARow} so far`, atlas, versus: null };
+  }
+  // The photos you were shown: every one you got right, and the one you missed.
+  const played = run.streak + (run.ended === "miss" ? 1 : 0);
   return {
     status: "done",
     line: run.ended === "cleared" ? `${inARow}, every photo` : inARow,
     atlas,
+    versus: run.atlasPlayed === played ? versus(run.streak, run.atlasRight, "right") : null,
   };
 }
 
@@ -165,7 +191,12 @@ function dailyFive(day: string, deckIds: readonly string[], now: Date) {
   const score = loadDailyScores(day)[day];
   if (score !== undefined) {
     const of = formatPoints(MAX_POINTS * ROUNDS_PER_GAME);
-    return { status: "done" as const, line: `${formatPoints(score)} of ${of}`, atlas: null };
+    return {
+      status: "done" as const,
+      line: `${formatPoints(score)} of ${of}`,
+      atlas: null,
+      versus: null,
+    };
   }
   const saved = loadSaved(deckIds, now.getTime());
   if (saved?.mode.kind === "daily" && !saved.mode.archive && saved.mode.day === day) {
@@ -174,29 +205,33 @@ function dailyFive(day: string, deckIds: readonly string[], now: Date) {
       status: "going" as const,
       line: `Photo ${photo} of ${ROUNDS_PER_GAME}`,
       atlas: null,
+      versus: null,
     };
   }
-  return { status: "new" as const, line: NOT_STARTED, atlas: null };
+  return { status: "new" as const, line: NOT_STARTED, atlas: null, versus: null };
 }
 
 function howFar(day: string) {
   const results = loadFarDay(day)?.results ?? [];
-  if (results.length === 0) return { status: "new" as const, line: NOT_STARTED, atlas: null };
+  if (results.length === 0)
+    return { status: "new" as const, line: NOT_STARTED, atlas: null, versus: null };
   const points = formatPoints(totalPoints(results));
   const atlas = atlasTotal(results);
   const rival = atlas.played > 0 ? `${formatPoints(atlas.points)} points` : null;
   if (results.length < PAIRS) {
     const line = `${results.length} of ${PAIRS} pairs, ${points} points`;
-    return { status: "going" as const, line, atlas: rival };
+    return { status: "going" as const, line, atlas: rival, versus: null };
   }
   const line = `${points} of ${formatPoints(PAIRS * PAIR_POINTS)}`;
-  return { status: "done" as const, line, atlas: rival };
+  const called =
+    atlas.played === PAIRS ? versus(totalPoints(results), atlas.points, "points") : null;
+  return { status: "done" as const, line, atlas: rival, versus: called };
 }
 
 function hotCold(day: string) {
   const kept = loadHotDay(day);
   if (!kept || (kept.results.length === 0 && kept.pins.length === 0)) {
-    return { status: "new" as const, line: NOT_STARTED, atlas: null };
+    return { status: "new" as const, line: NOT_STARTED, atlas: null, versus: null };
   }
   const { results } = kept;
   const points = formatPoints(hotTotal(results));
@@ -204,39 +239,49 @@ function hotCold(day: string) {
   const rival = atlas.played > 0 ? `${formatPoints(atlas.total)} points` : null;
   if (results.length < HOT_PHOTOS) {
     const line = `${results.length} of ${HOT_PHOTOS} photos, ${points} points`;
-    return { status: "going" as const, line, atlas: rival };
+    return { status: "going" as const, line, atlas: rival, versus: null };
   }
   const line = `${points} of ${formatPoints(HOT_PHOTOS * PHOTO_POINTS)}`;
-  return { status: "done" as const, line, atlas: rival };
+  const called =
+    atlas.played === HOT_PHOTOS ? versus(hotTotal(results), atlas.total, "points") : null;
+  return { status: "done" as const, line, atlas: rival, versus: called };
 }
 
 function lineUp(day: string) {
   const results = loadLineDay(day)?.results ?? [];
-  if (results.length === 0) return { status: "new" as const, line: NOT_STARTED, atlas: null };
+  if (results.length === 0)
+    return { status: "new" as const, line: NOT_STARTED, atlas: null, versus: null };
   const points = linePoints(results);
   const { points: atlasPoints, rows } = atlasLinePoints(results);
   const atlas = rows > 0 ? `${atlasPoints} of ${rows * ROW}` : null;
   if (results.length < ROWS) {
     const line = `${results.length} of ${ROWS} rows, ${points} in place`;
-    return { status: "going" as const, line, atlas };
+    return { status: "going" as const, line, atlas, versus: null };
   }
-  return { status: "done" as const, line: `${points} of ${ROWS * ROW} in place`, atlas };
+  const called = rows === ROWS ? versus(points, atlasPoints, "in place") : null;
+  return {
+    status: "done" as const,
+    line: `${points} of ${ROWS * ROW} in place`,
+    atlas,
+    versus: called,
+  };
 }
 
 function closeUp(day: string) {
   const kept = loadCloseDay(day);
   if (!kept || (kept.results.length === 0 && kept.wrong.length === 0)) {
-    return { status: "new" as const, line: NOT_STARTED, atlas: null };
+    return { status: "new" as const, line: NOT_STARTED, atlas: null, versus: null };
   }
   const { results } = kept;
   const { you, atlas, atlasPlayed } = closeTotals(results);
   const rival = atlasPlayed > 0 ? `${atlas} of ${atlasPlayed * CLOSE_POINTS[0]}` : null;
   if (results.length < CLOSE_PHOTOS) {
     const line = `${results.length} of ${CLOSE_PHOTOS} photos, ${you} points`;
-    return { status: "going" as const, line, atlas: rival };
+    return { status: "going" as const, line, atlas: rival, versus: null };
   }
   const line = `${you} of ${CLOSE_PHOTOS * CLOSE_POINTS[0]} points`;
-  return { status: "done" as const, line, atlas: rival };
+  const called = atlasPlayed === CLOSE_PHOTOS ? versus(you, atlas, "points") : null;
+  return { status: "done" as const, line, atlas: rival, versus: called };
 }
 
 /** Every daily game dealt on `day`, with its standing in this browser. */
@@ -273,6 +318,55 @@ export function todayGames(
 /** How many of the day's games are finished. */
 export function gamesDone(games: readonly TodayGame[]): number {
   return games.filter((g) => g.status === "done").length;
+}
+
+/** You against Atlas across the day's finished games. */
+export interface AtlasDay {
+  /** Finished games with a call, in Today's order. */
+  called: TodayGame[];
+  /** Finished games with no call: Atlas sat some of it out, or its score isn't kept. */
+  uncalled: TodayGame[];
+  /** Games each side took, and games level. */
+  you: number;
+  atlas: number;
+  level: number;
+  /** Who took the day on games won, or null before any game can be called. */
+  call: AtlasCall | null;
+}
+
+/**
+ * Atlas's day: every finished game where Atlas played the same photos all the way through, and
+ * who took more of them. A game still going has no result yet, so it waits until it is done.
+ */
+export function atlasDay(games: readonly TodayGame[]): AtlasDay {
+  const done = games.filter((g) => g.status === "done");
+  const called = done.filter((g) => g.versus !== null);
+  const count = (c: AtlasCall) => called.filter((g) => g.versus!.call === c).length;
+  const you = count("you");
+  const atlas = count("atlas");
+  return {
+    called,
+    uncalled: done.filter((g) => g.versus === null),
+    you,
+    atlas,
+    level: count("level"),
+    call: called.length === 0 ? null : you > atlas ? "you" : you < atlas ? "atlas" : "level",
+  };
+}
+
+/**
+ * "You took the day from Atlas, 3–1", "Atlas took the day, 2–1, 1 level" or "Level with Atlas,
+ * 1–1"; null before any game can be called.
+ */
+export function atlasDayWords(day: AtlasDay): string | null {
+  if (day.call === null) return null;
+  const head =
+    day.call === "you"
+      ? `You took the day from Atlas, ${day.you}–${day.atlas}`
+      : day.call === "atlas"
+        ? `Atlas took the day, ${day.atlas}–${day.you}`
+        : `Level with Atlas, ${day.you}–${day.atlas}`;
+  return day.level > 0 ? `${head}, ${day.level} level` : head;
 }
 
 /** How many of a day's daily games this browser finished. */
@@ -337,8 +431,9 @@ export function calendarWeeks(tallies: readonly DayTally[]): (DayTally | null)[]
 }
 
 /**
- * The share line: the day, how many games are finished, one line per finished game, a run of
- * full days once there is one to tell, and the address of this page. Scores and counts only, so
+ * The share line: the day, how many games are finished, one line per finished game, who took
+ * the day between you and Atlas once a game can be called, a run of full days once there is one
+ * to tell, and the address of this page. Scores and counts only, so
  * it can never name a place or a photo.
  */
 export function todayShare(
@@ -348,10 +443,12 @@ export function todayShare(
   streak?: FullDayStreak,
 ): string {
   const done = games.filter((g) => g.status === "done");
+  const rival = atlasDayWords(atlasDay(games));
   return [
     `Whereabout · Today · ${day}`,
     `${done.length} of ${games.length} daily games`,
     ...done.map((g) => `${g.icon} ${g.name}: ${g.line}`),
+    ...(rival ? [`🤖 ${rival}`] : []),
     ...(streak?.today && streak.days > 1 ? [`🔥 ${fullDaysWords(streak)} in a row`] : []),
     dailyRunUrl(href),
   ].join("\n");

@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
+import { formatPoints } from "@/lib/geo";
 import { runToday, untilNextRun } from "@/lib/game/dailyRuns";
 import {
   CALENDAR_WEEKS,
   TODAY_GAMES,
+  atlasDay,
+  atlasDayWords,
   calendarWeeks,
   dayTallies,
   fullDayStreak,
@@ -14,6 +17,7 @@ import {
   gamesDone,
   todayGames,
   todayShare,
+  type AtlasCall,
   type DayTally,
   type FullDayStreak,
   type TodayGame,
@@ -77,6 +81,79 @@ function GameCard({ info, game }: { info: TodayGameInfo; game?: TodayGame }) {
         )}
       </Link>
     </li>
+  );
+}
+
+const CALL_WORD: Record<AtlasCall, string> = { you: "You", atlas: "Atlas", level: "Level" };
+
+const CALL_STYLE: Record<AtlasCall, string> = {
+  you: "bg-gold text-ocean-deep",
+  atlas: "bg-flare/20 text-flare",
+  level: "bg-chalk/10 text-chalk",
+};
+
+function tally(n: number, unit: string): string {
+  return unit === "points" ? formatPoints(n) : String(n);
+}
+
+/**
+ * You against Atlas on the day's finished games: who took each one, and who took the day. A game
+ * Atlas sat part of out is listed without a call, so the count is only over like for like.
+ */
+function AtlasDayCard({ games }: { games: readonly TodayGame[] }) {
+  const day = atlasDay(games);
+  const words = atlasDayWords(day);
+  return (
+    <section
+      aria-labelledby="atlas-day"
+      data-testid="atlas-day"
+      data-call={day.call ?? undefined}
+      className="mt-6 rounded-2xl border border-graticule p-4 sm:p-5"
+    >
+      <h2 id="atlas-day" className="font-sign text-2xl font-bold">
+        Atlas&apos;s day
+      </h2>
+      <p className="mt-1 text-lg font-semibold" data-testid="atlas-day-call">
+        {words
+          ? `${words}.`
+          : "Finish a game Atlas played all the way through to see who takes the day."}
+      </p>
+      {day.called.length > 0 && (
+        <ul className="mt-3 divide-y divide-chalk/10" aria-label="Game by game">
+          {day.called.map((g) => {
+            const v = g.versus!;
+            return (
+              <li
+                key={g.id}
+                data-testid={`atlas-day-${g.id}`}
+                data-call={v.call}
+                className="flex items-center justify-between gap-3 py-2"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate font-semibold">{g.name}</span>
+                  <span className="tabular block text-sm text-chalk-dim">
+                    {`You ${tally(v.you, v.unit)} · Atlas ${tally(v.atlas, v.unit)} ${v.unit}`}
+                  </span>
+                </span>
+                <span
+                  className={`shrink-0 rounded-full px-3 py-1 text-sm font-semibold ${CALL_STYLE[v.call]}`}
+                >
+                  {CALL_WORD[v.call]}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {day.uncalled.length > 0 && (
+        <p className="mt-3 text-sm text-chalk-dim" data-testid="atlas-day-uncalled">
+          {`No call on ${day.uncalled.map((g) => g.name).join(", ")}: `}
+          {day.uncalled.every((g) => g.id === "daily-five")
+            ? "its score against Atlas isn't kept here."
+            : "Atlas played only some of the photos, or its score isn't kept here."}
+        </p>
+      )}
+    </section>
   );
 }
 
@@ -231,6 +308,8 @@ export default function Today({
           <GameCard key={info.id} info={info} game={view?.games.find((g) => g.id === info.id)} />
         ))}
       </ul>
+
+      {view && done > 0 && <AtlasDayCard games={view.games} />}
 
       {view && done > 0 && (
         <div className="mt-6">
