@@ -67,7 +67,9 @@ country on the first pin or 500 on the second. Five photos a game, against Atlas
 scored by the same rules; your best game is kept in your browser. **Today's game** (at
 `/hot-cold/daily`) deals everyone the same five photos on the same UTC day, one try a day. Every pin
 is kept as it drops, so a reload picks up where you were and can't take back a miss, and the share
-shows each photo's pins, spoiling no place.
+shows each photo's pins, spoiling no place. After a free game, *Challenge a friend* sends a link that deals the
+same five photos in the same order, with your points and the pin that found each country shown
+after every photo and the total to beat in the header; it carries ids and numbers only.
 **Name the country** (at `/name-country`, in the Games menu) shows one photo and four countries from
 the same continent, drawn from the countries the globe draws: tap the right one, or press 1 to 4,
 and go on until your first miss. Atlas picks too, the name it gave the most of the four, and the
