@@ -100,7 +100,9 @@ points to beat, yours beside theirs on every photo, and can send theirs back.
 **Today** (at `/today`, in the Games menu and on the results screen) puts every daily game on one
 page: the Daily Five, Further North, Odd one out, Which way?, How far apart?, Name the country,
 Hot and cold, Line them up and Close-up, each with where it stands in your browser (not started, under way or its result), the time to the next deal, and one
-share line gathering every finished game, as scores and counts only. Below them, **Full days**
+share line gathering every finished game, as scores and counts only. **Atlas's day** sets you
+against Atlas on each finished game it played all the way through, game by game, and says who took
+the day, a line the share carries too. Below them, **Full days**
 counts your run of days with every daily game finished and shows the last four weeks as a calendar.
 **Stamps** (at `/stamps`, from Today and the results screen) collects what you've played in this
 browser: the record's badges, a continent cleared once you've pinned a photo from every country the
