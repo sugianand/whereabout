@@ -102,6 +102,10 @@ page: the Daily Five, Further North, Odd one out, Which way?, How far apart?, Na
 Hot and cold, Line them up and Close-up, each with where it stands in your browser (not started, under way or its result), the time to the next deal, and one
 share line gathering every finished game, as scores and counts only. Below them, **Full days**
 counts your run of days with every daily game finished and shows the last four weeks as a calendar.
+**Stamps** (at `/stamps`, from Today and the results screen) collects what you've played in this
+browser: the record's badges, a continent cleared once you've pinned a photo from every country the
+game has there, a full day and a full week of daily games. Each says how it's earned and how close
+you are, the one nearest to done is named next, and a stamp once collected stays.
 
 The results screen gathers these quick games (Blitz, Country Streak, Survival, Further North, Odd
 one out, How far apart? and Which way?) in one list, each with your best from this browser beside its name, so you see what

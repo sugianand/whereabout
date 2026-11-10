@@ -709,6 +709,17 @@ export default function Summary({
       </Link>
 
       <Link
+        href="/stamps"
+        className="mt-4 block rounded-2xl border border-gold/40 p-5 transition hover:border-gold hover:bg-gold/5"
+      >
+        <span className="block font-sign text-2xl font-bold text-gold">Stamps</span>
+        <span className="mt-1 block text-chalk-dim">
+          Badges, every country of a continent pinned and full days of daily games, each with how
+          close you are.
+        </span>
+      </Link>
+
+      <Link
         href="/you"
         className="mt-4 block rounded-2xl border border-sonar/40 p-5 transition hover:border-sonar hover:bg-sonar/5"
       >

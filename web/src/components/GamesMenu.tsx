@@ -8,8 +8,8 @@ import type { QuickMode } from "@/lib/game/quickBests";
 import QuickGames from "./QuickGames";
 import TodayLink from "./TodayLink";
 
-/** A screen the Games menu can be opened from: a five-round game, a quick mode or Today. */
-export type GamesScreen = "round" | "today" | QuickMode;
+/** A screen the Games menu can be opened from: a five-round game, a quick mode, Today or Stamps. */
+export type GamesScreen = "round" | "today" | "stamps" | QuickMode;
 
 type GamesMenuProps = {
   /** The screen the menu sits on: its own card reads "Playing now" and isn't a link. */
@@ -112,7 +112,8 @@ export default function GamesMenu({
     }
   }
 
-  const current = screen === "round" || screen === "today" ? undefined : screen;
+  const current =
+    screen === "round" || screen === "today" || screen === "stamps" ? undefined : screen;
 
   return (
     <>

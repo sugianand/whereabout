@@ -1,0 +1,92 @@
+import { expect, test } from "@playwright/test";
+
+const pin = (id: string, country: string, km: number) => ({
+  id,
+  lng: 0,
+  lat: 0,
+  place: "Somewhere",
+  country,
+  km,
+  score: 3000,
+  day: new Date().toISOString().slice(0, 10),
+});
+
+test("stamps come from what the browser keeps, are marked new once, and fit a 320px phone", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+
+  // Today leads to the stamps.
+  await page.goto("./today");
+  await page.getByRole("link", { name: /^Stamps/ }).click();
+  await expect(page.getByRole("heading", { name: "Stamps", level: 1 })).toBeVisible();
+  await expect(page.getByTestId("stamps-standing")).toHaveText(/^0 of \d+ collected\.$/);
+  await expect(page.getByTestId("stamp-cleared-oceania")).toHaveAttribute("data-earned", "false");
+
+  // Every Oceania country the game deals pinned on the map, and yesterday's daily games all
+  // finished, as each game keeps them.
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+  await page.evaluate(
+    ({ played, day }) => {
+      localStorage.setItem("whereabout:played", JSON.stringify(played));
+      localStorage.setItem("whereabout:units", "km");
+      const run = { streak: 3, atlasRight: 1, atlasPlayed: 2, ended: "miss" };
+      const estimate = { km: 100, ratio: 1.5, points: 700, tooFar: false };
+      const pair = { actualKm: 100, you: estimate, atlas: null };
+      const hotPin = { at: { lng: 0, lat: 0 }, km: 10, bearing: 0, found: true };
+      const row = {
+        order: ["a", "b", "c", "d"],
+        east: ["a", "b", "c", "d"],
+        right: [true, true, true, true],
+        atlas: null,
+      };
+      const keep = (key: string, entry: unknown) =>
+        localStorage.setItem(key, JSON.stringify({ [day]: entry }));
+      keep("whereabout:daily-scores", 18240);
+      keep("whereabout:further-north-daily", run);
+      keep("whereabout:odd-one-out-daily", run);
+      keep("whereabout:which-way-daily", run);
+      keep("whereabout:name-country-daily", run);
+      keep("whereabout:how-far-daily", { results: Array(5).fill(pair) });
+      keep("whereabout:hot-cold-daily", {
+        results: Array(5).fill({ id: "a", pins: [hotPin], atlas: null }),
+        pins: [],
+      });
+      keep("whereabout:line-up-daily", { results: Array(5).fill(row) });
+      const close = (id: string) => ({ id, wrong: [], atlas: null });
+      keep("whereabout:close-up-daily", {
+        results: ["a", "b", "c", "d", "e"].map(close),
+        wrong: [],
+      });
+    },
+    { played: [pin("p1", "AU", 900), pin("p2", "NZ", 120), pin("p3", "PF", 3000)], day: yesterday },
+  );
+  await page.reload();
+
+  await expect(page.getByTestId("stamps-standing")).toHaveText(
+    /^2 of \d+ collected\. 2 new stamps since you last looked\.$/,
+  );
+  const oceania = page.getByTestId("stamp-cleared-oceania");
+  await expect(oceania).toHaveAttribute("data-earned", "true");
+  await expect(oceania.getByText("New")).toBeVisible();
+  await expect(page.getByTestId("stamp-full-day")).toHaveAttribute("data-earned", "true");
+  await expect(page.getByTestId("stamp-full-week-progress")).toHaveText("1 of 7 days");
+  await expect(page.getByTestId("stamp-bullseye")).toContainText("Closest pin so far: 120 km");
+  await expect(page.getByTestId("stamps-next")).toContainText("Next up:");
+
+  // Down to a 320px phone, nothing runs off the side.
+  for (const width of [page.viewportSize()!.width, 320]) {
+    await page.setViewportSize({ width, height: 700 });
+    const scroll = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(scroll).toBeLessThanOrEqual(width);
+  }
+
+  // Kept: back again, the stamps are still there and no longer new, even with the map forgotten.
+  await page.evaluate(() => localStorage.removeItem("whereabout:played"));
+  await page.reload();
+  await expect(page.getByTestId("stamps-standing")).toHaveText(/^2 of \d+ collected\.$/);
+  await expect(oceania).toHaveAttribute("data-earned", "true");
+  await expect(oceania.getByText("New")).toHaveCount(0);
+  expect(errors).toEqual([]);
+});

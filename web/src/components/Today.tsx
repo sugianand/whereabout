@@ -114,7 +114,9 @@ function DayCell({ tally, today, first }: { tally: DayTally; today: boolean; fir
         today ? "ring-2 ring-flare" : ""
       }`}
     >
-      <span>{dayName(tally.day, month ? { month: "short", day: "numeric" } : { day: "numeric" })}</span>
+      <span>
+        {dayName(tally.day, month ? { month: "short", day: "numeric" } : { day: "numeric" })}
+      </span>
       <span className="tabular mt-0.5">{full ? "All" : done > 0 ? done : ""}</span>
     </li>
   );
@@ -134,7 +136,10 @@ function FullDays({ tallies, today }: { tallies: readonly DayTally[]; today: str
       <p className="mt-1 text-chalk-dim" data-testid="full-day-streak">
         {streakLine(streak, left, total)}
       </p>
-      <div aria-hidden="true" className="mt-4 grid grid-cols-7 gap-1.5 text-center text-xs text-chalk-dim">
+      <div
+        aria-hidden="true"
+        className="mt-4 grid grid-cols-7 gap-1.5 text-center text-xs text-chalk-dim"
+      >
         {WEEKDAYS.map((d, i) => (
           <span key={i}>{d}</span>
         ))}
@@ -231,12 +236,24 @@ export default function Today({
         <div className="mt-6">
           <ShareDay
             label="Share your day"
-            shareText={(href) => todayShare(view.day, view.games, href, fullDayStreak(view.tallies))}
+            shareText={(href) =>
+              todayShare(view.day, view.games, href, fullDayStreak(view.tallies))
+            }
           />
         </div>
       )}
 
       {view && <FullDays tallies={view.tallies} today={view.day} />}
+
+      <Link
+        href="/stamps"
+        className="mt-6 block rounded-2xl border border-gold/40 p-4 transition hover:border-gold hover:bg-gold/5 sm:p-5"
+      >
+        <span className="block font-sign text-2xl font-bold text-gold">Stamps</span>
+        <span className="mt-1 block text-chalk-dim">
+          A full day and a full week are stamps to collect, with badges and continents cleared.
+        </span>
+      </Link>
 
       <p className="mt-8 text-sm text-chalk-dim">
         Each game deals once a day at midnight UTC, the same for everyone. What you&apos;ve played
