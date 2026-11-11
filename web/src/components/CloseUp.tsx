@@ -45,6 +45,7 @@ import {
   CLOSE_CHALLENGE_PARAM,
   challengeTotal,
   closeChallengeLine,
+  closeHeadToHead,
   closeChallengeText,
   parseCloseChallenge,
   type CloseChallenge,
@@ -58,6 +59,7 @@ import { sendShare, type ShareOutcome } from "@/lib/share";
 import ControlsHelp from "./ControlsHelp";
 import { DailyRunResult } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
+import { HeadToHeadButton } from "./HeadToHeadButton";
 
 /** How long a photo waits for its busiest spot before opening on the fallback. */
 const FOCUS_WAIT_MS = 1500;
@@ -735,6 +737,15 @@ function CloseEnd({
         >
           {challenge ? "Send yours back" : "Challenge a friend"}
         </button>
+        {challenge && (
+          <HeadToHeadButton
+            headToHead={closeHeadToHead(results, challenge, window.location.href)}
+            replyText={() =>
+              closeChallengeText(results, seed, window.location.href, challenge)
+            }
+            onNote={setSent}
+          />
+        )}
         <GamesMenu screen="close-up" streakHref="/streak" />
       </div>
       <p className="mt-2 min-h-5 text-sm text-chalk-dim" role="status">

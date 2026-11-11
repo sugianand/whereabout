@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import photos from "@/data/photos.json";
+import { headToHeadLayout } from "@/lib/headToHead";
 
 import {
   encodeLineChallenge,
@@ -8,6 +9,7 @@ import {
   lineChallengeLine,
   lineChallengeText,
   lineChallengeUrl,
+  lineHeadToHead,
   parseLineChallenge,
   type LineChallenge,
 } from "./lineChallenge";
@@ -109,5 +111,47 @@ describe("line-up challenge links", () => {
     );
     for (const p of photos) expect(text).not.toContain(p.place);
     expect(parseLineChallenge(text.split("challenge=")[1], photos.map((p) => p.id)).ok).toBe(true);
+  });
+});
+
+describe("the line-up head to head", () => {
+  const PAGE = `https://x.dev/whereabout/line-up/?challenge=${VALUE}`;
+
+  it("lists both counts in place on every row, and calls each and the game on them", () => {
+    // The friend's 4, 2, 0, 1, 3 against 4, 3, 0, 0, 1: 10 to 8.
+    const results = [4, 3, 0, 0, 1].map((n, i) => result(C.rows[i]!, n));
+    const h = lineHeadToHead(results, C, PAGE);
+    expect(h.game).toBe("Line them up");
+    expect(h.youTotal).toBe("8 of 20");
+    expect(h.friendTotal).toBe("10 of 20");
+    expect(h.outcome).toBe("lost");
+    expect(h.rows.map((r) => [r.label, r.you, r.friend, r.winner])).toEqual([
+      ["Row 1", "4 of 4 in place", "4 of 4 in place", "tie"],
+      ["Row 2", "3 of 4 in place", "2 of 4 in place", "you"],
+      ["Row 3", "0 of 4 in place", "0 of 4 in place", "tie"],
+      ["Row 4", "0 of 4 in place", "1 of 4 in place", "friend"],
+      ["Row 5", "1 of 4 in place", "3 of 4 in place", "friend"],
+    ]);
+  });
+
+  it("counts out of the rows the game had, on a short game", () => {
+    const short = { rows: ROWS_OF(2), points: [4, 0] };
+    const h = lineHeadToHead([result(short.rows[0]!, 2), result(short.rows[1]!, 3)], short, PAGE);
+    expect([h.youTotal, h.friendTotal, h.outcome]).toEqual(["5 of 8", "4 of 8", "won"]);
+    expect(h.rows).toHaveLength(2);
+  });
+
+  it("draws no photo or place, only the page it came from", () => {
+    const rows = [0, 1, 2, 3, 4].map((r) => photos.slice(r * 4, r * 4 + 4).map((p) => p.id));
+    const results = rows.map((row, i) => result(row, i % 5));
+    const words = headToHeadLayout(lineHeadToHead(results, lineChallengeFrom(rows, results), PAGE))
+      .texts.map((t) => t.text)
+      .join("\n");
+    for (const p of photos) {
+      expect(words).not.toContain(p.id);
+      expect(words).not.toContain(p.place);
+    }
+    expect(words).toContain("x.dev/whereabout/line-up/");
+    expect(words).not.toContain("challenge=");
   });
 });

@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import photos from "@/data/photos.json";
+import { headToHeadLayout } from "@/lib/headToHead";
 
 import {
   closeChallengeFrom,
   closeChallengeLine,
   closeChallengeText,
   closeChallengeUrl,
+  closeHeadToHead,
+  closeRowResult,
   encodeCloseChallenge,
   parseCloseChallenge,
   type CloseChallenge,
@@ -97,5 +100,51 @@ describe("close-up challenge links", () => {
     for (const p of photos) {
       expect(text).not.toContain(p.place);
     }
+  });
+});
+
+describe("the close-up head to head", () => {
+  const PAGE = `https://x.dev/whereabout/close-up/?challenge=${encodeCloseChallenge(C)}`;
+
+  it("words a photo's points by the name that found it, the friend's from their points alone", () => {
+    expect([3, 2, 1, 0].map(closeRowResult)).toEqual([
+      "3 · 1st name",
+      "2 · 2nd name",
+      "1 · 3rd name",
+      "0 · not named",
+    ]);
+  });
+
+  it("lists both results on every photo, and calls each and the game on points", () => {
+    // The friend's 3, 2, 0, 1, 3 against 3, 1, 1, 0, 2: 9 to 7.
+    const results = [0, 2, 2, 3, 1].map((wrong, i) => result(C.ids[i]!, wrong));
+    const h = closeHeadToHead(results, C, PAGE);
+    expect(h.game).toBe("Close-up");
+    expect(h.youTotal).toBe("7 of 15");
+    expect(h.friendTotal).toBe("9 of 15");
+    expect(h.outcome).toBe("lost");
+    expect(h.rows).toEqual([
+      { label: "Photo 1", you: "3 · 1st name", friend: "3 · 1st name", winner: "tie" },
+      { label: "Photo 2", you: "1 · 3rd name", friend: "2 · 2nd name", winner: "friend" },
+      { label: "Photo 3", you: "1 · 3rd name", friend: "0 · not named", winner: "you" },
+      { label: "Photo 4", you: "0 · not named", friend: "1 · 3rd name", winner: "friend" },
+      { label: "Photo 5", you: "2 · 2nd name", friend: "3 · 1st name", winner: "friend" },
+    ]);
+    const won = closeHeadToHead(C.ids.map((id) => result(id, 0)), C, PAGE);
+    expect([won.outcome, won.youTotal]).toEqual(["won", "15 of 15"]);
+  });
+
+  it("draws no photo, place or country, only the page it came from", () => {
+    const real = photos.slice(0, 5).map((p, i) => result(p.id, i % 4));
+    const c = closeChallengeFrom(real, 7);
+    const words = headToHeadLayout(closeHeadToHead(real, c, PAGE))
+      .texts.map((t) => t.text)
+      .join("\n");
+    for (const p of photos) {
+      expect(words).not.toContain(p.id);
+      expect(words).not.toContain(p.place);
+    }
+    expect(words).toContain("x.dev/whereabout/close-up/");
+    expect(words).not.toContain("challenge=");
   });
 });

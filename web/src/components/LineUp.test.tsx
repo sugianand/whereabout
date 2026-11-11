@@ -6,6 +6,7 @@ import { encodeLineChallenge } from "@/lib/game/lineChallenge";
 import { LINE_DAILY_KEY, dailyLineRows, loadLineDay } from "@/lib/game/lineDaily";
 import { BEST_LINE_KEY } from "@/lib/game/lineUp";
 import type { AtlasGuess, CatalogPhoto } from "@/lib/game/types";
+import { stubCanvas } from "@/test/canvas";
 import { gameFor } from "@/test/deck";
 
 import LineUp from "./LineUp";
@@ -303,6 +304,32 @@ describe("a friend's Line them up challenge", () => {
       `http://localhost:3000/line-up?challenge=${rows}_4.4.4.4.4`,
     ]);
 
+    // The head to head is drawn row by row in photos in place, saved, and the reply link copied
+    // beside it.
+    const drawn = stubCanvas();
+    const reply = box.sent;
+    box.sent = "";
+    fireEvent.click(screen.getByRole("button", { name: "Share head to head" }));
+    expect(
+      await screen.findByText("Head to head saved. Post it with the link, which is copied too."),
+    ).toBeVisible();
+    expect(drawn.saved).toEqual(["whereabout-line-them-up-head-to-head.png"]);
+    expect(drawn.words).toEqual(
+      expect.arrayContaining([
+        "Line them up: head to head",
+        "You won",
+        "20 of 20",
+        "10 of 20",
+        "Row 5",
+        "4 of 4 in place",
+        "0 of 4 in place",
+      ]),
+    );
+    const all = drawn.words.join("\n");
+    for (const id of ROWS_DEALT.flat()) expect(all).not.toContain(id);
+    expect(box.sent).toBe(reply);
+    drawn.restore();
+
     // A fresh game leaves the link behind.
     fireEvent.click(screen.getByRole("button", { name: "Play a fresh game" }));
     await waitFor(() => expect(screen.getByText("Line them up: west to east")).toBeVisible());
@@ -316,6 +343,8 @@ describe("a friend's Line them up challenge", () => {
     fireEvent.click(screen.getByRole("button", { name: "Challenge a friend" }));
     await waitFor(() => expect(box.sent).not.toBe(""));
     expect(box.sent).toContain("Same rows, same start: can you beat me?");
+    // Head to head is only for a game that answered a friend's.
+    expect(screen.queryByRole("button", { name: "Share head to head" })).toBeNull();
     const link = new URL(box.sent.split("\n")[2]);
     expect(link.searchParams.get("challenge")).toMatch(/_4\.4\.4\.4\.4$/);
     cleanup();

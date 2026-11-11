@@ -16,6 +16,7 @@ import { runToday } from "@/lib/game/dailyRuns";
 import {
   LINE_CHALLENGE_PARAM,
   lineChallengeLine,
+  lineHeadToHead,
   lineChallengeText,
   lineChallengeTotal,
   parseLineChallenge,
@@ -49,6 +50,7 @@ import { sendShare, type ShareOutcome } from "@/lib/share";
 import ControlsHelp from "./ControlsHelp";
 import { DailyRunResult } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
+import { HeadToHeadButton } from "./HeadToHeadButton";
 import PhotoViewer from "./PhotoViewer";
 
 type LineUpProps = {
@@ -868,6 +870,13 @@ function Finished({
           >
             {challenge ? "Send yours back" : "Challenge a friend"}
           </button>
+        )}
+        {!none && challenge && (
+          <HeadToHeadButton
+            headToHead={lineHeadToHead(results, challenge, window.location.href)}
+            replyText={() => lineChallengeText(rows, results, window.location.href, challenge)}
+            onNote={setSent}
+          />
         )}
         <Link href="/" className="text-chalk-dim underline underline-offset-2 hover:text-chalk">
           Back to the main game

@@ -11,6 +11,8 @@
  * a row can score.
  */
 
+import { rowWinner, type HeadToHead } from "@/lib/headToHead";
+
 import { challengeOutcome, sumScores, type ChallengeOutcome } from "./challenge";
 import { ROW, ROWS, linePoints, type RowResult } from "./lineUp";
 
@@ -137,4 +139,33 @@ export function lineChallengeLine(results: readonly RowResult[], c: LineChalleng
   if (outcome === "won") return `You won the challenge by ${by}.`;
   if (outcome === "lost") return `Your friend won by ${by}.`;
   return "A dead heat with your friend.";
+}
+
+/**
+ * The head-to-head of a Line them up challenge: how many photos each of you had in place on every
+ * row, never which photos or where. Photos in place decide each row and the game, as the end
+ * screen does.
+ */
+export function lineHeadToHead(
+  results: readonly RowResult[],
+  c: LineChallenge,
+  url: string,
+): HeadToHead {
+  const out = (n: number) => `${n} of ${results.length * ROW}`;
+  return {
+    game: "Line them up",
+    youTotal: out(linePoints(results)),
+    friendTotal: out(lineChallengeTotal(c)),
+    outcome: lineChallengeOutcome(results, c),
+    rows: results.map((r, i) => {
+      const theirs = c.points[i];
+      return {
+        label: `Row ${i + 1}`,
+        you: `${r.points} of ${ROW} in place`,
+        friend: theirs === undefined ? "" : `${theirs} of ${ROW} in place`,
+        winner: theirs === undefined ? "none" : rowWinner(r.points, theirs),
+      };
+    }),
+    url,
+  };
 }

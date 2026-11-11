@@ -11,6 +11,8 @@
  * not a leaderboard), but each must be one a photo can score.
  */
 
+import { rowWinner, type HeadToHead } from "@/lib/headToHead";
+
 import { challengeOutcome, sumScores, type ChallengeOutcome } from "./challenge";
 import { CLOSE_PHOTOS, CLOSE_POINTS, closeTotals, type CloseResult } from "./closeUp";
 
@@ -132,4 +134,44 @@ export function closeChallengeLine(results: readonly CloseResult[], c: CloseChal
   if (outcome === "won") return `You won the challenge by ${by}.`;
   if (outcome === "lost") return `Your friend won by ${by}.`;
   return "A dead heat with your friend.";
+}
+
+const ORDINAL = ["1st", "2nd", "3rd"] as const;
+
+/**
+ * "3 · 1st name", "1 · 3rd name" or "0 · not named": a photo's points and the name it took to get
+ * it. The points say how many wrong names came first, so the friend's are worded from theirs alone.
+ */
+export function closeRowResult(points: number): string {
+  const wrong = CLOSE_POINTS.findIndex((p) => p === points);
+  return wrong < 0 ? `${points} · not named` : `${points} · ${ORDINAL[wrong]} name`;
+}
+
+/**
+ * The head-to-head of a Close-up challenge: both results on every photo, as points and which
+ * name found it, never the photo's place or country. Points decide each photo and the game, as
+ * the end screen does.
+ */
+export function closeHeadToHead(
+  results: readonly CloseResult[],
+  c: CloseChallenge,
+  url: string,
+): HeadToHead {
+  const pts = (n: number) => `${n} of ${results.length * CLOSE_POINTS[0]}`;
+  return {
+    game: "Close-up",
+    youTotal: pts(closeTotals(results).you),
+    friendTotal: pts(challengeTotal(c)),
+    outcome: closeChallengeOutcome(results, c),
+    rows: results.map((r, i) => {
+      const theirs = c.points[i];
+      return {
+        label: `Photo ${i + 1}`,
+        you: closeRowResult(r.points),
+        friend: theirs === undefined ? "" : closeRowResult(theirs),
+        winner: theirs === undefined ? "none" : rowWinner(r.points, theirs),
+      };
+    }),
+    url,
+  };
 }

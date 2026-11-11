@@ -8,6 +8,7 @@ import { BEST_CLOSE_KEY, dealClose } from "@/lib/game/closeUp";
 import type { GameRecord } from "@/lib/game/deck";
 import type { AtlasGuess, CatalogPhoto } from "@/lib/game/types";
 import { nameIds, nameOptions, nameSeed } from "@/lib/game/nameCountry";
+import { stubCanvas } from "@/test/canvas";
 import { gameFor } from "@/test/deck";
 
 import CloseUp from "./CloseUp";
@@ -290,6 +291,37 @@ describe("a friend's Close-up challenge", () => {
       `http://localhost:3000/close-up?challenge=${IDS.join(".")}_${SEED.toString(36)}_2.3.3.3.3`,
     ]);
 
+    // The head to head is drawn photo by photo in points and the name that found it, saved, and
+    // the reply link copied beside it.
+    const drawn = stubCanvas();
+    const reply = sent;
+    sent = "";
+    fireEvent.click(screen.getByRole("button", { name: "Share head to head" }));
+    expect(
+      await screen.findByText("Head to head saved. Post it with the link, which is copied too."),
+    ).toBeInTheDocument();
+    expect(drawn.saved).toEqual(["whereabout-close-up-head-to-head.png"]);
+    expect(drawn.words).toEqual(
+      expect.arrayContaining([
+        "Close-up: head to head",
+        "You won",
+        "14 of 15",
+        "9 of 15",
+        "Photo 1",
+        "2 · 2nd name",
+        "0 · not named",
+        "3 · 1st name",
+      ]),
+    );
+    const all = drawn.words.join("\n");
+    for (const id of IDS) {
+      expect(all).not.toContain(id);
+      expect(all).not.toContain(`Place ${id}`);
+      expect(all).not.toContain(countryName(BY_ID.get(id)!.photo.country));
+    }
+    expect(sent).toBe(reply);
+    drawn.restore();
+
     // A fresh game leaves the link behind.
     fireEvent.click(screen.getByRole("button", { name: "Play a fresh game" }));
     await waitFor(() => expect(screen.getByText("Close-up: which country is this?")).toBeInTheDocument());
@@ -323,6 +355,7 @@ describe("a friend's Close-up challenge", () => {
       configurable: true,
     });
     fireEvent.click(screen.getByRole("button", { name: "Challenge a friend" }));
+    expect(screen.queryByRole("button", { name: "Share head to head" })).toBeNull();
     await waitFor(() => expect(sent).not.toBe(""));
     const seed = Math.floor(0.5 * 2 ** 32);
     expect(sent).toContain("Same photos, same names: can you beat me?");
