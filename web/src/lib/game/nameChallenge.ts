@@ -15,6 +15,8 @@
  * past that carries its first photos and the streak, and the friend plays on from the seed.
  */
 
+import { runHeadToHead, type HeadToHead } from "@/lib/headToHead";
+
 import { challengeOutcome, type ChallengeOutcome } from "./challenge";
 import { seededShuffle } from "./daily";
 
@@ -158,4 +160,24 @@ export function nameChallengeLine(streak: number, c: NameChallenge): string {
   if (outcome === "won") return `You beat your friend's ${c.streak} in a row by ${gap}.`;
   if (outcome === "lost") return `Your friend's ${c.streak} in a row wins, by ${gap}.`;
   return `A dead heat: you both named ${countries(c.streak)}.`;
+}
+
+/**
+ * The head-to-head of a Name the country challenge: both runs photo by photo, right, wrong or not
+ * reached, never a photo, a place or a name either side picked. The longer streak takes it, as the
+ * end screen says. A link that stops before its sender's miss shows none.
+ */
+export function nameHeadToHead(
+  run: { index: number; streak: number },
+  c: NameChallenge,
+  url: string,
+): HeadToHead {
+  return runHeadToHead(
+    "Name the country",
+    { one: "Photo", many: "Photos" },
+    // A cleared run ends on a photo it named, so its streak runs one past `index`.
+    { streak: run.streak, missed: run.index === run.streak },
+    { streak: c.streak, missed: c.streak === c.ids.length - 1 },
+    url,
+  );
 }

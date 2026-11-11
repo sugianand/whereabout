@@ -28,6 +28,7 @@ import {
   streakChallengeLine,
   streakChallengeOrder,
   streakChallengeText,
+  streakHeadToHead,
   type FinishedStreakRun,
   type StreakChallenge,
 } from "@/lib/game/streakChallenge";
@@ -37,6 +38,7 @@ import type { LngLat } from "@/lib/geo";
 import type { RevealView } from "@/lib/reveal";
 
 import GamesMenu from "./GamesMenu";
+import { HeadToHeadButton } from "./HeadToHeadButton";
 import Globe from "./Globe";
 import PhotoViewer from "./PhotoViewer";
 
@@ -607,13 +609,23 @@ function ChallengeButton({
   }
   return (
     <span className={compact ? "flex min-w-0 flex-col" : "flex flex-col"}>
-      <button
-        type="button"
-        onClick={send}
-        className={`rounded-full border-2 border-gold font-semibold text-gold transition hover:bg-gold/10 ${compact ? "px-4 py-2" : "px-5 py-2.5"}`}
-      >
-        {answering ? "Send yours back" : "Challenge a friend"}
-      </button>
+      <span className="flex flex-wrap gap-x-3 gap-y-2">
+        <button
+          type="button"
+          onClick={send}
+          className={`rounded-full border-2 border-gold font-semibold text-gold transition hover:bg-gold/10 ${compact ? "px-4 py-2" : "px-5 py-2.5"}`}
+        >
+          {answering ? "Send yours back" : "Challenge a friend"}
+        </button>
+        {answering && (
+          <HeadToHeadButton
+            headToHead={streakHeadToHead(run, answering, window.location.href)}
+            replyText={() => streakChallengeText(run, window.location.href, region, answering)}
+            onNote={setSent}
+            compact={compact}
+          />
+        )}
+      </span>
       <span role="status" className={sent ? "mt-1 text-xs text-chalk-dim" : "sr-only"}>
         {sent}
       </span>

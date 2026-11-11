@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import photos from "@/data/photos.json";
+import { countryName } from "@/lib/countries";
+import { headToHeadLayout } from "@/lib/headToHead";
 
 import { seededShuffle } from "./daily";
 import {
@@ -11,6 +13,7 @@ import {
   nameChallengeOrder,
   nameChallengeText,
   nameChallengeUrl,
+  nameHeadToHead,
   parseNameChallenge,
   type NameChallenge,
 } from "./nameChallenge";
@@ -155,5 +158,44 @@ describe("name the country challenge links", () => {
     expect(nameChallengeLine(5, C)).toBe("You beat your friend's 2 in a row by 3.");
     expect(nameChallengeLine(1, C)).toBe("Your friend's 2 in a row wins, by 1.");
     expect(nameChallengeLine(2, C)).toBe("A dead heat: you both named 2 countries.");
+  });
+});
+
+describe("the Name the country head to head", () => {
+  it("lists both runs photo by photo, a shared miss ringed for both", () => {
+    // Two right and a miss on photo 3, as the friend did: a dead heat.
+    const h = nameHeadToHead({ index: 2, streak: 2 }, C, HREF);
+    expect([h.game, h.youTotal, h.friendTotal, h.outcome]).toEqual([
+      "Name the country",
+      "2 in a row",
+      "2 in a row",
+      "tied",
+    ]);
+    expect(h.rows.map((r) => [r.label, r.you, r.friend, r.winner])).toEqual([
+      ["Photo 1", "Right", "Right", "none"],
+      ["Photo 2", "Right", "Right", "none"],
+      ["Photo 3", "Wrong", "Wrong", "tie"],
+    ]);
+  });
+
+  it("shows no miss for a run that named every photo, and draws no photo or country", () => {
+    const cleared = { index: 2, streak: 3 };
+    const c: NameChallenge = { ...C, streak: 3 };
+    const h = nameHeadToHead(cleared, c, HREF);
+    expect(h.rows.map((r) => [r.you, r.friend, r.winner])).toEqual([
+      ["Right", "Right", "none"],
+      ["Right", "Right", "none"],
+      ["Right", "Right", "none"],
+    ]);
+    const words = headToHeadLayout(nameHeadToHead({ index: 0, streak: 0 }, C, HREF))
+      .texts.map((t) => t.text)
+      .join("\n");
+    expect(words).toContain("Your friend won");
+    for (const p of photos) {
+      expect(words).not.toContain(p.id);
+      expect(words).not.toContain(p.place);
+      expect(words).not.toContain(countryName(p.country));
+    }
+    expect(words).not.toContain("challenge=");
   });
 });

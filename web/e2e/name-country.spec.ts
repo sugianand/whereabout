@@ -191,6 +191,18 @@ test("a challenge link deals a friend the same photos and names, with the streak
   expect(reply).toContain("That beats your 2. Your turn to go further.");
   expect(reply).toMatch(/_3$/);
 
+  // Head to head: both runs drawn as a 1080px picture, saved, with the reply link copied.
+  await page.evaluate(() => ((window as unknown as { sent: string }).sent = ""));
+  const picture = card.getByRole("button", { name: "Share head to head" });
+  await expect(picture).toBeInViewport({ ratio: 1 });
+  const [download] = await Promise.all([page.waitForEvent("download"), picture.click()]);
+  expect(download.suggestedFilename()).toBe("whereabout-name-the-country-head-to-head.png");
+  const png = readFileSync((await download.path())!);
+  expect(png.subarray(1, 4).toString()).toBe("PNG");
+  expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1080, 1080]);
+  await expect(page.getByText("Head to head saved.", { exact: false })).toBeVisible();
+  expect(await sent()).toBe(reply);
+
   // A fresh run drops the link, so a reload doesn't deal the challenge again.
   await card.getByRole("button", { name: "Play a fresh run" }).click();
   await expect(page.getByText("Name the country: which of these four?")).toBeVisible();

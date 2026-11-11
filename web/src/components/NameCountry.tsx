@@ -34,6 +34,7 @@ import {
   nameChallengeLine,
   nameChallengeOrder,
   nameChallengeText,
+  nameHeadToHead,
   parseNameChallenge,
   type NameChallenge,
 } from "@/lib/game/nameChallenge";
@@ -50,6 +51,7 @@ import { sendShare, type ShareOutcome } from "@/lib/share";
 import ControlsHelp from "./ControlsHelp";
 import { DailyRunResult, ShareDay } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
+import { HeadToHeadButton } from "./HeadToHeadButton";
 import PhotoViewer from "./PhotoViewer";
 
 type NameCountryProps = {
@@ -667,13 +669,23 @@ function ChallengeButton({
   }
   return (
     <span className={compact ? "flex min-w-0 flex-col" : "flex flex-col"}>
-      <button
-        type="button"
-        onClick={send}
-        className={`rounded-full border-2 border-gold font-semibold text-gold transition hover:bg-gold/10 ${compact ? "px-4 py-2" : "px-5 py-2.5"}`}
-      >
-        {answering ? "Send yours back" : "Challenge a friend"}
-      </button>
+      <span className="flex flex-wrap gap-x-3 gap-y-2">
+        <button
+          type="button"
+          onClick={send}
+          className={`rounded-full border-2 border-gold font-semibold text-gold transition hover:bg-gold/10 ${compact ? "px-4 py-2" : "px-5 py-2.5"}`}
+        >
+          {answering ? "Send yours back" : "Challenge a friend"}
+        </button>
+        {answering && (
+          <HeadToHeadButton
+            headToHead={nameHeadToHead(run, answering, window.location.href)}
+            replyText={() => nameChallengeText(run, window.location.href, answering)}
+            onNote={setSent}
+            compact={compact}
+          />
+        )}
+      </span>
       <span role="status" className={sent ? "mt-1 text-xs text-chalk-dim" : "sr-only"}>
         {sent}
       </span>

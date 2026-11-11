@@ -13,16 +13,19 @@ import {
  * *Share head to head* at the end of a friend's challenge in one of the quick games: draws both
  * results as a picture and sends it with the reply link (`replyText`, read as it is pressed, so the
  * link carries the page's address at that moment). `onNote` gets the line to show under the
- * buttons, so the game keeps one status line for every share it offers.
+ * buttons, so the game keeps one status line for every share it offers. `compact` is the smaller
+ * size the answer cards use, where it shares a row with the button for a new run.
  */
 export function HeadToHeadButton({
   headToHead,
   replyText,
   onNote,
+  compact = false,
 }: {
   headToHead: HeadToHead;
   replyText: () => string;
   onNote: (note: string) => void;
+  compact?: boolean;
 }) {
   const [drawing, setDrawing] = useState(false);
   const words = useId();
@@ -42,7 +45,7 @@ export function HeadToHeadButton({
         onClick={share}
         disabled={drawing}
         aria-describedby={words}
-        className="rounded-full border-2 border-gold px-5 py-2.5 font-semibold text-gold transition hover:bg-gold/10 disabled:opacity-60"
+        className={`rounded-full border-2 border-gold font-semibold text-gold transition hover:bg-gold/10 disabled:opacity-60 ${compact ? "px-4 py-2" : "px-5 py-2.5"}`}
       >
         Share head to head
       </button>

@@ -7,6 +7,7 @@ import { encodeNameChallenge } from "@/lib/game/nameChallenge";
 import { BEST_NAME_KEY, nameOptions, nameSeed } from "@/lib/game/nameCountry";
 import { loadNameDay, rememberNameDay } from "@/lib/game/nameDaily";
 import type { AtlasGuess, CatalogPhoto } from "@/lib/game/types";
+import { stubCanvas } from "@/test/canvas";
 import { gameFor } from "@/test/deck";
 
 import NameCountry from "./NameCountry";
@@ -309,6 +310,32 @@ describe("a friend's Name the country challenge", () => {
       `http://localhost:3000/name-country?challenge=${played.join(".")}_${SEED.toString(36)}_3`,
     ]);
 
+    // The head to head is drawn photo by photo, saved, and the reply link copied beside it.
+    const drawn = stubCanvas();
+    const reply = box.sent;
+    box.sent = "";
+    fireEvent.click(within(card).getByRole("button", { name: "Share head to head" }));
+    expect(
+      await screen.findByText("Head to head saved. Post it with the link, which is copied too."),
+    ).toBeInTheDocument();
+    expect(drawn.saved).toEqual(["whereabout-name-the-country-head-to-head.png"]);
+    expect(drawn.words).toEqual(
+      expect.arrayContaining([
+        "Name the country: head to head",
+        "You won",
+        "3 in a row",
+        "2 in a row",
+        "Photo 3",
+        "Photo 4",
+        "Right",
+        "Wrong",
+      ]),
+    );
+    const all = drawn.words.join("\n");
+    for (const id of played) expect(all).not.toContain(id);
+    expect(box.sent).toBe(reply);
+    drawn.restore();
+
     // A fresh run leaves the link behind.
     fireEvent.click(within(card).getByRole("button", { name: "Play a fresh run" }));
     await waitFor(() =>
@@ -357,6 +384,8 @@ describe("a friend's Name the country challenge", () => {
     );
     // The new run stays the focused way on.
     expect(screen.getByRole("button", { name: "Start a new run" })).toBeInTheDocument();
+    // A free run answers no one, so there is no head to head to draw.
+    expect(screen.queryByRole("button", { name: "Share head to head" })).toBeNull();
   });
 
   it("offers a challenge from a run that named every photo", async () => {

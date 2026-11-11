@@ -19,6 +19,8 @@
  * past that carries its first photos and the streak, and the friend plays on from the seed.
  */
 
+import { runHeadToHead, type HeadToHead } from "@/lib/headToHead";
+
 import { challengeOutcome, type ChallengeOutcome } from "./challenge";
 import { seededShuffle } from "./daily";
 
@@ -197,4 +199,24 @@ export function streakChallengeLine(streak: number, c: StreakChallenge): string 
 export function friendMissCountry(c: StreakChallenge, index: number, truth: string): string | null {
   if (!c.miss || index !== c.ids.length - 1 || c.streak !== c.ids.length - 1) return null;
   return c.miss === truth ? null : c.miss;
+}
+
+/**
+ * The head-to-head of a Country Streak challenge: both runs photo by photo, right, wrong or not
+ * reached, never a photo, a place or the country either side tapped. The longer streak takes it,
+ * as the end screen says. A link that stops before its sender's miss shows none.
+ */
+export function streakHeadToHead(
+  run: FinishedStreakRun,
+  c: StreakChallenge,
+  url: string,
+): HeadToHead {
+  return runHeadToHead(
+    "Country Streak",
+    { one: "Photo", many: "Photos" },
+    // A cleared run ends on a photo it named, so its streak runs one past `index`.
+    { streak: run.streak, missed: run.index === run.streak },
+    { streak: c.streak, missed: c.streak === c.ids.length - 1 },
+    url,
+  );
 }

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import photos from "@/data/photos.json";
+import { countryName } from "@/lib/countries";
+import { headToHeadLayout } from "@/lib/headToHead";
+
 import { seededShuffle } from "./daily";
 import {
   STREAK_CHALLENGE_PHOTOS,
@@ -11,6 +15,7 @@ import {
   streakChallengeOrder,
   streakChallengeText,
   streakChallengeUrl,
+  streakHeadToHead,
   type StreakChallenge,
 } from "./streakChallenge";
 
@@ -168,5 +173,54 @@ describe("Country Streak challenge links", () => {
     expect(
       friendMissCountry({ ...C, ids: ["c3", "a1"], streak: 2, miss: null }, 1, "FR"),
     ).toBeNull();
+  });
+});
+
+describe("the Country Streak head to head", () => {
+  it("lists both runs photo by photo, to where each ended", () => {
+    // Three right and a miss on photo 4, against the friend's two right and a miss on photo 3.
+    const run = { order: DEALABLE, index: 3, seed: 1, streak: 3, miss: "FR" };
+    const h = streakHeadToHead(run, C, HREF);
+    expect([h.game, h.youTotal, h.friendTotal, h.outcome]).toEqual([
+      "Country Streak",
+      "3 in a row",
+      "2 in a row",
+      "won",
+    ]);
+    expect(h.rows.map((r) => [r.label, r.you, r.friend, r.winner])).toEqual([
+      ["Photo 1", "Right", "Right", "none"],
+      ["Photo 2", "Right", "Right", "none"],
+      ["Photo 3", "Right", "Wrong", "you"],
+      ["Photo 4", "Wrong", "—", "none"],
+    ]);
+  });
+
+  it("shows no miss for a cleared run or a link that stops before its sender's miss", () => {
+    // A cleared run of three photos ends on the third, which it named.
+    const cleared = { order: C.ids, index: 2, seed: 1, streak: 3, miss: null };
+    // A full link whose sender went past its photos: no miss of theirs to show.
+    const ids = Array.from({ length: STREAK_CHALLENGE_PHOTOS }, (_, i) => `p${i}`);
+    const full: StreakChallenge = { ids, seed: 1, streak: 70, miss: null };
+    const h = streakHeadToHead(cleared, full, HREF);
+    expect(h.outcome).toBe("lost");
+    expect(h.rows.map((r) => [r.label, r.you, r.friend, r.winner])).toEqual([
+      ["Photos 1–3", "Right", "Right", "none"],
+      ["Photos 4–70", "—", "Right", "friend"],
+    ]);
+  });
+
+  it("draws no photo, place or country, not even the one the friend tapped", () => {
+    const run = { order: C.ids, index: 0, seed: 1, streak: 0, miss: "JP" };
+    const words = headToHeadLayout(streakHeadToHead(run, C, HREF))
+      .texts.map((t) => t.text)
+      .join("\n");
+    for (const p of photos) {
+      expect(words).not.toContain(p.id);
+      expect(words).not.toContain(p.place);
+      expect(words).not.toContain(countryName(p.country));
+    }
+    expect(words).not.toContain(countryName("ES"));
+    expect(words).not.toContain("challenge=");
+    expect(words).not.toContain("region=");
   });
 });

@@ -8,6 +8,7 @@ import type { GameRecord } from "@/lib/game/deck";
 import { BEST_STREAK_KEY, bestStreakKey } from "@/lib/game/streak";
 import { encodeStreakChallenge } from "@/lib/game/streakChallenge";
 import type { CatalogPhoto } from "@/lib/game/types";
+import { stubCanvas } from "@/test/canvas";
 import { gameFor } from "@/test/deck";
 import { FakeMap, resetFakes } from "@/test/maplibre-mock";
 
@@ -287,6 +288,33 @@ describe("a friend's Country Streak challenge", () => {
       `http://localhost:3000/streak?challenge=${played.join(".")}_${SEED.toString(36)}_2_US`,
     ]);
 
+    // The head to head is drawn photo by photo, saved, and the reply link copied beside it.
+    const drawn = stubCanvas();
+    const reply = box.sent;
+    box.sent = "";
+    fireEvent.click(within(step.card).getByRole("button", { name: "Share head to head" }));
+    expect(
+      await screen.findByText("Head to head saved. Post it with the link, which is copied too."),
+    ).toBeInTheDocument();
+    expect(drawn.saved).toEqual(["whereabout-country-streak-head-to-head.png"]);
+    expect(drawn.words).toEqual(
+      expect.arrayContaining([
+        "Country Streak: head to head",
+        "You won",
+        "2 in a row",
+        "1 in a row",
+        "Photo 1",
+        "Photo 3",
+        "Right",
+        "Wrong",
+      ]),
+    );
+    const all = drawn.words.join("\n");
+    for (const id of played) expect(all).not.toContain(id);
+    expect(all).not.toContain("United States");
+    expect(box.sent).toBe(reply);
+    drawn.restore();
+
     // A fresh run leaves the link behind.
     fireEvent.click(within(step.card).getByRole("button", { name: "Play a fresh run" }));
     await waitFor(() => expect(screen.getByText("Country Streak: name the country")).toBeVisible());
@@ -340,6 +368,8 @@ describe("a friend's Country Streak challenge", () => {
       `http://localhost:3000/streak?challenge=${ids.join(".")}_0_1_US`,
     );
     expect(within(step.card).getByRole("button", { name: "Start a new streak" })).toBeVisible();
+    // A free run answers no one, so there is no head to head to draw.
+    expect(within(step.card).queryByRole("button", { name: "Share head to head" })).toBeNull();
   });
 
   it("offers a challenge from a run that named every photo", async () => {
