@@ -22,7 +22,10 @@ photo to load and pauses while the tab is hidden; your best Blitz is kept in you
 **Country Streak** (at `/streak`) asks only for the country: tap it on the globe, one photo after
 another, until your first miss. Pick a continent to deal only photos taken there
 (`/streak?region=europe`, or straight from a continent game); each continent keeps its own best
-streak in your browser beside the one from anywhere.
+streak in your browser beside the one from anywhere. After a run, *Challenge a friend* sends a
+link to the very same photos in the same order (and the same continent), with your streak to beat;
+on the photo that ended your run your friend sees the country you tapped, once they have answered
+it. A challenge never counts toward your best.
 **Survival** (at `/survival`, linked from the results screen) deals photo after photo until your
 misses empty a 5,000-point health bar: each round costs half the points it missed, a pin within
 25 km heals 1,000 instead, and your best run (photos survived, then points) is kept in your browser.
