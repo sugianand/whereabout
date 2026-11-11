@@ -54,6 +54,8 @@ interface Run {
   total: number;
   /** Photos played and lived through. */
   survived: number;
+  /** Health after each photo answered so far, in order: what a challenge link races against. */
+  healths: readonly number[];
 }
 
 export type SurvivalState =
@@ -86,7 +88,14 @@ export const initialSurvival: SurvivalState = { phase: "idle" };
 export function survivalReducer(state: SurvivalState, action: SurvivalAction): SurvivalState {
   switch (action.type) {
     case "start": {
-      const run = { order: action.order, index: 0, health: SURVIVAL_HEALTH, total: 0, survived: 0 };
+      const run = {
+        order: action.order,
+        index: 0,
+        health: SURVIVAL_HEALTH,
+        total: 0,
+        survived: 0,
+        healths: [],
+      };
       return action.order.length === 0
         ? { phase: "cleared", ...run }
         : { phase: "guessing", ...run, pin: null };
@@ -103,6 +112,7 @@ export function survivalReducer(state: SurvivalState, action: SurvivalAction): S
         health: round.after,
         total: state.total + round.score,
         survived: state.survived + (round.after > 0 ? 1 : 0),
+        healths: [...state.healths, round.after],
         pin: state.pin,
         truth: action.truth,
         round,
@@ -111,10 +121,11 @@ export function survivalReducer(state: SurvivalState, action: SurvivalAction): S
     case "next": {
       // With the bar empty the run is over; only a new "start" plays on.
       if (state.phase !== "answered" || state.health <= 0) return state;
-      const { order, health, total, survived } = state;
+      const { order, health, total, survived, healths } = state;
       const index = state.index + 1;
-      if (index >= order.length) return { phase: "cleared", order, index, health, total, survived };
-      return { phase: "guessing", order, index, health, total, survived, pin: null };
+      const run = { order, index, health, total, survived, healths };
+      if (index >= order.length) return { phase: "cleared", ...run };
+      return { phase: "guessing", ...run, pin: null };
     }
   }
 }

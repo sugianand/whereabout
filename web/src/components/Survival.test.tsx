@@ -1,15 +1,16 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { seededShuffle } from "@/lib/game/daily";
 import type { GameRecord } from "@/lib/game/deck";
 import { BEST_SURVIVAL_KEY, HEAL_POINTS, SURVIVAL_HEALTH, biteFor } from "@/lib/game/survival";
+import { encodeSurvivalChallenge } from "@/lib/game/survivalChallenge";
 import type { CatalogPhoto } from "@/lib/game/types";
 import { formatPoints } from "@/lib/geo";
 import { gameFor } from "@/test/deck";
 import { FakeMap, resetFakes } from "@/test/maplibre-mock";
 
-import Survival from "./Survival";
+import Survival, { SURVIVAL_CHALLENGE_NOTICE } from "./Survival";
 
 vi.mock("maplibre-gl", async () => (await import("@/test/maplibre-mock")).maplibreMock);
 
@@ -136,5 +137,150 @@ describe("Survival", () => {
     const { loadRecords } = await setup();
     const asked = loadRecords.mock.calls.flatMap(([ids]) => ids);
     expect(asked).toEqual(ORDER.slice(0, 2).map((p) => p.id));
+  });
+});
+
+describe("a friend's Survival challenge", () => {
+  const SEED = 987_654_321;
+  // The friend missed p3 by half the globe (down to 2,500), then emptied the bar on p1.
+  const FRIEND = { ids: ["p3", "p1"], seed: SEED, healths: [2500, 0], survived: 1, total: 0 };
+  const shownPhoto = () => document.querySelector("main")?.getAttribute("data-photo") ?? null;
+  const friendStat = () => screen.getByText("Friend").nextElementSibling;
+  const friendTick = () => document.querySelector("[data-friend-health]");
+
+  afterEach(() => window.history.replaceState(null, "", "/survival"));
+
+  function clipboard() {
+    const box = { sent: "" };
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: async (t: string) => void (box.sent = t) },
+      configurable: true,
+    });
+    return box;
+  }
+
+  /** Pin the photo on screen, on the spot or at its antipode, and return its id and card. */
+  async function answer(map: FakeMap, right: boolean) {
+    await screen.findByRole("button", { name: "Zoom in on the photo" });
+    const id = shownPhoto()!;
+    const photo = byId.get(id)!;
+    return { id, card: await pinAndGuess(map, right ? photo : antipode(photo)) };
+  }
+
+  it("races the friend's bar photo by photo, plays on past them, and answers with yours", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      `/survival?challenge=${encodeSurvivalChallenge(FRIEND)}&x=1`,
+    );
+    const { map } = await setup();
+    expect(screen.getByText("A friend's challenge: 1 photo to outlast")).toBeVisible();
+    expect(friendStat()).toHaveTextContent("5,000");
+    expect(friendTick()).toHaveAttribute("data-friend-health", String(SURVIVAL_HEALTH));
+
+    const played: string[] = [];
+    let step = await answer(map, true);
+    played.push(step.id);
+    expect(step.id).toBe("p3");
+    expect(step.card).toHaveTextContent("Your friend had 2,500 health after this photo.");
+    expect(friendStat()).toHaveTextContent("2,500");
+    expect(friendTick()).toHaveAttribute("data-friend-health", "2500");
+    fireEvent.click(within(step.card).getByRole("button", { name: "Next photo" }));
+
+    await waitFor(() => expect(shownPhoto()).toBe("p1"));
+    step = await answer(map, true);
+    played.push(step.id);
+    expect(step.card).toHaveTextContent("Your friend's bar ran out on this photo.");
+    expect(step.card).toHaveTextContent("That outlasts your friend's 1 photo!");
+    expect(friendStat()).toHaveTextContent("out");
+    fireEvent.click(within(step.card).getByRole("button", { name: "Next photo" }));
+
+    // Past the friend's run, it goes on through photos they never saw.
+    await waitFor(() => expect(["p2", "p4"]).toContain(shownPhoto()));
+    step = await answer(map, false);
+    played.push(step.id);
+    expect(step.card).toHaveTextContent("Your friend was already out of health by here.");
+    fireEvent.click(within(step.card).getByRole("button", { name: "Next photo" }));
+    step = await answer(map, false);
+    played.push(step.id);
+    expect(step.card).toHaveTextContent(
+      "Out of health. You survived 3 photos, 10,000 points. You outlasted your friend's 1 photo by 2 photos.",
+    );
+    // A challenge's photos may have been seen, so it never counts toward the best.
+    expect(localStorage.getItem(BEST_SURVIVAL_KEY)).toBeNull();
+
+    const box = clipboard();
+    fireEvent.click(within(step.card).getByRole("button", { name: "Send yours back" }));
+    await waitFor(() =>
+      expect(
+        screen.getByText(
+          "Challenge link copied. Whoever opens it plays these photos, in this order.",
+        ),
+      ).toBeInTheDocument(),
+    );
+    const healths = [SURVIVAL_HEALTH, SURVIVAL_HEALTH, 2500, 0].map((h) => h.toString(36));
+    expect(box.sent.split("\n")).toEqual([
+      "Whereabout · Survival: I survived 3 photos (10,000 points) on the globe.",
+      "That beats your 1 photo. Your turn to last longer.",
+      `http://localhost:3000/survival?challenge=${played.join(".")}_${SEED.toString(36)}_${healths.join(".")}_3_10000`,
+    ]);
+
+    // A fresh run leaves the link behind.
+    fireEvent.click(within(step.card).getByRole("button", { name: "Play a fresh run" }));
+    await waitFor(() =>
+      expect(screen.getByText("Survival: last as long as you can")).toBeVisible(),
+    );
+    expect(window.location.search).toBe("?x=1");
+    expect(friendTick()).toBeNull();
+  });
+
+  it("says when the friend lasted longer", async () => {
+    const strong = {
+      ids: ["p3", "p1", "p2"],
+      seed: SEED,
+      healths: [5000, 5000, 0],
+      survived: 2,
+      total: 10_000,
+    };
+    window.history.replaceState(null, "", `/survival?challenge=${encodeSurvivalChallenge(strong)}`);
+    const { map } = await setup();
+    let step = await answer(map, false);
+    fireEvent.click(within(step.card).getByRole("button", { name: "Next photo" }));
+    step = await answer(map, false);
+    expect(step.card).toHaveTextContent(
+      "Out of health. You survived 1 photo, 0 points. Your friend's 2 photos wins, by 1 photo.",
+    );
+    expect(within(step.card).getByRole("button", { name: "Send yours back" })).toBeVisible();
+  });
+
+  it("sets a broken link aside for a fresh run, with a reason", async () => {
+    window.history.replaceState(null, "", "/survival?challenge=p3.p1_1_0.0_0_0");
+    await setup();
+    expect(screen.getByRole("status")).toHaveTextContent(SURVIVAL_CHALLENGE_NOTICE.malformed);
+    expect(screen.getByText("Survival: last as long as you can")).toBeVisible();
+    expect(window.location.search).toBe("");
+  });
+
+  it("sets aside a link whose photos have left the game", async () => {
+    window.history.replaceState(null, "", "/survival?challenge=zz9_1_0_0_0");
+    await setup();
+    expect(screen.getByRole("status")).toHaveTextContent(SURVIVAL_CHALLENGE_NOTICE.missing);
+  });
+
+  it("offers a challenge from the end of a plain run, carrying its bar", async () => {
+    const { map } = await setup();
+    let card = await pinAndGuess(map, antipode(ORDER[0]));
+    fireEvent.click(within(card).getByRole("button", { name: "Next photo" }));
+    card = await pinAndGuess(map, antipode(ORDER[1]));
+    const box = clipboard();
+    fireEvent.click(within(card).getByRole("button", { name: "Challenge a friend" }));
+    await waitFor(() => expect(box.sent).not.toBe(""));
+    const healths = [2500, 0].map((h) => h.toString(36)).join(".");
+    expect(box.sent.split("\n")).toEqual([
+      "Whereabout · Survival: I survived 1 photo (0 points) on the globe.",
+      "Same photos, same order: can you last longer?",
+      `http://localhost:3000/survival?challenge=${ORDER[0].id}.${ORDER[1].id}_0_${healths}_1_0`,
+    ]);
   });
 });

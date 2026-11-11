@@ -18,8 +18,20 @@ import {
   type SurvivalBest,
   type SurvivalRound,
 } from "@/lib/game/survival";
+import {
+  SURVIVAL_CHALLENGE_PARAM,
+  friendHealthAt,
+  friendRunEndedAt,
+  parseSurvivalChallenge,
+  survivalChallengeLine,
+  survivalChallengeOrder,
+  survivalChallengeText,
+  type FinishedSurvivalRun,
+  type SurvivalChallenge,
+} from "@/lib/game/survivalChallenge";
 import { formatDistance, formatPoints, haversineKm, type LngLat } from "@/lib/geo";
 import type { RevealView } from "@/lib/reveal";
+import { sendShare, type ShareOutcome } from "@/lib/share";
 import type { Units } from "@/lib/units";
 import { useUnits } from "@/lib/useUnits";
 
@@ -46,24 +58,66 @@ function runLine(run: SurvivalBest): string {
   return `${photos(run.survived)}, ${formatPoints(run.total)} points`;
 }
 
-/** The bar itself: the share of health left, gold when full and turning red as it runs low. */
-function HealthBar({ health }: { health: number }) {
-  const share = Math.max(0, Math.min(1, health / SURVIVAL_HEALTH));
-  const tone = share > 0.5 ? "bg-sonar" : share > 0.2 ? "bg-gold" : "bg-flare";
+/** Why a challenge link was set aside for a fresh run. */
+export const SURVIVAL_CHALLENGE_NOTICE = {
+  malformed: "That challenge link was cut short, so here's a fresh run instead.",
+  missing: "That challenge's photos aren't in the game any more, so here's a fresh run instead.",
+} as const;
+
+/** The challenge the address carries, read once as the page opens; null without one. */
+function linkedChallenge(dealable: readonly string[]) {
+  const value = new URLSearchParams(window.location.search).get(SURVIVAL_CHALLENGE_PARAM);
+  return value === null ? null : parseSurvivalChallenge(value, dealable);
+}
+
+/** Take the challenge out of the address, so a reload deals a fresh run, not the old link. */
+function dropChallengeParam() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has(SURVIVAL_CHALLENGE_PARAM)) return;
+  url.searchParams.delete(SURVIVAL_CHALLENGE_PARAM);
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+const CHALLENGE_NOTE: Record<ShareOutcome, string> = {
+  shared: "Challenge sent.",
+  copied: "Challenge link copied. Whoever opens it plays these photos, in this order.",
+  cancelled: "",
+  failed: "Couldn't copy the link. Your browser blocked the clipboard.",
+};
+
+const share = (health: number) => Math.max(0, Math.min(1, health / SURVIVAL_HEALTH));
+
+/**
+ * The bar itself: the share of health left, gold when full and turning red as it runs low. In a
+ * challenge, a tick marks where the friend's bar stood at the same point of their run.
+ */
+function HealthBar({ health, friend }: { health: number; friend: number | null }) {
+  const mine = share(health);
+  const tone = mine > 0.5 ? "bg-sonar" : mine > 0.2 ? "bg-gold" : "bg-flare";
   return (
-    <div
-      role="meter"
-      aria-label="Health"
-      aria-valuemin={0}
-      aria-valuemax={SURVIVAL_HEALTH}
-      aria-valuenow={health}
-      aria-valuetext={`${formatPoints(health)} of ${formatPoints(SURVIVAL_HEALTH)}`}
-      className="h-2.5 w-36 overflow-hidden rounded-full bg-chalk/15 md:w-48"
-    >
+    <div className="relative">
       <div
-        className={`h-full rounded-full transition-[width] duration-700 motion-reduce:transition-none ${tone}`}
-        style={{ width: `${share * 100}%` }}
-      />
+        role="meter"
+        aria-label="Health"
+        aria-valuemin={0}
+        aria-valuemax={SURVIVAL_HEALTH}
+        aria-valuenow={health}
+        aria-valuetext={`${formatPoints(health)} of ${formatPoints(SURVIVAL_HEALTH)}`}
+        className="h-2.5 w-36 overflow-hidden rounded-full bg-chalk/15 md:w-48"
+      >
+        <div
+          className={`h-full rounded-full transition-[width] duration-700 motion-reduce:transition-none ${tone}`}
+          style={{ width: `${mine * 100}%` }}
+        />
+      </div>
+      {friend !== null && (
+        <div
+          aria-hidden="true"
+          data-friend-health={friend}
+          className="absolute -top-1 h-[1.125rem] w-0.5 -translate-x-1/2 rounded-full bg-chalk shadow-[0_0_0_1px_rgba(0,0,0,0.5)] transition-[left] duration-700 motion-reduce:transition-none"
+          style={{ left: `${share(friend) * 100}%` }}
+        />
+      )}
     </div>
   );
 }
@@ -80,18 +134,40 @@ export default function Survival({ deck, loadRecords, random }: SurvivalProps) {
   const [records, setRecords] = useState<ReadonlyMap<string, GameRecord>>(() => new Map());
   const [error, setError] = useState<string | null>(null);
   const units = useUnits();
+  // The run's seed, which a challenge link carries so a friend plays on in the same order.
+  const [seed, setSeed] = useState(0);
+  // A friend's challenge this run answers: their photos, their bar after each, and how far.
+  const [challenge, setChallenge] = useState<SurvivalChallenge | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  const start = useCallback(() => {
-    const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
-    const stored = loadBestSurvival();
-    setBestBeforeRun(stored);
-    setBest(stored);
-    dispatch({ type: "start", order: seededShuffle(deck.ids, seed) });
-  }, [deck.ids, random]);
+  /** Deal a run; `fromLink` takes up a challenge the address carries, as the page opens. */
+  const start = useCallback(
+    (fromLink = false) => {
+      const stored = loadBestSurvival();
+      setBestBeforeRun(stored);
+      setBest(stored);
+      const linked = fromLink ? linkedChallenge(deck.ids) : null;
+      setNotice(linked && !linked.ok ? SURVIVAL_CHALLENGE_NOTICE[linked.reason] : null);
+      if (linked?.ok) {
+        const { challenge: c } = linked;
+        setChallenge(c);
+        setSeed(c.seed);
+        dispatch({ type: "start", order: survivalChallengeOrder(c, deck.ids) });
+        return;
+      }
+      setChallenge(null);
+      dropChallengeParam();
+      const fresh = Math.floor((random ?? Math.random)() * 2 ** 32);
+      setSeed(fresh);
+      dispatch({ type: "start", order: seededShuffle(deck.ids, fresh) });
+    },
+    [deck.ids, random],
+  );
 
-  // The order is shuffled in the browser after hydration, never at build time.
+  // The order is shuffled (and the address's challenge read) in the browser after hydration,
+  // never at build time.
   useEffect(() => {
-    const id = requestAnimationFrame(start);
+    const id = requestAnimationFrame(() => start(true));
     return () => cancelAnimationFrame(id);
   }, [start]);
 
@@ -147,8 +223,9 @@ export default function Survival({ deck, loadRecords, random }: SurvivalProps) {
     if (state.phase !== "guessing" || !current || !state.pin) return;
     const action = { type: "answered", truth: current.photo } as const;
     // Keep the run as the best after every round that beats it, so leaving mid-run keeps it.
+    // A challenge's photos may have been seen before, so it never counts toward the best.
     const after = survivalReducer(state, action);
-    if (after.phase === "answered") {
+    if (after.phase === "answered" && !challenge) {
       setBest(rememberSurvival({ survived: after.survived, total: after.total }));
     }
     dispatch(action);
@@ -162,7 +239,22 @@ export default function Survival({ deck, loadRecords, random }: SurvivalProps) {
   }, [answered, current]);
 
   const health = state.phase === "idle" ? SURVIVAL_HEALTH : state.health;
-  const newBest = over && run !== null && betterRun(run, bestBeforeRun);
+  const newBest = over && !challenge && run !== null && betterRun(run, bestBeforeRun);
+  // The friend's bar at the same point of their run: before this photo while pinning it, after
+  // it once answered.
+  const friendHealth =
+    challenge && state.phase !== "idle" ? friendHealthAt(challenge, state.healths.length) : null;
+  // The run as it ended, for the challenge link its end can send.
+  const finished: FinishedSurvivalRun | null =
+    over && state.phase !== "idle"
+      ? {
+          order: state.order,
+          seed,
+          healths: state.healths,
+          survived: state.survived,
+          total: state.total,
+        }
+      : null;
 
   if (state.phase === "cleared") {
     return (
@@ -175,16 +267,20 @@ export default function Survival({ deck, loadRecords, random }: SurvivalProps) {
           {state.order.length === 0
             ? "Survival needs photos to deal."
             : `${runLine(state)}, with ${formatPoints(state.health)} health to spare.`}
+          {state.order.length > 0 && challenge && ` ${survivalChallengeLine(state, challenge)}`}
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-4">
           {state.order.length > 0 && (
             <button
               type="button"
-              onClick={start}
+              onClick={() => start()}
               className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
             >
-              Play again
+              {challenge ? "Play a fresh run" : "Play again"}
             </button>
+          )}
+          {finished && finished.healths.length > 0 && (
+            <ChallengeButton run={finished} answering={challenge} />
           )}
           <Link href="/" className="text-chalk-dim underline underline-offset-2 hover:text-chalk">
             Back to the main game
@@ -227,7 +323,11 @@ export default function Survival({ deck, loadRecords, random }: SurvivalProps) {
           >
             Whereabout
           </Link>
-          <p className="mt-1 text-sm text-chalk-dim">Survival: last as long as you can</p>
+          <p className="mt-1 text-sm text-chalk-dim">
+            {challenge
+              ? `A friend's challenge: ${photos(challenge.survived)} to outlast`
+              : "Survival: last as long as you can"}
+          </p>
           <div className="mt-2">
             <GamesMenu screen="survival" streakHref="/streak" />
           </div>
@@ -240,17 +340,30 @@ export default function Survival({ deck, loadRecords, random }: SurvivalProps) {
             </dd>
           </dl>
           <div className="mt-1.5">
-            <HealthBar health={health} />
+            <HealthBar health={health} friend={friendHealth} />
           </div>
           <dl className="mt-1 text-sm text-chalk-dim">
             <div className="flex justify-end gap-1.5">
               <dt>Survived</dt>
               <dd className="tabular">{run?.survived ?? 0}</dd>
             </div>
-            <div className="flex justify-end gap-1.5">
-              <dt>Best</dt>
-              <dd className="tabular">{best ? best.survived : 0}</dd>
-            </div>
+            {challenge ? (
+              <div className="flex justify-end gap-1.5">
+                <dt>Friend</dt>
+                <dd className="tabular">
+                  {friendHealth === null
+                    ? "still going"
+                    : friendHealth === 0
+                      ? "out"
+                      : formatPoints(friendHealth)}
+                </dd>
+              </div>
+            ) : (
+              <div className="flex justify-end gap-1.5">
+                <dt>Best</dt>
+                <dd className="tabular">{best ? best.survived : 0}</dd>
+              </div>
+            )}
           </dl>
         </div>
       </header>
@@ -280,6 +393,11 @@ export default function Survival({ deck, loadRecords, random }: SurvivalProps) {
                 ? "Guess here"
                 : "Place your pin on the globe"}
             </button>
+            {notice && state.phase === "guessing" && state.index === 0 && (
+              <p role="status" className="mt-2 text-center text-sm text-chalk-dim">
+                {notice}
+              </p>
+            )}
             {error && (
               <p role="alert" className="mt-2 text-center text-sm text-flare">
                 {error}
@@ -300,7 +418,11 @@ export default function Survival({ deck, loadRecords, random }: SurvivalProps) {
             run={run}
             best={best}
             newBest={newBest}
-            onNext={over ? start : () => dispatch({ type: "next" })}
+            challenge={challenge}
+            friendHealth={friendHealth}
+            friendEnded={challenge ? friendRunEndedAt(challenge, answered.index) : false}
+            finished={finished}
+            onNext={over ? () => start() : () => dispatch({ type: "next" })}
           />
         </div>
       )}
@@ -316,6 +438,10 @@ function SurvivalCard({
   run,
   best,
   newBest,
+  challenge,
+  friendHealth,
+  friendEnded,
+  finished,
   onNext,
 }: {
   round: SurvivalRound;
@@ -325,6 +451,14 @@ function SurvivalCard({
   run: SurvivalBest;
   best: SurvivalBest | null;
   newBest: boolean;
+  /** The friend's challenge this run answers, if it is one. */
+  challenge: SurvivalChallenge | null;
+  /** The friend's health after this same photo, when the link says. */
+  friendHealth: number | null;
+  /** True when this photo is the one that emptied the friend's bar. */
+  friendEnded: boolean;
+  /** The run as it ended, once it has: the challenge link its end can send. */
+  finished: FinishedSurvivalRun | null;
   onNext: () => void;
 }) {
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -365,34 +499,103 @@ function SurvivalCard({
           {atlasKm < round.distanceKm ? ", closer than you." : "."}
         </p>
       )}
+      {challenge && friendHealth !== null && (
+        <p className="mt-1 text-sm text-chalk-dim" data-friend-after={friendHealth}>
+          {friendEnded
+            ? "Your friend's bar ran out on this photo."
+            : friendHealth === 0
+              ? "Your friend was already out of health by here."
+              : `Your friend had ${formatPoints(friendHealth)} health after this photo.`}
+        </p>
+      )}
+      {challenge && !over && run.survived === challenge.survived + 1 && (
+        <p className="mt-3 font-semibold text-sonar">
+          {`That outlasts your friend's ${photos(challenge.survived)}!`}
+        </p>
+      )}
       {over ? (
         <p className="mt-3 text-chalk">
           {`Out of health. You survived ${runLine(run)}. `}
-          {newBest ? "That's your new best!" : best ? `Your best is ${runLine(best)}.` : ""}
+          {challenge
+            ? survivalChallengeLine(run, challenge)
+            : newBest
+              ? "That's your new best!"
+              : best
+                ? `Your best is ${runLine(best)}.`
+                : ""}
         </p>
       ) : (
         <p className="mt-3 text-chalk">
           {`${formatPoints(round.after)} health left. A pin within ${formatDistance(HEAL_KM, units)} heals ${formatPoints(HEAL_POINTS)}.`}
         </p>
       )}
-      <div className="mt-4 flex items-center gap-4 md:mt-5">
+      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 md:mt-5">
         <button
           ref={nextRef}
           type="button"
           onClick={onNext}
           className="shrink-0 rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
         >
-          {over ? "Start a new run" : "Next photo"}
+          {over ? (challenge ? "Play a fresh run" : "Start a new run") : "Next photo"}
         </button>
+        {finished ? (
+          <ChallengeButton run={finished} answering={challenge} compact />
+        ) : (
+          <a
+            href={credit.sourceUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="min-w-0 truncate text-xs text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk"
+          >
+            Photo: {credit.author}, {credit.license}
+          </a>
+        )}
+      </div>
+      {finished && (
         <a
           href={credit.sourceUrl}
           target="_blank"
           rel="noreferrer"
-          className="min-w-0 truncate text-xs text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk"
+          className="mt-2 block truncate text-xs text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk"
         >
           Photo: {credit.author}, {credit.license}
         </a>
-      </div>
+      )}
     </section>
+  );
+}
+
+/**
+ * Challenge a friend from a finished run (src/lib/game/survivalChallenge.ts): a link to the same
+ * photos in the same order, with the bar after each. Answering a challenge, it sends the reply.
+ */
+function ChallengeButton({
+  run,
+  answering,
+  compact = false,
+}: {
+  run: FinishedSurvivalRun;
+  answering: SurvivalChallenge | null;
+  /** On the answer card, where it shares a row with the button for a new run. */
+  compact?: boolean;
+}) {
+  const [sent, setSent] = useState("");
+  async function send() {
+    const text = survivalChallengeText(run, window.location.href, answering ?? undefined);
+    setSent(CHALLENGE_NOTE[await sendShare(text, navigator)]);
+  }
+  return (
+    <span className={compact ? "flex min-w-0 flex-col" : "flex flex-col"}>
+      <button
+        type="button"
+        onClick={send}
+        className={`rounded-full border-2 border-gold font-semibold text-gold transition hover:bg-gold/10 ${compact ? "px-4 py-2" : "px-5 py-2.5"}`}
+      >
+        {answering ? "Send yours back" : "Challenge a friend"}
+      </button>
+      <span role="status" className={sent ? "mt-1 text-xs text-chalk-dim" : "sr-only"}>
+        {sent}
+      </span>
+    </span>
   );
 }

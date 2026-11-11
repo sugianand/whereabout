@@ -77,6 +77,7 @@ describe("survivalReducer", () => {
       health: SURVIVAL_HEALTH,
       total: 0,
       survived: 0,
+      healths: [],
       pin: null,
     });
   });
@@ -126,6 +127,7 @@ describe("survivalReducer", () => {
     const first = play([start, ...guess(SYDNEY), { type: "next" }]);
     const over = play(guess(SYDNEY), first);
     expect(over).toMatchObject({ phase: "answered", health: 0, survived: 1 });
+    expect(over.phase === "answered" && over.healths).toEqual([SURVIVAL_HEALTH - biteFor(0), 0]);
     expect(survivalOver(over)).toBe(true);
     expect(survivalReducer(over, { type: "next" })).toBe(over);
   });
