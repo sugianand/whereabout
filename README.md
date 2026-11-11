@@ -29,6 +29,10 @@ it. A challenge never counts toward your best.
 **Survival** (at `/survival`, linked from the results screen) deals photo after photo until your
 misses empty a 5,000-point health bar: each round costs half the points it missed, a pin within
 25 km heals 1,000 instead, and your best run (photos survived, then points) is kept in your browser.
+When the bar runs out, *Challenge a friend* sends a link to the very same photos in the same order,
+with your health after each: your friend sees a tick on their bar where yours stood at that point,
+and after each photo what you had left, and a friend who outlasts you plays on through the rest of
+the deck. Photos survived decide it, then points. A challenge never counts toward your best.
 **Further North** (at `/further-north`, linked from the results screen) shows two photos and asks
 which was taken further north. A right pick keeps the second photo and deals a new one beside it;
 the first wrong pick ends the run. Photos under one degree of latitude apart count either way. The
