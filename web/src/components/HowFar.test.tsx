@@ -1,8 +1,9 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { seededShuffle } from "@/lib/game/daily";
 import type { GameRecord } from "@/lib/game/deck";
+import { encodeFarChallenge, type FarChallenge } from "@/lib/game/farChallenge";
 import { FAR_DAILY_KEY, dailyFarPairs, loadFarDay, rememberFarDay } from "@/lib/game/farDaily";
 import {
   BEST_HOW_FAR_KEY,
@@ -39,7 +40,10 @@ const RECORDS = Array.from({ length: 11 }, (_, i) =>
 );
 const byId = new Map(RECORDS.map((r) => [r.photo.id, r]));
 
-beforeEach(() => localStorage.clear());
+beforeEach(() => {
+  window.history.replaceState(null, "", "/how-far");
+  localStorage.clear();
+});
 
 async function setup() {
   const game = gameFor(RECORDS);
@@ -207,4 +211,149 @@ it("links the free game to today's", async () => {
     "href",
     "/how-far/daily",
   );
+});
+
+function useClipboard() {
+  const sent = { text: "" };
+  Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+  Object.defineProperty(navigator, "clipboard", {
+    value: { writeText: async (t: string) => void (sent.text = t) },
+    configurable: true,
+  });
+  return sent;
+}
+
+/** Lock in every pair at slider step `step`, and return the points each scored. */
+async function playAll(step: number, pairs: readonly (readonly [string, string])[]) {
+  const scored: number[] = [];
+  for (let i = 0; i < pairs.length; i++) {
+    await waitFor(() => expect(lockButton()).toBeEnabled());
+    expect(screen.getByTestId("how-far-photo-1")).toHaveAttribute("data-photo", pairs[i]![0]);
+    expect(screen.getByTestId("how-far-photo-2")).toHaveAttribute("data-photo", pairs[i]![1]);
+    fireEvent.change(slider(), { target: { value: String(step) } });
+    fireEvent.click(lockButton());
+    const [a, b] = [byId.get(pairs[i]![0])!, byId.get(pairs[i]![1])!];
+    scored.push(judgeEstimate(stepToKm(step), haversineKm(a.photo, b.photo)).points);
+    fireEvent.click(
+      await screen.findByRole("button", { name: i === 4 ? "See your score" : "Next pair" }),
+    );
+  }
+  return scored;
+}
+
+describe("a friend's How far apart? challenge", () => {
+  // Not the pairs random() = 0 deals, so the game must come from the link.
+  const FRIEND: FarChallenge = {
+    pairs: [
+      ["p6", "p4"],
+      ["p2", "p5"],
+      ["p3", "p8"],
+      ["p0", "p1"],
+      ["p9", "p10"],
+    ],
+    steps: [0, 120, 260, 330, 400],
+  };
+  const truth = (i: number) => {
+    const [a, b] = FRIEND.pairs[i]!.map((id) => byId.get(id)!.photo);
+    return haversineKm(a!, b!);
+  };
+  const friendPoints = FRIEND.steps.map((s, i) => judgeEstimate(stepToKm(s), truth(i)).points);
+
+  async function linked(value: string) {
+    window.history.replaceState(null, "", `/how-far?challenge=${value}&x=1`);
+    return setup();
+  }
+
+  it("deals the friend's pairs, and shows their estimate only once yours is in", async () => {
+    await linked(encodeFarChallenge(FRIEND));
+    expect(screen.getByText("Friend's challenge, pair 1 of 5")).toBeInTheDocument();
+    expect(screen.getByTestId("how-far-photo-1")).toHaveAttribute("data-photo", "p6");
+    expect(screen.getByTestId("how-far-friend-score")).toHaveTextContent("0");
+    expect(screen.queryByText("Best")).toBeNull();
+    expect(screen.queryByRole("link", { name: "Today's game" })).toBeNull();
+    expect(screen.queryByTestId("how-far-friend")).toBeNull();
+
+    fireEvent.change(slider(), { target: { value: "200" } });
+    fireEvent.click(lockButton());
+    const friend = judgeEstimate(stepToKm(0), truth(0));
+    expect(await screen.findByTestId("how-far-friend")).toHaveTextContent(
+      `Your friend said ${formatDistance(stepToKm(0), "km")}: ${describeEstimate(friend).toLowerCase()}, ${formatPoints(friend.points)} points`,
+    );
+    expect(screen.getByTestId("how-far-mark-friend")).toBeInTheDocument();
+    expect(screen.getByTestId("how-far-friend-score")).toHaveTextContent(
+      formatPoints(friend.points),
+    );
+  });
+
+  it("ends with who won, leaves the best alone, and sends one back", async () => {
+    await linked(encodeFarChallenge(FRIEND));
+    const mine = await playAll(200, FRIEND.pairs);
+    const you = mine.reduce((a, b) => a + b, 0);
+    const them = friendPoints.reduce((a, b) => a + b, 0);
+    expect(
+      await screen.findByRole("heading", { level: 1, name: `${formatPoints(you)} points` }),
+    ).toBeInTheDocument();
+    const gap = Math.abs(you - them);
+    const verdict =
+      you > them
+        ? `You won the challenge by ${formatPoints(gap)} point`
+        : you < them
+          ? `Your friend won by ${formatPoints(gap)} point`
+          : "A dead heat with your friend.";
+    expect(screen.getByText(/^Out of 5,000\./)).toHaveTextContent(verdict);
+    expect(screen.getByText(/^Out of 5,000\./)).toHaveTextContent(
+      `Your friend scored ${formatPoints(them)}. A challenge doesn't count toward your best.`,
+    );
+    const rows = within(screen.getByRole("list", { name: "Your pairs" })).getAllByRole("listitem");
+    rows.forEach((row, i) =>
+      expect(row).toHaveTextContent(`, friend ${formatPoints(friendPoints[i]!)}`),
+    );
+    expect(localStorage.getItem(BEST_HOW_FAR_KEY)).toBeNull();
+
+    const sent = useClipboard();
+    fireEvent.click(screen.getByRole("button", { name: "Send yours back" }));
+    await waitFor(() =>
+      expect(
+        screen.getByText("Challenge link copied. Whoever opens it plays these five pairs."),
+      ).toBeInTheDocument(),
+    );
+    expect(sent.text.split("\n").at(-1)).toBe(
+      `http://localhost:3000/how-far?challenge=${encodeFarChallenge({ ...FRIEND, steps: [200, 200, 200, 200, 200] })}`,
+    );
+
+    // A fresh game is a normal one again, with its own address.
+    fireEvent.click(screen.getByRole("button", { name: "Play a fresh game" }));
+    expect(await screen.findByText("How far apart? Pair 1 of 5")).toBeInTheDocument();
+    expect(window.location.search).toBe("?x=1");
+  });
+
+  it("sets a broken link aside for a fresh game, and says so", async () => {
+    const { order } = await linked("p6.p4_1");
+    expect(screen.getByText(/That challenge link was cut short/)).toBeInTheDocument();
+    expect(screen.getByText("How far apart? Pair 1 of 5")).toBeInTheDocument();
+    expect(screen.getByTestId("how-far-photo-1")).toHaveAttribute("data-photo", order[0]);
+    expect(window.location.search).toBe("?x=1");
+  });
+
+  it("says when the photos aren't dealt any more", async () => {
+    const gone: FarChallenge = { ...FRIEND, pairs: [...FRIEND.pairs.slice(0, 4), ["p9", "gone"]] };
+    await linked(encodeFarChallenge(gone));
+    expect(
+      screen.getByText(/That challenge's photos aren't in the game any more/),
+    ).toBeInTheDocument();
+  });
+
+  it("offers a challenge from the end of a free game, carrying its pairs and slider steps", async () => {
+    const { order } = await setup();
+    const pairs = [0, 1, 2, 3, 4].map((i) => [order[2 * i]!, order[2 * i + 1]!] as const);
+    await playAll(57, pairs);
+    expect(await screen.findByRole("button", { name: "Challenge a friend" })).toBeVisible();
+    const sent = useClipboard();
+    fireEvent.click(screen.getByRole("button", { name: "Challenge a friend" }));
+    await waitFor(() => expect(sent.text).not.toBe(""));
+    expect(sent.text.split("\n").at(-1)).toBe(
+      `http://localhost:3000/how-far?challenge=${encodeFarChallenge({ pairs: pairs.map(([a, b]) => [a, b] as const), steps: [57, 57, 57, 57, 57] })}`,
+    );
+    expect(sent.text).not.toMatch(/Place p/);
+  });
 });

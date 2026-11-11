@@ -6,6 +6,15 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "r
 import { seededShuffle } from "@/lib/game/daily";
 import { runToday } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
+import {
+  FAR_CHALLENGE_PARAM,
+  farChallengeLine,
+  farChallengeText,
+  friendEstimate,
+  friendTotal,
+  parseFarChallenge,
+  type FarChallenge,
+} from "@/lib/game/farChallenge";
 import { dailyFarPairs, farDailyShare, loadFarDay, rememberFarDay } from "@/lib/game/farDaily";
 import {
   MAX_KM,
@@ -25,10 +34,12 @@ import {
   stepToKm,
   totalPoints,
   type Estimate,
+  type Pair,
   type PairResult,
 } from "@/lib/game/howFar";
 import { formatDistance, formatPoints } from "@/lib/geo";
 import { placeholderUrl, sources } from "@/lib/photoSources";
+import { sendShare, type ShareOutcome } from "@/lib/share";
 import { KM_PER_MILE, type Units } from "@/lib/units";
 import { useUnits } from "@/lib/useUnits";
 
@@ -55,6 +66,26 @@ type HowFarProps = {
 /** The slider starts halfway along the scale, about 450 km, on every pair. */
 const START_STEP = SLIDER_STEPS / 2;
 
+/** Why a challenge link was set aside for a fresh game. */
+export const FAR_CHALLENGE_NOTICE = {
+  malformed: "That challenge link was cut short, so here's a fresh game instead.",
+  missing: "That challenge's photos aren't in the game any more, so here's a fresh game instead.",
+} as const;
+
+/** The challenge the address carries, read once as the page opens; null without one. */
+function linkedChallenge(dealable: readonly string[]) {
+  const value = new URLSearchParams(window.location.search).get(FAR_CHALLENGE_PARAM);
+  return value === null ? null : parseFarChallenge(value, dealable);
+}
+
+/** Take the challenge out of the address, so a reload deals a fresh game, not the old link. */
+function dropChallengeParam() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has(FAR_CHALLENGE_PARAM)) return;
+  url.searchParams.delete(FAR_CHALLENGE_PARAM);
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
 /** Round labels along the scale in the player's units, as kilometres. */
 function ticks(units: Units): number[] {
   const perUnit = units === "km" ? 1 : KM_PER_MILE;
@@ -66,13 +97,7 @@ function ticks(units: Units): number[] {
  * far apart they were taken, scored by how many times off the estimate was. Five pairs a game,
  * with Atlas's estimate from its own two guesses beside the player's at each reveal.
  */
-export default function HowFar({
-  deck,
-  loadRecords,
-  random,
-  daily = false,
-  now,
-}: HowFarProps) {
+export default function HowFar({ deck, loadRecords, random, daily = false, now }: HowFarProps) {
   const [state, dispatch] = useReducer(howFarReducer, initialHowFar);
   const [step, setStep] = useState(START_STEP);
   const [best, setBest] = useState(0);
@@ -85,33 +110,49 @@ export default function HowFar({
 
   // The day today's game was dealt for, kept when the clock passes midnight mid-game.
   const [day, setDay] = useState<string | null>(null);
+  // A friend's challenge this game answers: their pairs, and where they set the slider on each.
+  const [challenge, setChallenge] = useState<FarChallenge | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  const start = useCallback(() => {
-    if (daily) {
-      const today = runToday(now?.());
-      setDay(today);
+  /** Deal a game; `fromLink` takes up a challenge the address carries, as the page opens. */
+  const start = useCallback(
+    (fromLink = false) => {
+      if (daily) {
+        const today = runToday(now?.());
+        setDay(today);
+        setStep(START_STEP);
+        dispatch({
+          type: "start",
+          pairs: dailyFarPairs(deck.ids, deck.regions, today),
+          results: loadFarDay(today)?.results,
+        });
+        return;
+      }
+      const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
+      const stored = loadBestHowFar();
+      setBest(stored);
+      setBestBefore(stored);
       setStep(START_STEP);
+      const linked = fromLink ? linkedChallenge(deck.ids) : null;
+      setNotice(linked && !linked.ok ? FAR_CHALLENGE_NOTICE[linked.reason] : null);
+      if (linked?.ok) {
+        setChallenge(linked.challenge);
+        dispatch({ type: "start", pairs: linked.challenge.pairs });
+        return;
+      }
+      setChallenge(null);
+      dropChallengeParam();
       dispatch({
         type: "start",
-        pairs: dailyFarPairs(deck.ids, deck.regions, today),
-        results: loadFarDay(today)?.results,
+        pairs: dealPairs(seededShuffle(deck.ids, seed), continentLookup(deck.regions)),
       });
-      return;
-    }
-    const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
-    const stored = loadBestHowFar();
-    setBest(stored);
-    setBestBefore(stored);
-    setStep(START_STEP);
-    dispatch({
-      type: "start",
-      pairs: dealPairs(seededShuffle(deck.ids, seed), continentLookup(deck.regions)),
-    });
-  }, [deck.ids, deck.regions, random, daily, now]);
+    },
+    [deck.ids, deck.regions, random, daily, now],
+  );
 
   // The pairs are shuffled in the browser after hydration, never at build time.
   useEffect(() => {
-    const id = requestAnimationFrame(start);
+    const id = requestAnimationFrame(() => start(true));
     return () => cancelAnimationFrame(id);
   }, [start]);
 
@@ -178,7 +219,9 @@ export default function HowFar({
       // Today's game is kept after every pair, so a reload picks up at the next one.
       rememberFarDay(day, { results: after.results });
     } else if (
-      // The best is a whole game's points, kept as soon as its last pair is answered.
+      // The best is a whole game's points, kept as soon as its last pair is answered. A
+      // challenge's pairs may have been seen before, so it is played for the friend only.
+      !challenge &&
       after.phase === "answered" &&
       after.pairs.length === PAIRS &&
       after.index === after.pairs.length - 1
@@ -186,7 +229,7 @@ export default function HowFar({
       setBest(rememberHowFar(totalPoints(after.results)));
     }
     dispatch(action);
-  }, [state, recA, recB, step, day]);
+  }, [state, recA, recB, step, day, challenge]);
 
   const next = useCallback(() => {
     setStep(START_STEP);
@@ -205,12 +248,16 @@ export default function HowFar({
     }
     return (
       <Finished
+        pairs={state.pairs}
         results={state.results}
         whole={state.pairs.length === PAIRS}
         best={best}
-        newBest={totalPoints(state.results) > bestBefore && state.pairs.length === PAIRS}
+        newBest={
+          !challenge && totalPoints(state.results) > bestBefore && state.pairs.length === PAIRS
+        }
         units={units}
-        onAgain={start}
+        challenge={challenge}
+        onAgain={() => start()}
       />
     );
   }
@@ -218,6 +265,8 @@ export default function HowFar({
   const index = playing?.index ?? 0;
   const pairCount = playing?.pairs.length ?? PAIRS;
   const score = totalPoints(playing?.results ?? []);
+  // The friend's points only count the pairs revealed so far, so their estimates stay hidden.
+  const friendScore = challenge ? friendTotal(challenge, playing?.results ?? []) : 0;
 
   return (
     <main
@@ -237,14 +286,20 @@ export default function HowFar({
           <p className="mt-1 text-sm text-chalk-dim">
             {day
               ? `How far apart?, today's game (${day}): pair ${index + 1} of ${pairCount}`
-              : `How far apart? Pair ${index + 1} of ${pairCount}`}
+              : challenge
+                ? `Friend's challenge, pair ${index + 1} of ${pairCount}`
+                : `How far apart? Pair ${index + 1} of ${pairCount}`}
           </p>
-          <Link
-            href={daily ? "/how-far" : "/how-far/daily"}
-            className="mt-0.5 inline-block text-sm text-gold underline underline-offset-2 hover:brightness-110"
-          >
-            {daily ? "Free games" : "Today's game"}
-          </Link>
+          {/* A friend's challenge keeps the header short for the photos; the Games menu still
+              leads to today's game. */}
+          {!challenge && (
+            <Link
+              href={daily ? "/how-far" : "/how-far/daily"}
+              className="mt-0.5 inline-block text-sm text-gold underline underline-offset-2 hover:brightness-110"
+            >
+              {daily ? "Free games" : "Today's game"}
+            </Link>
+          )}
         </div>
         <div className="flex shrink-0 items-start gap-3">
           <GamesMenu screen="how-far" streakHref="/streak" />
@@ -254,11 +309,20 @@ export default function HowFar({
             <dd className="font-sign tabular text-3xl font-bold leading-none" aria-live="polite">
               {formatPoints(score)}
             </dd>
-            {!daily && (
+            {challenge ? (
               <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
-                <dt>Best</dt>
-                <dd className="tabular">{formatPoints(best)}</dd>
+                <dt>Friend</dt>
+                <dd className="tabular" data-testid="how-far-friend-score">
+                  {formatPoints(friendScore)}
+                </dd>
               </div>
+            ) : (
+              !daily && (
+                <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
+                  <dt>Best</dt>
+                  <dd className="tabular">{formatPoints(best)}</dd>
+                </div>
+              )
             )}
           </dl>
         </div>
@@ -283,11 +347,13 @@ export default function HowFar({
             result={result}
             places={[recA.photo.place, recB.photo.place]}
             units={units}
+            friend={challenge ? friendEstimate(challenge, index, result.actualKm) : null}
             last={index + 1 >= pairCount}
             onNext={next}
           />
         ) : (
           <EstimatePanel
+            notice={index === 0 ? notice : null}
             sliderRef={sliderRef}
             step={step}
             units={units}
@@ -377,6 +443,7 @@ function ScaleLabels({ units, className = "mt-1" }: { units: Units; className?: 
 }
 
 function EstimatePanel({
+  notice,
   sliderRef,
   step,
   units,
@@ -384,6 +451,8 @@ function EstimatePanel({
   onStep,
   onLockIn,
 }: {
+  /** Why a challenge link was set aside, shown on the first pair of the fresh game. */
+  notice: string | null;
   sliderRef: React.RefObject<HTMLInputElement | null>;
   step: number;
   units: Units;
@@ -398,6 +467,11 @@ function EstimatePanel({
       aria-label="Your estimate"
       className="w-full max-w-xl rounded-2xl border border-graticule/70 bg-ocean-deep/95 p-3 md:p-4"
     >
+      {notice && (
+        <p role="status" className="mb-2 text-center text-sm text-chalk-dim">
+          {notice}
+        </p>
+      )}
       <div className="flex items-baseline justify-between gap-3">
         <label htmlFor="how-far-slider" className="text-sm text-chalk-dim">
           How far apart were these taken?
@@ -441,35 +515,68 @@ function EstimatePanel({
   );
 }
 
-/** The truth, the player's estimate and Atlas's, each placed on the log scale. */
-function RevealScale({ result, units }: { result: PairResult; units: Units }) {
-  const marks: { key: string; km: number; label: string; className: string }[] = [
-    { key: "actual", km: result.actualKm, label: "Truth", className: "bg-gold text-ocean-deep" },
-    { key: "you", km: result.you.km, label: "You", className: "bg-sonar text-ocean-deep" },
+/**
+ * The truth, the player's estimate and Atlas's, each placed on the log scale; in a friend's
+ * challenge, the friend's estimate too. Every mark has a lane of its own, so close ones never cover.
+ */
+function RevealScale({
+  result,
+  friend,
+  units,
+}: {
+  result: PairResult;
+  friend: Estimate | null;
+  units: Units;
+}) {
+  // Lanes from the top: you, then the friend, the truth on the line, Atlas at the foot.
+  const marks: { key: string; km: number; label: string; className: string; top: string }[] = [
+    {
+      key: "you",
+      km: result.you.km,
+      label: "You",
+      className: "bg-sonar text-ocean-deep",
+      top: "0",
+    },
   ];
+  if (friend) {
+    marks.push({
+      key: "friend",
+      km: friend.km,
+      label: "Friend",
+      className: "bg-flare text-ocean-deep",
+      top: "1.0625rem",
+    });
+  }
+  const line = friend ? "2.625rem" : "50%";
+  marks.push({
+    key: "actual",
+    km: result.actualKm,
+    label: "Truth",
+    className: "bg-gold text-ocean-deep -translate-y-1/2",
+    top: line,
+  });
   if (result.atlas) {
     marks.push({
       key: "atlas",
       km: result.atlas.km,
       label: "Atlas",
-      className: "bg-chalk text-ocean-deep",
+      className: "bg-chalk text-ocean-deep -translate-y-full",
+      top: "100%",
     });
   }
   return (
     <div className="mt-3" aria-hidden="true">
-      <div className="relative h-14">
-        <div className="absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-chalk/20" />
-        {marks.map((m, i) => (
+      <div className={`relative ${friend ? "h-[4.25rem]" : "h-14"}`}>
+        <div
+          className="absolute inset-x-0 h-0.5 -translate-y-1/2 rounded-full bg-chalk/20"
+          style={{ top: line }}
+        />
+        {marks.map((m) => (
           <span
             key={m.key}
             data-testid={`how-far-mark-${m.key}`}
-            className={`absolute whitespace-nowrap rounded-full px-1.5 py-px text-[11px] font-semibold ${m.className}`}
-            // Truth sits on the line; you above it and Atlas below, so close marks never cover.
-            style={{
-              left: `${Math.min(96, Math.max(4, scalePosition(m.km) * 100))}%`,
-              top: i === 0 ? "50%" : i === 1 ? "0" : "100%",
-              transform: `translate(-50%, ${i === 0 ? "-50%" : i === 1 ? "0" : "-100%"})`,
-            }}
+            className={`absolute -translate-x-1/2 whitespace-nowrap rounded-full px-1.5 py-px text-[11px] font-semibold ${m.className}`}
+            style={{ left: `${Math.min(96, Math.max(4, scalePosition(m.km) * 100))}%`, top: m.top }}
           >
             {m.label}
           </span>
@@ -488,12 +595,15 @@ function HowFarCard({
   result,
   places,
   units,
+  friend,
   last,
   onNext,
 }: {
   result: PairResult;
   places: readonly [string, string];
   units: Units;
+  /** In a friend's challenge, where they set the slider on this pair, judged the same way. */
+  friend: Estimate | null;
   last: boolean;
   onNext: () => void;
 }) {
@@ -521,7 +631,18 @@ function HowFarCard({
       <p className="mt-1 text-chalk">
         {`${places[0]} and ${places[1]} are ${formatDistance(actualKm, units)} apart. You said ${formatDistance(you.km, units)}.`}
       </p>
-      <RevealScale result={result} units={units} />
+      <RevealScale result={result} friend={friend} units={units} />
+      {friend && (
+        <p className="mt-2 text-sm text-chalk" data-testid="how-far-friend">
+          {`Your friend said ${formatDistance(friend.km, units)}: ${describeEstimate(friend).toLowerCase()}, ${formatPoints(friend.points)} points${
+            friend.points > you.points
+              ? ", closer than you"
+              : friend.points < you.points
+                ? ", you were closer"
+                : ""
+          }.`}
+        </p>
+      )}
       <p className="mt-2 text-sm text-chalk-dim">
         {atlas
           ? `Atlas said ${formatDistance(atlas.km, units)} from its two guesses: ${describeEstimate(atlas).toLowerCase()}, ${formatPoints(atlas.points)} points${atlasWins ? ", closer than you" : ""}.`
@@ -542,8 +663,16 @@ function HowFarCard({
   );
 }
 
-/** Every pair of a game: the real distance, what you said and its points. */
-function PairList({ results, units }: { results: readonly PairResult[]; units: Units }) {
+/** Every pair of a game: the real distance, what you said and its points, beside a friend's. */
+function PairList({
+  results,
+  units,
+  challenge,
+}: {
+  results: readonly PairResult[];
+  units: Units;
+  challenge?: FarChallenge | null;
+}) {
   return (
     <ol className="mt-6 space-y-2" aria-label="Your pairs">
       {results.map((r, i) => (
@@ -557,7 +686,12 @@ function PairList({ results, units }: { results: readonly PairResult[]; units: U
               {`You said ${formatDistance(r.you.km, units)}: ${describeEstimate(r.you).toLowerCase()}`}
             </span>
           </span>
-          <span className="tabular font-semibold">{formatPoints(r.you.points)}</span>
+          <span className="tabular shrink-0 font-semibold">
+            {formatPoints(r.you.points)}
+            {challenge && (
+              <span className="font-normal text-chalk-dim">{`, friend ${formatPoints(friendEstimate(challenge, i, r.actualKm).points)}`}</span>
+            )}
+          </span>
         </li>
       ))}
     </ol>
@@ -568,7 +702,8 @@ function PairList({ results, units }: { results: readonly PairResult[]; units: U
 function atlasLine(results: readonly PairResult[]): string | null {
   const atlas = atlasTotal(results);
   if (atlas.played === 0) return null;
-  const pairs = atlas.played === results.length ? "same pairs" : `${atlas.played} of them it played`;
+  const pairs =
+    atlas.played === results.length ? "same pairs" : `${atlas.played} of them it played`;
   return `Atlas scored ${formatPoints(atlas.points)} on the ${pairs}.`;
 }
 
@@ -600,21 +735,38 @@ function FarDayResult({
   );
 }
 
+const CHALLENGE_NOTE: Record<ShareOutcome, string> = {
+  shared: "Challenge sent.",
+  copied: "Challenge link copied. Whoever opens it plays these five pairs.",
+  cancelled: "",
+  failed: "Couldn't copy the link. Your browser blocked the clipboard.",
+};
+
 function Finished({
+  pairs,
   results,
   whole,
   best,
   newBest,
   units,
+  challenge,
   onAgain,
 }: {
+  pairs: readonly Pair[];
   results: readonly PairResult[];
   whole: boolean;
   best: number;
   newBest: boolean;
   units: Units;
+  /** The friend's challenge this game answered, if it was one. */
+  challenge: FarChallenge | null;
   onAgain: () => void;
 }) {
+  const [sent, setSent] = useState("");
+  async function sendChallenge() {
+    const text = farChallengeText(pairs, results, window.location.href, challenge ?? undefined);
+    setSent(CHALLENGE_NOTE[await sendShare(text, navigator)]);
+  }
   const none = results.length === 0;
   const total = totalPoints(results);
   const atlas = atlasLine(results);
@@ -634,18 +786,20 @@ function Finished({
         <>
           <p className="mt-4 text-lg text-chalk-dim">
             {`Out of ${formatPoints(max)}. `}
-            {newBest
-              ? "That's your new best!"
-              : whole && best > 0
-                ? `Your best is ${formatPoints(best)}.`
-                : ""}
+            {challenge
+              ? `${farChallengeLine(results, challenge)} Your friend scored ${formatPoints(friendTotal(challenge, results))}. A challenge doesn't count toward your best.`
+              : newBest
+                ? "That's your new best!"
+                : whole && best > 0
+                  ? `Your best is ${formatPoints(best)}.`
+                  : ""}
           </p>
           {atlas && (
             <p className="mt-2 text-chalk" data-testid="how-far-atlas-total">
               {atlas}
             </p>
           )}
-          <PairList results={results} units={units} />
+          <PairList results={results} units={units} challenge={challenge} />
         </>
       )}
       <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -655,13 +809,27 @@ function Finished({
             onClick={onAgain}
             className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
           >
-            Play again
+            {challenge ? "Play a fresh game" : "Play again"}
+          </button>
+        )}
+        {!none && whole && (
+          <button
+            type="button"
+            onClick={sendChallenge}
+            className="rounded-full border-2 border-gold px-5 py-2.5 font-semibold text-gold transition hover:bg-gold/10"
+          >
+            {challenge ? "Send yours back" : "Challenge a friend"}
           </button>
         )}
         <Link href="/" className="text-chalk-dim underline underline-offset-2 hover:text-chalk">
           Back to the main game
         </Link>
       </div>
+      {!none && whole && (
+        <p className="mt-2 min-h-5 text-sm text-chalk-dim" role="status">
+          {sent}
+        </p>
+      )}
     </main>
   );
 }
