@@ -1,11 +1,12 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PICK_LAYER } from "@/lib/basemap";
 import { countryName } from "@/lib/countries";
 import { seededShuffle } from "@/lib/game/daily";
 import type { GameRecord } from "@/lib/game/deck";
 import { BEST_STREAK_KEY, bestStreakKey } from "@/lib/game/streak";
+import { encodeStreakChallenge } from "@/lib/game/streakChallenge";
 import type { CatalogPhoto } from "@/lib/game/types";
 import { gameFor } from "@/test/deck";
 import { FakeMap, resetFakes } from "@/test/maplibre-mock";
@@ -95,7 +96,9 @@ describe("CountryStreak", () => {
     fireEvent.click(screen.getByRole("button", { name: "It's United States" }));
     const card = await screen.findByRole("region");
     expect(within(card).getByText("Not United States.")).toBeInTheDocument();
-    expect(within(card).getByText(/Your streak ends at 2 photos\. That's your new best!/)).toBeInTheDocument();
+    expect(
+      within(card).getByText(/Your streak ends at 2 photos\. That's your new best!/),
+    ).toBeInTheDocument();
     expect(localStorage.getItem(BEST_STREAK_KEY)).toBe("2");
 
     // A new run starts from zero, with the best kept.
@@ -112,7 +115,9 @@ describe("CountryStreak", () => {
     fireEvent.click(screen.getByRole("button", { name: /^It's / }));
     const card = await screen.findByRole("region");
     expect(within(card).getByText(`It was ${countryName(ORDER[0].country)}`)).toBeInTheDocument();
-    expect(within(card).getByText(/Your streak ends at 0 photos\. Your best is 5\./)).toBeInTheDocument();
+    expect(
+      within(card).getByText(/Your streak ends at 0 photos\. Your best is 5\./),
+    ).toBeInTheDocument();
     expect(localStorage.getItem(BEST_STREAK_KEY)).toBe("5");
   });
 
@@ -122,7 +127,9 @@ describe("CountryStreak", () => {
     fireEvent.click(screen.getByRole("button", { name: /^It's / }));
     const card = await screen.findByRole("region");
     const right = ORDER[0].country === "FR";
-    expect(card).toHaveTextContent(right ? "Atlas said France, and it was right." : "Atlas said France.");
+    expect(card).toHaveTextContent(
+      right ? "Atlas said France, and it was right." : "Atlas said France.",
+    );
   });
 
   it("fetches only the photo on screen and the next one", async () => {
@@ -202,5 +209,151 @@ describe("CountryStreak", () => {
       expect(picker().value).toBe("any");
       await waitFor(() => expect(window.location.search).toBe(""));
     });
+  });
+});
+
+describe("a friend's Country Streak challenge", () => {
+  const SEED = 987_654_321;
+  // The friend named p3, then tapped the United States on p1 (France).
+  const FRIEND = { ids: ["p3", "p1"], seed: SEED, streak: 1, miss: "US" };
+  const shownPhoto = () => document.querySelector("main")?.getAttribute("data-photo") ?? null;
+
+  afterEach(() => window.history.replaceState(null, "", "/streak"));
+
+  function clipboard() {
+    const box = { sent: "" };
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: async (t: string) => void (box.sent = t) },
+      configurable: true,
+    });
+    return box;
+  }
+
+  /** Answer the photo on screen, right or with the United States, and return its id. */
+  async function answer(map: FakeMap, right: boolean) {
+    await screen.findByRole("button", { name: "Zoom in on the photo" });
+    const id = shownPhoto()!;
+    const photo = byId.get(id)!;
+    act(() => (right ? map.click(photo.lng, photo.lat) : map.click(WRONG.lng, WRONG.lat)));
+    fireEvent.click(screen.getByRole("button", { name: /^It's / }));
+    return { id, card: await screen.findByRole("region") };
+  }
+
+  it("deals the friend's photos in order, plays on past them, and answers with yours", async () => {
+    window.history.replaceState(null, "", `/streak?challenge=${encodeStreakChallenge(FRIEND)}&x=1`);
+    const { map } = await setup();
+    expect(screen.getByText("A friend's challenge: 1 country in a row to beat")).toBeVisible();
+
+    const played: string[] = [];
+    let step = await answer(map, true);
+    played.push(step.id);
+    expect(step.id).toBe("p3");
+    expect(step.card).not.toHaveTextContent("Your friend said");
+    fireEvent.click(within(step.card).getByRole("button", { name: "Next photo" }));
+
+    await waitFor(() => expect(shownPhoto()).toBe("p1"));
+    step = await answer(map, true);
+    played.push(step.id);
+    // The photo that ended the friend's run says what they tapped, once it has been answered.
+    expect(step.card).toHaveTextContent(
+      "Your friend said United States, and their run ended here.",
+    );
+    expect(step.card).toHaveTextContent("That beats your friend's 1 in a row!");
+    fireEvent.click(within(step.card).getByRole("button", { name: "Next photo" }));
+
+    // Past the friend's miss, the run goes on to a photo they never saw.
+    await waitFor(() => expect(shownPhoto()).toBe("p2"));
+    step = await answer(map, false);
+    played.push(step.id);
+    expect(step.card).toHaveTextContent(
+      "Your streak ends at 2 photos. You beat your friend's 1 in a row by 1.",
+    );
+    // A challenge's photos may have been seen, so it never counts toward the best.
+    expect(localStorage.getItem(BEST_STREAK_KEY)).toBeNull();
+
+    const box = clipboard();
+    fireEvent.click(within(step.card).getByRole("button", { name: "Send yours back" }));
+    await waitFor(() =>
+      expect(
+        screen.getByText(
+          "Challenge link copied. Whoever opens it plays these photos, in this order.",
+        ),
+      ).toBeInTheDocument(),
+    );
+    expect(box.sent.split("\n")).toEqual([
+      "Whereabout · Country Streak: I named 2 countries in a row on the globe.",
+      "That beats your 1. Your turn to go further.",
+      `http://localhost:3000/streak?challenge=${played.join(".")}_${SEED.toString(36)}_2_US`,
+    ]);
+
+    // A fresh run leaves the link behind.
+    fireEvent.click(within(step.card).getByRole("button", { name: "Play a fresh run" }));
+    await waitFor(() => expect(screen.getByText("Country Streak: name the country")).toBeVisible());
+    expect(window.location.search).toBe("?x=1");
+  });
+
+  it("says when the friend's streak still wins, and shows no friend's pick before theirs", async () => {
+    window.history.replaceState(null, "", `/streak?challenge=${encodeStreakChallenge(FRIEND)}`);
+    const { map } = await setup();
+    const { id, card } = await answer(map, false);
+    expect(id).toBe("p3");
+    expect(card).not.toHaveTextContent("Your friend said");
+    expect(card).toHaveTextContent(
+      "Your streak ends at 0 photos. Your friend's 1 in a row wins, by 1.",
+    );
+  });
+
+  it("deals a fresh run, and says why, when the link is cut short or its photos have gone", async () => {
+    window.history.replaceState(null, "", "/streak?challenge=p3.p1_1z_1&x=1");
+    await setup();
+    expect(screen.getByText(/That challenge link was cut short/)).toBeVisible();
+    expect(screen.getByText("Country Streak: name the country")).toBeVisible();
+    expect(window.location.search).toBe("?x=1");
+
+    resetFakes();
+    document.body.innerHTML = "";
+    window.history.replaceState(
+      null,
+      "",
+      `/streak?challenge=${encodeStreakChallenge({ ...FRIEND, ids: ["p3", "gone"] })}`,
+    );
+    await setup();
+    expect(screen.getByText(/That challenge's photos aren't in the game any more/)).toBeVisible();
+  });
+
+  it("offers a challenge from the end of a free run, with the photos up to the miss", async () => {
+    const { map } = await setup();
+    const ids: string[] = [];
+    let step = await answer(map, true);
+    ids.push(step.id);
+    fireEvent.click(within(step.card).getByRole("button", { name: "Next photo" }));
+    await waitFor(() => expect(shownPhoto()).not.toBe(ids[0]));
+    step = await answer(map, false);
+    ids.push(step.id);
+    const box = clipboard();
+    fireEvent.click(within(step.card).getByRole("button", { name: "Challenge a friend" }));
+    await waitFor(() => expect(box.sent).not.toBe(""));
+    expect(box.sent).toContain("Same photos, same order: can you go further?");
+    // random() = 0 is seed 0; the miss carries the country tapped.
+    expect(box.sent.split("\n").at(-1)).toBe(
+      `http://localhost:3000/streak?challenge=${ids.join(".")}_0_1_US`,
+    );
+    expect(within(step.card).getByRole("button", { name: "Start a new streak" })).toBeVisible();
+  });
+
+  it("offers a challenge from a run that named every photo", async () => {
+    const { map } = await setup();
+    for (let i = 0; i < 3; i++) {
+      const { card } = await answer(map, true);
+      fireEvent.click(within(card).getByRole("button", { name: "Next photo" }));
+    }
+    await screen.findByRole("heading", { name: "Every photo, no misses" });
+    const box = clipboard();
+    fireEvent.click(screen.getByRole("button", { name: "Challenge a friend" }));
+    await waitFor(() => expect(box.sent).not.toBe(""));
+    expect(box.sent.split("\n").at(-1)).toBe(
+      `http://localhost:3000/streak?challenge=${ORDER.map((p) => p.id).join(".")}_0_3`,
+    );
   });
 });

@@ -179,3 +179,118 @@ test("a streak can be dealt from one continent, with its own best", async ({ pag
   await expect(page.getByText("Best", { exact: true }).locator("+ dd")).toHaveText("0");
   expect(errors).toEqual([]);
 });
+
+test("a challenge link deals a friend the same run, with the streak to beat and their miss", async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  const card = page.locator('section[aria-labelledby="streak-answer"]');
+  const sent = () => page.evaluate(() => (window as unknown as { sent: string }).sent);
+  const shownId = () => page.locator("main[data-photo]").getAttribute("data-photo");
+
+  // The sender names one, then misses.
+  await page.goto("./streak");
+  const dealt: string[] = [];
+  let truth = await currentCountry(page);
+  dealt.push((await shownId())!);
+  await pickWithKeyboard(page, (c) => c === truth);
+  await page.getByRole("button", { name: /^It's / }).click();
+  await card.getByRole("button", { name: "Next photo" }).click();
+  truth = await currentCountry(page);
+  dealt.push((await shownId())!);
+  await pickWithKeyboard(page, (c) => c !== null && c !== truth);
+  const tapped = (await page.getByRole("button", { name: /^It's / }).innerText()).slice(5);
+  await page.getByRole("button", { name: /^It's / }).click();
+  await expect(card).toContainText("Your streak ends at 1 photo.");
+  const challengeButton = card.getByRole("button", { name: "Challenge a friend" });
+  await expect(challengeButton).toBeInViewport();
+  await challengeButton.click();
+  await expect(page.getByText(/^Challenge (sent|link copied)/)).toBeVisible();
+  const message = await sent();
+  expect(message).toContain("I named 1 country in a row on the globe.");
+  expect(message).not.toContain(tapped);
+  const link = message.split("\n").at(-1)!;
+  expect(link).toMatch(
+    new RegExp(`/whereabout/streak/?\\?challenge=${dealt.join("\\.")}_[0-9a-z]+_1_[A-Z]{2}$`),
+  );
+
+  // The friend, with nothing kept, gets the same photos, sees the sender's pick on the photo that
+  // ended their run once they have answered it, and goes one further.
+  await page.evaluate(() => localStorage.clear());
+  await page.goto(link);
+  await expect(page.getByText("A friend's challenge: 1 country in a row to beat")).toBeVisible();
+  for (let i = 0; i < 2; i++) {
+    const country = await currentCountry(page);
+    expect(await shownId()).toBe(dealt[i]);
+    await pickWithKeyboard(page, (c) => c === country);
+    await page.getByRole("button", { name: /^It's / }).click();
+    if (i === 1) {
+      await expect(card).toContainText(`Your friend said ${tapped}, and their run ended here.`);
+      await expect(card).toContainText("That beats your friend's 1 in a row!");
+    } else {
+      await expect(card).not.toContainText("Your friend said");
+    }
+    await card.getByRole("button", { name: "Next photo" }).click();
+  }
+  // Past the friend's miss, the run plays on to a photo the friend never saw.
+  const next = await currentCountry(page);
+  expect(dealt).not.toContain(await shownId());
+  await pickWithKeyboard(page, (c) => c !== null && c !== next);
+  await page.getByRole("button", { name: /^It's / }).click();
+  await expect(card).toContainText(
+    "Your streak ends at 2 photos. You beat your friend's 1 in a row by 1.",
+  );
+  expect(
+    await page.evaluate(() => localStorage.getItem("whereabout:country-streak-best")),
+  ).toBeNull();
+
+  const back = card.getByRole("button", { name: "Send yours back" });
+  await expect(back).toBeInViewport();
+  await back.click();
+  await expect(page.getByText(/^Challenge (sent|link copied)/)).toBeVisible();
+  const reply = await sent();
+  expect(reply).toContain("That beats your 1. Your turn to go further.");
+  expect(reply).toMatch(/_2_[A-Z]{2}$/);
+
+  // A fresh run drops the link, so a reload doesn't deal the challenge again.
+  await card.getByRole("button", { name: "Play a fresh run" }).click();
+  await expect(page.getByText("Country Streak: name the country")).toBeVisible();
+  expect(new URL(page.url()).search).toBe("");
+  expect(errors).toEqual([]);
+});
+
+test("a broken Country Streak challenge says so and deals a fresh run", async ({ page }) => {
+  await page.goto("./streak?challenge=wm001.wm002_3_9");
+  await expect(page.getByText(/That challenge link was cut short/)).toBeVisible();
+  await expect(page.getByText("Country Streak: name the country")).toBeVisible();
+  await currentCountry(page);
+});
+
+test("the end of a streak keeps both its buttons on a 320px phone", async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 1000) >= 768, "a phone layout check");
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto("./streak");
+  const truth = await currentCountry(page);
+  await pickWithKeyboard(page, (c) => c !== null && c !== truth);
+  await page.getByRole("button", { name: /^It's / }).click();
+  const card = page.getByRole("region");
+  for (const name of ["Start a new streak", "Challenge a friend"]) {
+    await expect(card.getByRole("button", { name })).toBeInViewport({ ratio: 1 });
+  }
+  const scroll = await page.evaluate(() => [
+    document.documentElement.scrollWidth,
+    window.innerWidth,
+  ]);
+  expect(scroll[0]).toBeLessThanOrEqual(scroll[1]);
+});
