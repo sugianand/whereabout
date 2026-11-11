@@ -8,6 +8,16 @@ import { FRESH_RUN, runToday, type DailyRun } from "@/lib/game/dailyRuns";
 import { recordFreeRound } from "@/lib/game/quickRecord";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import {
+  ODD_CHALLENGE_PARAM,
+  oddChallengeDealer,
+  oddChallengeLine,
+  oddChallengeText,
+  oddFriendMissLine,
+  parseOddChallenge,
+  type OddChallenge,
+  type OddRun,
+} from "@/lib/game/oddChallenge";
+import {
   dailyOddDealer,
   loadOddDay,
   oddDailyShare,
@@ -26,6 +36,7 @@ import {
   type Quad,
 } from "@/lib/game/oddOneOut";
 import { placeholderUrl, sources } from "@/lib/photoSources";
+import { sendShare, type ShareOutcome } from "@/lib/share";
 
 import ControlsHelp from "./ControlsHelp";
 import { DailyRunResult, ShareDay } from "./DailyRunShare";
@@ -53,6 +64,27 @@ function quads(n: number): string {
   return `${n} quad${n === 1 ? "" : "s"}`;
 }
 
+/** Why a challenge link was set aside for a fresh run. */
+export const ODD_CHALLENGE_NOTICE = {
+  malformed: "That challenge link was cut short, so here's a fresh run instead.",
+  missing: "That challenge's photos aren't in the game any more, so here's a fresh run instead.",
+} as const;
+
+/** Take the challenge out of the address, so a reload deals a fresh run, not the old link. */
+function dropChallengeParam() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has(ODD_CHALLENGE_PARAM)) return;
+  url.searchParams.delete(ODD_CHALLENGE_PARAM);
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+const CHALLENGE_NOTE: Record<ShareOutcome, string> = {
+  shared: "Challenge sent.",
+  copied: "Challenge link copied. Whoever opens it plays these quads, laid out the same way.",
+  cancelled: "",
+  failed: "Couldn't copy the link. Your browser blocked the clipboard.",
+};
+
 /**
  * Odd one out (src/lib/game/oddOneOut.ts): four photos, three from one continent; tap the one
  * from somewhere else. Endless until the first wrong tap.
@@ -77,6 +109,11 @@ export default function OddOneOut({
   // once it has ended, how it went, which shows instead of the game.
   const [day, setDay] = useState<string | null>(null);
   const [dayDone, setDayDone] = useState<DailyRun | null>(null);
+  // A friend's challenge this run answers: their quads, and the run to beat.
+  const [challenge, setChallenge] = useState<OddChallenge | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  // Every quad answered this run, in order, for the challenge link its end can send.
+  const [played, setPlayed] = useState<Quad[]>([]);
 
   const deal = useCallback((): Quad | null => {
     if (dealer.current) return dealer.current.next();
@@ -85,39 +122,57 @@ export default function OddOneOut({
     return quad;
   }, [deck.regions, random]);
 
-  const start = useCallback(() => {
-    if (daily) {
-      const today = runToday(now?.());
-      const kept = loadOddDay(today);
-      setDay(today);
-      if (kept?.ended) {
-        setDayDone(kept);
+  /** Deal a run; `fromLink` takes up a challenge the address carries, as the page opens. */
+  const start = useCallback(
+    (fromLink = false) => {
+      setPlayed([]);
+      if (daily) {
+        const today = runToday(now?.());
+        const kept = loadOddDay(today);
+        setDay(today);
+        if (kept?.ended) {
+          setDayDone(kept);
+          return;
+        }
+        const { streak, atlasRight, atlasPlayed } = kept ?? FRESH_RUN;
+        // Replay the day's stream past the quads already answered, to the one the run was on.
+        dealer.current = dailyOddDealer(deck.regions, today);
+        dealer.current.skip(streak);
+        const quad = deal();
+        dispatch({
+          type: "start",
+          quad,
+          upcoming: quad ? deal() : null,
+          from: { streak, atlasRight, atlasPlayed },
+        });
         return;
       }
-      const { streak, atlasRight, atlasPlayed } = kept ?? FRESH_RUN;
-      // Replay the day's stream past the quads already answered, to the one the run was on.
-      dealer.current = dailyOddDealer(deck.regions, today);
-      dealer.current.skip(streak);
+      const stored = loadBestOdd();
+      setBest(stored);
+      setBestBeforeRun(stored);
+      seen.current = new Set();
+      const value = fromLink
+        ? new URLSearchParams(window.location.search).get(ODD_CHALLENGE_PARAM)
+        : null;
+      const linked = value === null ? null : parseOddChallenge(value, deck.regions);
+      setNotice(linked && !linked.ok ? ODD_CHALLENGE_NOTICE[linked.reason] : null);
+      if (linked?.ok) {
+        setChallenge(linked.challenge);
+        dealer.current = oddChallengeDealer(linked.challenge, deck.regions, random ?? Math.random);
+      } else {
+        setChallenge(null);
+        dealer.current = null;
+        dropChallengeParam();
+      }
       const quad = deal();
-      dispatch({
-        type: "start",
-        quad,
-        upcoming: quad ? deal() : null,
-        from: { streak, atlasRight, atlasPlayed },
-      });
-      return;
-    }
-    const stored = loadBestOdd();
-    setBest(stored);
-    setBestBeforeRun(stored);
-    seen.current = new Set();
-    const quad = deal();
-    dispatch({ type: "start", quad, upcoming: quad ? deal() : null });
-  }, [deal, daily, deck.regions, now]);
+      dispatch({ type: "start", quad, upcoming: quad ? deal() : null });
+    },
+    [deal, daily, deck.regions, now, random],
+  );
 
   // Quads are dealt in the browser after hydration, never at build time.
   useEffect(() => {
-    const id = requestAnimationFrame(start);
+    const id = requestAnimationFrame(() => start(true));
     return () => cancelAnimationFrame(id);
   }, [start]);
 
@@ -175,6 +230,7 @@ export default function OddOneOut({
         atlas: state.quad.ids.map((id) => records.get(id)?.atlas ?? null),
       } as const;
       const after = oddReducer(state, action);
+      if (after.phase === "answered") setPlayed((quads) => [...quads, state.quad]);
       if (after.phase === "answered" && day) {
         // Today's run is kept after every tap, so a reload resumes it and never deals it again.
         rememberOddDay(day, {
@@ -191,12 +247,13 @@ export default function OddOneOut({
           correct: after.correct,
           atlas: after.atlas ? after.atlas.correct : null,
         });
-        // Keep the run as the best after every right tap, so leaving mid-run keeps it.
-        if (after.correct) setBest(rememberOdd(after.streak));
+        // Keep the run as the best after every right tap, so leaving mid-run keeps it. A
+        // challenge's photos may have been seen before, so it is played for the friend only.
+        if (after.correct && !challenge) setBest(rememberOdd(after.streak));
       }
       dispatch(action);
     },
-    [state, ready, records, day],
+    [state, ready, records, day, challenge],
   );
 
   // 1 to 4 pick a photo from the keyboard.
@@ -253,6 +310,11 @@ export default function OddOneOut({
   }
 
   const streak = playing?.streak ?? 0;
+  // Which quad of the run is on screen: a right tap has already counted it in the streak.
+  const quadIndex = streak - (answered?.correct ? 1 : 0);
+  // On the quad that ended the friend's run, where they tapped.
+  const friendMiss =
+    challenge && answered && oddFriendMissLine(quadIndex, challenge) ? challenge.missPick : null;
 
   return (
     <main
@@ -272,7 +334,9 @@ export default function OddOneOut({
           <p className="mt-1 text-sm text-chalk-dim">
             {day
               ? `Odd one out, today's run (${day}): three photos share a continent. Which one doesn't?`
-              : "Odd one out: three photos share a continent. Which one doesn't?"}
+              : challenge
+                ? `A friend's challenge: ${quads(challenge.streak)} in a row to beat`
+                : "Odd one out: three photos share a continent. Which one doesn't?"}
           </p>
           <Link
             href={daily ? "/odd-one-out" : "/odd-one-out/daily"}
@@ -309,10 +373,17 @@ export default function OddOneOut({
             quad={playing?.quad ?? null}
             picked={answered?.picked ?? null}
             atlas={answered?.atlas ?? null}
+            friendPick={friendMiss === i}
             onPick={choose}
           />
         ))}
       </div>
+
+      {notice && state.phase === "picking" && streak === 0 && (
+        <p role="status" className="px-4 pb-2 text-center text-sm text-chalk-dim">
+          {notice}
+        </p>
+      )}
 
       {error && (
         <p role="alert" className="absolute inset-x-4 bottom-4 text-center text-sm text-flare">
@@ -335,7 +406,10 @@ export default function OddOneOut({
             best={best}
             newBest={over && answered.streak > bestBeforeRun}
             daily={day}
-            onNext={over ? start : next}
+            run={{ quads: played, streak: answered.streak, picked: answered.picked }}
+            challenge={challenge}
+            friendMiss={challenge ? oddFriendMissLine(quadIndex, challenge) : null}
+            onNext={over ? () => start() : next}
           />
         </div>
       )}
@@ -350,6 +424,7 @@ function PhotoTile({
   quad,
   picked,
   atlas,
+  friendPick,
   onPick,
 }: {
   index: number;
@@ -358,6 +433,8 @@ function PhotoTile({
   quad: Quad | null;
   picked: number | null;
   atlas: AtlasOdd | null;
+  /** The friend whose challenge this is tapped this photo, and it ended their run. */
+  friendPick: boolean;
   onPick: (index: number) => void;
 }) {
   const n = index + 1;
@@ -402,6 +479,11 @@ function PhotoTile({
         <div className="absolute inset-x-2 top-2 ml-9 flex flex-col items-end gap-1 text-right">
           {/* Atlas's pick shares the first line, so the card never hides it on a phone. */}
           <span className="flex flex-wrap items-center justify-end gap-1">
+            {friendPick && (
+              <span className="rounded-full border border-flare bg-ocean-deep/85 px-2 py-0.5 text-xs font-semibold text-flare">
+                Friend&apos;s pick
+              </span>
+            )}
             {atlas?.picked === index && (
               <span className="rounded-full border border-gold bg-ocean-deep/85 px-2 py-0.5 text-xs font-semibold text-gold">
                 Atlas&apos;s pick
@@ -463,6 +545,9 @@ function OddCard({
   best,
   newBest,
   daily,
+  run,
+  challenge,
+  friendMiss,
   onNext,
 }: {
   quad: Quad;
@@ -475,6 +560,12 @@ function OddCard({
   newBest: boolean;
   /** Today's run's day, when this is it: its end shares the day instead of starting again. */
   daily: string | null;
+  /** The run as it stands, for the challenge link its end can send. */
+  run: OddRun;
+  /** The friend's challenge this run answers, if it is one. */
+  challenge: OddChallenge | null;
+  /** On the quad that ended the friend's run, what they tapped. */
+  friendMiss: string | null;
   onNext: () => void;
 }) {
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -502,13 +593,25 @@ function OddCard({
           {`${atlasSentence(atlas, quad)} Atlas this run: ${atlasRight} of ${quads(atlasPlayed)}.`}
         </p>
       )}
+      {friendMiss && <p className="mt-2 text-sm text-chalk">{friendMiss}</p>}
+      {challenge && correct && streak === challenge.streak + 1 && (
+        <p className="mt-2 font-semibold text-sonar">
+          {`That beats your friend's ${challenge.streak} in a row!`}
+        </p>
+      )}
       {over && daily && (
         <p className="mt-2 text-chalk">{`Today's run is over: ${quads(streak)} in a row.`}</p>
       )}
       {over && !daily && (
         <p className="mt-2 text-chalk">
           {`Run over: ${quads(streak)} in a row. `}
-          {newBest ? "That's your new best!" : best > 0 ? `Your best is ${quads(best)}.` : ""}
+          {challenge
+            ? oddChallengeLine(streak, challenge)
+            : newBest
+              ? "That's your new best!"
+              : best > 0
+                ? `Your best is ${quads(best)}.`
+                : ""}
         </p>
       )}
       {over && daily ? (
@@ -520,15 +623,44 @@ function OddCard({
           focus
         />
       ) : (
-        <button
-          ref={nextRef}
-          type="button"
-          onClick={onNext}
-          className="mt-3 rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
-        >
-          {over ? "Start a new run" : "Next four"}
-        </button>
+        <div className="mt-3 flex flex-wrap items-start gap-x-3 gap-y-2">
+          <button
+            ref={nextRef}
+            type="button"
+            onClick={onNext}
+            className="shrink-0 rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
+          >
+            {over ? (challenge ? "Play a fresh run" : "Start a new run") : "Next four"}
+          </button>
+          {over && <ChallengeButton run={run} answering={challenge} />}
+        </div>
       )}
     </section>
+  );
+}
+
+/**
+ * Challenge a friend from a finished run (src/lib/game/oddChallenge.ts): a link to the same
+ * quads, laid out the same way, and the run to beat. Answering a challenge, it sends one back.
+ */
+function ChallengeButton({ run, answering }: { run: OddRun; answering: OddChallenge | null }) {
+  const [sent, setSent] = useState("");
+  async function send() {
+    const text = oddChallengeText(run, window.location.href, answering ?? undefined);
+    setSent(CHALLENGE_NOTE[await sendShare(text, navigator)]);
+  }
+  return (
+    <span className="flex min-w-0 flex-col">
+      <button
+        type="button"
+        onClick={send}
+        className="rounded-full border-2 border-gold px-5 py-2.5 font-semibold text-gold transition hover:bg-gold/10"
+      >
+        {answering ? "Send yours back" : "Challenge a friend"}
+      </button>
+      <span role="status" className={sent ? "mt-1 text-xs text-chalk-dim" : "sr-only"}>
+        {sent}
+      </span>
+    </span>
   );
 }

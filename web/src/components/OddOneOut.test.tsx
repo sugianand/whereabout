@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { QUICK_RECORD_KEY, loadFreeTallies } from "@/lib/game/quickRecord";
 import type { GameRecord } from "@/lib/game/deck";
@@ -207,6 +207,109 @@ describe("OddOneOut, today's run", () => {
     expect(screen.getByRole("link", { name: "Today's run" })).toHaveAttribute(
       "href",
       "/odd-one-out/daily",
+    );
+  });
+});
+
+describe("a friend's Odd one out challenge", () => {
+  // The friend spotted e1 among Japan's photos, then tapped photo 1 when j4 was the odd one.
+  const FRIEND = "j1.e1.j2.j3-e2.e3.e4.j4_1_1";
+
+  afterEach(() => window.history.replaceState(null, "", "/"));
+
+  function clipboard() {
+    const box = { sent: "" };
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: async (t: string) => void (box.sent = t) },
+      configurable: true,
+    });
+    return box;
+  }
+
+  async function linked(value: string) {
+    window.history.replaceState(null, "", `/odd-one-out?challenge=${value}&x=1`);
+    return setup(Math.random);
+  }
+
+  it("deals the friend's quads as laid out, shows their miss, plays on, and answers", async () => {
+    await linked(FRIEND);
+    expect(screen.getByText("A friend's challenge: 1 quad in a row to beat")).toBeVisible();
+    expect(shownIds()).toEqual(["j1", "e1", "j2", "j3"]);
+    fireEvent.click(tap(2));
+    let card = await screen.findByRole("region");
+    expect(card).not.toHaveTextContent("Your friend's run ended here");
+    expect(screen.queryByText("Friend's pick")).toBeNull();
+    fireEvent.click(within(card).getByRole("button", { name: "Next four" }));
+    await waitFor(() => expect(tap(1)).toBeEnabled());
+
+    // The quad that ended the friend's run: they tapped photo 1.
+    expect(shownIds()).toEqual(["e2", "e3", "e4", "j4"]);
+    fireEvent.click(tap(4));
+    card = await screen.findByRole("region");
+    expect(card).toHaveTextContent("That beats your friend's 1 in a row!");
+    expect(card).toHaveTextContent("Your friend's run ended here: they picked photo 1.");
+    expect(within(screen.getByTestId("odd-photo-1")).getByText("Friend's pick")).toBeVisible();
+    fireEvent.click(within(card).getByRole("button", { name: "Next four" }));
+    await waitFor(() => expect(tap(1)).toBeEnabled());
+
+    // Past the friend's quads, a fresh one; a wrong tap ends the run.
+    const third = shownIds();
+    const wrong = (oddSlot() % 4) + 1;
+    fireEvent.click(tap(wrong));
+    card = await screen.findByRole("region");
+    expect(card).toHaveTextContent(
+      "Run over: 2 quads in a row. You beat your friend's 1 in a row by 1.",
+    );
+    expect(card).not.toHaveTextContent("Your friend's run ended here");
+    // A challenge's photos may have been seen, so it is played for the friend only.
+    expect(localStorage.getItem(BEST_ODD_KEY)).toBeNull();
+
+    const box = clipboard();
+    fireEvent.click(within(card).getByRole("button", { name: "Send yours back" }));
+    await waitFor(() =>
+      expect(
+        screen.getByText(
+          "Challenge link copied. Whoever opens it plays these quads, laid out the same way.",
+        ),
+      ).toBeInTheDocument(),
+    );
+    expect(box.sent.split("\n")).toEqual([
+      "Whereabout · Odd one out: I spotted the odd one in 2 quads in a row.",
+      "That beats your 1. Your turn to go further.",
+      `http://localhost:3000/odd-one-out?challenge=j1.e1.j2.j3-e2.e3.e4.j4-${third.join(".")}_2_${wrong}`,
+    ]);
+
+    // A fresh run leaves the link behind.
+    fireEvent.click(within(card).getByRole("button", { name: "Play a fresh run" }));
+    await waitFor(() =>
+      expect(screen.getByText(/^Odd one out: three photos share a continent/)).toBeInTheDocument(),
+    );
+    expect(window.location.search).toBe("?x=1");
+  });
+
+  it("says when a link is cut short or its photos have gone, and deals a fresh run", async () => {
+    await linked("j1.e1.j2_0_1");
+    expect(screen.getByText(/That challenge link was cut short/)).toBeVisible();
+    expect(screen.getByText(/^Odd one out: three photos share a continent/)).toBeVisible();
+    expect(window.location.search).toBe("?x=1");
+    cleanup();
+    await linked("j1.e1.j2.gone_0_1");
+    expect(screen.getByText(/That challenge's photos aren't in the game any more/)).toBeVisible();
+  });
+
+  it("offers a challenge from the end of a free run, carrying the quads up to the miss", async () => {
+    await setup(Math.random);
+    const ids = shownIds();
+    const wrong = (oddSlot() % 4) + 1;
+    fireEvent.click(tap(wrong));
+    const card = await screen.findByRole("region");
+    const box = clipboard();
+    fireEvent.click(within(card).getByRole("button", { name: "Challenge a friend" }));
+    await waitFor(() => expect(box.sent).not.toBe(""));
+    expect(box.sent).toContain("I spotted the odd one in 0 quads in a row.");
+    expect(box.sent.split("\n").at(-1)).toBe(
+      `http://localhost:3000/?challenge=${ids.join(".")}_0_${wrong}`,
     );
   });
 });
