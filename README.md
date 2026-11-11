@@ -32,7 +32,10 @@ the first wrong pick ends the run. Photos under one degree of latitude apart cou
 reveal names both places with their latitudes and says whether Atlas, going by its own guesses,
 would have got the pair; your best streak is kept in your browser. **Today's run** (at
 `/further-north/daily`) deals everyone the same order on the same UTC day: one try a day, picked
-back up where you left it after a reload, with a spoiler-free share line (counts only) at the end.
+back up where you left it after a reload, with a spoiler-free share line (counts only) at the end. After a free run, *Challenge a friend* sends a link to the very
+photos you were shown, in the same order, with your run to beat; on the pair that ended your run the
+friend sees which photo you picked, and a friend who gets past it plays on through the rest of the
+deck and can send theirs back.
 **Odd one out** (at `/odd-one-out`, linked from the results screen) deals four photos, three
 taken on one continent and one on another; tap the odd one (keys 1 to 4 on a keyboard). A right
 tap deals four more, the first miss ends the run, and your best run is kept in your browser. The
