@@ -913,6 +913,51 @@ test("a finished game becomes a challenge link a friend plays on the same five p
   expect(errors).toEqual([]);
 });
 
+test("the end of a friend's challenge saves a head-to-head picture, with the reply link copied", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const catalog: { id: string; place: string }[] = JSON.parse(
+    readFileSync(resolve(process.cwd(), "src/data/photos.json"), "utf8"),
+  );
+  const atlas = JSON.parse(readFileSync(resolve(process.cwd(), "src/data/atlas.json"), "utf8"));
+  const five = catalog.filter((p) => Object.hasOwn(atlas.guesses, p.id)).slice(10, 15);
+  const scores = [5000, 0, 2500, 4000, 1];
+  await page.goto(`./?challenge=${five.map((p) => p.id).join(".")}_${scores.join(".")}`);
+  await expect(page.getByText("A friend's challenge", { exact: true })).toBeVisible();
+  for (let round = 1; round <= 5; round++) {
+    const card = await playRoundWithKeyboard(page);
+    await card.getByRole("button", { name: round < 5 ? "Next photo" : "See your results" }).click();
+  }
+  await expect(page.getByTestId("challenge-result")).toBeVisible();
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  const button = page.getByRole("button", { name: "Share head to head" });
+  const box = (await button.boundingBox())!;
+  expect(box.x + box.width, "the button fits the screen").toBeLessThanOrEqual(
+    page.viewportSize()!.width,
+  );
+  const [download] = await Promise.all([page.waitForEvent("download"), button.click()]);
+  expect(download.suggestedFilename()).toBe("whereabout-five-photos-head-to-head.png");
+  const png = readFileSync((await download.path())!);
+  // A real PNG, square at 1080: its width and height sit at bytes 16 and 20 of the header.
+  expect(png.subarray(1, 4).toString()).toBe("PNG");
+  expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1080, 1080]);
+  await expect(page.getByText("Head to head saved.", { exact: false })).toBeVisible();
+  const sent = await page.evaluate(() => (window as unknown as { sent: string }).sent);
+  expect(sent.split("\n").at(-1)).toMatch(/\/whereabout\/\?challenge=[\w.-]+_[\d.]+$/);
+  for (const p of five) expect(sent).not.toContain(p.place);
+  expect(errors).toEqual([]);
+});
+
 test("a Blitz becomes a challenge link a friend plays on the same clock, with time to beat", async ({
   page,
   browser,

@@ -44,6 +44,12 @@ import {
   shareImageName,
   type ImageOutcome,
 } from "@/lib/shareImage";
+import {
+  fivePhotoHeadToHead,
+  headToHeadName,
+  headToHeadSummary,
+  renderHeadToHead,
+} from "@/lib/headToHead";
 import { useCountUp } from "@/lib/useCountUp";
 
 import DailyArchive from "./DailyArchive";
@@ -335,7 +341,7 @@ function ContinentRecordTable({ record }: { record: PlayerRecord }) {
 
 type Sent =
   | { what: "result" | "challenge" | "blitz-challenge"; outcome: ShareOutcome }
-  | { what: "picture"; outcome: ImageOutcome | "drawing" };
+  | { what: "picture" | "head-to-head"; outcome: ImageOutcome | "drawing" };
 
 const PICTURE_NOTE: Record<ImageOutcome | "drawing", string> = {
   drawing: "Drawing your picture…",
@@ -345,8 +351,23 @@ const PICTURE_NOTE: Record<ImageOutcome | "drawing", string> = {
   failed: "Couldn't draw the picture in this browser. Share the result as text instead.",
 };
 
+const HEAD_TO_HEAD_NOTE: Record<ImageOutcome | "drawing", string> = {
+  drawing: "Drawing your head to head…",
+  shared: "Head to head shared, with the link to answer it.",
+  downloaded: "Head to head saved. Post it with the link, which is copied too.",
+  cancelled: "",
+  failed: "Couldn't draw the picture in this browser. Send your score back as text instead.",
+};
+
 function sentNote(sent: Sent): string {
-  return sent.what === "picture" ? PICTURE_NOTE[sent.outcome] : SENT_NOTE[sent.what][sent.outcome];
+  switch (sent.what) {
+    case "picture":
+      return PICTURE_NOTE[sent.outcome];
+    case "head-to-head":
+      return HEAD_TO_HEAD_NOTE[sent.outcome];
+    default:
+      return SENT_NOTE[sent.what][sent.outcome];
+  }
 }
 
 const SENT_NOTE: Record<
@@ -482,6 +503,36 @@ export default function Summary({
       // No canvas to draw on: the note says so and the text share still works.
     }
     setSent({ what: "picture", outcome });
+  }
+
+  // A friend's challenge ends head to head: both results, photo by photo.
+  const headToHead = challenge
+    ? fivePhotoHeadToHead(
+        isTimedChallenge(challenge) ? "Blitz" : "Five photos",
+        results,
+        challenge,
+        card.url,
+      )
+    : null;
+
+  /**
+   * The end of a friend's challenge as a picture of both results, sent with the reply link. Where
+   * the picture is saved rather than shared, the reply text is copied so the link isn't lost.
+   */
+  async function shareHeadToHead() {
+    if (!challenge || !headToHead) return;
+    setSent({ what: "head-to-head", outcome: "drawing" });
+    const h = headToHead;
+    const text = challengeText(results, window.location.href, challenge);
+    let outcome: ImageOutcome = "failed";
+    try {
+      const blob = await renderHeadToHead(h);
+      if (blob) outcome = await sendShareImage(blob, headToHeadName(h), text, navigator);
+      if (outcome === "downloaded") await navigator.clipboard?.writeText(text).catch(() => {});
+    } catch {
+      // No canvas to draw on: the note says so and the reply link still works.
+    }
+    setSent({ what: "head-to-head", outcome });
   }
 
   async function sendChallenge() {
@@ -655,6 +706,22 @@ export default function Summary({
           >
             {challenge ? "Send your score back" : "Challenge a friend"}
           </button>
+        )}
+        {canChallenge && headToHead && (
+          <button
+            type="button"
+            onClick={shareHeadToHead}
+            disabled={sent?.what === "head-to-head" && sent.outcome === "drawing"}
+            aria-describedby="head-to-head-words"
+            className="rounded-full border border-gold/60 px-6 py-3 font-semibold text-gold transition hover:border-gold disabled:opacity-60"
+          >
+            Share head to head
+          </button>
+        )}
+        {canChallenge && headToHead && (
+          <span id="head-to-head-words" hidden>
+            {headToHeadSummary(headToHead)}
+          </span>
         )}
         <button
           type="button"

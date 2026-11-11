@@ -15,7 +15,7 @@ import { DISTANCE_BANDS, type DistanceBand, type ShareCard, type Versus } from "
 /** Square, the size chat apps and stories show without cropping. */
 export const IMAGE_SIZE = 1080;
 
-const INK = {
+export const INK = {
   background: "#082331",
   frame: "#2a5b6e",
   chalk: "#eef4f2",
@@ -25,8 +25,8 @@ const INK = {
   gold: "#ffc53d",
 };
 
-const SIGN = '"Big Shoulders Display Variable", "Arial Narrow", sans-serif';
-const SANS = '"Atkinson Hyperlegible Next Variable", system-ui, sans-serif';
+export const SIGN = '"Big Shoulders Display Variable", "Arial Narrow", sans-serif';
+export const SANS = '"Atkinson Hyperlegible Next Variable", system-ui, sans-serif';
 
 /** One colour per distance band, closest first, in the order of DISTANCE_BANDS. */
 export const BAND_COLORS: readonly string[] = [INK.sonar, INK.gold, "#ff9f43", INK.flare];

@@ -566,6 +566,36 @@ describe("Game", { timeout: 20000 }, () => {
       return sent;
     }
 
+    /** A 2D canvas that records the words it is asked to draw, and saves instead of sharing. */
+    function stubCanvas() {
+      const words: string[] = [];
+      const saved: string[] = [];
+      const ctx = {
+        fillRect: () => {},
+        beginPath: () => {},
+        roundRect: () => {},
+        fill: () => {},
+        stroke: () => {},
+        fillText: (t: string) => void words.push(t),
+      };
+      const spies = [
+        vi
+          .spyOn(HTMLCanvasElement.prototype, "getContext")
+          .mockReturnValue(ctx as unknown as CanvasRenderingContext2D),
+        vi
+          .spyOn(HTMLCanvasElement.prototype, "toBlob")
+          .mockImplementation((done) => done(new Blob(["png"], { type: "image/png" }))),
+        vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+          this: HTMLAnchorElement,
+        ) {
+          saved.push(this.download);
+        }),
+      ];
+      URL.createObjectURL = () => "blob:head-to-head";
+      URL.revokeObjectURL = () => {};
+      return { words, saved, restore: () => spies.forEach((s) => s.mockRestore()) };
+    }
+
     async function finish(map: FakeMap, at: (i: number) => { lng: number; lat: number }) {
       for (let i = 0; i < ROUNDS_PER_GAME; i++) {
         const card = await playRound(map, at(i));
@@ -632,6 +662,25 @@ describe("Game", { timeout: 20000 }, () => {
       await waitFor(() => expect(sent).toHaveLength(1));
       expect(sent[0]).toContain("I beat your score.");
       expect(sent[0]).toMatch(/_0\.5000\.5000\.5000\.5000$/);
+
+      // The head to head is drawn photo by photo, saved, and the reply link copied beside it.
+      const drawn = stubCanvas();
+      fireEvent.click(screen.getByRole("button", { name: "Share head to head" }));
+      expect(
+        await screen.findByText(
+          "Head to head saved. Post it with the link, which is copied too.",
+          {},
+          WAIT,
+        ),
+      ).toBeInTheDocument();
+      expect(drawn.saved).toEqual(["whereabout-five-photos-head-to-head.png"]);
+      expect(drawn.words).toEqual(
+        expect.arrayContaining(["You won", "20,000 pts", "14,000 pts", "Photo 1", "Photo 5"]),
+      );
+      for (const p of five) expect(drawn.words.join("\n")).not.toContain(p.place);
+      expect(sent).toHaveLength(2);
+      expect(sent[1]).toBe(sent[0]);
+      drawn.restore();
 
       // A fresh game leaves the challenge behind, address included.
       fireEvent.click(screen.getByRole("button", { name: "Play a fresh game" }));
