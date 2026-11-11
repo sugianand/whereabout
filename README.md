@@ -39,7 +39,10 @@ tap deals four more, the first miss ends the run, and your best run is kept in y
 reveal names every photo's continent and place, and what Atlas would have picked from its own
 guesses: the one photo it placed on a different continent, or else its pin furthest from the rest.
 **Today's run** (at `/odd-one-out/daily`) deals everyone the same quads on the same UTC day, one
-try a day, resumed after a reload and shared as counts only.
+try a day, resumed after a reload and shared as counts only. After a free run, *Challenge a friend* sends a
+link to the very quads you were shown, each photo in the same place, with your run to beat; on
+the quad that ended your run the friend sees which photo you tapped, and a friend who gets past it
+plays on through fresh quads and can send theirs back.
 **How far apart?** (at `/how-far`, in the Games menu) shows two photos and a slider on a log scale
 from 10 km to 20,000 km: set how far apart you think they were taken. Each of the five pairs scores
 up to 1,000 points by how many times off you were (all of them when exact, none from 10× off), and
