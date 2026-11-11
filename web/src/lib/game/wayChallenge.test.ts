@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { headToHeadLayout } from "@/lib/headToHead";
+
 import { seededShuffle } from "./daily";
 import {
   WAY_CHALLENGE_PHOTOS,
@@ -8,6 +10,7 @@ import {
   friendMissWords,
   parseWayChallenge,
   wayChallengeFrom,
+  wayHeadToHead,
   wayChallengeLine,
   wayChallengeOrder,
   wayChallengeText,
@@ -179,5 +182,33 @@ describe("Which way? challenge links", () => {
     // No miss in the link, or a journey that no longer runs through those two photos.
     expect(friendMissPick(order, 2, { ...C, streak: 3, miss: null }, 0)).toBeNull();
     expect(friendMissPick(["c3", "a1", "f6", "h8"], 2, C, 0)).toBeNull();
+  });
+});
+
+describe("the Which way? head to head", () => {
+  it("lists both journeys stop by stop, to where each ended, never a heading", () => {
+    const run = { order: C.ids, index: 2, seed: 1, streak: 2, miss: "N" as const };
+    const h = wayHeadToHead(run, C, HREF);
+    expect([h.game, h.youTotal, h.friendTotal, h.outcome]).toEqual([
+      "Which way?",
+      "2 in a row",
+      "2 in a row",
+      "tied",
+    ]);
+    expect(h.rows.map((r) => [r.label, r.you, r.friend, r.winner])).toEqual([
+      ["Stop 1", "Right", "Right", "none"],
+      ["Stop 2", "Right", "Right", "none"],
+      ["Stop 3", "Wrong", "Wrong", "tie"],
+    ]);
+    const words = headToHeadLayout(h).texts.map((t) => t.text);
+    expect(words).not.toContain("SW");
+    expect(words).not.toContain("N");
+    expect(words.join("\n")).not.toContain("challenge=");
+  });
+
+  it("shows no miss for a journey that travelled every photo", () => {
+    const h = wayHeadToHead({ order: C.ids, index: 2, seed: 1, streak: 3, miss: null }, C, HREF);
+    expect(h.outcome).toBe("won");
+    expect(h.rows.at(-1)).toEqual({ label: "Stop 3", you: "Right", friend: "Wrong", winner: "you" });
   });
 });

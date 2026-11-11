@@ -12,6 +12,7 @@ import {
   oddChallengeDealer,
   oddChallengeLine,
   oddChallengeText,
+  oddHeadToHead,
   oddFriendMissLine,
   parseOddChallenge,
   type OddChallenge,
@@ -41,6 +42,7 @@ import { sendShare, type ShareOutcome } from "@/lib/share";
 import ControlsHelp from "./ControlsHelp";
 import { DailyRunResult, ShareDay } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
+import { HeadToHeadButton } from "./HeadToHeadButton";
 
 type OddOneOutProps = {
   deck: Deck;
@@ -651,13 +653,22 @@ function ChallengeButton({ run, answering }: { run: OddRun; answering: OddChalle
   }
   return (
     <span className="flex min-w-0 flex-col">
-      <button
-        type="button"
-        onClick={send}
-        className="rounded-full border-2 border-gold px-5 py-2.5 font-semibold text-gold transition hover:bg-gold/10"
-      >
-        {answering ? "Send yours back" : "Challenge a friend"}
-      </button>
+      <span className="flex flex-wrap gap-x-3 gap-y-2">
+        <button
+          type="button"
+          onClick={send}
+          className="rounded-full border-2 border-gold px-5 py-2.5 font-semibold text-gold transition hover:bg-gold/10"
+        >
+          {answering ? "Send yours back" : "Challenge a friend"}
+        </button>
+        {answering && (
+          <HeadToHeadButton
+            headToHead={oddHeadToHead(run, answering, window.location.href)}
+            replyText={() => oddChallengeText(run, window.location.href, answering)}
+            onNote={setSent}
+          />
+        )}
+      </span>
       <span role="status" className={sent ? "mt-1 text-xs text-chalk-dim" : "sr-only"}>
         {sent}
       </span>

@@ -5,6 +5,7 @@ import type { GameRecord } from "@/lib/game/deck";
 import type { CatalogPhoto } from "@/lib/game/types";
 import { WAY_DAILY_KEY, dailyWayOrder } from "@/lib/game/wayDaily";
 import { BEST_WAY_KEY, POINT_NAMES, initialBearing, pointOf } from "@/lib/game/whichWay";
+import { stubCanvas } from "@/test/canvas";
 import { gameFor } from "@/test/deck";
 import { FakeMap, FakeMarker, resetFakes } from "@/test/maplibre-mock";
 
@@ -343,6 +344,30 @@ describe("a friend's Which way? challenge", () => {
       "That beats your 1. Your turn to travel further.",
       `http://localhost:3000/which-way?challenge=p5.p3.p1.${next}_5_2_${wrong}`,
     ]);
+
+    // The head to head is drawn call by call, saved, and the reply link copied beside it.
+    const drawn = stubCanvas();
+    const reply = box.sent;
+    box.sent = "";
+    fireEvent.click(within(card()).getByRole("button", { name: "Share head to head" }));
+    expect(
+      await screen.findByText("Head to head saved. Post it with the link, which is copied too."),
+    ).toBeInTheDocument();
+    expect(drawn.saved).toEqual(["whereabout-which-way-head-to-head.png"]);
+    expect(drawn.words).toEqual(expect.arrayContaining([
+      "Which way?: head to head",
+      "You won",
+      "2 in a row",
+      "1 in a row",
+      "Stop 1",
+      "Stop 3",
+      "Right",
+      "Wrong",
+    ]));
+    const all = drawn.words.join("\n");
+    for (const id of ["p5", "p3", "p1", next]) expect(all).not.toContain(id);
+    expect(box.sent).toBe(reply);
+    drawn.restore();
 
     // A fresh run leaves the link behind.
     fireEvent.click(within(card()).getByRole("button", { name: "Play a fresh run" }));

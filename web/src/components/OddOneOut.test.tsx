@@ -6,6 +6,7 @@ import type { GameRecord } from "@/lib/game/deck";
 import { ODD_DAILY_KEY, dailyOddDealer } from "@/lib/game/oddDaily";
 import { BEST_ODD_KEY } from "@/lib/game/oddOneOut";
 import type { CatalogPhoto } from "@/lib/game/types";
+import { stubCanvas } from "@/test/canvas";
 import { gameFor } from "@/test/deck";
 
 import OddOneOut from "./OddOneOut";
@@ -280,6 +281,33 @@ describe("a friend's Odd one out challenge", () => {
       `http://localhost:3000/odd-one-out?challenge=j1.e1.j2.j3-e2.e3.e4.j4-${third.join(".")}_2_${wrong}`,
     ]);
 
+    // The head to head is drawn quad by quad, saved, and the reply link copied beside it.
+    const drawn = stubCanvas();
+    const reply = box.sent;
+    box.sent = "";
+    fireEvent.click(within(card).getByRole("button", { name: "Share head to head" }));
+    expect(
+      await screen.findByText("Head to head saved. Post it with the link, which is copied too."),
+    ).toBeInTheDocument();
+    expect(drawn.saved).toEqual(["whereabout-odd-one-out-head-to-head.png"]);
+    expect(drawn.words).toEqual(
+      expect.arrayContaining([
+        "Odd one out: head to head",
+        "You won",
+        "2 in a row",
+        "1 in a row",
+        "Quad 1",
+        "Quad 3",
+        "Right",
+        "Wrong",
+      ]),
+    );
+    const all = drawn.words.join("\n");
+    for (const id of ["j1", "e1", "j4", ...third]) expect(all).not.toContain(id);
+    expect(all).not.toContain("Japan");
+    expect(box.sent).toBe(reply);
+    drawn.restore();
+
     // A fresh run leaves the link behind.
     fireEvent.click(within(card).getByRole("button", { name: "Play a fresh run" }));
     await waitFor(() =>
@@ -308,6 +336,7 @@ describe("a friend's Odd one out challenge", () => {
     fireEvent.click(within(card).getByRole("button", { name: "Challenge a friend" }));
     await waitFor(() => expect(box.sent).not.toBe(""));
     expect(box.sent).toContain("I spotted the odd one in 0 quads in a row.");
+    expect(within(card).queryByRole("button", { name: "Share head to head" })).toBeNull();
     expect(box.sent.split("\n").at(-1)).toBe(
       `http://localhost:3000/?challenge=${ids.join(".")}_0_${wrong}`,
     );

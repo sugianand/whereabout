@@ -22,6 +22,8 @@
  * on from the seed.
  */
 
+import { runHeadToHead, type HeadToHead } from "@/lib/headToHead";
+
 import { challengeOutcome, type ChallengeOutcome } from "./challenge";
 import { seededShuffle } from "./daily";
 import { POINTS, POINT_NAMES, judgeWay, type Point } from "./whichWay";
@@ -208,4 +210,18 @@ export function friendMissPick(
 /** "Your friend's run ended here: they set off north-west." */
 export function friendMissWords(pick: Point): string {
   return `Your friend's run ended here: they set off ${POINT_NAMES[pick]}.`;
+}
+
+/**
+ * The head-to-head of a Which way? challenge: both journeys stop by stop, right, wrong or not
+ * reached, never a place or a heading. The longer streak takes it, as the end screen says.
+ */
+export function wayHeadToHead(run: WayRun, c: WayChallenge, url: string): HeadToHead {
+  return runHeadToHead(
+    "Which way?",
+    { one: "Stop", many: "Stops" },
+    { streak: run.streak, missed: run.miss !== null },
+    { streak: c.streak, missed: c.miss !== null },
+    url,
+  );
 }

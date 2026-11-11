@@ -6,6 +6,7 @@ import type { GameRecord } from "@/lib/game/deck";
 import { BEST_NORTH_KEY } from "@/lib/game/furtherNorth";
 import { NORTH_DAILY_KEY, dailyNorthOrder } from "@/lib/game/northDaily";
 import type { CatalogPhoto } from "@/lib/game/types";
+import { stubCanvas } from "@/test/canvas";
 import { gameFor } from "@/test/deck";
 
 import FurtherNorth from "./FurtherNorth";
@@ -307,6 +308,30 @@ describe("a friend's Further North challenge", () => {
       "That beats your 1. Your turn to go further.",
       `http://localhost:3000/further-north?challenge=${chain.join(".")}_5_${streakNow}`,
     ]);
+
+    // The head to head is drawn call by call, saved, and the reply link copied beside it.
+    const drawn = stubCanvas();
+    const reply = box.sent;
+    box.sent = "";
+    fireEvent.click(within(card).getByRole("button", { name: "Share head to head" }));
+    expect(
+      await screen.findByText("Head to head saved. Post it with the link, which is copied too."),
+    ).toBeInTheDocument();
+    expect(drawn.saved).toEqual(["whereabout-further-north-head-to-head.png"]);
+    expect(drawn.words).toEqual(expect.arrayContaining([
+      "Further North: head to head",
+      "You won",
+      `${streakNow} in a row`,
+      "1 in a row",
+      "Pair 1",
+      "Pair 2",
+      "Right",
+      "Wrong",
+    ]));
+    const all = drawn.words.join("\n");
+    for (const id of chain) expect(all).not.toContain(id);
+    expect(box.sent).toBe(reply);
+    drawn.restore();
 
     // A fresh run leaves the link behind.
     fireEvent.click(within(card).getByRole("button", { name: "Play a fresh run" }));

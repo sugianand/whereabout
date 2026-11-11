@@ -18,6 +18,7 @@
  */
 
 import type { Continent } from "@/lib/continents";
+import { runHeadToHead, type HeadToHead } from "@/lib/headToHead";
 
 import { challengeOutcome, type ChallengeOutcome } from "./challenge";
 import { QUAD, dealQuad, type Quad } from "./oddOneOut";
@@ -229,4 +230,18 @@ export function oddChallengeLine(streak: number, c: OddChallenge): string {
 export function oddFriendMissLine(quadIndex: number, c: OddChallenge): string | null {
   if (c.missPick === null || quadIndex !== c.quads.length - 1) return null;
   return `Your friend's run ended here: they picked photo ${c.missPick + 1}.`;
+}
+
+/**
+ * The head-to-head of an Odd one out challenge: both runs quad by quad, right, wrong or not
+ * reached, never a photo or a continent. The longer streak takes it, as the end screen says.
+ */
+export function oddHeadToHead(run: OddRun, c: OddChallenge, url: string): HeadToHead {
+  return runHeadToHead(
+    "Odd one out",
+    { one: "Quad", many: "Quads" },
+    { streak: run.streak, missed: run.quads.length > run.streak },
+    { streak: c.streak, missed: c.missPick !== null },
+    url,
+  );
 }

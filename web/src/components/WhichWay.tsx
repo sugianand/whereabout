@@ -48,6 +48,7 @@ import {
   wayChallengeLine,
   wayChallengeOrder,
   wayChallengeText,
+  wayHeadToHead,
   type WayChallenge,
   type WayRun,
 } from "@/lib/game/wayChallenge";
@@ -63,6 +64,7 @@ import { DailyRunResult, ShareDay } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
 import Globe from "./Globe";
 import UnitsSwitch from "./UnitsSwitch";
+import { HeadToHeadButton } from "./HeadToHeadButton";
 
 type WhichWayProps = {
   deck: Deck;
@@ -841,13 +843,22 @@ function ChallengeButton({ run, answering }: { run: WayRun; answering: WayChalle
   }
   return (
     <span className="flex min-w-0 flex-col">
-      <button
-        type="button"
-        onClick={send}
-        className="rounded-full border-2 border-gold px-5 py-2.5 font-semibold text-gold transition hover:bg-gold/10"
-      >
-        {answering ? "Send yours back" : "Challenge a friend"}
-      </button>
+      <span className="flex flex-wrap gap-x-3 gap-y-2">
+        <button
+          type="button"
+          onClick={send}
+          className="rounded-full border-2 border-gold px-5 py-2.5 font-semibold text-gold transition hover:bg-gold/10"
+        >
+          {answering ? "Send yours back" : "Challenge a friend"}
+        </button>
+        {answering && (
+          <HeadToHeadButton
+            headToHead={wayHeadToHead(run, answering, window.location.href)}
+            replyText={() => wayChallengeText(run, window.location.href, answering)}
+            onNote={setSent}
+          />
+        )}
+      </span>
       <span role="status" className={sent ? "mt-1 text-xs text-chalk-dim" : "sr-only"}>
         {sent}
       </span>

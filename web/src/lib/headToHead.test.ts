@@ -14,6 +14,7 @@ import {
   headToHeadLayout,
   headToHeadName,
   headToHeadSummary,
+  runHeadToHead,
   shownRows,
   siteAddress,
   type HeadToHead,
@@ -222,5 +223,69 @@ describe("names and addresses", () => {
       "sugianand.github.io/whereabout/",
     );
     expect(siteAddress("not a url")).toBe("");
+  });
+});
+
+describe("runHeadToHead", () => {
+  const QUAD = { one: "Quad", many: "Quads" };
+
+  it("lists both runs call by call as far as the longer went, ringing only where they split", () => {
+    const h = runHeadToHead("Odd one out", QUAD, { streak: 3, missed: true }, { streak: 1, missed: true }, PAGE);
+    expect([h.game, h.youTotal, h.friendTotal, h.outcome]).toEqual([
+      "Odd one out",
+      "3 in a row",
+      "1 in a row",
+      "won",
+    ]);
+    expect(h.rows).toEqual([
+      { label: "Quad 1", you: "Right", friend: "Right", winner: "none" },
+      { label: "Quad 2", you: "Right", friend: "Wrong", winner: "you" },
+      { label: "Quad 3", you: "Right", friend: "—", winner: "you" },
+      { label: "Quad 4", you: "Wrong", friend: "—", winner: "none" },
+    ]);
+  });
+
+  it("calls a loss, and a dead heat whose shared miss rings both", () => {
+    const lost = runHeadToHead("Odd one out", QUAD, { streak: 0, missed: true }, { streak: 2, missed: true }, PAGE);
+    expect(lost.outcome).toBe("lost");
+    expect(lost.rows.map((r) => [r.you, r.friend, r.winner])).toEqual([
+      ["Wrong", "Right", "friend"],
+      ["—", "Right", "friend"],
+      ["—", "Wrong", "none"],
+    ]);
+    const tied = runHeadToHead("Odd one out", QUAD, { streak: 1, missed: true }, { streak: 1, missed: true }, PAGE);
+    expect(tied.outcome).toBe("tied");
+    expect(tied.rows.at(-1)).toEqual({ label: "Quad 2", you: "Wrong", friend: "Wrong", winner: "tie" });
+  });
+
+  it("shows no miss for a run that ran out of photos or a link that stops before it", () => {
+    const h = runHeadToHead("Odd one out", QUAD, { streak: 2, missed: false }, { streak: 2, missed: false }, PAGE);
+    expect(h.outcome).toBe("tied");
+    expect(h.rows.map((r) => [r.you, r.friend, r.winner])).toEqual([
+      ["Right", "Right", "none"],
+      ["Right", "Right", "none"],
+    ]);
+  });
+
+  it("folds a long run's stretches into ranges, keeping where each run ended", () => {
+    const h = runHeadToHead("Odd one out", QUAD, { streak: 20, missed: true }, { streak: 35, missed: false }, PAGE);
+    expect(h.rows).toEqual([
+      { label: "Quads 1–20", you: "Right", friend: "Right", winner: "none" },
+      { label: "Quad 21", you: "Wrong", friend: "Right", winner: "friend" },
+      { label: "Quads 22–35", you: "—", friend: "Right", winner: "friend" },
+    ]);
+    // A run that fits stays call by call.
+    const fits = runHeadToHead("Odd one out", QUAD, { streak: MAX_ROWS - 1, missed: true }, { streak: 0, missed: true }, PAGE);
+    expect(fits.rows).toHaveLength(MAX_ROWS);
+    expect(fits.rows.every((r) => !r.label.includes("–"))).toBe(true);
+  });
+
+  it("draws every folded row inside the frame", () => {
+    const layout = headToHeadLayout(
+      runHeadToHead("Odd one out", QUAD, { streak: 40, missed: true }, { streak: 9, missed: true }, PAGE),
+    );
+    const words = layout.texts.map((t) => t.text);
+    expect(words).toEqual(expect.arrayContaining(["Quads 1–9", "Quad 10", "Quads 11–40", "Quad 41"]));
+    for (const t of layout.texts) expect(t.y).toBeLessThan(IMAGE_SIZE - 32);
   });
 });

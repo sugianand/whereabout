@@ -18,6 +18,8 @@
  * on from the seed.
  */
 
+import { runHeadToHead, type HeadToHead } from "@/lib/headToHead";
+
 import { challengeOutcome, type ChallengeOutcome } from "./challenge";
 import { seededShuffle } from "./daily";
 
@@ -181,4 +183,19 @@ export function northChallengeLine(streak: number, c: NorthChallenge): string {
  */
 export function isFriendMiss(index: number, c: NorthChallenge): boolean {
   return endsOnMiss(c) && index === c.ids.length - 2;
+}
+
+/**
+ * The head-to-head of a Further North challenge: both runs pair by pair, right, wrong or not
+ * reached, never a photo or a latitude. The longer streak takes it, as the end screen says.
+ */
+export function northHeadToHead(run: NorthRun, c: NorthChallenge, url: string): HeadToHead {
+  return runHeadToHead(
+    "Further North",
+    { one: "Pair", many: "Pairs" },
+    // The pair that ended the run starts at `index`: past the streak's pairs when it was a miss.
+    { streak: run.streak, missed: run.index === run.streak },
+    { streak: c.streak, missed: endsOnMiss(c) },
+    url,
+  );
 }

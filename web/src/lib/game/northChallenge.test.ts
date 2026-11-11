@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { headToHeadLayout } from "@/lib/headToHead";
+
 import photos from "@/data/photos.json";
 
 import { seededShuffle } from "./daily";
@@ -9,6 +11,7 @@ import {
   endsOnMiss,
   isFriendMiss,
   northChallengeFrom,
+  northHeadToHead,
   northChallengeLine,
   northChallengeOrder,
   northChallengeText,
@@ -158,5 +161,40 @@ describe("Further North challenge links", () => {
     expect(northChallengeLine(5, C)).toBe("You beat your friend's 2 in a row by 3.");
     expect(northChallengeLine(1, C)).toBe("Your friend's 2 in a row wins, by 1.");
     expect(northChallengeLine(2, C)).toBe("A dead heat: you both called 2 pairs.");
+  });
+});
+
+describe("the Further North head to head", () => {
+  it("lists both runs pair by pair, to where each ended", () => {
+    // A miss on the very first pair, against the friend's two right and a miss.
+    const h = northHeadToHead({ order: C.ids, index: 0, seed: 1, streak: 0 }, C, HREF);
+    expect([h.game, h.youTotal, h.friendTotal, h.outcome]).toEqual([
+      "Further North",
+      "0 in a row",
+      "2 in a row",
+      "lost",
+    ]);
+    expect(h.rows.map((r) => [r.label, r.you, r.friend, r.winner])).toEqual([
+      ["Pair 1", "Wrong", "Right", "friend"],
+      ["Pair 2", "—", "Right", "friend"],
+      ["Pair 3", "—", "Wrong", "none"],
+    ]);
+  });
+
+  it("shows no miss for a run that called every pair, and draws no photo", () => {
+    // Every pair of four photos called: the last pair starts at photo 2, one short of the streak.
+    const h = northHeadToHead({ order: C.ids, index: 2, seed: 1, streak: 3 }, C, HREF);
+    expect(h.outcome).toBe("won");
+    expect(h.rows.map((r) => [r.you, r.friend, r.winner])).toEqual([
+      ["Right", "Right", "none"],
+      ["Right", "Right", "none"],
+      ["Right", "Wrong", "you"],
+    ]);
+    const words = headToHeadLayout(h).texts.map((t) => t.text).join("\n");
+    for (const p of photos) {
+      expect(words).not.toContain(p.id);
+      expect(words).not.toContain(p.place);
+    }
+    expect(words).not.toContain("challenge=");
   });
 });

@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 
+import { headToHeadLayout } from "@/lib/headToHead";
+
 import {
   ODD_CHALLENGE_QUADS,
   encodeOddChallenge,
   oddChallengeDealer,
   oddChallengeFrom,
+  oddHeadToHead,
   oddChallengeLine,
   oddChallengeText,
   oddChallengeUrl,
@@ -163,5 +166,36 @@ describe("odd one out challenge words", () => {
     expect(oddFriendMissLine(1, C)).toBe("Your friend's run ended here: they picked photo 1.");
     expect(oddFriendMissLine(2, C)).toBeNull();
     expect(oddFriendMissLine(1, { ...C, missPick: null })).toBeNull();
+  });
+});
+
+describe("the Odd one out head to head", () => {
+  it("lists both runs quad by quad, to where each ended", () => {
+    // Two right, then a miss on the third quad, against the friend's one right and a miss.
+    const run = { quads: [Q1, Q2, Q1], streak: 2, picked: 0 };
+    const h = oddHeadToHead(run, C, HREF);
+    expect([h.game, h.youTotal, h.friendTotal, h.outcome]).toEqual([
+      "Odd one out",
+      "2 in a row",
+      "1 in a row",
+      "won",
+    ]);
+    expect(h.rows.map((r) => [r.label, r.you, r.friend, r.winner])).toEqual([
+      ["Quad 1", "Right", "Right", "none"],
+      ["Quad 2", "Right", "Wrong", "you"],
+      ["Quad 3", "Wrong", "—", "none"],
+    ]);
+  });
+
+  it("shows no miss on a link that stops before it, and draws no photo", () => {
+    const quads = Array.from({ length: ODD_CHALLENGE_QUADS }, () => Q1);
+    const long: OddChallenge = { quads, streak: 20, missPick: null };
+    const h = oddHeadToHead({ quads: [Q1], streak: 0, picked: 0 }, long, HREF);
+    expect(h.outcome).toBe("lost");
+    expect(h.rows.at(-1)).toMatchObject({ label: "Quads 2–20", you: "—", friend: "Right" });
+    const words = headToHeadLayout(h).texts.map((t) => t.text).join("\n");
+    for (const id of [...Q1.ids, ...Q2.ids, "Asia", "Europe"]) expect(words).not.toContain(id);
+    expect(words).toContain("example.org/whereabout/odd-one-out/");
+    expect(words).not.toContain("challenge=");
   });
 });

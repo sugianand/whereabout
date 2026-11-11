@@ -265,3 +265,91 @@ export function fivePhotoHeadToHead(
 export function headToHeadSummary(h: HeadToHead): string {
   return `${OUTCOME_HEADLINE[h.outcome].text}: you ${h.youTotal}, your friend ${h.friendTotal}.`;
 }
+
+/** One side of a run game (Odd one out, Further North, Which way?): how far it went, how it ended. */
+export interface RunSide {
+  /** Calls right in a row. */
+  streak: number;
+  /**
+   * True when the run ended on a wrong call the picture can show: the call after the streak.
+   * False for a run that ran out of photos, or a friend's link that stops before its miss.
+   */
+  missed: boolean;
+}
+
+/** What a run game calls each part of it: "Quad" and "Quads". */
+export interface RunUnit {
+  one: string;
+  many: string;
+}
+
+/** "Right", "Wrong", or a dash on a call that side never reached. */
+function runCell(side: RunSide, i: number): string {
+  if (i < side.streak) return "Right";
+  return side.missed && i === side.streak ? "Wrong" : "—";
+}
+
+/**
+ * Who took a call in a run: the side that got it right when the other got it wrong or never
+ * reached it, both on a call each got wrong. A call both got right is no one's, so only the calls
+ * where the runs split are ringed.
+ */
+function runWinner(you: string, friend: string): RowWinner {
+  if (you === friend) return you === "Wrong" ? "tie" : "none";
+  if (you === "Right") return "you";
+  if (friend === "Right") return "friend";
+  return "none";
+}
+
+/**
+ * Fold a long run's stretches of the same two results into one row each, "Quads 1–14", so the
+ * picture still reaches where each run ended. Runs that fit are left call by call.
+ */
+export function foldRunRows(rows: readonly HeadToHeadRow[], unit: RunUnit): HeadToHeadRow[] {
+  if (rows.length <= MAX_ROWS) return [...rows];
+  const out: HeadToHeadRow[] = [];
+  let start = 0;
+  for (let i = 1; i <= rows.length; i++) {
+    const same =
+      i < rows.length && rows[i].you === rows[start].you && rows[i].friend === rows[start].friend;
+    if (same) continue;
+    const label = i - start === 1 ? rows[start].label : `${unit.many} ${start + 1}–${i}`;
+    out.push({ ...rows[start], label });
+    start = i;
+  }
+  return out;
+}
+
+/**
+ * The head-to-head of a run game: both runs call by call, as far as the longer one went, each
+ * call right, wrong, or not reached, so the rows show where each run ended. The longer streak
+ * takes the game, as the end screen says.
+ */
+export function runHeadToHead(
+  game: string,
+  unit: RunUnit,
+  you: RunSide,
+  friend: RunSide,
+  url: string,
+): HeadToHead {
+  const reach = (s: RunSide) => s.streak + (s.missed ? 1 : 0);
+  const n = Math.max(reach(you), reach(friend));
+  const rows = Array.from({ length: n }, (_, i): HeadToHeadRow => {
+    const mine = runCell(you, i);
+    const theirs = runCell(friend, i);
+    return {
+      label: `${unit.one} ${i + 1}`,
+      you: mine,
+      friend: theirs,
+      winner: runWinner(mine, theirs),
+    };
+  });
+  return {
+    game,
+    youTotal: `${you.streak} in a row`,
+    friendTotal: `${friend.streak} in a row`,
+    outcome: challengeOutcome(you.streak, friend.streak),
+    rows: foldRunRows(rows, unit),
+    url,
+  };
+}
