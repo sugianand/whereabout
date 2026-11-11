@@ -55,6 +55,9 @@ the scale; your best game is kept in your browser.
 **Today's game** (at `/how-far/daily`) deals everyone the same five pairs on the same UTC day, one
 try a day, picked back up at the next pair after a reload and shared as each pair's points in
 coloured squares with the total.
+After a free game, *Challenge a friend* sends a link to the same five pairs with where you set the
+slider on each; the friend sees your estimate on the scale only once theirs is locked in, scored
+against the same true distance, and can send theirs back.
 **Which way?** (at `/which-way`, in the Games menu) shows where you stand and where you're headed:
 pick which of eight compass points you'd set off in, by the great-circle starting bearing (the
 heading of the shortest route, so Paris to Tokyo sets off north-east, not east). The reveal draws
