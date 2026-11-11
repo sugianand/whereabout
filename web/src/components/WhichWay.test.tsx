@@ -1,5 +1,5 @@
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GameRecord } from "@/lib/game/deck";
 import type { CatalogPhoto } from "@/lib/game/types";
@@ -266,5 +266,110 @@ describe("WhichWay, today's run", () => {
       "href",
       "/which-way/daily",
     );
+  });
+});
+
+describe("a friend's Which way? challenge", () => {
+  // The friend went London to Paris (south-east, right), then set off south from Paris toward
+  // Tokyo, which heads north-east.
+  const FRIEND = "p5.p3.p1_5_1_S";
+  const AT = Object.fromEntries(RECORDS.map((r) => [r.photo.id, r.photo]));
+  const shown = (n: number) => photo(n).getAttribute("data-photo")!;
+  /** The point really heading from photo 1 to photo 2 on screen, and one opposite it. */
+  const heading = () => initialBearing(AT[shown(1)], AT[shown(2)]);
+
+  afterEach(() => window.history.replaceState(null, "", "/"));
+
+  function clipboard() {
+    const box = { sent: "" };
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: async (t: string) => void (box.sent = t) },
+      configurable: true,
+    });
+    return box;
+  }
+
+  async function linked(value: string) {
+    window.history.replaceState(null, "", `/which-way?challenge=${value}&x=1`);
+    const game = gameFor(RECORDS);
+    render(<WhichWay deck={game.deck} loadRecords={game.loadRecords} random={() => 0} />);
+    await waitFor(() => expect(point("north")).toBeEnabled());
+  }
+
+  it("deals the friend's journey, shows the way they set off where it ended, plays on, and answers", async () => {
+    await linked(FRIEND);
+    expect(screen.getByText("A friend's challenge: 1 stop in a row to beat")).toBeVisible();
+    expect([shown(1), shown(2)]).toEqual(["p5", "p3"]);
+    fireEvent.click(point("south-east"));
+    expect(card()).not.toHaveTextContent("Your friend's run ended here");
+    expect(screen.queryByTestId("way-dial-friend")).toBeNull();
+    fireEvent.click(within(card()).getByRole("button", { name: "Travel on" }));
+    await waitFor(() => expect(point("north")).toBeEnabled());
+
+    // The stop that ended the friend's run, its pick shown only once you have picked.
+    expect([shown(1), shown(2)]).toEqual(["p3", "p1"]);
+    expect(screen.queryByText(/Your friend's run ended here/)).toBeNull();
+    fireEvent.click(point("north-east"));
+    expect(card()).toHaveTextContent("That beats your friend's 1 in a row!");
+    expect(card()).toHaveTextContent("Your friend's run ended here: they set off south.");
+    expect(screen.getByTestId("way-dial-friend")).toBeInTheDocument();
+
+    // Past the friend's photos, the rest of the deck from their seed: set off the wrong way.
+    fireEvent.click(within(card()).getByRole("button", { name: "Travel on" }));
+    await waitFor(() => expect(point("north")).toBeEnabled());
+    const next = shown(2);
+    expect(["p2", "p4"]).toContain(next);
+    const wrong = pointOf(heading() + 180);
+    fireEvent.click(point(POINT_NAMES[wrong]));
+    expect(card()).toHaveTextContent(
+      "Run over: 2 stops in a row. You beat your friend's 1 in a row by 1.",
+    );
+    expect(card()).not.toHaveTextContent("Your friend's run ended here");
+    // A challenge's photos may have been seen, so it is played for the friend only.
+    expect(localStorage.getItem(BEST_WAY_KEY)).toBeNull();
+
+    const box = clipboard();
+    fireEvent.click(within(card()).getByRole("button", { name: "Send yours back" }));
+    await waitFor(() =>
+      expect(
+        screen.getByText(
+          "Challenge link copied. Whoever opens it travels the same journey, stop by stop.",
+        ),
+      ).toBeInTheDocument(),
+    );
+    expect(box.sent.split("\n")).toEqual([
+      "Whereabout · Which way?: I travelled 2 stops in a row.",
+      "That beats your 1. Your turn to travel further.",
+      `http://localhost:3000/which-way?challenge=p5.p3.p1.${next}_5_2_${wrong}`,
+    ]);
+
+    // A fresh run leaves the link behind.
+    fireEvent.click(within(card()).getByRole("button", { name: "Play a fresh run" }));
+    await waitFor(() =>
+      expect(screen.getByText("Which way?: set off from photo 1 toward photo 2")).toBeVisible(),
+    );
+    expect(window.location.search).toBe("?x=1");
+  });
+
+  it("says when a link is cut short or its photos have gone, and deals a fresh run", async () => {
+    await linked("p5.p3_5_0");
+    expect(screen.getByText(/That challenge link was cut short/)).toBeVisible();
+    expect(screen.getByText("Which way?: set off from photo 1 toward photo 2")).toBeVisible();
+    expect(window.location.search).toBe("?x=1");
+    cleanup();
+    await linked("p5.gone_5_0_N");
+    expect(screen.getByText(/That challenge's photos aren't in the game any more/)).toBeVisible();
+  });
+
+  it("offers a challenge from the end of a free run, carrying the photos and the wrong pick", async () => {
+    await setup();
+    // Seed 0 deals p5, p3: London to Paris heads south-east, so north is wrong.
+    fireEvent.click(point("north"));
+    const box = clipboard();
+    fireEvent.click(within(card()).getByRole("button", { name: "Challenge a friend" }));
+    await waitFor(() => expect(box.sent).not.toBe(""));
+    expect(box.sent).toContain("I travelled 0 stops in a row.");
+    expect(box.sent.split("\n").at(-1)).toBe("http://localhost:3000/?challenge=p5.p3_0_0_N");
   });
 });

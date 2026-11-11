@@ -1,7 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 
 import { isShortcut } from "@/lib/controls";
 import { seededShuffle } from "@/lib/game/daily";
@@ -32,8 +40,20 @@ import {
   type Point,
   type WayVerdict,
 } from "@/lib/game/whichWay";
+import {
+  WAY_CHALLENGE_PARAM,
+  friendMissPick,
+  friendMissWords,
+  parseWayChallenge,
+  wayChallengeLine,
+  wayChallengeOrder,
+  wayChallengeText,
+  type WayChallenge,
+  type WayRun,
+} from "@/lib/game/wayChallenge";
 import { formatDistance, type LngLat } from "@/lib/geo";
 import { placeholderUrl, sources } from "@/lib/photoSources";
+import { sendShare, type ShareOutcome } from "@/lib/share";
 import type { RevealView } from "@/lib/reveal";
 import type { Units } from "@/lib/units";
 import { useUnits } from "@/lib/useUnits";
@@ -70,6 +90,27 @@ function stops(n: number): string {
   return `${n} stop${n === 1 ? "" : "s"}`;
 }
 
+/** Why a challenge link was set aside for a fresh run. */
+export const WAY_CHALLENGE_NOTICE = {
+  malformed: "That challenge link was cut short, so here's a fresh run instead.",
+  missing: "That challenge's photos aren't in the game any more, so here's a fresh run instead.",
+} as const;
+
+/** Take the challenge out of the address, so a reload deals a fresh run, not the old link. */
+function dropChallengeParam() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has(WAY_CHALLENGE_PARAM)) return;
+  url.searchParams.delete(WAY_CHALLENGE_PARAM);
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+const CHALLENGE_NOTE: Record<ShareOutcome, string> = {
+  shared: "Challenge sent.",
+  copied: "Challenge link copied. Whoever opens it travels the same journey, stop by stop.",
+  cancelled: "",
+  failed: "Couldn't copy the link. Your browser blocked the clipboard.",
+};
+
 const at = (r: GameRecord): LngLat => ({ lng: r.photo.lng, lat: r.photo.lat });
 const atlasAt = (r: GameRecord): LngLat | null =>
   r.atlas ? { lng: r.atlas.lng, lat: r.atlas.lat } : null;
@@ -96,33 +137,56 @@ export default function WhichWay({
   // once it has ended, how it went, which shows instead of the game.
   const [day, setDay] = useState<string | null>(null);
   const [dayDone, setDayDone] = useState<DailyRun | null>(null);
+  // A free run's seed, for the challenge link its end can send.
+  const [seed, setSeed] = useState(0);
+  // A friend's challenge this run answers: their journey, the run to beat and the pick it ended on.
+  const [challenge, setChallenge] = useState<WayChallenge | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  const start = useCallback(() => {
-    if (daily) {
-      const today = runToday(now?.());
-      const kept = loadWayDay(today);
-      setDay(today);
-      if (kept?.ended) {
-        setDayDone(kept);
+  /** Deal a run; `fromLink` takes up a challenge the address carries, as the page opens. */
+  const start = useCallback(
+    (fromLink = false) => {
+      if (daily) {
+        const today = runToday(now?.());
+        const kept = loadWayDay(today);
+        setDay(today);
+        if (kept?.ended) {
+          setDayDone(kept);
+          return;
+        }
+        dispatch({
+          type: "start",
+          order: resumeWayOrder(dailyWayOrder(deck.ids, today), kept),
+          from: kept ?? undefined,
+        });
         return;
       }
-      dispatch({
-        type: "start",
-        order: resumeWayOrder(dailyWayOrder(deck.ids, today), kept),
-        from: kept ?? undefined,
-      });
-      return;
-    }
-    const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
-    const stored = loadBestWay();
-    setBest(stored);
-    setBestBeforeRun(stored);
-    dispatch({ type: "start", order: seededShuffle(deck.ids, seed) });
-  }, [deck.ids, random, daily, now]);
+      const stored = loadBestWay();
+      setBest(stored);
+      setBestBeforeRun(stored);
+      const value = fromLink
+        ? new URLSearchParams(window.location.search).get(WAY_CHALLENGE_PARAM)
+        : null;
+      const linked = value === null ? null : parseWayChallenge(value, deck.ids);
+      setNotice(linked && !linked.ok ? WAY_CHALLENGE_NOTICE[linked.reason] : null);
+      if (linked?.ok) {
+        setChallenge(linked.challenge);
+        setSeed(linked.challenge.seed);
+        dispatch({ type: "start", order: wayChallengeOrder(linked.challenge, deck.ids) });
+        return;
+      }
+      setChallenge(null);
+      dropChallengeParam();
+      const fresh = Math.floor((random ?? Math.random)() * 2 ** 32);
+      setSeed(fresh);
+      dispatch({ type: "start", order: seededShuffle(deck.ids, fresh) });
+    },
+    [deck.ids, random, daily, now],
+  );
 
   // The order is shuffled in the browser after hydration, never at build time.
   useEffect(() => {
-    const id = requestAnimationFrame(start);
+    const id = requestAnimationFrame(() => start(true));
     return () => cancelAnimationFrame(id);
   }, [start]);
 
@@ -198,13 +262,14 @@ export default function WhichWay({
           ended: !right ? "miss" : after.index + 2 >= after.order.length ? "cleared" : null,
           at: right ? to.photo.id : from.photo.id,
         });
-      } else if (after.phase === "answered" && after.verdict.correct) {
-        // Keep the run as the best after every right pick, so leaving mid-run keeps it.
+      } else if (after.phase === "answered" && after.verdict.correct && !challenge) {
+        // Keep the run as the best after every right pick, so leaving mid-run keeps it. A
+        // challenge's photos may have been seen before, so it is played for the friend only.
         setBest(rememberWay(after.streak));
       }
       dispatch(action);
     },
-    [state, from, to, unfit, day],
+    [state, from, to, unfit, day, challenge],
   );
 
   // The number pad's layout picks a point: 8 is north, 9 north-east, 2 south.
@@ -230,6 +295,11 @@ export default function WhichWay({
   );
 
   const streak = state.phase === "idle" ? 0 : state.streak;
+  // On the stop that ended the friend's run, once you have picked: the way they set off.
+  const friendPick =
+    challenge && answered
+      ? friendMissPick(answered.order, answered.index, challenge, answered.verdict.bearing)
+      : null;
 
   // Today's journey can also run out of stops when the last photos left make no fair question
   // from where you stand: keep it as travelled to the end.
@@ -267,15 +337,30 @@ export default function WhichWay({
             ? "Which way? needs at least two photos to deal."
             : `${stops(state.streak)} in a row, every photo the game has.`}
         </p>
+        {!none && challenge && (
+          <p className="mt-2 text-chalk">{wayChallengeLine(state.streak, challenge)}</p>
+        )}
         <div className="mt-8 flex flex-wrap items-center gap-4">
           {!none && (
             <button
               type="button"
-              onClick={start}
+              onClick={() => start()}
               className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
             >
               Play again
             </button>
+          )}
+          {!none && (
+            <ChallengeButton
+              run={{
+                order: state.order,
+                index: state.index - 1,
+                seed,
+                streak: state.streak,
+                miss: null,
+              }}
+              answering={challenge}
+            />
           )}
           <Link href="/" className="text-chalk-dim underline underline-offset-2 hover:text-chalk">
             Back to the main game
@@ -315,7 +400,9 @@ export default function WhichWay({
           <p className="mt-1 text-sm text-chalk-dim">
             {day
               ? `Which way?, today's run (${day}): set off from photo 1 toward photo 2`
-              : "Which way?: set off from photo 1 toward photo 2"}
+              : challenge
+                ? `A friend's challenge: ${stops(challenge.streak)} in a row to beat`
+                : "Which way?: set off from photo 1 toward photo 2"}
           </p>
           <Link
             href={daily ? "/which-way" : "/which-way/daily"}
@@ -348,6 +435,11 @@ export default function WhichWay({
             <WayPhoto n={1} record={from} caption="You are here" />
             <WayPhoto n={2} record={unfit ? undefined : to} caption="You're headed here" />
           </div>
+          {notice && streak === 0 && (
+            <p role="status" className="text-center text-sm text-chalk-dim">
+              {notice}
+            </p>
+          )}
           <Compass ready={ready} onPick={choose} />
         </div>
       )}
@@ -374,7 +466,16 @@ export default function WhichWay({
             best={best}
             newBest={over && answered.streak > bestBeforeRun}
             daily={day}
-            onNext={over ? start : () => dispatch({ type: "next" })}
+            run={{
+              order: answered.order,
+              index: answered.index,
+              seed,
+              streak: answered.streak,
+              miss: answered.verdict.correct ? null : answered.verdict.picked,
+            }}
+            challenge={challenge}
+            friendPick={friendPick}
+            onNext={over ? () => start() : () => dispatch({ type: "next" })}
           />
         </div>
       )}
@@ -474,7 +575,16 @@ function Compass({ ready, onPick }: { ready: boolean; onPick: (point: Point) => 
 }
 
 /** A compass dial: the true heading as a gold needle, your pick's wedge, and Atlas's pick as a dot. */
-function Dial({ verdict, atlas }: { verdict: WayVerdict; atlas: WayVerdict | null }) {
+function Dial({
+  verdict,
+  atlas,
+  friend,
+}: {
+  verdict: WayVerdict;
+  atlas: WayVerdict | null;
+  /** The friend's wrong pick on this stop, drawn as a ring at its point. */
+  friend: Point | null;
+}) {
   const R = 30;
   const polar = (deg: number, r: number) => {
     const rad = (deg * Math.PI) / 180;
@@ -524,6 +634,17 @@ function Dial({ verdict, atlas }: { verdict: WayVerdict; atlas: WayVerdict | nul
         className="stroke-gold"
       />
       <circle cx="36" cy="36" r="3" className="fill-gold" />
+      {friend && (
+        <circle
+          cx={polar(pointHeading(friend), R)[0]}
+          cy={polar(pointHeading(friend), R)[1]}
+          r="4.5"
+          fill="none"
+          strokeWidth="2"
+          className="stroke-flare"
+          data-testid="way-dial-friend"
+        />
+      )}
       {atlas && (
         <circle
           cx={polar(pointHeading(atlas.picked), R)[0]}
@@ -550,6 +671,9 @@ function WayCard({
   best,
   newBest,
   daily,
+  run,
+  challenge,
+  friendPick,
   onNext,
 }: {
   verdict: WayVerdict;
@@ -565,6 +689,12 @@ function WayCard({
   newBest: boolean;
   /** Today's run's day, when this is it: its end shares the day instead of starting again. */
   daily: string | null;
+  /** The run as it stands, for the challenge link its end can send. */
+  run: WayRun;
+  /** The friend's challenge this run answers, if it is one. */
+  challenge: WayChallenge | null;
+  /** On the stop that ended the friend's run: the way they set off. */
+  friendPick: Point | null;
   onNext: () => void;
 }) {
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -608,12 +738,18 @@ function WayCard({
             </p>
           )}
         </div>
-        <Dial verdict={verdict} atlas={atlas} />
+        <Dial verdict={verdict} atlas={atlas} friend={friendPick} />
       </div>
       {atlas && (
         <p className="mt-2 text-sm text-chalk-dim">
           {`Atlas picked ${POINT_NAMES[atlas.picked]}${atlas.correct ? " and got it" : ", wrong"}. `}
           {`Atlas this run: ${atlasRight} of ${stops(atlasPlayed)}.`}
+        </p>
+      )}
+      {friendPick && <p className="mt-2 text-sm text-chalk">{friendMissWords(friendPick)}</p>}
+      {challenge && verdict.correct && streak === challenge.streak + 1 && (
+        <p className="mt-2 font-semibold text-sonar">
+          {`That beats your friend's ${challenge.streak} in a row!`}
         </p>
       )}
       {over && daily && (
@@ -622,7 +758,13 @@ function WayCard({
       {over && !daily && (
         <p className="mt-2 text-chalk">
           {`Run over: ${stops(streak)} in a row. `}
-          {newBest ? "That's your new best!" : best > 0 ? `Your best is ${stops(best)}.` : ""}
+          {challenge
+            ? wayChallengeLine(streak, challenge)
+            : newBest
+              ? "That's your new best!"
+              : best > 0
+                ? `Your best is ${stops(best)}.`
+                : ""}
         </p>
       )}
       {over && daily && (
@@ -634,17 +776,20 @@ function WayCard({
           focus
         />
       )}
+      {over && !daily && (
+        // The run's end has the most to say, so on a short phone the card scrolls: its two
+        // buttons stay pinned to the card's foot, in reach, while the words scroll above them.
+        <div className="sticky -bottom-4 z-10 -mx-4 mt-3 flex flex-wrap items-start gap-x-3 gap-y-2 bg-ocean-deep px-4 py-2 md:static md:mx-0 md:bg-transparent md:p-0">
+          <NextButton
+            nextRef={nextRef}
+            onNext={onNext}
+            label={challenge ? "Play a fresh run" : "Start a new run"}
+          />
+          <ChallengeButton run={run} answering={challenge} />
+        </div>
+      )}
       <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        {!(over && daily) && (
-          <button
-            ref={nextRef}
-            type="button"
-            onClick={onNext}
-            className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
-          >
-            {over ? "Start a new run" : "Travel on"}
-          </button>
-        )}
+        {!over && <NextButton nextRef={nextRef} onNext={onNext} label="Travel on" />}
         <p className="min-w-0 text-[11px] text-chalk-dim">
           {[from, to].map((r, i) => (
             <a
@@ -660,6 +805,53 @@ function WayCard({
         </p>
       </div>
     </section>
+  );
+}
+
+function NextButton({
+  nextRef,
+  onNext,
+  label,
+}: {
+  nextRef: RefObject<HTMLButtonElement | null>;
+  onNext: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      ref={nextRef}
+      type="button"
+      onClick={onNext}
+      className="shrink-0 rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
+    >
+      {label}
+    </button>
+  );
+}
+
+/**
+ * Challenge a friend from a finished run (src/lib/game/wayChallenge.ts): a link to the same
+ * journey, the run to beat and the pick that ended it. Answering a challenge, it sends one back.
+ */
+function ChallengeButton({ run, answering }: { run: WayRun; answering: WayChallenge | null }) {
+  const [sent, setSent] = useState("");
+  async function send() {
+    const text = wayChallengeText(run, window.location.href, answering ?? undefined);
+    setSent(CHALLENGE_NOTE[await sendShare(text, navigator)]);
+  }
+  return (
+    <span className="flex min-w-0 flex-col">
+      <button
+        type="button"
+        onClick={send}
+        className="rounded-full border-2 border-gold px-5 py-2.5 font-semibold text-gold transition hover:bg-gold/10"
+      >
+        {answering ? "Send yours back" : "Challenge a friend"}
+      </button>
+      <span role="status" className={sent ? "mt-1 text-xs text-chalk-dim" : "sr-only"}>
+        {sent}
+      </span>
+    </span>
   );
 }
 
