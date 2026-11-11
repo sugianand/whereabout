@@ -19,6 +19,9 @@ your score on each to beat, and they can send theirs straight back.
 **Blitz** (`?blitz`) gives each photo 30 seconds on a countdown ring: when time runs out your
 guess goes in wherever the pin is, and with no pin the round scores 0. The clock waits for the
 photo to load and pauses while the tab is hidden; your best Blitz is kept in your browser.
+*Challenge a friend* after a Blitz sends a link that also carries the seconds you had left on each
+photo: your friend plays the same five photos on the same 30-second clock, and at each reveal sees
+what you scored there and with how long to spare. A challenge never counts toward your best Blitz.
 **Country Streak** (at `/streak`) asks only for the country: tap it on the globe, one photo after
 another, until your first miss. Pick a continent to deal only photos taken there
 (`/streak?region=europe`, or straight from a continent game); each continent keeps its own best
