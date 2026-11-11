@@ -23,6 +23,8 @@ import {
   SANS,
   SIGN,
   drawShareImage,
+  sendShareImage,
+  type ImageOutcome,
   type ImageRect,
   type ImageText,
   type ShareImageLayout,
@@ -176,6 +178,36 @@ export async function renderHeadToHead(
   return new Promise((done) => canvas.toBlob((blob) => done(blob), "image/png"));
 }
 
+/** What the note under the button says as the picture is drawn and sent. */
+export const HEAD_TO_HEAD_NOTE: Record<ImageOutcome | "drawing", string> = {
+  drawing: "Drawing your head to head…",
+  shared: "Head to head shared, with the link to answer it.",
+  downloaded: "Head to head saved. Post it with the link, which is copied too.",
+  cancelled: "",
+  failed: "Couldn't draw the picture in this browser. Send your score back as text instead.",
+};
+
+/**
+ * Draw the head-to-head and send it with `replyText`, the reply link's message. Where the picture
+ * is saved rather than shared, the reply text is copied too, so the link isn't lost.
+ */
+export async function sendHeadToHead(
+  h: HeadToHead,
+  replyText: string,
+  nav: Navigator = navigator,
+): Promise<ImageOutcome> {
+  try {
+    const blob = await renderHeadToHead(h);
+    if (!blob) return "failed";
+    const outcome = await sendShareImage(blob, headToHeadName(h), replyText, nav);
+    if (outcome === "downloaded") await nav.clipboard?.writeText(replyText).catch(() => {});
+    return outcome;
+  } catch {
+    // No canvas to draw on: the note says so and the reply link still works.
+    return "failed";
+  }
+}
+
 /** "whereabout-blitz-head-to-head.png". */
 export function headToHeadName(h: HeadToHead): string {
   const slug = `${h.game} head to head`
@@ -186,7 +218,8 @@ export function headToHeadName(h: HeadToHead): string {
   return `whereabout-${slug}.png`;
 }
 
-function rowWinner(you: number, friend: number): RowWinner {
+/** Who took a row on a number where more is better: points, a streak, places right. */
+export function rowWinner(you: number, friend: number): RowWinner {
   return you > friend ? "you" : you < friend ? "friend" : "tie";
 }
 

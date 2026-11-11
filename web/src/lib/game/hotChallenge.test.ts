@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import photos from "@/data/photos.json";
+import { headToHeadLayout } from "@/lib/headToHead";
 
 import { hotRound, type HotPin, type HotRound } from "./hotCold";
 import {
@@ -10,6 +11,7 @@ import {
   hotChallengeLine,
   hotChallengeText,
   hotChallengeUrl,
+  hotHeadToHead,
   parseHotChallenge,
   type HotChallenge,
 } from "./hotChallenge";
@@ -126,5 +128,54 @@ describe("hot and cold challenge links", () => {
     for (const p of photos) {
       expect(text).not.toContain(p.place);
     }
+  });
+});
+
+describe("the hot and cold head to head", () => {
+  const PAGE = `https://x.dev/whereabout/hot-cold/?challenge=${encodeHotChallenge(C)}`;
+  const results = [
+    round("a1", 0, 0),
+    round("b2", 0, 0),
+    round("c3", 3, 0, false),
+    round("d4", 0, 0),
+    round("e5", 3, 0, false),
+  ];
+
+  it("lists both sides' points and found-on pin on every photo, and calls each on points", () => {
+    const h = hotHeadToHead(results, C, PAGE);
+    expect(h.game).toBe("Hot and cold");
+    expect(h.youTotal).toBe(
+      `${results.reduce((s, r) => s + r.score, 0).toLocaleString("en-US")} pts`,
+    );
+    expect(h.friendTotal).toBe("17,442 pts");
+    expect(h.rows.map((r) => r.label)).toEqual([1, 2, 3, 4, 5].map((n) => `Photo ${n}`));
+    expect(h.rows[0]).toEqual({
+      label: "Photo 1",
+      you: "6,000 · pin 1",
+      friend: "5,820 · pin 1",
+      winner: "you",
+    });
+    expect(h.rows[2]!.you).toBe(`${results[2]!.score.toLocaleString("en-US")} · not found`);
+    expect(h.rows[2]!.friend).toBe("0 · not found");
+    expect(h.rows[3]!.winner).toBe("tie");
+    expect(h.rows[4]!.friend).toBe("2,210 · pin 3");
+    expect(h.outcome).toBe(results.reduce((s, r) => s + r.score, 0) > 17_442 ? "won" : "lost");
+  });
+
+  it("calls a dead heat when the totals match", () => {
+    const level: HotChallenge = {
+      ...C,
+      scores: results.map((r) => r.score),
+      foundOn: [1, 1, 0, 1, 0],
+    };
+    const h = hotHeadToHead(results, level, PAGE);
+    expect(h.outcome).toBe("tied");
+    expect(h.rows.every((r) => r.winner === "tie")).toBe(true);
+  });
+
+  it("draws the page to play on, never the link's photo ids", () => {
+    const words = headToHeadLayout(hotHeadToHead(results, C, PAGE)).texts.map((t) => t.text);
+    expect(words).toContain("x.dev/whereabout/hot-cold/");
+    expect(words.join("\n")).not.toMatch(/a1|b2|c3|d4|e5/);
   });
 });

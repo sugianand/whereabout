@@ -14,6 +14,7 @@ import {
   friendTotal,
   parseFarChallenge,
   type FarChallenge,
+  farHeadToHead,
 } from "@/lib/game/farChallenge";
 import { dailyFarPairs, farDailyShare, loadFarDay, rememberFarDay } from "@/lib/game/farDaily";
 import {
@@ -45,6 +46,7 @@ import { useUnits } from "@/lib/useUnits";
 
 import ControlsHelp from "./ControlsHelp";
 import { DailyRunResult } from "./DailyRunShare";
+import { HeadToHeadButton } from "./HeadToHeadButton";
 import GamesMenu from "./GamesMenu";
 import UnitsSwitch from "./UnitsSwitch";
 
@@ -65,6 +67,11 @@ type HowFarProps = {
 
 /** The slider starts halfway along the scale, about 450 km, on every pair. */
 const START_STEP = SLIDER_STEPS / 2;
+
+/** The page's address, for the head-to-head's foot; empty before there is a page. */
+function pageHref(): string {
+  return typeof window === "undefined" ? "" : window.location.href;
+}
 
 /** Why a challenge link was set aside for a fresh game. */
 export const FAR_CHALLENGE_NOTICE = {
@@ -820,6 +827,13 @@ function Finished({
           >
             {challenge ? "Send yours back" : "Challenge a friend"}
           </button>
+        )}
+        {!none && whole && challenge && (
+          <HeadToHeadButton
+            headToHead={farHeadToHead(results, challenge, pageHref())}
+            replyText={() => farChallengeText(pairs, results, window.location.href, challenge)}
+            onNote={setSent}
+          />
         )}
         <Link href="/" className="text-chalk-dim underline underline-offset-2 hover:text-chalk">
           Back to the main game

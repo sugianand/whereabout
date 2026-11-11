@@ -17,12 +17,14 @@
  */
 
 import { formatPoints } from "@/lib/geo";
+import { rowWinner, type HeadToHead } from "@/lib/headToHead";
 
 import { challengeOutcome, type ChallengeOutcome } from "./challenge";
 import {
   PAIRS,
   PAIR_POINTS,
   SLIDER_STEPS,
+  describeEstimate,
   judgeEstimate,
   kmToStep,
   stepToKm,
@@ -159,4 +161,41 @@ export function farChallengeText(
   }
   lines.push(farChallengeUrl(href, farChallengeFrom(pairs, results)));
   return lines.join("\n");
+}
+
+/** "820 · 1.6× over", "1,000 · spot on" or "0 · 12× under": an estimate's points and how far off. */
+function estimateResult(e: Estimate): string {
+  const off = describeEstimate(e)
+    .toLowerCase()
+    .replace("too far", "over")
+    .replace("too close", "under");
+  return `${formatPoints(e.points)} · ${off}`;
+}
+
+/**
+ * The head-to-head of a How far apart? challenge: both estimates on every pair, as points and how
+ * many times over or under the true distance, never the distance itself. Points decide each pair
+ * and the game, as the end screen does.
+ */
+export function farHeadToHead(
+  results: readonly PairResult[],
+  c: FarChallenge,
+  url: string,
+): HeadToHead {
+  return {
+    game: "How far apart?",
+    youTotal: `${formatPoints(totalPoints(results))} pts`,
+    friendTotal: `${formatPoints(friendTotal(c, results))} pts`,
+    outcome: farChallengeOutcome(results, c),
+    rows: results.map((r, i) => {
+      const theirs = friendEstimate(c, i, r.actualKm);
+      return {
+        label: `Pair ${i + 1}`,
+        you: estimateResult(r.you),
+        friend: estimateResult(theirs),
+        winner: rowWinner(r.you.points, theirs.points),
+      };
+    }),
+    url,
+  };
 }

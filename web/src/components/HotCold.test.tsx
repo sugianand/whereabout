@@ -8,6 +8,7 @@ import { encodeHotChallenge, type HotChallenge } from "@/lib/game/hotChallenge";
 import { HOT_DAILY_KEY, dailyHotOrder, loadHotDay } from "@/lib/game/hotDaily";
 import type { CatalogPhoto } from "@/lib/game/types";
 import { formatPoints, scoreDistance } from "@/lib/geo";
+import { stubCanvas } from "@/test/canvas";
 import { gameFor } from "@/test/deck";
 import { FakeMap, FakeMarker, resetFakes } from "@/test/maplibre-mock";
 
@@ -236,6 +237,32 @@ describe("a friend's Hot and cold challenge", () => {
     expect(lines[2]).toBe(
       `http://localhost:3000/hot-cold?challenge=${IDS.join(".")}_6000.6000.6000.6000.6000_1.1.1.1.1`,
     );
+
+    // The head to head is drawn photo by photo, saved, and the reply link copied beside it.
+    const drawn = stubCanvas();
+    const reply = sent.text;
+    sent.text = "";
+    fireEvent.click(screen.getByRole("button", { name: "Share head to head" }));
+    expect(
+      await screen.findByText("Head to head saved. Post it with the link, which is copied too."),
+    ).toBeInTheDocument();
+    expect(drawn.saved).toEqual(["whereabout-hot-and-cold-head-to-head.png"]);
+    expect(drawn.words).toEqual(
+      expect.arrayContaining([
+        "Hot and cold: head to head",
+        "You won",
+        "30,000 pts",
+        "21,500 pts",
+        "Photo 1",
+        "6,000 · pin 1",
+        "5,500 · pin 2",
+        "0 · not found",
+        "4,000 · pin 3",
+      ]),
+    );
+    for (const id of IDS) expect(drawn.words.join("\n")).not.toContain(id);
+    expect(sent.text).toBe(reply);
+    drawn.restore();
 
     // A fresh game is a normal one again, with its own address.
     fireEvent.click(screen.getByRole("button", { name: "Play a fresh game" }));

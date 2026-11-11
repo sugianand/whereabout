@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { headToHeadLayout } from "@/lib/headToHead";
+
 import {
   encodeFarChallenge,
   farChallengeFrom,
@@ -9,6 +11,7 @@ import {
   farChallengeUrl,
   friendEstimate,
   friendTotal,
+  farHeadToHead,
   parseFarChallenge,
   type FarChallenge,
 } from "./farChallenge";
@@ -161,5 +164,48 @@ describe("farChallengeText", () => {
     expect(farChallengeText(PAIRS, off, href, same).split("\n")[1]).toMatch(
       /^Your [\d,]+ wins this time\. Try them again\?$/,
     );
+  });
+});
+
+describe("the how far apart head to head", () => {
+  const PAGE = `https://x.dev/whereabout/how-far/?challenge=${LINK}`;
+  // The friend's steps: 200, 0, 400, 137 and 250, on pairs that are each `truth[i]` km apart.
+  const c = parseFarChallenge(LINK, DECK);
+  if (!c.ok) throw new Error("the test link should parse");
+  const truth = [stepToKm(200), stepToKm(200), stepToKm(400), stepToKm(137), stepToKm(250)];
+  const results = [
+    answered(200, truth[0]!),
+    answered(260, truth[1]!),
+    answered(100, truth[2]!),
+    answered(137, truth[3]!),
+    answered(250, truth[4]!),
+  ];
+
+  it("lists both estimates' points and how far off on every pair, never a distance", () => {
+    const h = farHeadToHead(results, c.challenge, PAGE);
+    expect(h.game).toBe("How far apart?");
+    expect(h.rows.map((r) => r.label)).toEqual([1, 2, 3, 4, 5].map((n) => `Pair ${n}`));
+    expect(h.rows[0]).toEqual({
+      label: "Pair 1",
+      you: "1,000 · spot on",
+      friend: "1,000 · spot on",
+      winner: "tie",
+    });
+    // Pair 2: the friend set the slider to the bottom, far under; the player went over.
+    expect(h.rows[1]!.you).toMatch(/^[\d,]+ · [\d.]+× over$/);
+    expect(h.rows[1]!.friend).toMatch(/^[\d,]+ · [\d.]+× under$/);
+    expect(h.rows[1]!.winner).toBe(
+      results[1]!.you.points > friendEstimate(c.challenge, 1, truth[1]!).points ? "you" : "friend",
+    );
+    expect(h.rows[2]!.winner).toBe("friend");
+    const you = results.reduce((s, r) => s + r.you.points, 0);
+    expect(h.youTotal).toBe(`${you.toLocaleString("en-US")} pts`);
+    expect(h.friendTotal).toBe(
+      `${friendTotal(c.challenge, results).toLocaleString("en-US")} pts`,
+    );
+    expect(h.outcome).toBe(farChallengeOutcome(results, c.challenge));
+    const words = headToHeadLayout(h).texts.map((t) => t.text).join("\n");
+    expect(words).not.toMatch(/km|mi\b|wm0/);
+    expect(words).toContain("x.dev/whereabout/how-far/");
   });
 });

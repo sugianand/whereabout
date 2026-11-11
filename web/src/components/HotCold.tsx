@@ -33,6 +33,7 @@ import {
   hotChallengeTotal,
   parseHotChallenge,
   type HotChallenge,
+  hotHeadToHead,
 } from "@/lib/game/hotChallenge";
 import { dailyHotOrder, hotDailyShare, loadHotDay, rememberHotDay } from "@/lib/game/hotDaily";
 import { formatDistance, formatPoints, haversineKm, type LngLat } from "@/lib/geo";
@@ -43,6 +44,7 @@ import { useUnits } from "@/lib/useUnits";
 
 import ControlsHelp from "./ControlsHelp";
 import { DailyRunResult } from "./DailyRunShare";
+import { HeadToHeadButton } from "./HeadToHeadButton";
 import GamesMenu from "./GamesMenu";
 import Globe from "./Globe";
 import PhotoViewer from "./PhotoViewer";
@@ -62,6 +64,11 @@ type HotColdProps = {
   /** For tests: the clock that picks today's game. */
   now?: () => Date;
 };
+
+/** The page's address, for the head-to-head's foot; empty before there is a page. */
+function pageHref(): string {
+  return typeof window === "undefined" ? "" : window.location.href;
+}
 
 /** Why a challenge link was set aside for a fresh game. */
 export const HOT_CHALLENGE_NOTICE = {
@@ -659,6 +666,13 @@ function Finished({
           >
             {challenge ? "Send yours back" : "Challenge a friend"}
           </button>
+        )}
+        {!none && challenge && (
+          <HeadToHeadButton
+            headToHead={hotHeadToHead(results, challenge, pageHref())}
+            replyText={() => hotChallengeText(results, window.location.href, challenge)}
+            onNote={setSent}
+          />
         )}
         <Link href="/" className="text-chalk-dim underline underline-offset-2 hover:text-chalk">
           Back to the main game

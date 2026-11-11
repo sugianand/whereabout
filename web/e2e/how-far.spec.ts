@@ -185,6 +185,19 @@ test("a challenge link deals a friend the same five pairs, with their estimate a
   const reply = await page.evaluate(() => (window as unknown as { sent: string }).sent);
   expect(reply).toMatch(/_100\.140\.180\.220\.260$/);
 
+  // Head to head: both results drawn as a 1080px picture, saved, with the reply link copied.
+  await page.evaluate(() => ((window as unknown as { sent: string }).sent = ""));
+  const picture = page.getByRole("button", { name: "Share head to head" });
+  await picture.scrollIntoViewIfNeeded();
+  await expectOnScreen(picture);
+  const [download] = await Promise.all([page.waitForEvent("download"), picture.click()]);
+  expect(download.suggestedFilename()).toBe("whereabout-how-far-apart-head-to-head.png");
+  const png = readFileSync((await download.path())!);
+  expect(png.subarray(1, 4).toString()).toBe("PNG");
+  expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1080, 1080]);
+  await expect(page.getByText("Head to head saved.", { exact: false })).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as { sent: string }).sent)).toBe(reply);
+
   // A fresh game drops the link, so a reload doesn't deal the challenge again.
   await page.getByRole("button", { name: "Play a fresh game" }).click();
   await expect(page.getByText("How far apart? Pair 1 of 5")).toBeVisible();

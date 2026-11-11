@@ -14,6 +14,7 @@ import {
 } from "@/lib/game/howFar";
 import type { CatalogPhoto } from "@/lib/game/types";
 import { formatDistance, formatPoints, haversineKm } from "@/lib/geo";
+import { stubCanvas } from "@/test/canvas";
 import { gameFor } from "@/test/deck";
 
 import HowFar from "./HowFar";
@@ -241,6 +242,14 @@ async function playAll(step: number, pairs: readonly (readonly [string, string])
   return scored;
 }
 
+/** How far off an estimate was, as the head to head words it: "spot on", "1.6× over". */
+function offWords(e: ReturnType<typeof judgeEstimate>): string {
+  return describeEstimate(e)
+    .toLowerCase()
+    .replace("too far", "over")
+    .replace("too close", "under");
+}
+
 describe("a friend's How far apart? challenge", () => {
   // Not the pairs random() = 0 deals, so the game must come from the link.
   const FRIEND: FarChallenge = {
@@ -320,6 +329,31 @@ describe("a friend's How far apart? challenge", () => {
     expect(sent.text.split("\n").at(-1)).toBe(
       `http://localhost:3000/how-far?challenge=${encodeFarChallenge({ ...FRIEND, steps: [200, 200, 200, 200, 200] })}`,
     );
+
+    // The head to head is drawn pair by pair in points and times off, saved, and the reply
+    // link copied beside it.
+    const drawn = stubCanvas();
+    const reply = sent.text;
+    sent.text = "";
+    fireEvent.click(screen.getByRole("button", { name: "Share head to head" }));
+    expect(
+      await screen.findByText("Head to head saved. Post it with the link, which is copied too."),
+    ).toBeInTheDocument();
+    expect(drawn.saved).toEqual(["whereabout-how-far-apart-head-to-head.png"]);
+    expect(drawn.words).toEqual(
+      expect.arrayContaining([
+        "How far apart?: head to head",
+        `${formatPoints(you)} pts`,
+        `${formatPoints(them)} pts`,
+        "Pair 1",
+        "Pair 5",
+        `${formatPoints(friendPoints[0]!)} · ${offWords(judgeEstimate(stepToKm(0), truth(0)))}`,
+      ]),
+    );
+    const all = drawn.words.join("\n");
+    expect(all).not.toMatch(/\bkm\b|p6|p4/);
+    expect(sent.text).toBe(reply);
+    drawn.restore();
 
     // A fresh game is a normal one again, with its own address.
     fireEvent.click(screen.getByRole("button", { name: "Play a fresh game" }));

@@ -13,6 +13,7 @@
  */
 
 import { MAX_POINTS, formatPoints } from "@/lib/geo";
+import { rowWinner, type HeadToHead } from "@/lib/headToHead";
 
 import { challengeOutcome, sumScores, type ChallengeOutcome } from "./challenge";
 import { HOT_PHOTOS, MAX_PINS, PHOTO_POINTS, PIN_BONUS, hotTotal, type HotRound } from "./hotCold";
@@ -151,4 +152,36 @@ export function hotChallengeLine(results: readonly HotRound[], c: HotChallenge):
   if (outcome === "won") return `You won the challenge by ${by}.`;
   if (outcome === "lost") return `Your friend won by ${by}.`;
   return "A dead heat with your friend.";
+}
+
+/** "5,820 · pin 1", or "1,230 · not found" when three pins missed the country. */
+function photoResult(score: number, foundOn: number): string {
+  return `${formatPoints(score)} · ${foundOn > 0 ? `pin ${foundOn}` : "not found"}`;
+}
+
+/**
+ * The head-to-head of a Hot and cold challenge: both sides' points on every photo, with the pin
+ * that found its country. Points decide each photo and the game, as the end screen does.
+ */
+export function hotHeadToHead(
+  results: readonly HotRound[],
+  c: HotChallenge,
+  url: string,
+): HeadToHead {
+  return {
+    game: "Hot and cold",
+    youTotal: `${formatPoints(hotTotal(results))} pts`,
+    friendTotal: `${formatPoints(hotChallengeTotal(c))} pts`,
+    outcome: hotChallengeOutcome(results, c),
+    rows: results.map((r, i) => {
+      const theirs = c.scores[i];
+      return {
+        label: `Photo ${i + 1}`,
+        you: photoResult(r.score, r.foundOn ?? 0),
+        friend: theirs === undefined ? "" : photoResult(theirs, c.foundOn[i] ?? 0),
+        winner: theirs === undefined ? "none" : rowWinner(r.score, theirs),
+      };
+    }),
+    url,
+  };
 }

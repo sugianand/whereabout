@@ -22,6 +22,7 @@ import { tierBlurb } from "@/lib/game/tiers";
 import { offeredRegions, regionBlurb, regionSlug } from "@/lib/game/regions";
 import { continentOf } from "@/lib/continents";
 import type { AtlasData, CatalogPhoto, GameBackend } from "@/lib/game/types";
+import { stubCanvas } from "@/test/canvas";
 import { bundledGame } from "@/test/deck";
 import { FakeMap, resetFakes } from "@/test/maplibre-mock";
 
@@ -567,35 +568,6 @@ describe("Game", { timeout: 20000 }, () => {
     }
 
     /** A 2D canvas that records the words it is asked to draw, and saves instead of sharing. */
-    function stubCanvas() {
-      const words: string[] = [];
-      const saved: string[] = [];
-      const ctx = {
-        fillRect: () => {},
-        beginPath: () => {},
-        roundRect: () => {},
-        fill: () => {},
-        stroke: () => {},
-        fillText: (t: string) => void words.push(t),
-      };
-      const spies = [
-        vi
-          .spyOn(HTMLCanvasElement.prototype, "getContext")
-          .mockReturnValue(ctx as unknown as CanvasRenderingContext2D),
-        vi
-          .spyOn(HTMLCanvasElement.prototype, "toBlob")
-          .mockImplementation((done) => done(new Blob(["png"], { type: "image/png" }))),
-        vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
-          this: HTMLAnchorElement,
-        ) {
-          saved.push(this.download);
-        }),
-      ];
-      URL.createObjectURL = () => "blob:head-to-head";
-      URL.revokeObjectURL = () => {};
-      return { words, saved, restore: () => spies.forEach((s) => s.mockRestore()) };
-    }
-
     async function finish(map: FakeMap, at: (i: number) => { lng: number; lat: number }) {
       for (let i = 0; i < ROUNDS_PER_GAME; i++) {
         const card = await playRound(map, at(i));
