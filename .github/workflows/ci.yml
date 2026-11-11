@@ -103,8 +103,19 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - name: Install
         run: npm ci
+      # The browser comes from Playwright's CDN; its system packages come from apt, whose mirror
+      # sometimes fails to resolve on the runner. The ubuntu-24.04 image already has Chromium's
+      # libraries, so a failed apt fetch (mostly extra fonts) warns instead of skipping the tests.
       - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
+      - name: Install Chromium's system packages
+        run: |
+          for attempt in 1 2; do
+            timeout 300 npx playwright install-deps chromium && exit 0
+            echo "apt failed (attempt $attempt)"
+            sleep 20
+          done
+          echo "::warning::Couldn't install Chromium's system packages; testing with the runner's own."
       - name: Build the static site
         run: npm run build
         env:
