@@ -20,8 +20,8 @@ challenge, *Share head to head* draws both results photo by photo as a picture (
 photo, and the game), spoiling no place, and sends it with the link to answer it. Hot and cold,
 How far apart?, Close-up and Line them up challenges end with one too, in their own units (the
 pin that found each country; how many times over or under each estimate was; the name that found
-each crop; how many photos were in place on each row). Odd one out, Further North and Which way?
-draw both runs call by call, right, wrong or not reached, so the picture shows where each run
+each crop; how many photos were in place on each row). Odd one out, Further North, Which way?,
+Name the country and Country Streak draw both runs call by call, right, wrong or not reached, so the picture shows where each run
 ended; a long run folds its matching stretches into one row ("Quads 1–14").
 **Blitz** (`?blitz`) gives each photo 30 seconds on a countdown ring: when time runs out your
 guess goes in wherever the pin is, and with no pin the round scores 0. The clock waits for the
