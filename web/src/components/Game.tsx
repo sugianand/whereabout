@@ -29,6 +29,7 @@ import {
 import {
   CHALLENGE_PARAM,
   encodeChallenge,
+  isTimedChallenge,
   parseChallenge,
   sumScores,
   type Challenge,
@@ -42,7 +43,7 @@ import {
 } from "@/lib/game/dailyArchive";
 import { fetchRecords, recordUrl, type Deck, type GameRecord } from "@/lib/game/deck";
 import { loadRecent, pickFresh, rememberPlayed, saveRecent } from "@/lib/game/fresh";
-import type { GameMode } from "@/lib/game/mode";
+import { isTimedMode, type GameMode } from "@/lib/game/mode";
 import { keepForRematch, loadRematch, pickRematch } from "@/lib/game/rematch";
 import { gameToResume, loadSaved, snapshot, storeSaved, type SavedGame } from "@/lib/game/saved";
 import { ROUNDS_PER_GAME, gameReducer, initialState, totals } from "@/lib/game/state";
@@ -88,7 +89,8 @@ export function modeTitle(mode: GameMode): string {
   if (mode.kind === "fresh") return "Fresh game";
   if (mode.kind === "tier") return `${TIER_NAMES[mode.tier]} game`;
   if (mode.kind === "region") return `${mode.region} game`;
-  if (mode.kind === "challenge") return "A friend's challenge";
+  if (mode.kind === "challenge")
+    return isTimedChallenge(mode.challenge) ? "A friend's Blitz challenge" : "A friend's challenge";
   if (mode.kind === "blitz") return "Blitz";
   if (mode.kind === "rematch") return "Rematch Atlas";
   const label = new Date(`${mode.day}T12:00:00Z`).toLocaleDateString("en-US", {
@@ -499,7 +501,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
 
   // Blitz: each photo's clock starts once the photo is on screen and runs only while the page
   // is visible. `now` ticks a few times a second to redraw the ring and to notice time is up.
-  const blitz = mode?.kind === "blitz";
+  const blitz = mode ? isTimedMode(mode) : false;
   const guessingId = state.phase === "guessing" ? state.round.roundId : null;
   const [clock, setClock] = useState<{ roundId: string; clock: BlitzClock } | null>(null);
   const [now, setNow] = useState(0);
@@ -543,7 +545,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
     if (lockedFor.current === state.round.roundId) return;
     lockedFor.current = state.round.roundId;
     dispatch({ type: "timeUp" });
-    void send(state.round.roundId, state.pin);
+    void send(state.round.roundId, state.pin, 0);
   });
   const expired = ticking && roundClock !== null && timeUp(roundClock, now);
   useEffect(() => {
@@ -577,7 +579,8 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
     };
   }, []);
 
-  async function send(roundId: string, pin: LngLat | null) {
+  /** `secondsLeft` is the Blitz clock's whole seconds left as the guess went in; unset untimed. */
+  async function send(roundId: string, pin: LngLat | null, secondsLeft?: number) {
     if (!backend) return;
     try {
       const reveal = await backend.guess(roundId, pin);
@@ -587,7 +590,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
         reveal.atlas !== undefined
           ? reveal.atlas
           : ((photoId ? records.get(photoId)?.atlas : null) ?? null);
-      dispatch({ type: "revealed", reveal, atlas: atlasGuess });
+      dispatch({ type: "revealed", reveal, atlas: atlasGuess, secondsLeft });
       if (photoId) {
         // A photo not yet on your map is a first try; one Atlas won waits for a rematch.
         const firstTry = !loadPlayed().some((p) => p.id === photoId);
@@ -621,8 +624,10 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   async function submit() {
     if (state.phase !== "guessing" || !state.pin || state.submitting || state.hinting) return;
     if (!backend) return;
+    // The seconds the ring showed as the guess went in, kept for a Blitz challenge link.
+    const secondsLeft = roundClock ? secondsShown(roundClock, performance.now()) : undefined;
     dispatch({ type: "submitted" });
-    await send(state.round.roundId, state.pin);
+    await send(state.round.roundId, state.pin, secondsLeft);
   }
 
   async function takeHint() {
@@ -699,7 +704,10 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
     setMode((m) =>
       m?.kind === "tier" || m?.kind === "region" || m?.kind === "blitz"
         ? { ...m, game: m.game + 1 }
-        : { kind: "fresh", game: m?.kind === "fresh" ? m.game + 1 : 1 },
+        : // After a friend's Blitz challenge, a Blitz of the player's own.
+          m && isTimedMode(m)
+          ? { kind: "blitz", game: 1 }
+          : { kind: "fresh", game: m?.kind === "fresh" ? m.game + 1 : 1 },
     );
     restart();
   }
@@ -802,7 +810,9 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
               ? `Play another ${mode.region} game`
               : mode?.kind === "blitz"
                 ? "Play another Blitz"
-                : undefined
+                : mode && isTimedMode(mode)
+                  ? "Play a Blitz of your own"
+                  : undefined
         }
         onPlayDaily={mode?.kind === "daily" ? undefined : playDaily}
         dailyScores={apiUrl ? undefined : dailyScores}
@@ -913,6 +923,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
               <span className="tabular font-semibold">
                 {formatPoints(sumScores(mode.challenge.scores))}
               </span>
+              {isTimedChallenge(mode.challenge) && `, ${BLITZ_SECONDS} seconds a photo`}
             </p>
           )}
           {mode?.kind === "rematch" && !replayed && (
@@ -1142,6 +1153,9 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
             onNext={next}
             sureness={deck.sureness}
             friend={mode?.kind === "challenge" ? mode.challenge.scores[index] : undefined}
+            friendSeconds={
+              mode?.kind === "challenge" ? mode.challenge.secondsLeft?.[index] : undefined
+            }
             firstTry={mode?.kind === "rematch" ? mode.rematch.scores[index] : undefined}
             replay={
               replayed

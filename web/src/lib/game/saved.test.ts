@@ -181,6 +181,49 @@ describe("parseSaved", () => {
     expect(roundTrip(other)).toBeNull();
   });
 
+  it("keeps a friend's Blitz challenge with its clock and seconds left on each photo", async () => {
+    const challenge: GameMode = {
+      kind: "challenge",
+      challenge: { ids: IDS, scores: [1, 2, 3, 4, 5], secondsLeft: [9, 0, 30, 1, 2] },
+    };
+    const kept = snapshot(challenge, IDS, await midRound(), NOW, 8_000)!;
+    expect(kept.round?.blitzMsLeft).toBe(8_000);
+    const back = roundTrip(kept);
+    expect(back?.mode).toEqual(challenge);
+    expect(back?.round?.blitzMsLeft).toBe(8_000);
+    const tooLong = {
+      ...kept,
+      mode: { ...challenge, challenge: { ...challenge.challenge, secondsLeft: [9, 0, 31, 1, 2] } },
+    };
+    expect(roundTrip(tooLong)).toBeNull();
+    // A plain challenge never keeps a clock.
+    const plain = {
+      ...kept,
+      mode: { kind: "challenge", challenge: { ids: IDS, scores: [1, 2, 3, 4, 5] } },
+    };
+    expect(roundTrip(plain as SavedGame)).toBeNull();
+    // A rematch never carries seconds.
+    const rematch = {
+      ...kept,
+      round: null,
+      mode: {
+        kind: "rematch",
+        rematch: { ids: IDS, scores: [1, 2, 3, 4, 5], secondsLeft: [1, 1, 1, 1, 1] },
+      },
+    };
+    expect(roundTrip(rematch as SavedGame)).toBeNull();
+  });
+
+  it("reads back a round's seconds left only as a Blitz clock could show them", async () => {
+    const state = await played(1);
+    if (state.phase === "finished") throw new Error("expected a game in progress");
+    const timed = { ...state, results: [{ ...state.results[0], secondsLeft: 7 }] };
+    const kept = snapshot({ kind: "blitz", game: 1 }, IDS, timed, NOW)!;
+    expect(roundTrip(kept)?.results[0].secondsLeft).toBe(7);
+    const odd = { ...kept, results: [{ ...kept.results[0], secondsLeft: 31 }] };
+    expect(roundTrip(odd)).toBeNull();
+  });
+
   it("keeps a rematch with its first tries, and only on the five photos it names", async () => {
     const rematch: GameMode = {
       kind: "rematch",

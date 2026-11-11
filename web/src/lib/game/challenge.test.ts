@@ -10,7 +10,9 @@ import {
   challengeText,
   challengeUrl,
   encodeChallenge,
+  isTimedChallenge,
   parseChallenge,
+  secondsLeftPhrase,
 } from "./challenge";
 
 const photos = catalog as CatalogPhoto[];
@@ -114,5 +116,54 @@ describe("challenge links", () => {
     expect(challengeOutcome(10, 9)).toBe("won");
     expect(challengeOutcome(9, 10)).toBe("lost");
     expect(challengeOutcome(10, 10)).toBe("tied");
+  });
+});
+
+describe("Blitz challenge links", () => {
+  const seconds = [12, 0, 25, 3, 30];
+  const blitzGame = game.map((r, i) => ({ ...r, secondsLeft: seconds[i] }));
+
+  it("carry the seconds left on each photo after a t, and round-trip them", () => {
+    const c = challengeFrom(blitzGame);
+    expect(c).toEqual({ ids: five.map((p) => p.id), scores, secondsLeft: seconds });
+    expect(isTimedChallenge(c)).toBe(true);
+    const encoded = encodeChallenge(c);
+    expect(encoded.endsWith("_t12.0.25.3.30")).toBe(true);
+    expect(parseChallenge(encoded, deck)).toEqual({ ok: true, challenge: c });
+  });
+
+  it("stay plain when any round kept no clock", () => {
+    const mixed = blitzGame.map((r, i) => (i === 2 ? { ...r, secondsLeft: undefined } : r));
+    expect(isTimedChallenge(challengeFrom(mixed))).toBe(false);
+    expect(isTimedChallenge(challengeFrom(game))).toBe(false);
+  });
+
+  const base = encodeChallenge({ ids: five.map((p) => p.id), scores });
+  it.each([
+    ["no t", `${base}_12.0.25.3.30`],
+    ["four seconds", `${base}_t12.0.25.3`],
+    ["six seconds", `${base}_t12.0.25.3.30.1`],
+    ["more than the clock", `${base}_t12.0.25.3.31`],
+    ["a letter", `${base}_t12.0.2a.3.30`],
+    ["a negative", `${base}_t-1.0.25.3.30`],
+    ["an empty t", `${base}_t`],
+    ["a fourth part", `${base}_t12.0.25.3.30_x`],
+  ])("refuse %s", (_, value) => {
+    expect(parseChallenge(value, deck)).toEqual({ ok: false, reason: "malformed" });
+  });
+
+  it("say what it was played on, and answer in kind", () => {
+    const text = challengeText(blitzGame, "https://x.org/whereabout/?blitz");
+    expect(text).toContain(
+      "Whereabout Blitz: I scored 13,544 on these five photos, 30 seconds each.",
+    );
+    expect(text).toContain("_t12.0.25.3.30");
+    expect(text).not.toContain("blitz&");
+  });
+
+  it("read how long the sender had to spare", () => {
+    expect(secondsLeftPhrase(12)).toBe("with 12 seconds left");
+    expect(secondsLeftPhrase(1)).toBe("with 1 second left");
+    expect(secondsLeftPhrase(0)).toBe("as the clock ran out");
   });
 });

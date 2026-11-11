@@ -5,7 +5,14 @@ import { useEffect, useRef, useState } from "react";
 
 import { BADGES, type BadgeId } from "@/lib/badges";
 import type { BlitzBest } from "@/lib/game/blitz";
-import { challengeOutcome, challengeText, sumScores, type Challenge } from "@/lib/game/challenge";
+import {
+  challengeFrom,
+  challengeOutcome,
+  challengeText,
+  isTimedChallenge,
+  sumScores,
+  type Challenge,
+} from "@/lib/game/challenge";
 import { dayKey } from "@/lib/game/daily";
 import type { DailyScores } from "@/lib/game/dailyArchive";
 import { rematchOutcome } from "@/lib/game/rematch";
@@ -327,7 +334,7 @@ function ContinentRecordTable({ record }: { record: PlayerRecord }) {
 }
 
 type Sent =
-  | { what: "result" | "challenge"; outcome: ShareOutcome }
+  | { what: "result" | "challenge" | "blitz-challenge"; outcome: ShareOutcome }
   | { what: "picture"; outcome: ImageOutcome | "drawing" };
 
 const PICTURE_NOTE: Record<ImageOutcome | "drawing", string> = {
@@ -342,7 +349,10 @@ function sentNote(sent: Sent): string {
   return sent.what === "picture" ? PICTURE_NOTE[sent.outcome] : SENT_NOTE[sent.what][sent.outcome];
 }
 
-const SENT_NOTE: Record<"result" | "challenge", Record<ShareOutcome, string>> = {
+const SENT_NOTE: Record<
+  "result" | "challenge" | "blitz-challenge",
+  Record<ShareOutcome, string>
+> = {
   result: {
     shared: "Result shared.",
     copied: "Result copied. Paste it anywhere.",
@@ -352,6 +362,13 @@ const SENT_NOTE: Record<"result" | "challenge", Record<ShareOutcome, string>> = 
   challenge: {
     shared: "Challenge sent.",
     copied: "Challenge link copied. Whoever opens it plays these five photos.",
+    cancelled: "",
+    failed: "Couldn't copy the link. Your browser blocked the clipboard.",
+  },
+  "blitz-challenge": {
+    shared: "Blitz challenge sent.",
+    copied:
+      "Blitz challenge link copied. Whoever opens it plays these five photos on the same clock.",
     cancelled: "",
     failed: "Couldn't copy the link. Your browser blocked the clipboard.",
   },
@@ -469,7 +486,8 @@ export default function Summary({
 
   async function sendChallenge() {
     const text = challengeText(results, window.location.href, challenge);
-    setSent({ what: "challenge", outcome: await sendShare(text, navigator) });
+    const what = isTimedChallenge(challengeFrom(results)) ? "blitz-challenge" : "challenge";
+    setSent({ what, outcome: await sendShare(text, navigator) });
   }
   const friendTotal = challenge ? sumScores(challenge.scores) : null;
   const firstTotal = rematch ? sumScores(rematch.scores) : null;
@@ -556,6 +574,8 @@ export default function Summary({
                 {challenge && challenge.scores[i] !== undefined && (
                   <span className="ml-3 text-sm text-gold">
                     Friend: {formatPoints(challenge.scores[i])} points
+                    {challenge.secondsLeft?.[i] !== undefined &&
+                      `, ${challenge.secondsLeft[i] > 0 ? `${challenge.secondsLeft[i]}s left` : "time up"}`}
                   </span>
                 )}
                 {rematch && rematch.scores[i] !== undefined && (

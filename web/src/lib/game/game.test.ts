@@ -363,6 +363,28 @@ describe("gameReducer", () => {
     expect(after.phase === "guessing" && after.clues).toEqual([]);
   });
 
+  it("keeps the seconds left on a Blitz round's clock, and 0 when time locked it in", () => {
+    let s = gameReducer(initialState, { type: "started", round });
+    s = gameReducer(s, { type: "pinned", pin: { lng: 135, lat: 34 } });
+    s = gameReducer(s, { type: "submitted" });
+    const sent = gameReducer(s, { type: "revealed", reveal, atlas, secondsLeft: 12 });
+    expect(sent.phase === "revealed" && sent.current.secondsLeft).toBe(12);
+
+    let late = gameReducer(initialState, { type: "started", round });
+    late = gameReducer(late, { type: "timeUp" });
+    late = gameReducer(late, {
+      type: "revealed",
+      reveal: { ...reveal, distanceKm: null, score: 0 },
+      atlas,
+      secondsLeft: 4,
+    });
+    expect(late.phase === "revealed" && late.current.secondsLeft).toBe(0);
+
+    // An untimed round keeps no clock at all.
+    const plain = playRound(initialState);
+    expect(plain.phase === "revealed" && plain.current).not.toHaveProperty("secondsLeft");
+  });
+
   it("works without Atlas data", () => {
     const s = playRound(initialState, false);
     expect(s.phase === "revealed" && s.current.atlas).toBeNull();

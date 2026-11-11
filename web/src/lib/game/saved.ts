@@ -19,9 +19,9 @@ import { MAX_HINTS, MAX_POINTS, type LngLat } from "@/lib/geo";
 import type { Clue } from "@/lib/hints";
 import { isPostcard } from "@/lib/postcard";
 
-import { BLITZ_MS } from "./blitz";
+import { BLITZ_MS, BLITZ_SECONDS } from "./blitz";
 import { encodeChallenge, parseChallenge } from "./challenge";
-import { sameKindOfGame, type GameMode } from "./mode";
+import { isTimedMode, sameKindOfGame, type GameMode } from "./mode";
 import { ROUNDS_PER_GAME, type GameState, type RoundResult } from "./state";
 import { isTier } from "./tiers";
 
@@ -69,7 +69,7 @@ export function snapshot(
       photoId: state.round.photo.id,
       pin: state.pin,
       hintsUsed: state.clues.length,
-      ...(mode.kind === "blitz" && blitzMsLeft != null ? { blitzMsLeft } : {}),
+      ...(isTimedMode(mode) && blitzMsLeft != null ? { blitzMsLeft } : {}),
     };
   }
   const engaged =
@@ -143,7 +143,15 @@ function isMode(v: unknown, deckIds: readonly string[]): v is GameMode {
       const c = v.kind === "challenge" ? v.challenge : v.rematch;
       if (!isObj(c) || !Array.isArray(c.ids) || !Array.isArray(c.scores)) return false;
       if (!c.ids.every(isStr) || !c.scores.every(isNum)) return false;
-      const value = encodeChallenge({ ids: c.ids as string[], scores: c.scores as number[] });
+      const seconds = c.secondsLeft;
+      if (seconds !== undefined && (v.kind !== "challenge" || !Array.isArray(seconds)))
+        return false;
+      if (seconds !== undefined && !seconds.every(isNum)) return false;
+      const value = encodeChallenge({
+        ids: c.ids as string[],
+        scores: c.scores as number[],
+        ...(seconds ? { secondsLeft: seconds as number[] } : {}),
+      });
       return parseChallenge(value, deckIds).ok;
     }
     default:
@@ -160,6 +168,7 @@ function isResult(v: unknown, photoId: string): v is RoundResult {
   if (v.pin !== null && !isLngLat(v.pin)) return false;
   if (!isClues(v.clues)) return false;
   if (v.timedOut !== undefined && v.timedOut !== true) return false;
+  if (v.secondsLeft !== undefined && !isInt(v.secondsLeft, 0, BLITZ_SECONDS)) return false;
   if (!isInt(reveal.score, 0, MAX_POINTS) || !isInt(reveal.hintsUsed, 0, MAX_HINTS)) return false;
   if (reveal.distanceKm !== null && !(isNum(reveal.distanceKm) && reveal.distanceKm >= 0)) {
     return false;
@@ -214,7 +223,7 @@ export function parseSaved(raw: string | null, deckIds: readonly string[], now: 
   // A round in progress is always the one after the last played.
   if (v.round !== null && !isRound(v.round, dealt[results.length])) return null;
   const round = v.round as SavedRound | null;
-  if (round?.blitzMsLeft !== undefined && v.mode.kind !== "blitz") return null;
+  if (round?.blitzMsLeft !== undefined && !isTimedMode(v.mode)) return null;
   return {
     v: VERSION,
     savedAt: v.savedAt,

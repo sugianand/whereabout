@@ -913,6 +913,74 @@ test("a finished game becomes a challenge link a friend plays on the same five p
   expect(errors).toEqual([]);
 });
 
+test("a Blitz becomes a challenge link a friend plays on the same clock, with time to beat", async ({
+  page,
+  browser,
+}) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("./?blitz");
+  await expect(page.getByText("Blitz", { exact: true })).toBeVisible();
+  for (let round = 1; round <= 5; round++) {
+    await expect(page.getByTestId("blitz-clock")).toHaveAttribute("data-paused", "false");
+    const card = await playRoundWithKeyboard(page);
+    await card.getByRole("button", { name: round < 5 ? "Next photo" : "See your results" }).click();
+  }
+  await expect(page.getByTestId("blitz-best")).toBeVisible();
+  const places = await page.getByRole("listitem").locator("span.truncate").allInnerTexts();
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  await page.getByRole("button", { name: "Challenge a friend" }).click();
+  await expect(page.getByText("Blitz challenge link copied.", { exact: false })).toBeVisible();
+  const sent = await page.evaluate(() => (window as unknown as { sent: string }).sent);
+  expect(sent).toMatch(
+    /^Whereabout Blitz: I scored [\d,]+ on these five photos, 30 seconds each\./,
+  );
+  for (const place of places) expect(sent).not.toContain(place);
+  const link = sent.split("\n").at(-1)!;
+  // Seconds left on each photo after the t: guessed straight away, so none ran out.
+  expect(link).toMatch(/\/whereabout\/\?challenge=[\w.-]+_[\d.]+_t([1-9]\d?\.){4}[1-9]\d?$/);
+  await page.close();
+
+  const friend = await browser.newPage({ viewport: page.viewportSize()! });
+  await friend.route(/wikimedia\.org/, (route) =>
+    route.fulfill({ body: PHOTO, contentType: "image/png" }),
+  );
+  friend.on("pageerror", (e) => errors.push(e.message));
+  await friend.goto(link);
+  await expect(friend.getByText("A friend's Blitz challenge", { exact: true })).toBeVisible();
+  const toBeat = friend.getByText(/^Score to beat: [\d,]+, 30 seconds a photo$/);
+  await expect(toBeat).toBeVisible();
+  const chip = (await toBeat.boundingBox())!;
+  expect(chip.x + chip.width).toBeLessThanOrEqual(friend.viewportSize()!.width);
+  // The friend's photos run on the same 30-second clock.
+  const clock = friend.getByTestId("blitz-clock");
+  await expect(clock).toHaveAttribute("data-paused", "false");
+  const card = await playRoundWithKeyboard(friend);
+  await expect(card.getByRole("heading", { name: places[0] })).toBeVisible();
+  await expect(card.getByTestId("friend-line")).toHaveText(
+    /^Your friend scored [\d,]+ here with \d+ seconds? left\. /,
+  );
+  if ((friend.viewportSize()?.width ?? 1000) < 768) {
+    const box = (await card.boundingBox())!;
+    expect(box.height, "the friend line keeps the card short").toBeLessThan(
+      friend.viewportSize()!.height / 2,
+    );
+  }
+  // A Blitz challenge is a challenge, not a Blitz: the address keeps only the link.
+  expect(new URL(friend.url()).search).toBe(new URL(link).search);
+  await friend.close();
+  expect(errors).toEqual([]);
+});
+
 test("a game fetches only the five photos it deals, not the whole catalog", async ({ page }) => {
   const records: string[] = [];
   page.on("request", (r) => {

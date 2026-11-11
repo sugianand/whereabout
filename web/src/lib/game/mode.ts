@@ -1,6 +1,6 @@
 import type { Continent } from "@/lib/continents";
 
-import { encodeChallenge, type Challenge } from "./challenge";
+import { encodeChallenge, isTimedChallenge, type Challenge } from "./challenge";
 import type { Tier } from "./tiers";
 
 /**
@@ -44,4 +44,9 @@ export function sameKindOfGame(a: GameMode, b: GameMode): boolean {
     case "blitz":
       return a.kind === b.kind;
   }
+}
+
+/** True when every photo of the game is played against the Blitz clock: a Blitz, or a friend's Blitz challenge. */
+export function isTimedMode(mode: GameMode): boolean {
+  return mode.kind === "blitz" || (mode.kind === "challenge" && isTimedChallenge(mode.challenge));
 }

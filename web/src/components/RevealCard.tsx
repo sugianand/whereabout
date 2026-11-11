@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { atlasLine, atlasSay } from "@/lib/atlasVoice";
 import { countryName, shortlist } from "@/lib/countries";
 import { rematchOutcome } from "@/lib/game/rematch";
+import { secondsLeftPhrase } from "@/lib/game/challenge";
 import type { RoundResult } from "@/lib/game/state";
 import { surenessLine, type SurenessBand } from "@/lib/game/sureness";
 import { formatDistance, formatPoints, maxPoints } from "@/lib/geo";
@@ -43,6 +44,8 @@ type RevealCardProps = {
   sureness?: readonly SurenessBand[];
   /** In a friend's challenge, the points the friend scored on this photo. */
   friend?: number;
+  /** In a friend's Blitz challenge, the seconds the friend had left when they guessed here. */
+  friendSeconds?: number;
   /** In a rematch against Atlas, the points the player scored on their first try here. */
   firstTry?: number;
 };
@@ -136,11 +139,15 @@ export function firstTryLine(score: number, first: number): string {
   return `Your first try scored ${formatPoints(first)} here. ${verdict}`;
 }
 
-/** "Your friend scored 3,100 here. You beat them.", comparing this round's points. */
-export function friendLine(score: number, friend: number): string {
+/**
+ * "Your friend scored 3,100 here. You beat them.", comparing this round's points. In a Blitz
+ * challenge it says how long the friend had to spare: "…scored 3,100 here with 12 seconds left."
+ */
+export function friendLine(score: number, friend: number, friendSeconds?: number): string {
   const verdict =
     score > friend ? "You beat them." : score < friend ? "They got closer." : "Level with them.";
-  return `Your friend scored ${formatPoints(friend)} here. ${verdict}`;
+  const when = friendSeconds === undefined ? "" : ` ${secondsLeftPhrase(friendSeconds)}`;
+  return `Your friend scored ${formatPoints(friend)} here${when}. ${verdict}`;
 }
 
 /** "You took 2 hints, so this round was worth up to 3,000 points.", or null without hints. */
@@ -173,6 +180,7 @@ export default function RevealCard({
   sureness,
   replay,
   friend,
+  friendSeconds,
   firstTry,
 }: RevealCardProps) {
   const { reveal, atlas } = result;
@@ -286,7 +294,7 @@ export default function RevealCard({
       )}
       {friend !== undefined && (
         <p className="mt-1 text-sm text-gold" data-testid="friend-line">
-          {friendLine(reveal.score, friend)}
+          {friendLine(reveal.score, friend, friendSeconds)}
         </p>
       )}
       {firstTry !== undefined && (

@@ -29,6 +29,11 @@ export interface RoundResult {
   atlas: (AtlasGuess & { distanceKm: number; score: number }) | null;
   /** Set when a Blitz clock, not the player, locked this guess in. */
   timedOut?: true;
+  /**
+   * Blitz only: the whole seconds left on the round's clock when the guess went in, 0 when the
+   * clock locked it in. A Blitz challenge link carries them (./challenge.ts).
+   */
+  secondsLeft?: number;
 }
 
 export type GameState =
@@ -71,7 +76,8 @@ export type GameAction =
   | { type: "hinted"; clues: Clue[] }
   | { type: "submitted" }
   | { type: "timeUp" }
-  | { type: "revealed"; reveal: Reveal; atlas: AtlasGuess | null }
+  /** `secondsLeft` is set in Blitz: the time left on the clock when the guess went in. */
+  | { type: "revealed"; reveal: Reveal; atlas: AtlasGuess | null; secondsLeft?: number }
   | { type: "failed"; message: string }
   | { type: "next" }
   | { type: "restart" };
@@ -164,6 +170,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         clues: state.clues,
         atlas: scoredAtlas,
         ...(state.timedOut ? { timedOut: true as const } : {}),
+        // Time up always leaves 0 seconds, however the guess's trip to the backend went.
+        ...(action.secondsLeft !== undefined
+          ? { secondsLeft: state.timedOut ? 0 : Math.max(0, Math.round(action.secondsLeft)) }
+          : {}),
       };
       return {
         phase: "revealed",

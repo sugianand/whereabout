@@ -797,6 +797,138 @@ describe("Blitz", { timeout: 20000 }, () => {
     const card = await screen.findByRole("region", { name: /./ }, WAIT);
     expect(within(card).getByTestId("time-up")).toHaveTextContent("Your pin went in");
   });
+
+  describe("Blitz challenges", () => {
+    function stubClipboard() {
+      const sent: string[] = [];
+      Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+      Object.defineProperty(navigator, "clipboard", {
+        value: { writeText: async (t: string) => void sent.push(t) },
+        configurable: true,
+      });
+      return sent;
+    }
+
+    /** The photo on screen, shown so its clock starts. */
+    async function showPhoto() {
+      const img = await screen.findByRole("img", { name: /photo to locate/ }, WAIT);
+      fireEvent.load(img);
+      const clock = await screen.findByTestId("blitz-clock", {}, WAIT);
+      await waitFor(() => expect(clock).toHaveAttribute("data-paused", "false"));
+      return playable.find((p) => img.getAttribute("src") === p.imageUrl)!;
+    }
+
+    function nextOrResults(card: HTMLElement, i: number) {
+      fireEvent.click(
+        within(card).getByRole("button", { name: i + 1 < ROUNDS_PER_GAME ? /Next/ : /results/i }),
+      );
+    }
+
+    it("sends a Blitz's link with the seconds left on each photo", async () => {
+      const sent = stubClipboard();
+      const { map } = await startBlitz();
+      const used = [3_000, 10_500, 29_200, 31_000, 0];
+      const ids: string[] = [];
+      for (let i = 0; i < ROUNDS_PER_GAME; i++) {
+        const photo =
+          i === 0
+            ? playable.find(
+                (p) =>
+                  p.imageUrl ===
+                  screen.getByRole("img", { name: /photo to locate/ }).getAttribute("src"),
+              )!
+            : await showPhoto();
+        ids.push(photo.id);
+        act(() => map.click(photo.lng, photo.lat));
+        now += used[i];
+        if (used[i] < 30_000) fireEvent.click(screen.getByRole("button", { name: "Guess here" }));
+        const card = await screen.findByRole("region", { name: /./ }, WAIT);
+        nextOrResults(card, i);
+      }
+      fireEvent.click(await screen.findByRole("button", { name: "Challenge a friend" }, WAIT));
+      expect(
+        await screen.findByText(
+          "Blitz challenge link copied. Whoever opens it plays these five photos on the same clock.",
+        ),
+      ).toBeInTheDocument();
+      expect(sent[0]).toMatch(
+        /^Whereabout Blitz: I scored 25,000 on these five photos, 30 seconds each\./,
+      );
+      const url = new URL(sent[0].split("\n").at(-1)!);
+      expect(url.search.includes("blitz")).toBe(false);
+      expect(url.searchParams.get("challenge")).toBe(
+        encodeChallenge({
+          ids,
+          scores: [5000, 5000, 5000, 5000, 5000],
+          secondsLeft: [27, 20, 1, 0, 30],
+        }),
+      );
+    });
+
+    it("deals a friend's Blitz on the same clock, with their points and time at each reveal", async () => {
+      const five = playable.slice(30, 35);
+      const challenge = {
+        ids: five.map((p) => p.id),
+        scores: [5000, 0, 1200, 4800, 3000],
+        secondsLeft: [12, 0, 1, 25, 30],
+      };
+      const link = `/?challenge=${encodeChallenge(challenge)}`;
+      window.history.replaceState(null, "", link);
+      const sent = stubClipboard();
+      render(<Game {...bundledGame} today={TODAY} />);
+      const map = await mapReady();
+      expect(await screen.findByText("A friend's Blitz challenge", {}, WAIT)).toBeInTheDocument();
+      expect(screen.getByText(/Score to beat/)).toHaveTextContent(
+        "Score to beat: 14,000, 30 seconds a photo",
+      );
+      // The friend's own photo, on the clock: time runs out with no pin.
+      expect((await showPhoto()).id).toBe(five[0].id);
+      now += 30_000;
+      const first = await screen.findByRole("region", { name: /./ }, WAIT);
+      expect(within(first).getByTestId("friend-line")).toHaveTextContent(
+        "Your friend scored 5,000 here with 12 seconds left. They got closer.",
+      );
+      nextOrResults(first, 0);
+      for (let i = 1; i < ROUNDS_PER_GAME; i++) {
+        const photo = await showPhoto();
+        expect(photo.id).toBe(five[i].id);
+        act(() => map.click(photo.lng, photo.lat));
+        now += 4_000;
+        fireEvent.click(screen.getByRole("button", { name: "Guess here" }));
+        const card = await screen.findByRole("region", { name: /./ }, WAIT);
+        if (i === 1) {
+          expect(within(card).getByTestId("friend-line")).toHaveTextContent(
+            "Your friend scored 0 here as the clock ran out. You beat them.",
+          );
+        }
+        nextOrResults(card, i);
+      }
+      expect(await screen.findByTestId("challenge-result", {}, WAIT)).toHaveTextContent(
+        "Your friend scored 14,000. You won the challenge by 6,000 points.",
+      );
+      expect(screen.getByText("Friend: 5,000 points, 12s left")).toBeInTheDocument();
+      expect(screen.getByText("Friend: 0 points, time up")).toBeInTheDocument();
+      // A challenge never touches the best Blitz.
+      expect(localStorage.getItem("whereabout:blitz-best")).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: "Send your score back" }));
+      await waitFor(() => expect(sent).toHaveLength(1));
+      expect(sent[0]).toContain("I beat your score.");
+      expect(sent[0]).toMatch(/_0\.5000\.5000\.5000\.5000_t0\.26\.26\.26\.26$/);
+
+      // The next game is a Blitz of the player's own, the challenge left behind.
+      fireEvent.click(screen.getByRole("button", { name: "Play a Blitz of your own" }));
+      await waitFor(() => expect(window.location.search).toBe("?blitz"));
+    });
+
+    it("sets aside a Blitz link whose clock could never read that", async () => {
+      const ids = playable.slice(30, 35).map((p) => p.id);
+      window.history.replaceState(null, "", `/?challenge=${ids.join(".")}_1.2.3.4.5_t12.0.99.3.4`);
+      render(<Game {...bundledGame} today={TODAY} />);
+      await mapReady();
+      expect(await screen.findByText(CHALLENGE_NOTICE.malformed, {}, WAIT)).toBeInTheDocument();
+      expect(screen.queryByTestId("blitz-clock")).toBeNull();
+    });
+  });
 });
 
 describe("Pick up where you left off", { timeout: 30000 }, () => {
