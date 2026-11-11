@@ -65,6 +65,9 @@ first miss ends the run, and your best run is kept in your browser. Keys 1 to 9 
 pad's layout (8 is north).
 **Today's run** (at `/which-way/daily`) sets everyone off on the same journey on the same UTC day,
 one try a day, picked back up at the photo you stood at after a reload and shared as counts only.
+After a free run, *Challenge a friend* sends a link to the same journey, stop by stop, with your
+run to beat; on the stop that ended your run the friend sees, once they've picked, which way you set
+off, and a friend who gets past it travels on through the rest of the deck and can send theirs back.
 **Hot and cold** (at `/hot-cold`, in the Games menu) gives you three pins to find each photo's
 country. A pin that misses says how far off it was and points an arrow the way to head from it,
 without naming the place, and the second miss says warmer or colder; earlier pins stay numbered on
