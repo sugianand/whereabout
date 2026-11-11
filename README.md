@@ -15,7 +15,9 @@ Daily Fives with your score on each, and any of them plays at `?daily=2026-10-20
 Atlas actually missed each photo (or open `?tier=hard`), or one continent, so every photo was taken
 in, say, South America (`?region=south-america`). The share text gives no spoilers.
 **Challenge a friend** from the results: the link deals your friend the same five photos with
-your score on each to beat, and they can send theirs straight back.
+your score on each to beat, and they can send theirs straight back. At the end of a friend's
+challenge, *Share head to head* draws both results photo by photo as a picture (who took each
+photo, and the game), spoiling no place, and sends it with the link to answer it.
 **Blitz** (`?blitz`) gives each photo 30 seconds on a countdown ring: when time runs out your
 guess goes in wherever the pin is, and with no pin the round scores 0. The clock waits for the
 photo to load and pauses while the tab is hidden; your best Blitz is kept in your browser.
