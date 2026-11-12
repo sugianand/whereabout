@@ -9,6 +9,7 @@ import { secondsLeftPhrase } from "@/lib/game/challenge";
 import type { RoundResult } from "@/lib/game/state";
 import { surenessLine, type SurenessBand } from "@/lib/game/sureness";
 import { formatDistance, formatPoints, maxPoints } from "@/lib/geo";
+import { missLessonFor } from "@/lib/missLesson";
 import { REVEAL_DRAW_MS } from "@/lib/reveal";
 import { trueClues, type TrueClue } from "@/lib/trueClues";
 import { useCountUp } from "@/lib/useCountUp";
@@ -194,8 +195,13 @@ export default function RevealCard({
   const truthListed = shortlisted.some((c) => c.country === truthCountry);
   const realityCheck = atlas && sureness ? surenessLine(sureness, atlas.confidence) : null;
   const realClues = trueClues(reveal.answer.clues, atlas);
+  const lesson = missLessonFor(result);
+  const units = useUnits();
+  const atlasHalves = atlasSay(result, units);
+  // A phone moves Atlas's line into the fold after a far miss (see below), so it opens then too.
   const hasThinking =
     realClues.length > 0 ||
+    (!!lesson && !!atlasHalves) ||
     (!!atlas &&
       (!!atlas.guessedPlace || shortlisted.length > 1 || atlas.clues.length > 0 || !!atlas.looked));
   // On phones Atlas's reasoning folds away so the globe behind the card stays in view; wider
@@ -204,9 +210,7 @@ export default function RevealCard({
   const [openFor, setOpenFor] = useState<RoundResult | null>(null);
   const thinkingOpen = openFor === result;
   const thinkingId = useId();
-  const units = useUnits();
   const atlasSays = atlasLine(result, units);
-  const atlasHalves = atlasSay(result, units);
 
   // Move focus to the next action so keyboard players can press Enter to continue.
   useEffect(() => {
@@ -281,9 +285,11 @@ export default function RevealCard({
 
       {/* Atlas's own verdict, from this round's numbers; the plain one is announced above.
           Phones keep the card short with the outcome alone: how sure Atlas was is in the fold. */}
+      {/* After a far miss a phone gives this line's room to the lesson below, and keeps it in
+          the fold instead, so the card still leaves the globe the top half of the screen. */}
       {atlasHalves && (
         <p
-          className="mt-2 text-sm text-chalk md:mt-3 md:text-base"
+          className={`mt-2 text-sm text-chalk md:mt-3 md:text-base ${lesson ? "hidden md:block" : ""}`}
           aria-hidden="true"
           data-testid="atlas-line"
         >
@@ -300,6 +306,18 @@ export default function RevealCard({
       {firstTry !== undefined && (
         <p className="mt-1 text-sm text-gold" data-testid="first-try-line">
           {firstTryLine(reveal.score, firstTry)}
+        </p>
+      )}
+
+      {/* Learn from a miss: outside the fold, so phones see it too. */}
+      {lesson && (
+        <p
+          className="mt-2 text-sm leading-snug text-chalk md:mt-3"
+          data-testid="miss-lesson"
+          data-kind={lesson.kind}
+        >
+          <span className="font-semibold text-gold">Tell them apart: </span>
+          {lesson.text}
         </p>
       )}
 
@@ -337,6 +355,15 @@ export default function RevealCard({
         data-testid="atlas-thinking"
         className={thinkingOpen ? "" : "hidden md:block"}
       >
+        {lesson && atlasHalves && (
+          <p
+            className="mt-3 text-sm text-chalk md:hidden"
+            aria-hidden="true"
+            data-testid="atlas-line-folded"
+          >
+            <span className="font-semibold text-sonar">Atlas: </span>“{atlasHalves.outcome}”
+          </p>
+        )}
         {atlas?.guessedPlace && (
           <p className="mt-3 text-sm text-chalk-dim">
             Atlas guessed <span className="text-sonar">{atlas.guessedPlace}</span>,{" "}

@@ -649,6 +649,52 @@ describe("RevealCard real clues", () => {
   });
 });
 
+describe("RevealCard learn from a miss", () => {
+  function miss(distanceKm: number, country: string): RoundResult {
+    const r = result(distanceKm, 0, 4900);
+    return {
+      ...r,
+      // Near Brasília.
+      pin: { lng: -47.9, lat: -15.8 },
+      reveal: {
+        ...r.reveal,
+        answer: { ...r.reveal.answer, country, clues: { drivingSide: "left" } },
+      },
+    };
+  }
+
+  it("says what tells the two places apart, outside the fold so phones see it", () => {
+    render(<RevealCard result={miss(17_700, "JP")} isLast={false} onNext={() => {}} />);
+    const line = screen.getByTestId("miss-lesson");
+    expect(line).toHaveTextContent(
+      "Tell them apart: In Japan they drive on the left; in Brazil, where your pin landed, on the right.",
+    );
+    expect(line.dataset.kind).toBe("driving_side");
+    expect(screen.getByTestId("atlas-thinking")).not.toContainElement(line);
+    // A phone gives Atlas's line's room to the lesson and keeps the line in the fold.
+    expect(screen.getByTestId("atlas-line")).toHaveClass("hidden", "md:block");
+    expect(screen.getByTestId("atlas-thinking")).toContainElement(
+      screen.getByTestId("atlas-line-folded"),
+    );
+    expect(screen.getByTestId("atlas-line-folded")).toHaveTextContent(/^Atlas: “.+”$/);
+  });
+
+  it("stays quiet on a near miss, a pin in the right country or one in the sea", () => {
+    const { unmount } = render(
+      <RevealCard result={miss(1200, "JP")} isLast={false} onNext={() => {}} />,
+    );
+    expect(screen.queryByTestId("miss-lesson")).toBeNull();
+    expect(screen.getByTestId("atlas-line")).not.toHaveClass("hidden");
+    expect(screen.queryByTestId("atlas-line-folded")).toBeNull();
+    unmount();
+    const home = render(<RevealCard result={miss(2500, "BR")} isLast={false} onNext={() => {}} />);
+    expect(screen.queryByTestId("miss-lesson")).toBeNull();
+    home.unmount();
+    render(<RevealCard result={result(9000, 0, 4900)} isLast={false} onNext={() => {}} />);
+    expect(screen.queryByTestId("miss-lesson")).toBeNull();
+  });
+});
+
 describe("RevealCard postcard", () => {
   function withPostcard(postcard: NonNullable<RoundResult["reveal"]["answer"]["postcard"]>) {
     const r = result(5, 100, 4900);

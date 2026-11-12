@@ -4,8 +4,11 @@ import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 import { continentOf } from "../src/lib/continents";
+import { countryAt } from "../src/lib/countryHit";
 import { BUZZ, CHIME, type Closeness } from "../src/lib/feel";
 import { dayKey } from "../src/lib/game/daily";
+import { haversineKm } from "../src/lib/geo";
+import { missLesson } from "../src/lib/missLesson";
 
 // The real photos are hot-linked from Wikimedia. Serve a local stand-in instead, so the test
 // doesn't depend on the network and never hammers Wikimedia from CI.
@@ -1197,13 +1200,19 @@ test("Atlas has its say at the reveal, from that round's own numbers", async ({
     (p: { credit: { sourceUrl: string } }) => p.credit.sourceUrl === source,
   );
   const guess = atlas.guesses[photo.id];
-  const line = card.getByTestId("atlas-line");
+  let line = card.getByTestId("atlas-line");
   if (!guess) {
     await expect(line).toHaveCount(0);
     return;
   }
   // Outside the phone fold, in Atlas's voice. Wider screens add the sureness the round really
   // had; phones keep the card short with the outcome alone (the fold says how sure it was).
+  // After a far miss a phone gives the line's room to the lesson and keeps it in the fold.
+  if (isMobile && (await card.getByTestId("miss-lesson").count()) > 0) {
+    await expect(line).toBeHidden();
+    await card.getByRole("button", { name: "How Atlas guessed" }).click();
+    line = card.getByTestId("atlas-line-folded");
+  }
   await expect(line).toBeVisible();
   await expect(line).toHaveText(/^Atlas: “.+”$/);
   const sure = `${Math.max(1, Math.round(guess.confidence * 100))}%`;
@@ -1319,4 +1328,52 @@ test("the summary offers a rematch of the photos Atlas beat you on, scored again
   await expect(page.getByText("Rematch Atlas", { exact: true })).toBeVisible();
   await expect(page.getByText("Round 2 of 5", { exact: true })).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+test("a far miss into another country says what tells the two places apart", async ({ page }) => {
+  type Photo = {
+    id: string;
+    place: string;
+    country: string;
+    lng: number;
+    lat: number;
+    drivingSide?: "left" | "right";
+  };
+  const catalog: Photo[] = JSON.parse(
+    readFileSync(resolve(process.cwd(), "src/data/photos.json"), "utf8"),
+  );
+  const atlas = JSON.parse(readFileSync(resolve(process.cwd(), "src/data/atlas.json"), "utf8"));
+  const playable = catalog.filter((p) => Object.hasOwn(atlas.guesses, p.id));
+  // playRoundWithKeyboard drops the pin at the globe's first centre (10° E, 20° N, Globe.tsx's
+  // INITIAL_VIEW) and moves it one big step, 10°, east: into Chad.
+  const pin = { lng: 20, lat: 20 };
+  const lessonOf = (p: Photo) =>
+    missLesson({
+      truthCountry: p.country,
+      pinnedCountry: countryAt(pin),
+      distanceKm: haversineKm(pin, p),
+      truthSide: p.drivingSide ?? null,
+    });
+  const road = playable.find((p) => lessonOf(p)?.kind === "driving_side")!;
+  const continent = playable.find((p) => lessonOf(p)?.kind === "continent")!;
+  const quiet = playable.find((p) => !lessonOf(p))!;
+  expect(road && continent && quiet, "the catalog has each kind of round").toBeTruthy();
+  const rest = playable.filter((p) => ![road, continent, quiet].includes(p)).slice(0, 2);
+  const ids = [road, continent, quiet, ...rest].map((p) => p.id);
+  await page.goto(`./?challenge=${ids.join(".")}_${ids.map(() => 2500).join(".")}`);
+
+  for (const photo of [road, continent, quiet]) {
+    const card = await playRoundWithKeyboard(page);
+    await expect(card.getByRole("heading", { name: photo.place })).toBeVisible();
+    const lesson = card.getByTestId("miss-lesson");
+    const expected = lessonOf(photo);
+    if (expected) {
+      // Outside the fold: visible on a phone without opening Atlas's reasoning.
+      await expect(lesson).toBeVisible();
+      await expect(lesson).toHaveText(`Tell them apart: ${expected.text}`);
+    } else {
+      await expect(lesson).toHaveCount(0);
+    }
+    await card.getByRole("button", { name: "Next photo" }).click();
+  }
 });
