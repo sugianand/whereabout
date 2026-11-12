@@ -7,6 +7,7 @@
 import { isDayKey } from "@/lib/game/dailyArchive";
 import { ROUNDS_PER_GAME, totals, type RoundResult } from "@/lib/game/state";
 import { MAX_POINTS, formatPoints } from "@/lib/geo";
+import { currentSquares, inSquares, type SquareSet } from "@/lib/squares";
 
 export interface DistanceBand {
   /** Upper bound of the band in km (inclusive); Infinity for the last band. */
@@ -131,10 +132,15 @@ export interface ShareTarget {
 /**
  * Send the card with the Web Share API where the browser offers it (phones, mostly), else copy
  * it. Closing the share sheet is not an error; a share that fails for another reason falls back
- * to the clipboard.
+ * to the clipboard. The text's squares go out in the player's set (`lib/squares.ts`).
  */
-export async function sendShare(text: string, target: ShareTarget): Promise<ShareOutcome> {
-  const data: ShareData = { title: "Whereabout", text };
+export async function sendShare(
+  text: string,
+  target: ShareTarget,
+  squares: SquareSet = currentSquares(),
+): Promise<ShareOutcome> {
+  const shared = inSquares(text, squares);
+  const data: ShareData = { title: "Whereabout", text: shared };
   if (typeof target.share === "function" && (target.canShare?.(data) ?? true)) {
     try {
       await target.share(data);
@@ -145,7 +151,7 @@ export async function sendShare(text: string, target: ShareTarget): Promise<Shar
   }
   try {
     if (!target.clipboard) return "failed";
-    await target.clipboard.writeText(text);
+    await target.clipboard.writeText(shared);
     return "copied";
   } catch {
     return "failed";

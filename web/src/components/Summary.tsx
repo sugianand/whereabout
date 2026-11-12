@@ -19,6 +19,8 @@ import { rematchOutcome } from "@/lib/game/rematch";
 import { ROUNDS_PER_GAME, totals, type RoundResult } from "@/lib/game/state";
 import { MAX_POINTS, formatDistance, formatPoints } from "@/lib/geo";
 import { useUnits } from "@/lib/useUnits";
+import { SQUARE_SETS, inSquares, type SquareSet } from "@/lib/squares";
+import { useSquares } from "@/lib/useSquares";
 import type { Units } from "@/lib/units";
 import { CONTINENTS } from "@/lib/continents";
 import {
@@ -61,6 +63,7 @@ import { useKeepChallenge } from "./HeadToHeadButton";
 import TodayLink from "./TodayLink";
 import GameTour from "./GameTour";
 import QuickGames from "./QuickGames";
+import SquaresSwitch from "./SquaresSwitch";
 import UnitsSwitch from "./UnitsSwitch";
 
 type SummaryProps = {
@@ -402,8 +405,17 @@ export function challengeResultLine(player: number, friend: number): string {
 }
 
 /** What the player is about to send, round by round, so nothing in it is a surprise. */
-function ShareCardPreview({ card, units }: { card: ShareCard; units: Units }) {
+function ShareCardPreview({
+  card,
+  units,
+  squares,
+}: {
+  card: ShareCard;
+  units: Units;
+  squares: SquareSet;
+}) {
   const [near, mid, far] = legendLabels(units);
+  const square = SQUARE_SETS[squares];
   return (
     <figure
       aria-label="Your share card"
@@ -425,7 +437,9 @@ function ShareCardPreview({ card, units }: { card: ShareCard; units: Units }) {
             aria-label={`Round ${i + 1}: ${r.band.label}, ${VERSUS_LABEL[r.versus]}`}
             className="flex flex-col items-center gap-1 text-2xl leading-none"
           >
-            <span aria-hidden="true">{r.band.square}</span>
+            <span aria-hidden="true" data-square>
+              {square[DISTANCE_BANDS.indexOf(r.band)]}
+            </span>
             <ClosenessMark
               band={DISTANCE_BANDS.indexOf(r.band)}
               color={bandColor(r.band)}
@@ -443,13 +457,17 @@ function ShareCardPreview({ card, units }: { card: ShareCard; units: Units }) {
         {[`within ${near}`, mid, far, "further"].map((words, i) => (
           <span key={i} className="whitespace-nowrap">
             {i > 0 && " · "}
-            {DISTANCE_BANDS[i].square}
+            {square[i]}
             <ClosenessMark band={i} color={BAND_COLORS[i]} size={11} className="mx-0.5" />
             {words}
           </span>
         ))}
         {card.atlasRounds > 0 && " · ✅ beat Atlas · ❌ Atlas closer · 🤝 tie · ▫️ Atlas sat out"}
       </p>
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-chalk-dim">
+        <span>Squares</span>
+        <SquaresSwitch />
+      </div>
     </figure>
   );
 }
@@ -479,6 +497,7 @@ export default function Summary({
 }: SummaryProps) {
   const t = totals(results);
   const units = useUnits();
+  const squares = useSquares();
   const counted = useCountUp(t.player, 1400);
   const shown = returnedFrom === null ? counted : t.player;
   const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -507,7 +526,12 @@ export default function Summary({
     try {
       const blob = await renderShareImage(card, units);
       if (blob)
-        outcome = await sendShareImage(blob, shareImageName(card), shareText(card), navigator);
+        outcome = await sendShareImage(
+          blob,
+          shareImageName(card),
+          inSquares(shareText(card), squares),
+          navigator,
+        );
     } catch {
       // No canvas to draw on: the note says so and the text share still works.
     }
@@ -691,7 +715,7 @@ export default function Summary({
         <RecordPanel record={record} newBadges={newBadges} today={today} onReset={onResetRecord} />
       )}
 
-      <ShareCardPreview card={card} units={units} />
+      <ShareCardPreview card={card} units={units} squares={squares} />
 
       <div className="mt-6 flex flex-wrap items-center gap-4">
         <button

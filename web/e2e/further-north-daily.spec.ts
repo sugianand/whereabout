@@ -87,6 +87,28 @@ test("today's Further North deals the day's pairs once, resumes after a reload, 
   expect(sent).toContain(`${"🟩".repeat(Math.min(streak, 30))}${streak > 30 ? "…" : ""}🟥`);
   expect(sent).toMatch(/\/whereabout\/further-north\/daily\/?$/);
 
+  // Colour-blind safe squares: the right picks go out blue instead, kept across a reload.
+  await page.getByRole("button", { name: "Colour-blind safe" }).click();
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Colour-blind safe" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  await page.getByRole("button", { name: "Share today's run" }).click();
+  await expect(page.getByText("Result copied. Paste it anywhere.")).toBeVisible();
+  const safe = await page.evaluate(() => (window as unknown as { sent: string }).sent);
+  expect(safe).toContain(`${"🟦".repeat(Math.min(streak, 30))}${streak > 30 ? "…" : ""}🟥`);
+  expect(safe).not.toContain("🟩");
+
   // The free runs' best is its own.
   expect(await page.evaluate(() => localStorage.getItem("whereabout:further-north-best"))).toBe(
     null,

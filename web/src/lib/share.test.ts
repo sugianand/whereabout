@@ -241,6 +241,17 @@ describe("sendShare", () => {
     expect(writeText).not.toHaveBeenCalled();
   });
 
+  it("sends the squares in the set the player chose", async () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    await sendShare("🟩🟥\nhttps://x.test/", { share }, "contrast");
+    expect(share).toHaveBeenCalledWith({ title: "Whereabout", text: "🟦🟥\nhttps://x.test/" });
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    await sendShare("🟩🟨", { clipboard: { writeText } }, "contrast");
+    expect(writeText).toHaveBeenCalledWith("🟦🟨");
+    await sendShare("🟩🟨", { clipboard: { writeText } }, "classic");
+    expect(writeText).toHaveBeenLastCalledWith("🟩🟨");
+  });
+
   it("copies instead when sharing is missing, refused or fails", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     expect(await sendShare("hi", { clipboard: { writeText } })).toBe("copied");

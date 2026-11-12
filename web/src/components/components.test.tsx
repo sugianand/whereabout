@@ -1,8 +1,9 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { RoundResult } from "@/lib/game/state";
 import { EMPTY_RECORD, type PlayerRecord } from "@/lib/playerRecord";
+import { setSquares } from "@/lib/squares";
 
 import PhotoViewer, { ZOOM } from "./PhotoViewer";
 import AtlasEyes from "./AtlasEyes";
@@ -176,6 +177,36 @@ describe("Summary", () => {
     const sent = writeText.mock.calls[0][0] as string;
     expect(sent).toContain("✅❌");
     expect(sent).not.toContain("Somewhere");
+  });
+
+  it("switches the card, its legend and what it sends to colour-blind safe squares", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    render(
+      <Summary
+        results={[result(10, 4967, 100), result(9000, 12, 3000)]}
+        title="Fresh game"
+        onPlayAgain={() => {}}
+      />,
+    );
+    const card = screen.getByRole("figure", { name: "Your share card" });
+    const squares = () =>
+      Array.from(card.querySelectorAll("[data-square]")).map((s) => s.textContent);
+    expect(squares()).toEqual(["🟩", "🟥"]);
+    expect(card).toHaveTextContent("🟩within 25 km");
+
+    const safe = within(card).getByRole("button", { name: "Colour-blind safe" });
+    fireEvent.click(safe);
+    expect(safe).toHaveAttribute("aria-pressed", "true");
+    expect(squares()).toEqual(["🟦", "🟥"]);
+    expect(card).toHaveTextContent("🟦within 25 km");
+
+    fireEvent.click(screen.getByRole("button", { name: "Share result" }));
+    await screen.findByText("Result copied. Paste it anywhere.");
+    const sent = writeText.mock.calls[0][0] as string;
+    expect(sent).toContain("🟦🟥");
+    expect(sent).not.toContain("🟩");
+    act(() => setSquares("classic"));
   });
 
   it("shows the record against Atlas, with a streak that lapses after a missed day", () => {

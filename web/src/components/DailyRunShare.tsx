@@ -6,6 +6,8 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { untilNextRun } from "@/lib/game/dailyRuns";
 import { sendShare, type ShareOutcome } from "@/lib/share";
 
+import SquaresSwitch from "./SquaresSwitch";
+
 const SHARE_NOTE: Record<ShareOutcome, string> = {
   shared: "Result shared.",
   copied: "Result copied. Paste it anywhere.",
@@ -16,18 +18,22 @@ const SHARE_NOTE: Record<ShareOutcome, string> = {
 /**
  * Share today's run of a quick game, and the way on to a free run. `shareText` builds the line
  * from the page's address; it is counts only, so it spoils nothing for a friend who hasn't played.
+ * Its squares go out in the set chosen beside the button, classic or colour-blind safe.
  */
 export function ShareDay({
   shareText,
   freeHref,
   focus = false,
   label = "Share today's run",
+  squares = true,
 }: {
   shareText: (href: string) => string;
   /** Where the way on to a free run goes; omitted, there is no such link. */
   freeHref?: string;
   focus?: boolean;
   label?: string;
+  /** Whether the line has squares, so the classic or colour-blind safe switch belongs beside it. */
+  squares?: boolean;
 }) {
   const [note, setNote] = useState("");
   const shareRef = useRef<HTMLButtonElement>(null);
@@ -58,6 +64,12 @@ export function ShareDay({
           </Link>
         )}
       </div>
+      {squares && (
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-chalk-dim">
+          <span>Squares</span>
+          <SquaresSwitch />
+        </div>
+      )}
       <p className="mt-2 min-h-5 text-sm text-chalk-dim" role="status">
         {note}
       </p>

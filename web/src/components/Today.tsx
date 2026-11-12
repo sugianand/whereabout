@@ -315,6 +315,7 @@ export default function Today({
         <div className="mt-6">
           <ShareDay
             label="Share your day"
+            squares={false}
             shareText={(href) =>
               todayShare(view.day, view.games, href, fullDayStreak(view.tallies))
             }
