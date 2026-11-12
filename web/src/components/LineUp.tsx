@@ -632,7 +632,7 @@ function Tile({
           href={photo.credit.sourceUrl}
           target="_blank"
           rel="noreferrer"
-          className={`absolute bottom-0.5 right-2 max-w-[90%] truncate rounded bg-ocean-deep/70 px-1 text-[11px] text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk ${result ? "" : "hidden md:block"}`}
+          className={`absolute bottom-0.5 right-2 max-w-[90%] truncate rounded bg-ocean-deep/70 px-1 text-[11px] leading-6 text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk ${result ? "" : "hidden md:block"}`}
         >
           Photo: {photo.credit.author}, {photo.credit.license}
         </a>
@@ -673,7 +673,7 @@ function Closer({ photo, onClose }: { photo: GameRecord["photo"]; onClose: () =>
           href={photo.credit.sourceUrl}
           target="_blank"
           rel="noreferrer"
-          className="min-w-0 truncate text-xs text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk"
+          className="min-w-0 truncate text-xs leading-6 text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk"
         >
           Photo: {photo.credit.author}, {photo.credit.license}
         </a>

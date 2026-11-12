@@ -516,7 +516,6 @@ function PhotoChoice({
           type="button"
           onClick={() => onPick(side)}
           disabled={!ready}
-          aria-label={`Photo ${n} was taken further north`}
           aria-keyshortcuts={String(n)}
           className="absolute inset-0 flex items-end justify-center p-3 outline-none disabled:cursor-wait"
         >
@@ -530,7 +529,7 @@ function PhotoChoice({
           href={photo.credit.sourceUrl}
           target="_blank"
           rel="noreferrer"
-          className={`absolute bottom-1 right-2 max-w-[60%] truncate text-[11px] text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk ${verdict ? "" : "hidden md:block"}`}
+          className={`absolute bottom-1 right-2 max-w-[60%] truncate text-[11px] leading-6 text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk ${verdict ? "" : "hidden md:block"}`}
         >
           Photo: {photo.credit.author}, {photo.credit.license}
         </a>

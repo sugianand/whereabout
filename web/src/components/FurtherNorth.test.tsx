@@ -54,7 +54,7 @@ async function setup() {
 }
 
 const pickButton = (n: number) =>
-  screen.getByRole("button", { name: `Photo ${n} was taken further north` });
+  screen.getByRole("button", { name: `Photo ${n} is further north` });
 const streak = () => screen.getByText("Streak").nextElementSibling;
 
 async function pickAndNext(n: number) {
@@ -216,7 +216,7 @@ describe("FurtherNorth, today's run", () => {
       screen.getByText(/Atlas got 1 of the 3 pairs it played\. The next run is dealt in 5h 12m\./),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Share today's run" })).toHaveFocus();
-    expect(screen.queryByRole("button", { name: /was taken further north/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /is further north/ })).toBeNull();
   });
 
   it("links free runs and today's run to each other", async () => {

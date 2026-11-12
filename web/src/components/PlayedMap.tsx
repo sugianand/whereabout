@@ -220,7 +220,8 @@ export default function PlayedMap({ deck }: { deck?: ClosestCallsDeck } = {}) {
           ref={containerRef}
           // Sized by height, not insets: MapLibre makes its container position: relative.
           className="h-full w-full"
-          role="img"
+          // A group, not an image: MapLibre puts focusable controls (zoom keys, credits) inside.
+          role="group"
           aria-label={`Globe with the ${plural(summary.photos, "photo", "photos")} you've played, coloured by how close your pin landed`}
           data-testid="played-globe"
           data-dots={ready ? played.length : undefined}

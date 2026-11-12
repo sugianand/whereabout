@@ -262,7 +262,6 @@ export default function GameTour({
     >
       <div
         ref={containerRef}
-        aria-hidden="true"
         data-ready={ready || undefined}
         className="globe relative h-64 w-full overflow-hidden rounded-2xl border border-graticule/60 bg-ocean-deep sm:h-80"
       />

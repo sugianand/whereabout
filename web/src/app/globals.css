@@ -223,6 +223,12 @@ body {
   color: var(--color-chalk-dim);
 }
 
+/* The credits are links in a line of text: underlined, so they don't rely on colour alone. */
+.maplibregl-ctrl.maplibregl-ctrl-attrib a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .globe .maplibregl-ctrl-attrib-button {
   filter: invert(1) opacity(0.6);
 }

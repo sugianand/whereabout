@@ -22,7 +22,7 @@ export default function UnitsSwitch({ className = "" }: { className?: string }) 
           key={u}
           type="button"
           aria-pressed={units === u}
-          aria-label={unitsName(u)}
+          aria-label={`${u} (${unitsName(u)})`}
           title={`Show distances in ${unitsName(u)}`}
           onClick={() => setUnits(u)}
           className={`min-h-6 px-2.5 font-semibold transition ${

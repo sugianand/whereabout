@@ -419,7 +419,7 @@ function PairPhoto({
           href={photo.credit.sourceUrl}
           target="_blank"
           rel="noreferrer"
-          className="absolute bottom-1 right-2 max-w-[70%] truncate text-[11px] text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk"
+          className="absolute bottom-1 right-2 max-w-[70%] truncate text-[11px] leading-6 text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk"
         >
           Photo: {photo.credit.author}, {photo.credit.license}
         </a>

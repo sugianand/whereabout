@@ -81,6 +81,7 @@ export default function PostcardNote({
           )}
         </p>
       )}
+      {/* Each control here is 24 px tall to tap (py-1) without making the card taller (-my-1). */}
       {(article || toggle) && (
         <p className="mt-0.5 flex flex-wrap items-baseline gap-x-3 text-xs md:mt-1">
           {article && (
@@ -88,7 +89,7 @@ export default function PostcardNote({
               href={article.url}
               target="_blank"
               rel="noreferrer"
-              className="font-semibold text-gold underline decoration-gold/40 underline-offset-2 hover:decoration-gold"
+              className="-my-1 py-1 font-semibold text-gold underline decoration-gold/40 underline-offset-2 hover:decoration-gold"
             >
               Read about {article.title} on Wikipedia
             </a>
@@ -99,7 +100,7 @@ export default function PostcardNote({
               aria-expanded={expanded}
               aria-controls={textId}
               onClick={() => setExpanded((e) => !e)}
-              className="font-semibold text-gold md:hidden"
+              className="-my-1 py-1 font-semibold text-gold md:hidden"
             >
               {expanded ? "Less" : "More"}
             </button>

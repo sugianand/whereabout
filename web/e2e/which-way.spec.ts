@@ -71,8 +71,8 @@ test("Which way? travels from photo to photo until the first wrong compass point
   let streak = 0;
   for (let i = 0; i < 40; i++) {
     const headed = await page.getByTestId("way-photo-2").getAttribute("data-photo");
-    await expect(page.getByRole("button", { name: "Headed north", exact: true })).toBeEnabled();
-    await page.getByRole("button", { name: "Headed north", exact: true }).click();
+    await expect(page.getByRole("button", { name: "N, headed north", exact: true })).toBeEnabled();
+    await page.getByRole("button", { name: "N, headed north", exact: true }).click();
     await expect(card).toBeVisible();
     // The card names the route and its bearing, and stays inside the screen.
     await expect(card).toContainText(
@@ -120,7 +120,7 @@ test("Which way? travels from photo to photo until the first wrong compass point
 });
 
 const headed = (page: Page, point: number) =>
-  page.getByRole("button", { name: `Headed ${NAMES[point]}`, exact: true });
+  page.getByRole("button", { name: `${LETTERS[point]}, headed ${NAMES[point]}`, exact: true });
 
 /** The stop on screen, once the compass is ready: where you stand and where you're headed. */
 async function stop(page: Page): Promise<[string, string]> {

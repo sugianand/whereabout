@@ -48,13 +48,21 @@ export default function DailyArchive({
         {days.map((day, i) => {
           const score = scores[day];
           const isToday = day === today;
-          const name = isToday ? "Today" : dayLabel(day, { month: "long", day: "numeric" });
           // The month is named on the first cell and wherever a new month starts.
           const month = i === 0 || day.endsWith("-01");
+          const shown = isToday
+            ? "Today"
+            : month
+              ? dayLabel(day, { month: "short", day: "numeric" })
+              : dayLabel(day, { day: "numeric" });
+          // The name starts with the words on the cell, in order, so a voice command that reads
+          // them out ("Today, play") reaches it; a bare day number gets its month in front.
+          const name = isToday || month ? shown : dayLabel(day, { month: "long", day: "numeric" });
+          const short = score === undefined ? "" : compactPoints(score);
           const label =
             score === undefined
-              ? `${name}: not played yet. Play it`
-              : `${name}: ${formatPoints(score)} points. Play it again`;
+              ? `${name}: play it, not played yet`
+              : `${name}: ${short} points${short === formatPoints(score) ? "" : ` (${formatPoints(score)})`}. Play it again`;
           return (
             <li key={day}>
               <button
@@ -68,16 +76,8 @@ export default function DailyArchive({
                     : "border-sonar/40 bg-sonar/10 text-chalk hover:border-sonar"
                 } ${day === playedDay ? "ring-2 ring-flare" : ""}`}
               >
-                <span className={`font-semibold ${isToday ? "text-flare" : ""}`}>
-                  {isToday
-                    ? "Today"
-                    : month
-                      ? dayLabel(day, { month: "short", day: "numeric" })
-                      : dayLabel(day, { day: "numeric" })}
-                </span>
-                <span className="tabular mt-0.5">
-                  {score === undefined ? "Play" : compactPoints(score)}
-                </span>
+                <span className={`font-semibold ${isToday ? "text-flare" : ""}`}>{shown}</span>{" "}
+                <span className="tabular mt-0.5">{score === undefined ? "Play" : short}</span>
               </button>
             </li>
           );

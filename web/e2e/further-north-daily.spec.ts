@@ -25,7 +25,7 @@ test("today's Further North deals the day's pairs once, resumes after a reload, 
   const { width, height } = page.viewportSize()!;
 
   // Everyone on one day gets the same pairs: a fresh player (nothing kept) is dealt the same.
-  await expect(page.getByRole("button", { name: "Photo 1 was taken further north" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Photo 1 is further north" })).toBeEnabled();
   const first = [
     await page.getByTestId("north-photo-1").getAttribute("data-photo"),
     await page.getByTestId("north-photo-2").getAttribute("data-photo"),
@@ -39,9 +39,9 @@ test("today's Further North deals the day's pairs once, resumes after a reload, 
   let streak = 0;
   for (let i = 0; i < 40; i++) {
     await expect(
-      page.getByRole("button", { name: "Photo 1 was taken further north" }),
+      page.getByRole("button", { name: "Photo 1 is further north" }),
     ).toBeEnabled();
-    await page.getByRole("button", { name: "Photo 1 was taken further north" }).click();
+    await page.getByRole("button", { name: "Photo 1 is further north" }).click();
     await expect(card).toBeVisible();
     if ((await card.getByRole("heading").textContent()) === "Wrong") break;
     streak++;
@@ -67,7 +67,7 @@ test("today's Further North deals the day's pairs once, resumes after a reload, 
   await page.reload();
   await expect(page.getByRole("heading", { name: `${streak} ${plural} in a row` })).toBeVisible();
   await expect(page.getByText(/The next run is dealt in \d+/)).toBeVisible();
-  await expect(page.getByRole("button", { name: /was taken further north/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /is further north/ })).toHaveCount(0);
 
   await page.evaluate(() => {
     Object.defineProperty(navigator, "share", { value: undefined, configurable: true });

@@ -58,7 +58,7 @@ async function setup() {
   return { loadRecords };
 }
 
-const point = (name: string) => screen.getByRole("button", { name: `Headed ${name}` });
+const point = (name: string) => screen.getByRole("button", { name: new RegExp(`^[NESW]{1,2}, headed ${name}$`) });
 const photo = (n: number) => screen.getByTestId(`way-photo-${n}`);
 const card = () => screen.getByRole("region");
 

@@ -516,7 +516,7 @@ function PhotoTile({
           href={photo.credit.sourceUrl}
           target="_blank"
           rel="noreferrer"
-          className={`absolute bottom-1 right-2 max-w-[80%] truncate text-[11px] text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk ${revealed ? "" : "hidden md:block"}`}
+          className={`absolute bottom-1 right-2 max-w-[80%] truncate text-[11px] leading-6 text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk ${revealed ? "" : "hidden md:block"}`}
         >
           Photo: {photo.credit.author}, {photo.credit.license}
         </a>

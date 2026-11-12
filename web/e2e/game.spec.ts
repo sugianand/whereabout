@@ -194,7 +194,10 @@ test("a past Daily Five plays from the archive, and the summary's calendar opens
   const archive = page.getByRole("region", { name: "Daily Five archive" });
   await expect(archive.getByRole("button")).toHaveCount(30);
   const played = archive.getByRole("button", {
-    name: new RegExp(`^${pastName}: [\\d,]+ points\\. Play it again$`),
+    // A cell that starts a month names it short, as the cell shows it.
+    name: new RegExp(
+      `^${past.endsWith("-01") ? pastName.replace(/^(\\w{3})\\w*/, "$1") : pastName}: [\\d.]+k? points( \\([\\d,]+\\))?\\. Play it again$`,
+    ),
   });
   await expect(played).toHaveAttribute("aria-current", "date");
   await expect(archive.getByText(/You've played 1 of the last 30 days\./)).toBeVisible();
@@ -206,7 +209,7 @@ test("a past Daily Five plays from the archive, and the summary's calendar opens
   expect(overflow).toBeLessThanOrEqual(0);
 
   // Today's cell opens today's Daily Five, the one that counts toward the streak.
-  await archive.getByRole("button", { name: "Today: not played yet. Play it" }).click();
+  await archive.getByRole("button", { name: "Today: play it, not played yet" }).click();
   await expect(page.getByText("Round 1 of 5", { exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\?daily$/);
   expect(errors).toEqual([]);
@@ -1122,7 +1125,7 @@ test("hints come one at a time, stay on screen with the globe, and cap the round
 
   // Every photo offers at least its continent; take hints until the button goes.
   let taken = 0;
-  const hint = page.getByRole("button", { name: /^Take a hint/ });
+  const hint = page.getByRole("button", { name: /^Hint −/ });
   while ((await hint.count()) > 0) {
     await hint.click();
     taken += 1;

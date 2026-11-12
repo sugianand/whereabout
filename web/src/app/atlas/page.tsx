@@ -78,7 +78,13 @@ const km = (x: number) => `${Math.round(x).toLocaleString("en-US")} km`;
 
 function ResultsTable({ systems }: { systems: AtlasSystemResult[] }) {
   return (
-    <div className="mt-6 overflow-x-auto rounded-xl border border-graticule/70">
+    // Wider than a phone: it scrolls sideways, so it takes focus for the arrow keys to scroll it.
+    <div
+      role="region"
+      aria-label="Results table"
+      tabIndex={0}
+      className="mt-6 overflow-x-auto rounded-xl border border-graticule/70"
+    >
       <table className="w-full min-w-[40rem] text-left text-sm">
         <caption className="sr-only">
           How close each system got, on the same {atlas.evaluation?.n} photos
@@ -388,7 +394,12 @@ export default function AtlasPage() {
         too high. The bar is set so the hand-reviewed game photos get through ({gate.catalog.passed}{" "}
         of {gate.catalog.n} do), then tested on images that should be turned away.
       </p>
-      <div className="mt-6 overflow-x-auto rounded-xl border border-graticule/70">
+      <div
+        role="region"
+        aria-label="Photo screen table"
+        tabIndex={0}
+        className="mt-6 overflow-x-auto rounded-xl border border-graticule/70"
+      >
         <table className="w-full text-left text-sm">
           <caption className="sr-only">How many unwanted images the photo screen catches</caption>
           <thead className="bg-ocean-deep text-chalk-dim">

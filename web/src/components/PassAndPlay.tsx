@@ -536,7 +536,7 @@ function RoundCard({
           href={credit.sourceUrl}
           target="_blank"
           rel="noreferrer"
-          className="min-w-0 truncate text-xs text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk"
+          className="min-w-0 truncate text-xs leading-6 text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk"
         >
           Photo: {credit.author}, {credit.license}
         </a>

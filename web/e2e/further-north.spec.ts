@@ -28,7 +28,7 @@ test("Further North deals pairs of photos until the first wrong pick, and keeps 
   // Both photos and their pick buttons are on screen, side by side or stacked.
   for (const n of [1, 2]) {
     await expect(
-      page.getByRole("button", { name: `Photo ${n} was taken further north` }),
+      page.getByRole("button", { name: `Photo ${n} is further north` }),
     ).toBeEnabled();
     const box = (await page.getByTestId(`north-photo-${n}`).boundingBox())!;
     expect(box.x).toBeGreaterThanOrEqual(0);
@@ -42,7 +42,7 @@ test("Further North deals pairs of photos until the first wrong pick, and keeps 
   let streak = 0;
   for (let i = 0; i < 40; i++) {
     const kept = await page.getByTestId("north-photo-2").getAttribute("data-photo");
-    await page.getByRole("button", { name: "Photo 1 was taken further north" }).click();
+    await page.getByRole("button", { name: "Photo 1 is further north" }).click();
     await expect(card).toBeVisible();
     const box = (await card.boundingBox())!;
     expect(box.x).toBeGreaterThanOrEqual(0);
@@ -69,7 +69,7 @@ test("Further North deals pairs of photos until the first wrong pick, and keeps 
   await page.reload();
   await expect(page.getByText("Best", { exact: true }).locator("+ dd")).toHaveText(String(streak));
   // Key 2 picks the second photo.
-  await expect(page.getByRole("button", { name: "Photo 2 was taken further north" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Photo 2 is further north" })).toBeEnabled();
   await page.keyboard.press("2");
   await expect(card).toBeVisible();
   expect(errors).toEqual([]);
@@ -106,7 +106,7 @@ test("a challenge link deals a friend the same pairs, with the run to beat and w
   const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
   const sent = () => page.evaluate(() => (window as unknown as { sent: string }).sent);
   const pick = (n: number) =>
-    page.getByRole("button", { name: `Photo ${n} was taken further north` });
+    page.getByRole("button", { name: `Photo ${n} is further north` });
 
   // The sender calls one pair right, then misses the first pair that isn't a tie.
   await page.goto("./further-north");
@@ -217,7 +217,7 @@ test("a broken Further North challenge says so and deals a fresh run", async ({ 
   await page.goto("./further-north?challenge=wm001_3_9");
   await expect(page.getByText(/That challenge link was cut short/)).toBeVisible();
   await expect(page.getByText("Further North: which photo was taken further north?")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Photo 2 was taken further north" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Photo 2 is further north" })).toBeEnabled();
 });
 
 test("the end of a run keeps both its buttons on a 320px phone", async ({ page }) => {
@@ -226,10 +226,10 @@ test("the end of a run keeps both its buttons on a 320px phone", async ({ page }
   await page.goto("./further-north");
   const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
   for (let i = 0; i < 40; i++) {
-    await expect(page.getByRole("button", { name: "Photo 2 was taken further north" })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Photo 2 is further north" })).toBeEnabled();
     const north = northOf(await pair(page));
     await page
-      .getByRole("button", { name: `Photo ${north === 1 ? 2 : 1} was taken further north` })
+      .getByRole("button", { name: `Photo ${north === 1 ? 2 : 1} is further north` })
       .click();
     if (north !== null) break;
     await card.getByRole("button", { name: "Next pair" }).click();

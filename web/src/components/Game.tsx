@@ -1110,7 +1110,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
                   type="button"
                   onClick={takeHint}
                   disabled={state.hinting || state.submitting}
-                  aria-label={`Take a hint: the round will be worth up to ${formatPoints(maxPoints(clues.length + 1))} points`}
+                  aria-label={`Hint −${formatPoints(maxPoints(clues.length) - maxPoints(clues.length + 1))}: the round will be worth up to ${formatPoints(maxPoints(clues.length + 1))} points`}
                   className="shrink-0 rounded-full border border-gold/60 bg-ocean-deep/60 px-4 py-3 text-sm font-semibold text-gold backdrop-blur transition enabled:hover:border-gold disabled:cursor-wait disabled:opacity-60"
                 >
                   Hint{" "}

@@ -18,7 +18,7 @@ test("today's Which way? deals the day's journey once, resumes after a reload, a
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   const today = new Date().toISOString().slice(0, 10);
-  const north = page.getByRole("button", { name: "Headed north", exact: true });
+  const north = page.getByRole("button", { name: "N, headed north", exact: true });
 
   // The free runs link to today's run.
   await page.goto("./which-way");

@@ -129,7 +129,7 @@ describe("Game", { timeout: 20000 }, () => {
 
     for (let i = 0; i < clues.length; i++) {
       const hint = screen.getByRole("button", {
-        name: `Take a hint: the round will be worth up to ${maxPoints(i + 1).toLocaleString("en-US")} points`,
+        name: `Hint −${(maxPoints(i) - maxPoints(i + 1)).toLocaleString("en-US")}: the round will be worth up to ${maxPoints(i + 1).toLocaleString("en-US")} points`,
       });
       fireEvent.click(hint);
       const list = await screen.findByRole("list", { name: "Hints" }, WAIT);
@@ -137,7 +137,7 @@ describe("Game", { timeout: 20000 }, () => {
       expect(within(list).getByText(clues[i].text)).toBeInTheDocument();
     }
     // Every hint taken: the button goes.
-    expect(screen.queryByRole("button", { name: /^Take a hint/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Hint −/ })).toBeNull();
 
     const card = await playRound(map, first);
     const top = maxPoints(clues.length).toLocaleString("en-US");
@@ -195,9 +195,11 @@ describe("Game", { timeout: 20000 }, () => {
     window.scrollTo = vi.fn();
     const entries = window.history.length;
 
+    // A row's name is its own words after a hidden "Look again at round"; jsdom joins the pieces
+    // without the spaces a browser puts between them, hence the optional spaces.
     fireEvent.click(
       screen.getByRole("button", {
-        name: new RegExp(`^Look again at round 2: ${escapeRegExp(daily[1].place)}`),
+        name: new RegExp(`^Look again at round ?2: ?${escapeRegExp(daily[1].place)}`),
       }),
     );
     const card = await screen.findByRole("region", { name: daily[1].place }, WAIT);
@@ -223,7 +225,7 @@ describe("Game", { timeout: 20000 }, () => {
     fireEvent.click(within(first).getByRole("button", { name: "Back to your results" }));
     const row = await screen.findByRole(
       "button",
-      { name: new RegExp(`^Look again at round 1: `) },
+      { name: /^Look again at round ?1: ?/ },
       WAIT,
     );
     await waitFor(() => expect(row).toHaveFocus(), WAIT);
@@ -235,13 +237,13 @@ describe("Game", { timeout: 20000 }, () => {
     expect(JSON.parse(localStorage.getItem(RECORD_KEY)!)).toMatchObject({ games: 1 });
 
     // The browser's back closes the replay too.
-    fireEvent.click(screen.getByRole("button", { name: /^Look again at round 5: / }));
+    fireEvent.click(screen.getByRole("button", { name: /^Look again at round ?5: ?/ }));
     await screen.findByRole("region", { name: daily[4].place }, WAIT);
     act(() => {
       window.history.back();
     });
     expect(
-      await screen.findByRole("button", { name: /^Look again at round 5: / }, WAIT),
+      await screen.findByRole("button", { name: /^Look again at round ?5: ?/ }, WAIT),
     ).toHaveFocus();
   });
 
@@ -974,7 +976,7 @@ describe("Pick up where you left off", { timeout: 30000 }, () => {
     fireEvent.click(within(card).getByRole("button", { name: "Next photo" }));
     // Round 2: a hint and a pin, then the tab is lost.
     await screen.findByRole("button", { name: "Zoom in on the photo" }, WAIT);
-    fireEvent.click(screen.getByRole("button", { name: /^Take a hint/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Hint −/ }));
     await screen.findByRole("list", { name: "Hints" }, WAIT);
     act(() => map.click(daily[1].lng, daily[1].lat));
     await waitFor(() =>
@@ -1121,12 +1123,12 @@ describe("Daily Five archive", { timeout: 30000 }, () => {
 
     // Its day on the calendar carries the score kept for it, and is the one just played.
     const cell = within(archive).getByRole("button", {
-      name: /^October 2: .* points\. Play it again$/,
+      name: /^October 2: .* points( \([\d,]+\))?\. Play it again$/,
     });
     expect(cell).toHaveAttribute("aria-current", "date");
     expect(within(archive).getAllByRole("button")).toHaveLength(30);
     expect(
-      within(archive).getByRole("button", { name: "Today: not played yet. Play it" }),
+      within(archive).getByRole("button", { name: "Today: play it, not played yet" }),
     ).toBeInTheDocument();
     expect(within(archive).getByText(/You've played 1 of the last 30 days\./)).toBeInTheDocument();
   });
@@ -1137,11 +1139,11 @@ describe("Daily Five archive", { timeout: 30000 }, () => {
     const archive = await finish(map);
     expect(JSON.parse(localStorage.getItem(RECORD_KEY)!)).toMatchObject({ streak: 1 });
     expect(
-      within(archive).getByRole("button", { name: /^Today: .* points\. Play it again$/ }),
+      within(archive).getByRole("button", { name: /^Today: .* points( \([\d,]+\))?\. Play it again$/ }),
     ).toHaveAttribute("aria-current", "date");
 
     fireEvent.click(
-      within(archive).getByRole("button", { name: "October 2: not played yet. Play it" }),
+      within(archive).getByRole("button", { name: "October 2: play it, not played yet" }),
     );
     expect(await screen.findByText("Daily Five, October 2", {}, WAIT)).toBeInTheDocument();
     await waitFor(() => expect(window.location.search).toBe(`?daily=${PAST}`));

@@ -24,8 +24,8 @@ describe("UnitsSwitch", () => {
         <Distance km={5} />
       </>,
     );
-    const km = screen.getByRole("button", { name: "kilometres" });
-    const mi = screen.getByRole("button", { name: "miles" });
+    const km = screen.getByRole("button", { name: "km (kilometres)" });
+    const mi = screen.getByRole("button", { name: "mi (miles)" });
     expect(km).toHaveAttribute("aria-pressed", "true");
     expect(screen.getAllByTestId("distance").map((d) => d.textContent)).toEqual([
       "1,000 km",

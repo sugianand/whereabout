@@ -518,7 +518,7 @@ export default function NameCountry({
               href={current.photo.credit.sourceUrl}
               target="_blank"
               rel="noreferrer"
-              className="max-w-full truncate text-[11px] text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk"
+              className="max-w-full truncate text-[11px] leading-6 text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk"
             >
               Photo: {current.photo.credit.author}, {current.photo.credit.license}
             </a>
@@ -631,7 +631,7 @@ function NameCard({
       href={credit.sourceUrl}
       target="_blank"
       rel="noreferrer"
-      className="block min-w-0 truncate text-xs text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk"
+      className="block min-w-0 truncate text-xs leading-6 text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk"
     >
       Photo: {credit.author}, {credit.license}
     </a>

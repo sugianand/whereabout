@@ -530,7 +530,7 @@ function WayPhoto({
           href={photo.credit.sourceUrl}
           target="_blank"
           rel="noreferrer"
-          className="absolute bottom-1 right-2 hidden max-w-[60%] truncate text-[11px] text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk md:block"
+          className="absolute bottom-1 right-2 hidden max-w-[60%] truncate text-[11px] leading-6 text-chalk-dim underline decoration-graticule underline-offset-2 hover:text-chalk md:block"
         >
           Photo: {photo.credit.author}, {photo.credit.license}
         </a>
@@ -563,7 +563,7 @@ function Compass({ ready, onPick }: { ready: boolean; onPick: (point: Point) => 
             type="button"
             onClick={() => onPick(point)}
             disabled={!ready}
-            aria-label={`Headed ${POINT_NAMES[point]}`}
+            aria-label={`${point}, headed ${POINT_NAMES[point]}`}
             aria-keyshortcuts={POINT_KEYS[point]}
             data-point={point}
             className={`h-11 w-16 rounded-full font-sign text-lg font-extrabold transition disabled:cursor-wait disabled:opacity-50 md:h-12 md:w-20 ${i % 2 === 1 ? "bg-gold text-ocean-deep enabled:hover:brightness-110" : "border-2 border-gold/70 text-gold enabled:hover:bg-gold/10"}`}
@@ -799,7 +799,7 @@ function WayCard({
               href={r.photo.credit.sourceUrl}
               target="_blank"
               rel="noreferrer"
-              className="block truncate underline decoration-graticule underline-offset-2 hover:text-chalk"
+              className="block truncate leading-6 underline decoration-graticule underline-offset-2 hover:text-chalk"
             >
               {`Photo ${i + 1}: ${r.photo.credit.author}, ${r.photo.credit.license}`}
             </a>

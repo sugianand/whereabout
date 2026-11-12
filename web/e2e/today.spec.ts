@@ -44,7 +44,7 @@ test("Today lists every daily game from the Games menu, follows a real run, and 
 
   // A real answer in today's Further North shows up when you come back.
   await page.getByTestId("today-further-north").click();
-  await page.getByRole("button", { name: "Photo 1 was taken further north" }).click();
+  await page.getByRole("button", { name: "Photo 1 is further north" }).click();
   await expect
     .poll(() =>
       page.evaluate(

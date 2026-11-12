@@ -18,11 +18,11 @@ describe("DailyArchive", () => {
     render(<DailyArchive today="2026-10-29" scores={{}} onPlay={() => {}} />);
     const cells = within(screen.getByRole("list")).getAllByRole("button");
     expect(cells).toHaveLength(30);
-    expect(cells[0]).toHaveAccessibleName("September 30: not played yet. Play it");
+    expect(cells[0]).toHaveAccessibleName("Sep 30: play it, not played yet");
     expect(cells[0]).toHaveTextContent("Sep 30");
     expect(cells[1]).toHaveTextContent("Oct 1");
-    expect(cells[2]).toHaveTextContent(/^2Play$/);
-    expect(cells[29]).toHaveAccessibleName("Today: not played yet. Play it");
+    expect(cells[2]).toHaveTextContent(/^2 Play$/);
+    expect(cells[29]).toHaveAccessibleName("Today: play it, not played yet");
     expect(screen.getByText(/Play any of the last 30 days\./)).toBeInTheDocument();
   });
 
@@ -36,11 +36,11 @@ describe("DailyArchive", () => {
         onPlay={onPlay}
       />,
     );
-    const day = screen.getByRole("button", { name: "October 20: 18,240 points. Play it again" });
+    const day = screen.getByRole("button", { name: "October 20: 18.2k points (18,240). Play it again" });
     expect(day).toHaveTextContent("18.2k");
     expect(day).toHaveAttribute("aria-current", "date");
     expect(screen.getByText(/You've played 2 of the last 30 days\./)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "October 3: not played yet. Play it" }));
+    fireEvent.click(screen.getByRole("button", { name: "October 3: play it, not played yet" }));
     expect(onPlay).toHaveBeenCalledWith("2026-10-03");
   });
 });

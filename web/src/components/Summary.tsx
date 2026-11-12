@@ -603,7 +603,14 @@ export default function Summary({
         {results.map((r, i) => {
           const row = (
             <>
-              <span className="font-sign text-2xl text-chalk-dim">{i + 1}</span>
+              {/* A row that replays is named by its own words, after "Look again at round 2:". */}
+              {onReplay && <span className="sr-only">{`Look again at round ${i + 1}:`}</span>}
+              <span
+                aria-hidden={onReplay ? true : undefined}
+                className="font-sign text-2xl text-chalk-dim"
+              >
+                {i + 1}
+              </span>
               <span className="min-w-0">
                 <span className="block truncate text-lg">{r.reveal.answer.place}</span>
                 {r.atlas && (
@@ -646,7 +653,6 @@ export default function Summary({
                   }}
                   type="button"
                   onClick={() => onReplay(i)}
-                  aria-label={`Look again at round ${i + 1}: ${r.reveal.answer.place}, ${r.reveal.distanceKm === null ? "no pin before time ran out" : `you were ${formatDistance(r.reveal.distanceKm, units)} away`}`}
                   className={`${grid} group w-full grid-cols-[2rem_1fr_auto_1rem] rounded-lg px-1 text-left transition hover:bg-chalk/5 focus-visible:bg-chalk/5`}
                 >
                   {row}

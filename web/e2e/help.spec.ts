@@ -280,7 +280,7 @@ test.describe("on a keyboard", () => {
     const picks = keysOf("which-way", "pick");
     expect(picks).toHaveLength(8);
 
-    await expect(page.getByRole("button", { name: "Headed north", exact: true })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "N, headed north", exact: true })).toBeEnabled();
     const sheet = await openWithKey(page, "Controls for Which way?");
     await expectSheetLists(sheet, "which-way", false);
     checked.add("help");
@@ -298,7 +298,7 @@ test.describe("on a keyboard", () => {
       await expect(card).toBeVisible();
       // The card says which point was picked, unless the pick was right on.
       const said = (await card.textContent())!;
-      const point = name!.replace("Headed ", "");
+      const point = name!.replace(/^[NESW]{1,2}, headed /, "");
       const verdict = await card.getByRole("heading", { level: 2 }).textContent();
       if (verdict === "Wrong") expect(said).toContain(`You picked ${point}.`);
       await expect(
