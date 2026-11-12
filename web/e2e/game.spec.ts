@@ -1334,7 +1334,10 @@ test("the summary offers a rematch of the photos Atlas beat you on, scored again
   expect(errors).toEqual([]);
 });
 
-test("a far miss into another country says what tells the two places apart", async ({ page }) => {
+test("a far miss into another country says what tells the two places apart", async ({
+  page,
+  isMobile,
+}) => {
   type Photo = {
     id: string;
     place: string;
@@ -1408,12 +1411,28 @@ test("a far miss into another country says what tells the two places apart", asy
     });
     expect(expected?.kind ?? null).toBe(kind);
     const lesson = card.getByTestId("miss-lesson");
-    if (expected) {
-      // Outside the fold: visible on a phone without opening Atlas's reasoning.
+    const brief = card.getByTestId("reveal-brief");
+    if (expected && isMobile) {
+      // Outside the fold: a phone says the friend's score and the lesson in one short block,
+      // so the card still leaves the globe the top half of the screen.
+      await expect(brief).toBeVisible();
+      await expect(brief).toHaveText(
+        /^Your friend: 2,500\. (You beat them|They got closer|Level with them)\. Tell them apart: /,
+      );
+      await expect(brief).toContainText(`Tell them apart: ${expected.short}`);
+      await expect(lesson).toBeHidden();
+      await expect(card.getByTestId("friend-line")).toBeHidden();
+      const box = (await card.boundingBox())!;
+      expect(box.height, "the lesson and the friend keep the card short").toBeLessThan(
+        page.viewportSize()!.height / 2,
+      );
+    } else if (expected) {
       await expect(lesson).toBeVisible();
       await expect(lesson).toHaveText(`Tell them apart: ${expected.text}`);
+      await expect(brief).toBeHidden();
     } else {
       await expect(lesson).toHaveCount(0);
+      await expect(brief).toHaveCount(0);
     }
     await card.getByRole("button", { name: "Next photo" }).click();
   }

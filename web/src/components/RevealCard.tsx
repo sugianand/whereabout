@@ -151,6 +151,34 @@ export function friendLine(score: number, friend: number, friendSeconds?: number
   return `Your friend scored ${formatPoints(friend)} here${when}. ${verdict}`;
 }
 
+/**
+ * The friend's line in fewer words, for a phone's reveal that also teaches from a miss:
+ * "Your friend: 3,100, 12s left. You beat them."
+ */
+export function friendShort(score: number, friend: number, friendSeconds?: number): string {
+  const verdict =
+    score > friend ? "You beat them." : score < friend ? "They got closer." : "Level with them.";
+  const when =
+    friendSeconds === undefined
+      ? ""
+      : friendSeconds <= 0
+        ? " as time ran out"
+        : `, ${friendSeconds}s left`;
+  return `Your friend: ${formatPoints(friend)}${when}. ${verdict}`;
+}
+
+/** The first-try line in fewer words, as `friendShort`: "First try: 1,200. You did better." */
+export function firstTryShort(score: number, first: number): string {
+  const outcome = rematchOutcome(score, first);
+  const verdict =
+    outcome === "better"
+      ? "You did better."
+      : outcome === "worse"
+        ? "That was closer."
+        : "Same again.";
+  return `First try: ${formatPoints(first)}. ${verdict}`;
+}
+
 /** "You took 2 hints, so this round was worth up to 3,000 points.", or null without hints. */
 export function hintNote(result: RoundResult): string | null {
   const used = result.reveal.hintsUsed;
@@ -196,11 +224,21 @@ export default function RevealCard({
   const realityCheck = atlas && sureness ? surenessLine(sureness, atlas.confidence) : null;
   const realClues = trueClues(reveal.answer.clues, atlas);
   const lesson = missLessonFor(result);
+  // A friend's or first try's score beside a lesson: on a phone the two share one short block.
+  const brief = !lesson
+    ? null
+    : friend !== undefined
+      ? friendShort(reveal.score, friend, friendSeconds)
+      : firstTry !== undefined
+        ? firstTryShort(reveal.score, firstTry)
+        : null;
+  const briefed = brief ? "hidden md:block" : "";
   const units = useUnits();
   const atlasHalves = atlasSay(result, units);
   // A phone moves Atlas's line into the fold after a far miss (see below), so it opens then too.
   const hasThinking =
     realClues.length > 0 ||
+    (!!brief && !replay && !!reveal.answer.postcard) ||
     (!!lesson && !!atlasHalves) ||
     (!!atlas &&
       (!!atlas.guessedPlace || shortlisted.length > 1 || atlas.clues.length > 0 || !!atlas.looked));
@@ -247,12 +285,13 @@ export default function RevealCard({
         {reveal.answer.place}
       </h2>
       {/* A replay carries its own heading and a row of buttons, so a phone gives up the note it
-          has already read and a line of the name, to leave the globe the top half of the screen. */}
+          has already read and a line of the name, to leave the globe the top half of the screen.
+          A phone with a score to compare and a lesson moves the note into the fold instead. */}
       {reveal.answer.postcard && (
         <PostcardNote
           postcard={reveal.answer.postcard}
           sourceUrl={credit?.sourceUrl ?? null}
-          className={replay ? "hidden md:block" : ""}
+          className={replay || brief ? "hidden md:block" : ""}
         />
       )}
 
@@ -299,12 +338,15 @@ export default function RevealCard({
         </p>
       )}
       {friend !== undefined && (
-        <p className="mt-1 text-sm text-gold" data-testid="friend-line">
+        <p className={`mt-1 text-sm text-gold ${briefed}`} data-testid="friend-line">
           {friendLine(reveal.score, friend, friendSeconds)}
         </p>
       )}
       {firstTry !== undefined && (
-        <p className="mt-1 text-sm text-gold" data-testid="first-try-line">
+        <p
+          className={`mt-1 text-sm text-gold ${friend === undefined ? briefed : ""}`}
+          data-testid="first-try-line"
+        >
           {firstTryLine(reveal.score, firstTry)}
         </p>
       )}
@@ -312,12 +354,25 @@ export default function RevealCard({
       {/* Learn from a miss: outside the fold, so phones see it too. */}
       {lesson && (
         <p
-          className="mt-2 text-sm leading-snug text-chalk md:mt-3"
+          className={`mt-2 text-sm leading-snug text-chalk md:mt-3 ${briefed}`}
           data-testid="miss-lesson"
           data-kind={lesson.kind}
         >
           <span className="font-semibold text-gold">Tell them apart: </span>
           {lesson.text}
+        </p>
+      )}
+      {/* A phone with both a score to compare and a lesson says the two in one short block, in
+          fewer words, so the card still leaves the globe the top half of the screen. */}
+      {brief && lesson && (
+        <p
+          className="mt-2 text-sm leading-snug text-chalk md:hidden"
+          data-testid="reveal-brief"
+          data-kind={lesson.kind}
+        >
+          <span className="text-gold">{brief}</span>{" "}
+          <span className="font-semibold text-gold">Tell them apart: </span>
+          {lesson.short}
         </p>
       )}
 
@@ -355,6 +410,13 @@ export default function RevealCard({
         data-testid="atlas-thinking"
         className={thinkingOpen ? "" : "hidden md:block"}
       >
+        {brief && !replay && reveal.answer.postcard && (
+          <PostcardNote
+            postcard={reveal.answer.postcard}
+            sourceUrl={credit?.sourceUrl ?? null}
+            className="md:hidden"
+          />
+        )}
         {lesson && atlasHalves && (
           <p
             className="mt-3 text-sm text-chalk md:hidden"

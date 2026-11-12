@@ -23,6 +23,11 @@ export interface MissLesson {
   kind: MissLessonKind;
   /** The line itself, e.g. "In Japan they drive on the left; in Brazil, where your pin landed, on the right." */
   text: string;
+  /**
+   * The same clue said in fewer words, for a phone's reveal when it also has a friend's or a first
+   * try's score to show: "Japan drives on the left, Brazil on the right."
+   */
+  short: string;
 }
 
 export interface MissFacts {
@@ -73,6 +78,7 @@ export function missLesson({
     return {
       kind: "driving_side",
       text: `In ${there} they drive on the ${truthSide}; in ${here}, where your pin landed, on the ${pinnedSide}.`,
+      short: `${capitalised(there)} drives on the ${truthSide}, ${here} on the ${pinnedSide}.`,
     };
   }
 
@@ -80,11 +86,16 @@ export function missLesson({
   const pinnedContinent = continentOf(pinned);
   if (truthContinent && pinnedContinent && truthContinent !== pinnedContinent) {
     // Antarctica is its own continent: "Antarctica … is in Antarctica" says nothing.
-    const landed =
-      here === pinnedContinent
-        ? `your pin landed in ${here}`
-        : `${here}, where your pin landed, is in ${pinnedContinent}`;
-    return { kind: "continent", text: `${capitalised(there)} is in ${truthContinent}; ${landed}.` };
+    const own = here === pinnedContinent;
+    const landed = own
+      ? `your pin landed in ${here}`
+      : `${here}, where your pin landed, is in ${pinnedContinent}`;
+    const briefly = own ? `your pin in ${here}` : `${here} in ${pinnedContinent}`;
+    return {
+      kind: "continent",
+      text: `${capitalised(there)} is in ${truthContinent}; ${landed}.`,
+      short: `${capitalised(there)} is in ${truthContinent}, ${briefly}.`,
+    };
   }
   return null;
 }

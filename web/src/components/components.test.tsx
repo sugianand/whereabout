@@ -6,7 +6,15 @@ import { EMPTY_RECORD, type PlayerRecord } from "@/lib/playerRecord";
 
 import PhotoViewer, { ZOOM } from "./PhotoViewer";
 import AtlasEyes from "./AtlasEyes";
-import RevealCard, { hintNote, timeUpNote, verdict } from "./RevealCard";
+import RevealCard, {
+  firstTryLine,
+  firstTryShort,
+  friendLine,
+  friendShort,
+  hintNote,
+  timeUpNote,
+  verdict,
+} from "./RevealCard";
 import Summary, { blitzLine, challengeResultLine } from "./Summary";
 
 function result(playerKm: number, playerScore: number, atlasScore?: number): RoundResult {
@@ -692,6 +700,81 @@ describe("RevealCard learn from a miss", () => {
     home.unmount();
     render(<RevealCard result={result(9000, 0, 4900)} isLast={false} onNext={() => {}} />);
     expect(screen.queryByTestId("miss-lesson")).toBeNull();
+  });
+
+  it("says a friend's score and the lesson in one short block on a phone", () => {
+    render(
+      <RevealCard
+        result={miss(17_700, "JP")}
+        isLast={false}
+        onNext={() => {}}
+        friend={3100}
+        friendSeconds={12}
+      />,
+    );
+    const brief = screen.getByTestId("reveal-brief");
+    expect(brief).toHaveTextContent(
+      "Your friend: 3,100, 12s left. They got closer. Tell them apart: Japan drives on the left, Brazil on the right.",
+    );
+    expect(brief).toHaveClass("md:hidden");
+    expect(brief.dataset.kind).toBe("driving_side");
+    expect(screen.getByTestId("atlas-thinking")).not.toContainElement(brief);
+    // The full lines stay for wider screens, and give the phone's room to the block.
+    expect(screen.getByTestId("friend-line")).toHaveClass("hidden", "md:block");
+    expect(screen.getByTestId("miss-lesson")).toHaveClass("hidden", "md:block");
+    expect(screen.getByTestId("friend-line")).toHaveTextContent(
+      "Your friend scored 3,100 here with 12 seconds left. They got closer.",
+    );
+  });
+
+  it("moves the postcard into the fold on a phone when the card carries the short block", () => {
+    const r = miss(17_700, "JP");
+    const postcard = { description: "A bridge over the river." };
+    const withNote = { ...r, reveal: { ...r.reveal, answer: { ...r.reveal.answer, postcard } } };
+    render(<RevealCard result={withNote} isLast={false} onNext={() => {}} friend={3100} />);
+    const [outside, folded] = screen.getAllByTestId("postcard");
+    expect(outside).toHaveClass("hidden", "md:block");
+    expect(screen.getByTestId("atlas-thinking")).not.toContainElement(outside);
+    expect(screen.getByTestId("atlas-thinking")).toContainElement(folded);
+    expect(folded).toHaveClass("md:hidden");
+    expect(folded).toHaveTextContent("A bridge over the river.");
+  });
+
+  it("says a first try's score and the lesson in one short block on a phone", () => {
+    render(
+      <RevealCard result={miss(17_700, "JP")} isLast={false} onNext={() => {}} firstTry={0} />,
+    );
+    expect(screen.getByTestId("reveal-brief")).toHaveTextContent(
+      "First try: 0. Same again. Tell them apart: Japan drives on the left, Brazil on the right.",
+    );
+    expect(screen.getByTestId("first-try-line")).toHaveClass("hidden", "md:block");
+  });
+
+  it("keeps the friend's line whole when there is no lesson, and no block without a score", () => {
+    const { unmount } = render(
+      <RevealCard result={miss(1200, "JP")} isLast={false} onNext={() => {}} friend={3100} />,
+    );
+    expect(screen.queryByTestId("reveal-brief")).toBeNull();
+    expect(screen.getByTestId("friend-line")).not.toHaveClass("hidden");
+    unmount();
+    render(<RevealCard result={miss(17_700, "JP")} isLast={false} onNext={() => {}} />);
+    expect(screen.queryByTestId("reveal-brief")).toBeNull();
+    expect(screen.getByTestId("miss-lesson")).not.toHaveClass("hidden");
+  });
+});
+
+describe("RevealCard comparison lines", () => {
+  it("say the friend's score in full and in fewer words", () => {
+    expect(friendLine(4000, 3100)).toBe("Your friend scored 3,100 here. You beat them.");
+    expect(friendShort(4000, 3100)).toBe("Your friend: 3,100. You beat them.");
+    expect(friendShort(100, 3100, 1)).toBe("Your friend: 3,100, 1s left. They got closer.");
+    expect(friendShort(3100, 3100, 0)).toBe("Your friend: 3,100 as time ran out. Level with them.");
+  });
+
+  it("say the first try's score in full and in fewer words", () => {
+    expect(firstTryLine(2000, 1200)).toBe("Your first try scored 1,200 here. You did better.");
+    expect(firstTryShort(2000, 1200)).toBe("First try: 1,200. You did better.");
+    expect(firstTryShort(100, 1200)).toBe("First try: 1,200. That was closer.");
   });
 });
 

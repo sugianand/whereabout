@@ -22,6 +22,7 @@ describe("missLesson", () => {
     ).toEqual({
       kind: "driving_side",
       text: "In Japan they drive on the left; in Brazil, where your pin landed, on the right.",
+      short: "Japan drives on the left, Brazil on the right.",
     });
   });
 
@@ -31,6 +32,7 @@ describe("missLesson", () => {
     ).toEqual({
       kind: "continent",
       text: "France is in Europe; the United States, where your pin landed, is in North America.",
+      short: "France is in Europe, the United States in North America.",
     });
   });
 
@@ -50,6 +52,7 @@ describe("missLesson", () => {
     ).toEqual({
       kind: "continent",
       text: "Argentina is in South America; your pin landed in Antarctica.",
+      short: "Argentina is in South America, your pin in Antarctica.",
     });
   });
 
@@ -189,13 +192,21 @@ describe("missLesson against the whole catalog", () => {
         }
         lessons++;
         expect(lesson.text).not.toMatch(/\b[A-Z]{2}\b|undefined|null/);
+        expect(lesson.short).not.toMatch(/\b[A-Z]{2}\b|undefined|null/);
+        // The short form says the same clue in fewer words, starting with a capital.
+        expect(lesson.short.length).toBeLessThan(lesson.text.length);
+        expect(lesson.short).toMatch(/^[A-Z].*\.$/);
         if (lesson.kind === "driving_side") {
           expect(truthSide).not.toBeNull();
           expect(drivingSideOf(photo.country)).toBe(truthSide);
           expect(lesson.text).toContain(`on the ${drivingSideOf(code)}.`);
+          expect(lesson.short).toContain(`drives on the ${truthSide}, `);
+          expect(lesson.short).toContain(`on the ${drivingSideOf(code)}.`);
         } else {
           expect(lesson.text).toContain(`${continentOf(code)}.`);
           expect(lesson.text).toContain(`is in ${continentOf(photo.country)};`);
+          expect(lesson.short).toContain(`is in ${continentOf(photo.country)}, `);
+          expect(lesson.short).toContain(`${continentOf(code)}.`);
         }
       }
     }
