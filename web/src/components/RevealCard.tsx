@@ -415,6 +415,7 @@ export default function RevealCard({
             postcard={reveal.answer.postcard}
             sourceUrl={credit?.sourceUrl ?? null}
             className="md:hidden"
+            testId="postcard-folded"
           />
         )}
         {lesson && atlasHalves && (

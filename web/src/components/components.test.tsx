@@ -732,7 +732,8 @@ describe("RevealCard learn from a miss", () => {
     const postcard = { description: "A bridge over the river." };
     const withNote = { ...r, reveal: { ...r.reveal, answer: { ...r.reveal.answer, postcard } } };
     render(<RevealCard result={withNote} isLast={false} onNext={() => {}} friend={3100} />);
-    const [outside, folded] = screen.getAllByTestId("postcard");
+    const outside = screen.getByTestId("postcard");
+    const folded = screen.getByTestId("postcard-folded");
     expect(outside).toHaveClass("hidden", "md:block");
     expect(screen.getByTestId("atlas-thinking")).not.toContainElement(outside);
     expect(screen.getByTestId("atlas-thinking")).toContainElement(folded);

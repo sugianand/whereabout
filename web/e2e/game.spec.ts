@@ -1256,7 +1256,19 @@ test("every reveal teaches one thing about the place: its postcard under the nam
   const card = await playRoundWithKeyboard(page);
   await expect(card.getByRole("heading", { name: longest.place })).toBeVisible();
 
-  const postcard = card.getByTestId("postcard");
+  let postcard = card.getByTestId("postcard");
+  // A phone whose reveal also compares the friend's score with a lesson from the miss keeps the
+  // postcard in the fold, to leave the answer in view; it is one tap away there.
+  const briefed = isMobile && (await card.getByTestId("reveal-brief").isVisible());
+  if (briefed) {
+    await page.waitForTimeout(800);
+    const cardBox = (await card.boundingBox())!;
+    expect(cardBox.height).toBeLessThan(page.viewportSize()!.height / 2);
+    await expect(postcard).toBeHidden();
+    await card.getByRole("button", { name: "How Atlas guessed" }).click();
+    postcard = card.getByTestId("postcard-folded");
+    await expect(postcard).toBeVisible();
+  }
   await expect(postcard).toContainText(longest.postcard!.description!.slice(0, 30));
   const article = longest.postcard!.article!;
   await expect(
@@ -1268,9 +1280,11 @@ test("every reveal teaches one thing about the place: its postcard under the nam
 
   if (isMobile) {
     // Cut to one line on a phone, so the card still leaves the answer in view…
-    await page.waitForTimeout(800);
-    const cardBox = (await card.boundingBox())!;
-    expect(cardBox.height).toBeLessThan(page.viewportSize()!.height / 2);
+    if (!briefed) {
+      await page.waitForTimeout(800);
+      const cardBox = (await card.boundingBox())!;
+      expect(cardBox.height).toBeLessThan(page.viewportSize()!.height / 2);
+    }
     // …and one tap away in full.
     const more = postcard.getByRole("button", { name: "More" });
     const text = postcard.getByText(longest.postcard!.description!);

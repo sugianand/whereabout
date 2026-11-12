@@ -20,11 +20,14 @@ export default function PostcardNote({
   postcard,
   sourceUrl,
   className = "",
+  testId = "postcard",
 }: {
   postcard: Postcard;
   /** The photo's Commons file page, where the description comes from. */
   sourceUrl: string | null;
   className?: string;
+  /** Tells a copy kept in the reveal's fold apart from the one under the place. */
+  testId?: string;
 }) {
   const { description } = postcard;
   // Only an English Wikipedia address is ever linked, whatever was stored.
@@ -42,21 +45,28 @@ export default function PostcardNote({
     setExpanded(false);
   }
 
-  // Whether the one-line cut hides anything, measured whenever it could change.
+  // Whether the one-line cut hides anything, measured whenever it could change: on a resize of
+  // the window or of the text itself.
   useBrowserLayoutEffect(() => {
     const el = textRef.current;
     if (!el || expanded) return;
     const measure = () => setCut(el.scrollHeight > el.clientHeight + 1);
     measure();
     window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+    // A copy in a closed fold has no layout until the fold opens: measure it again then.
+    const seen = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    seen?.observe(el);
+    return () => {
+      window.removeEventListener("resize", measure);
+      seen?.disconnect();
+    };
   }, [description, expanded]);
 
   if (!description && !article) return null;
 
   const toggle = cut || expanded;
   return (
-    <div className={`mt-1.5 md:mt-2 ${className}`.trim()} data-testid="postcard">
+    <div className={`mt-1.5 md:mt-2 ${className}`.trim()} data-testid={testId}>
       {description && (
         <p
           ref={textRef}
