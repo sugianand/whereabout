@@ -6,6 +6,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { continentOf } from "../src/lib/continents";
 import { countryAt } from "../src/lib/countryHit";
 import { BUZZ, CHIME, type Closeness } from "../src/lib/feel";
+import { drivingSideOf } from "../src/lib/drivingSides";
 import { dayKey } from "../src/lib/game/daily";
 import { haversineKm } from "../src/lib/geo";
 import { missLesson } from "../src/lib/missLesson";
@@ -1344,29 +1345,66 @@ test("a far miss into another country says what tells the two places apart", asy
   );
   const atlas = JSON.parse(readFileSync(resolve(process.cwd(), "src/data/atlas.json"), "utf8"));
   const playable = catalog.filter((p) => Object.hasOwn(atlas.guesses, p.id));
-  // playRoundWithKeyboard drops the pin at the globe's first centre (10° E, 20° N, Globe.tsx's
-  // INITIAL_VIEW) and moves it one big step, 10°, east: into Chad.
-  const pin = { lng: 20, lat: 20 };
-  const lessonOf = (p: Photo) =>
-    missLesson({
-      truthCountry: p.country,
-      pinnedCountry: countryAt(pin),
-      distanceKm: haversineKm(pin, p),
-      truthSide: p.drivingSide ?? null,
-    });
-  const road = playable.find((p) => lessonOf(p)?.kind === "driving_side")!;
-  const continent = playable.find((p) => lessonOf(p)?.kind === "continent")!;
-  const quiet = playable.find((p) => !lessonOf(p))!;
+  // Each round's pin goes into Chad, a right-hand-traffic country in Africa, so a photo from Japan
+  // differs by the road, one from the far west of the United States by continent, and one
+  // from a right-hand country in Africa shares both and gets no line.
+  const road = playable.find((p) => p.country === "JP" && p.drivingSide === "left")!;
+  const continent = playable.find((p) => p.country === "US" && p.lng < -100)!;
+  const quiet = playable.find(
+    (p) => continentOf(p.country) === "Africa" && p.drivingSide === "right",
+  )!;
   expect(road && continent && quiet, "the catalog has each kind of round").toBeTruthy();
   const rest = playable.filter((p) => ![road, continent, quiet].includes(p)).slice(0, 2);
   const ids = [road, continent, quiet, ...rest].map((p) => p.id);
   await page.goto(`./?challenge=${ids.join(".")}_${ids.map(() => 2500).join(".")}`);
 
-  for (const photo of [road, continent, quiet]) {
-    const card = await playRoundWithKeyboard(page);
+  for (const [photo, kind] of [
+    [road, "driving_side"],
+    [continent, "continent"],
+    [quiet, null],
+  ] as const) {
+    // Drop the pin with the keyboard and walk it to the middle of Chad, reading where it is from
+    // the page: the globe may still be easing back from the last reveal when the pin goes in.
+    const globe = page.getByRole("application", { name: /Globe/ });
+    await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
+    await globe.focus();
+    await page.keyboard.press("Enter");
+    const where = page.getByText(/^Your pin: /);
+    const readPin = async () => {
+      const m = /([\d.]+)° ([NS]), ([\d.]+)° ([EW])/.exec((await where.textContent())!)!;
+      return {
+        lat: Number(m[1]) * (m[2] === "S" ? -1 : 1),
+        lng: Number(m[3]) * (m[4] === "W" ? -1 : 1),
+      };
+    };
+    const start = await readPin();
+    const walk: [number, string, string][] = [
+      [20 - start.lat, "ArrowUp", "ArrowDown"],
+      [20 - start.lng, "ArrowRight", "ArrowLeft"],
+    ];
+    for (const [delta, more, less] of walk) {
+      const key = delta > 0 ? more : less;
+      const steps = Math.round(Math.abs(delta));
+      for (let i = 0; i < Math.floor(steps / 10); i++) await page.keyboard.press(`Shift+${key}`);
+      for (let i = 0; i < steps % 10; i++) await page.keyboard.press(key);
+    }
+    await expect(where).toHaveText(/^Your pin: (19|20|21)\.\d+° N, (19|20|21)\.\d+° E$/);
+    const pin = await readPin();
+    const pinned = countryAt(pin);
+    expect(continentOf(pinned)).toBe("Africa");
+    expect(drivingSideOf(pinned)).toBe("right");
+    await page.getByRole("button", { name: "Guess here" }).click();
+    const card = page.getByRole("region").filter({ hasText: "It was taken in" });
     await expect(card.getByRole("heading", { name: photo.place })).toBeVisible();
+
+    const expected = missLesson({
+      truthCountry: photo.country,
+      pinnedCountry: pinned,
+      distanceKm: haversineKm(pin, photo),
+      truthSide: photo.drivingSide ?? null,
+    });
+    expect(expected?.kind ?? null).toBe(kind);
     const lesson = card.getByTestId("miss-lesson");
-    const expected = lessonOf(photo);
     if (expected) {
       // Outside the fold: visible on a phone without opening Atlas's reasoning.
       await expect(lesson).toBeVisible();
