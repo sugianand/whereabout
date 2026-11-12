@@ -164,7 +164,10 @@ are closer than the five before. Once two continents have five pinned rounds eac
 is your weak spot, with *Practise* to deal a five-photo game there. **Getting closer** charts
 your form over time: a column per week, as tall as the median distance your pins landed off that
 week, with how the newest week compares with the one before; tap a week for its rounds. It waits
-until two weeks have pinned rounds. Below them, **you and Atlas in the quick
+until two weeks have pinned rounds. **Countries you mix up** lists the pairs you've most often
+taken for each other in Name the country, Close-up and Country Streak (from your last 300 wrong
+answers), how often and which way round, with a Country Streak on that continent to practise
+them. Below them, **you and Atlas in the quick
 games**: for Further North and Odd one out, the rounds you got right of those you answered beside
 the rounds Atlas got right of those it played, free runs and today's runs together, and who is
 ahead. Then **head to head with friends**: every friend's challenge you've answered from a link,
