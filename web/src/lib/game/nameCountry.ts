@@ -230,10 +230,13 @@ function storage(): Storage | null {
   }
 }
 
-/** The best run this browser has kept, or 0 when none is stored or it can't be read. */
-export function loadBestName(): number {
+/**
+ * The best run this browser has kept, or 0 when none is stored or it can't be read. `key` picks
+ * which best: free runs, or practice runs (`nameMixUps.ts`), which keep their own.
+ */
+export function loadBestName(key = BEST_NAME_KEY): number {
   try {
-    const raw = storage()?.getItem(BEST_NAME_KEY);
+    const raw = storage()?.getItem(key);
     if (!raw) return 0;
     const value: unknown = JSON.parse(raw);
     return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : 0;
@@ -243,11 +246,11 @@ export function loadBestName(): number {
 }
 
 /** Keep `streak` if it beats the stored best, and return the best after that. */
-export function rememberName(streak: number): number {
-  const best = loadBestName();
+export function rememberName(streak: number, key = BEST_NAME_KEY): number {
+  const best = loadBestName(key);
   if (streak <= best) return best;
   try {
-    storage()?.setItem(BEST_NAME_KEY, JSON.stringify(streak));
+    storage()?.setItem(key, JSON.stringify(streak));
   } catch {
     // Private mode or full storage: the run still counts for this visit.
   }

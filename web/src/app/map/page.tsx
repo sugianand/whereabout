@@ -6,7 +6,8 @@ import MixUps from "@/components/MixUps";
 import PlayedMap from "@/components/PlayedMap";
 import QuickRecord from "@/components/QuickRecord";
 import { CONTINENTS } from "@/lib/continents";
-import { bundledDeck } from "@/lib/game/bundled";
+import { bundledDeck, bundledPhotoCountries } from "@/lib/game/bundled";
+import { photosByCountry } from "@/lib/game/nameMixUps";
 import { streakRegions } from "@/lib/game/regions";
 
 // The continents a Country Streak can be dealt on, for the mix-ups' practice links.
@@ -38,7 +39,7 @@ export default function YourMapPage() {
       <PlayedMap
         deck={{ version: bundledDeck.version, ids: bundledDeck.ids, regions: bundledDeck.regions }}
       />
-      <MixUps streakable={streakable} />
+      <MixUps streakable={streakable} photoCounts={photosByCountry(bundledPhotoCountries)} />
       <QuickRecord />
       <HeadToHeadLog />
     </main>

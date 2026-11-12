@@ -8,8 +8,20 @@ import atlasData from "@/data/atlas.json";
 import catalog from "@/data/photos.json";
 
 import { buildDeck, gameRecords } from "./deck";
+import { nameIds } from "./nameCountry";
 import type { AtlasData, CatalogPhoto } from "./types";
 
 export const bundledRecords = gameRecords(catalog as CatalogPhoto[], atlasData as AtlasData);
 export const bundledDeck = buildDeck(bundledRecords);
 export const bundledById = new Map(bundledRecords.map((r) => [r.photo.id, r]));
+
+/**
+ * Each photo Name the country can deal, by its country: what a practice run of your mix-ups needs
+ * to pick photos in the browser (`nameMixUps.ts`), a few bytes a photo.
+ */
+export const bundledPhotoCountries: Record<string, string> = Object.fromEntries(
+  nameIds(bundledDeck.streakIds, bundledDeck.regions).map((id) => [
+    id,
+    bundledById.get(id)!.photo.country,
+  ]),
+);

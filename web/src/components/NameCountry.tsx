@@ -46,7 +46,16 @@ import {
   rememberNameDay,
 } from "@/lib/game/nameDaily";
 
-import { keepMixUp } from "@/lib/mixUps";
+import {
+  BEST_MIX_UPS_KEY,
+  MIN_PRACTICE_PHOTOS,
+  practiceIds,
+  practiceOptions,
+  practiceOrder,
+  practicePartners,
+  type PhotoCountries,
+} from "@/lib/game/nameMixUps";
+import { keepMixUp, loadMixUps } from "@/lib/mixUps";
 import { sendShare, type ShareOutcome } from "@/lib/share";
 
 import ControlsHelp from "./ControlsHelp";
@@ -68,6 +77,12 @@ type NameCountryProps = {
   daily?: boolean;
   /** For tests: the clock that picks today's run. */
   now?: () => Date;
+  /**
+   * Practise your mix-ups (src/lib/game/nameMixUps.ts): each dealable photo's country, so a run
+   * can be dealt from the countries this browser's player mixes up most, each photo offering the
+   * country it was taken for. Off, runs are dealt from every photo.
+   */
+  practice?: PhotoCountries;
 };
 
 /** "1 country", "4 countries". */
@@ -118,6 +133,7 @@ export default function NameCountry({
   random,
   daily = false,
   now,
+  practice,
 }: NameCountryProps) {
   const [state, dispatch] = useReducer(nameReducer, initialName);
   const [best, setBest] = useState(0);
@@ -132,6 +148,9 @@ export default function NameCountry({
   // A friend's challenge this run answers: their photos, names and streak to beat.
   const [challenge, setChallenge] = useState<NameChallenge | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // A practice run's countries, each with those it was mixed up with, as the run was dealt.
+  const [partners, setPartners] = useState<ReadonlyMap<string, string[]>>(() => new Map());
+  const bestKey = practice ? BEST_MIX_UPS_KEY : undefined;
 
   /** Deal a run; `fromLink` takes up a challenge the address carries, as the page opens. */
   const start = useCallback(
@@ -154,9 +173,23 @@ export default function NameCountry({
         return;
       }
       const ids = nameIds(deck.streakIds, deck.regions);
-      const stored = loadBestName();
+      const stored = loadBestName(bestKey);
       setBest(stored);
       setBestBefore(stored);
+      if (practice) {
+        // Dealt afresh from the mix-ups as they stand, so a miss last run is in this one.
+        const paired = practicePartners(loadMixUps());
+        const dealable = practiceIds(ids, practice, paired);
+        const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
+        setPartners(paired);
+        dispatch({
+          type: "start",
+          order:
+            dealable.length >= MIN_PRACTICE_PHOTOS ? practiceOrder(dealable, practice, seed) : [],
+          seed,
+        });
+        return;
+      }
       const linked = fromLink ? linkedChallenge(ids) : null;
       setNotice(linked && !linked.ok ? NAME_CHALLENGE_NOTICE[linked.reason] : null);
       if (linked?.ok) {
@@ -170,7 +203,7 @@ export default function NameCountry({
       const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
       dispatch({ type: "start", order: seededShuffle(ids, seed), seed });
     },
-    [daily, deck.regions, deck.streakIds, now, random],
+    [daily, deck.regions, deck.streakIds, now, random, practice, bestKey],
   );
 
   // The run is shuffled in the browser after hydration, never at build time.
@@ -225,9 +258,11 @@ export default function NameCountry({
   const options = useMemo(
     () =>
       truth && id && seed !== undefined
-        ? nameOptions(truth, deck.countryPool, nameSeed(seed, id))
+        ? practice
+          ? practiceOptions(truth, partners.get(truth) ?? [], deck.countryPool, nameSeed(seed, id))
+          : nameOptions(truth, deck.countryPool, nameSeed(seed, id))
         : [],
-    [truth, id, seed, deck.countryPool],
+    [truth, id, seed, deck.countryPool, practice, partners],
   );
 
   const choose = useCallback(
@@ -255,11 +290,11 @@ export default function NameCountry({
       } else if (after.phase === "answered" && after.correct && !challenge) {
         // Keep the run as the best after every right tap, so leaving mid-run keeps it. A
         // challenge's photos may have been seen before, so it is played for the friend only.
-        setBest(rememberName(after.streak));
+        setBest(rememberName(after.streak, bestKey));
       }
       dispatch(action);
     },
-    [state, current, options, day, challenge],
+    [state, current, options, day, challenge, bestKey],
   );
 
   // 1 to 4 pick a name from the keyboard. Attached before paint, so a key pressed the moment the
@@ -310,14 +345,24 @@ export default function NameCountry({
     const cleared = state.phase === "cleared";
     return (
       <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center px-6 py-16">
-        <p className="text-sm text-gold">Name the country</p>
+        <p className="text-sm text-gold">
+          {practice ? "Name the country: your mix-ups" : "Name the country"}
+        </p>
         <h1 className="mt-2 font-sign text-5xl font-extrabold leading-none tracking-tight">
-          {cleared ? `All ${state.streak} named` : "No photos to play yet"}
+          {cleared
+            ? `All ${state.streak} named`
+            : practice
+              ? "No mix-ups to practise yet"
+              : "No photos to play yet"}
         </h1>
         <p className="mt-4 text-lg text-chalk-dim">
           {cleared
-            ? "You named the country of every photo in the game without a miss."
-            : "Name the country needs photos taken in countries the globe draws."}
+            ? practice
+              ? "You named every photo from the countries you mix up without a miss."
+              : "You named the country of every photo in the game without a miss."
+            : practice
+              ? `Practice deals photos from the countries you've taken for each other in Name the country, Close-up and Country Streak, and needs at least ${MIN_PRACTICE_PHOTOS} of them. Play a few runs and come back.`
+              : "Name the country needs photos taken in countries the globe draws."}
           {cleared && challenge && ` ${nameChallengeLine(state.streak, challenge)}`}
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -330,7 +375,15 @@ export default function NameCountry({
               {challenge ? "Play a fresh run" : "Start a new run"}
             </button>
           )}
-          {cleared && <ChallengeButton run={state} answering={challenge} />}
+          {cleared && !practice && <ChallengeButton run={state} answering={challenge} />}
+          {practice && (
+            <Link
+              href="/name-country"
+              className="text-gold underline underline-offset-2 hover:brightness-110"
+            >
+              Play a free run
+            </Link>
+          )}
           <Link href="/" className="text-chalk-dim underline underline-offset-2 hover:text-chalk">
             Back to the main game
           </Link>
@@ -365,16 +418,18 @@ export default function NameCountry({
               ? `Today's run, ${day}`
               : challenge
                 ? `A friend's challenge: ${countries(challenge.streak)} in a row to beat`
-                : "Name the country: which of these four?"}
+                : practice
+                  ? "Your mix-ups: which of these four?"
+                  : "Name the country: which of these four?"}
           </p>
           <div className="mt-2 flex items-center gap-2">
             <GamesMenu screen="name-country" streakHref="/streak" />
             <ControlsHelp screen="name-country" />
             <Link
-              href={daily ? "/name-country" : "/name-country/daily"}
+              href={daily || practice ? "/name-country" : "/name-country/daily"}
               className="whitespace-nowrap text-sm text-gold underline underline-offset-2 hover:brightness-110"
             >
-              {daily ? "Free runs" : "Today's run"}
+              {daily || practice ? "Free runs" : "Today's run"}
             </Link>
           </div>
         </div>
@@ -454,6 +509,7 @@ export default function NameCountry({
             daily={day}
             run={answered}
             challenge={challenge}
+            practice={!!practice}
             onNext={over ? () => start() : () => dispatch({ type: "next" })}
           />
         ) : (
@@ -540,6 +596,7 @@ function NameCard({
   daily,
   run,
   challenge,
+  practice,
   onNext,
 }: {
   record: GameRecord;
@@ -558,6 +615,8 @@ function NameCard({
   run: { order: readonly string[]; index: number; seed: number; streak: number };
   /** The friend's challenge this run answers, if it is one. */
   challenge: NameChallenge | null;
+  /** A practice run: dealt from this player's mix-ups, so it is no challenge to send. */
+  practice: boolean;
   onNext: () => void;
 }) {
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -616,7 +675,7 @@ function NameCard({
             : newBest
               ? "That's your new best!"
               : best > 0
-                ? `Your best is ${countries(best)}.`
+                ? `Your best${practice ? " at your mix-ups" : ""} is ${countries(best)}.`
                 : ""}
         </p>
       )}
@@ -642,7 +701,11 @@ function NameCard({
             >
               {over ? (challenge ? "Play a fresh run" : "Start a new run") : "Next photo"}
             </button>
-            {over ? <ChallengeButton run={run} answering={challenge} compact /> : photoCredit}
+            {over && !practice ? (
+              <ChallengeButton run={run} answering={challenge} compact />
+            ) : (
+              !over && photoCredit
+            )}
           </div>
           {over && photoCredit}
         </>

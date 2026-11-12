@@ -82,3 +82,66 @@ test("a wrong name lands in Countries you mix up on Your map, with a streak to p
   await expect(page.getByRole("application", { name: /Globe/ })).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("Practise your mix-ups deals only those countries, each with the one it was taken for, and keeps its own best", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+
+  await page.goto("./map/");
+  await page.evaluate(() =>
+    localStorage.setItem(
+      "whereabout:mix-ups",
+      JSON.stringify([
+        { truth: "JP", picked: "KR" },
+        { truth: "KR", picked: "JP" },
+      ]),
+    ),
+  );
+  await page.reload();
+  const section = page.getByRole("region", { name: "Countries you mix up" });
+  await expect(section.getByTestId("mix-ups-practice-note")).toContainText(
+    /^Name the country with \d+ photos from these countries/,
+  );
+  await section.getByRole("link", { name: "Practise your mix-ups" }).click();
+  await expect(page).toHaveURL(/\/name-country\/mix-ups\/?$/);
+  await expect(page.getByText("Your mix-ups: which of these four?")).toBeVisible();
+
+  const names = async () =>
+    Promise.all(
+      [1, 2, 3, 4].map((n) => page.getByTestId(`name-option-${n}`).getAttribute("data-country")),
+    );
+
+  // Name two photos right: each is Japan or South Korea, with the other among its names.
+  for (let i = 0; i < 2; i++) {
+    await expect(page.getByTestId("name-option-4")).toBeEnabled();
+    const truth = BY_ID.get((await page.locator("main").getAttribute("data-photo"))!)!.country;
+    expect(["JP", "KR"]).toContain(truth);
+    const offered = await names();
+    expect(offered).toContain(truth === "JP" ? "KR" : "JP");
+    await page.getByTestId(`name-option-${offered.indexOf(truth) + 1}`).click();
+    await expect(page.getByRole("heading", { name: /^Right: / })).toBeVisible();
+    await page.getByRole("button", { name: "Next photo" }).click();
+  }
+
+  // Then take the photo for its partner: the run ends, with no challenge to send.
+  await expect(page.getByTestId("name-option-4")).toBeEnabled();
+  const truth = BY_ID.get((await page.locator("main").getAttribute("data-photo"))!)!.country;
+  const partner = truth === "JP" ? "KR" : "JP";
+  await page.getByTestId(`name-option-${(await names()).indexOf(partner) + 1}`).click();
+  await expect(page.getByRole("heading", { name: /^Wrong: / })).toBeVisible();
+  await expect(page.getByText("Run over: 2 countries in a row.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Challenge a friend" })).toHaveCount(0);
+
+  // Your map counts the miss, and shows practice's own best.
+  await page.goto("./map/");
+  await expect(section.getByTestId("mix-up").first()).toContainText("3 times");
+  await expect(section.getByTestId("mix-ups-practice-note")).toContainText(
+    "Your best: 2 in a row.",
+  );
+  expect(
+    await page.evaluate(() => localStorage.getItem("whereabout:name-country-best")),
+  ).toBeNull();
+  expect(errors).toEqual([]);
+});

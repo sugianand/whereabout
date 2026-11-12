@@ -5,6 +5,7 @@ import { countryName } from "@/lib/countries";
 import type { GameRecord } from "@/lib/game/deck";
 import { encodeNameChallenge } from "@/lib/game/nameChallenge";
 import { BEST_NAME_KEY, nameOptions, nameSeed } from "@/lib/game/nameCountry";
+import { BEST_MIX_UPS_KEY } from "@/lib/game/nameMixUps";
 import { loadNameDay, rememberNameDay } from "@/lib/game/nameDaily";
 import type { AtlasGuess, CatalogPhoto } from "@/lib/game/types";
 import { loadMixUps } from "@/lib/mixUps";
@@ -406,5 +407,101 @@ describe("a friend's Name the country challenge", () => {
     fireEvent.click(screen.getByRole("button", { name: "Challenge a friend" }));
     await waitFor(() => expect(box.sent).toMatch(/_5$/));
     expect(box.sent.split("\n").at(-1)!.split("=")[1].split("_")[0].split(".")).toHaveLength(5);
+  });
+});
+
+describe("practising your mix-ups", () => {
+  // France, Japan and two South Korean photos; the player has taken Japan and South Korea for
+  // each other, so practice deals only those seven photos.
+  const PRACTICE = [
+    ...RECORDS,
+    record("k1", "KR", atlasSays("KR", 0.4)),
+    record("k2", "KR", atlasSays("KR", 0.4)),
+  ];
+  const PRACTICE_BY_ID = new Map(PRACTICE.map((r) => [r.photo.id, r]));
+  const COUNTRIES = Object.fromEntries(PRACTICE.map((r) => [r.photo.id, r.photo.country]));
+
+  async function practise() {
+    const game = gameFor(PRACTICE);
+    const { container } = render(
+      <NameCountry
+        deck={game.deck}
+        loadRecords={game.loadRecords}
+        random={() => 0.25}
+        practice={COUNTRIES}
+      />,
+    );
+    const photoId = () => container.querySelector("main")!.getAttribute("data-photo")!;
+    return { photoId, truth: () => PRACTICE_BY_ID.get(photoId())!.photo.country };
+  }
+  const names = () =>
+    [1, 2, 3, 4].map((n) => screen.getByTestId(`name-option-${n}`).getAttribute("data-country"));
+
+  it("deals only the countries mixed up, each photo offering the one it was taken for", async () => {
+    localStorage.setItem(
+      "whereabout:mix-ups",
+      JSON.stringify([
+        { truth: "JP", picked: "KR" },
+        { truth: "KR", picked: "JP" },
+      ]),
+    );
+    const { truth } = await practise();
+    expect(screen.getByText("Your mix-ups: which of these four?")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Free runs" })).toHaveAttribute(
+      "href",
+      "/name-country",
+    );
+
+    // Name all seven: every one is Japan or South Korea, with the other among its names.
+    const seen: string[] = [];
+    for (let i = 0; i < 7; i++) {
+      await waitFor(() => expect(screen.getByTestId("name-option-4")).toBeEnabled());
+      const country = truth();
+      seen.push(country);
+      expect(["JP", "KR"]).toContain(country);
+      expect(names()).toContain(country === "JP" ? "KR" : "JP");
+      fireEvent.click(option(country));
+      fireEvent.click(screen.getByRole("button", { name: "Next photo" }));
+    }
+    // Both countries come up early, though Japan has more photos.
+    expect(seen.slice(0, 2).sort()).toEqual(["JP", "KR"]);
+    expect(await screen.findByRole("heading", { name: "All 7 named" })).toBeInTheDocument();
+    expect(screen.getByText(/every photo from the countries you mix up/)).toBeInTheDocument();
+    // Practice keeps its own best, and is no challenge to send.
+    expect(localStorage.getItem(BEST_MIX_UPS_KEY)).toBe("7");
+    expect(localStorage.getItem(BEST_NAME_KEY)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Challenge a friend" })).toBeNull();
+  });
+
+  it("keeps a miss as a mix-up, and ends with its own best and no challenge", async () => {
+    localStorage.setItem("whereabout:mix-ups", JSON.stringify([{ truth: "JP", picked: "KR" }]));
+    localStorage.setItem(BEST_MIX_UPS_KEY, "5");
+    localStorage.setItem(BEST_NAME_KEY, "2");
+    const { truth } = await practise();
+    await waitFor(() => expect(screen.getByTestId("name-option-4")).toBeEnabled());
+    const country = truth();
+    const tapped = country === "JP" ? "KR" : "JP";
+    fireEvent.click(option(tapped));
+    const card = screen.getByRole("region");
+    expect(card).toHaveTextContent(
+      "Run over: 0 countries in a row. Your best at your mix-ups is 5 countries.",
+    );
+    expect(within(card).queryByRole("button", { name: "Challenge a friend" })).toBeNull();
+    expect(loadMixUps()).toEqual([
+      { truth: "JP", picked: "KR" },
+      { truth: country, picked: tapped },
+    ]);
+  });
+
+  it("explains itself when too few photos come from the countries mixed up", async () => {
+    localStorage.setItem("whereabout:mix-ups", JSON.stringify([{ truth: "DE", picked: "AT" }]));
+    await practise();
+    expect(
+      await screen.findByRole("heading", { name: "No mix-ups to practise yet" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Play a free run" })).toHaveAttribute(
+      "href",
+      "/name-country",
+    );
   });
 });

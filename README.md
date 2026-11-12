@@ -167,7 +167,10 @@ week, with how the newest week compares with the one before; tap a week for its 
 until two weeks have pinned rounds. **Countries you mix up** lists the pairs you've most often
 taken for each other in Name the country, Close-up and Country Streak (from your last 300 wrong
 answers), how often and which way round, with a Country Streak on that continent to practise
-them. Below them, **you and Atlas in the quick
+them. Once those countries have three photos to deal, *Practise your mix-ups* opens Name the
+country on just them (`/name-country/mix-ups`): every photo offers the country you took it for
+among its four names, the countries take turns so a big one never crowds out its partner, and the
+run keeps its own best. Below them, **you and Atlas in the quick
 games**: for Further North and Odd one out, the rounds you got right of those you answered beside
 the rounds Atlas got right of those it played, free runs and today's runs together, and who is
 ahead. Then **head to head with friends**: every friend's challenge you've answered from a link,
