@@ -98,3 +98,50 @@ test("every round played lands on your map, coloured and counted", async ({ page
   expect(overflow).toBeLessThanOrEqual(0);
   expect(errors).toEqual([]);
 });
+
+test("your continents name the weak spot and practise it, and fit a 320px phone", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  // Five rounds near the mark in Europe and five far off in Oceania, kept as the game keeps them.
+  const round = (i: number, country: string, km: number) => ({
+    id: `seed${i}`,
+    lng: 0,
+    lat: 0,
+    place: `Seeded place ${i}`,
+    country,
+    km,
+    score: 3000,
+    day: "2026-11-01",
+  });
+  const history = [
+    ...[40, 60, 80, 120, 30].map((km, i) => round(i, "FR", km)),
+    ...[3000, 4200, 3800, 5000, 2600].map((km, i) => round(i + 5, "AU", km)),
+  ];
+  await page.addInitScript((h) => {
+    localStorage.setItem("whereabout:played", h);
+    localStorage.setItem("whereabout:units", "km");
+  }, JSON.stringify(history));
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.goto("./map/");
+
+  const rows = page.getByTestId("continent-form-row");
+  await expect(rows).toHaveCount(2);
+  await expect(rows.nth(0)).toContainText("Your strong suit");
+  await expect(rows.nth(0)).toContainText("60 km");
+  await expect(rows.nth(1)).toContainText("Your weak spot");
+  await expect(rows.nth(1)).toContainText("3,800 km");
+
+  const weak = page.getByTestId("weak-spot");
+  await expect(weak).toContainText("furthest off in Oceania, about 3,800 km away");
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
+
+  await weak.getByRole("link", { name: "Practise Oceania" }).click();
+  await expect(page).toHaveURL(/\?region=oceania$/, { timeout: 20_000 });
+  await expect(page.getByText("Oceania game", { exact: true })).toBeVisible();
+  expect(errors).toEqual([]);
+});

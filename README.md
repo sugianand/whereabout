@@ -157,7 +157,11 @@ game, the first turn moves one seat along each round, and the names are kept for
 close your pin landed, with the countries and continents you've seen counted and your rounds
 listed newest first; pick one to fly the globe to it. **Your closest calls** sit under the globe:
 the five rounds where your pin landed nearest, each with its photo, your distance, Atlas's on the
-same photo and a link to a game on that continent. Below them, **you and Atlas in the quick
+same photo and a link to a game on that continent. **Your continents** come next: how far off
+your pins land on each continent, by the median of your rounds there so one wild miss doesn't
+swamp it, with how many landed within 500 km and, after ten pinned rounds, whether your last five
+are closer than the five before. Once two continents have five pinned rounds each, the furthest
+is your weak spot, with *Practise* to deal a five-photo game there. Below them, **you and Atlas in the quick
 games**: for Further North and Odd one out, the rounds you got right of those you answered beside
 the rounds Atlas got right of those it played, free runs and today's runs together, and who is
 ahead. Then **head to head with friends**: every friend's challenge you've answered from a link,

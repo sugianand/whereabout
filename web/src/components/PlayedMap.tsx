@@ -22,6 +22,7 @@ import {
 } from "@/lib/playedMap";
 
 import ClosestCalls, { type ClosestCallsDeck } from "./ClosestCalls";
+import ContinentForm from "./ContinentForm";
 import { INITIAL_VIEW } from "./Globe";
 import UnitsSwitch from "./UnitsSwitch";
 
@@ -247,6 +248,8 @@ export default function PlayedMap({ deck }: { deck?: ClosestCallsDeck } = {}) {
       </div>
 
       {deck && <ClosestCalls played={played} deck={deck} />}
+
+      <ContinentForm played={played} regions={deck?.regions ?? {}} />
 
       <section className="mt-12 grid gap-10 md:grid-cols-[1fr_1.4fr]">
         <div>
