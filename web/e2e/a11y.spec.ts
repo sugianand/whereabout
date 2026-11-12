@@ -57,6 +57,7 @@ const FIRST_SCREENS = [
   "./name-country",
   "./line-up",
   "./close-up",
+  "./left-right",
   "./pass-and-play",
   "./today",
   "./map",
@@ -122,6 +123,7 @@ const KEYED = [
   ["which-way", "8"],
   ["name-country", "1"],
   ["close-up", "1"],
+  ["left-right", "ArrowLeft"],
 ] as const;
 
 for (const [path, key] of KEYED) {

@@ -242,7 +242,7 @@ test.describe("on a keyboard", () => {
 
   test("? lists Left or right?'s controls, and every one of its keys works", async ({ page }) => {
     await page.goto("./left-right");
-    await expect(page.getByRole("button", { name: "They drive on the left" })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Left: they drive on the left" })).toBeEnabled();
     const sheet = await openWithKey(page, "Controls for Left or right?");
     await expectSheetLists(sheet, "left-right", false);
     // An arrow pressed in the sheet doesn't make a call behind it.
@@ -254,7 +254,9 @@ test.describe("on a keyboard", () => {
 
     // Each arrow makes a call; Enter moves on from the answer, or deals a new run after a miss.
     for (const pick of keysOf("left-right", "pick")) {
-      await expect(page.getByRole("button", { name: "They drive on the left" })).toBeEnabled();
+      await expect(
+        page.getByRole("button", { name: "Left: they drive on the left" }),
+      ).toBeEnabled();
       await page.keyboard.press(pick);
       await expect(card).toBeVisible();
       await expect(card.getByRole("button")).toBeFocused();

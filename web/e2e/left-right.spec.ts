@@ -48,7 +48,9 @@ test("Left or right? takes calls by tap and swipe until the first miss, and keep
   ).toBeVisible();
   const { width, height } = page.viewportSize()!;
   for (const side of ["left", "right"] as const) {
-    const button = page.getByRole("button", { name: `They drive on the ${side}` });
+    const button = page.getByRole("button", {
+      name: `${side === "left" ? "Left" : "Right"}: they drive on the ${side}`,
+    });
     await expect(button).toBeEnabled();
     const box = (await button.boundingBox())!;
     expect(box.y + box.height).toBeLessThanOrEqual(height + 1);
@@ -60,7 +62,11 @@ test("Left or right? takes calls by tap and swipe until the first miss, and keep
 
   // A right call by tapping the side.
   let side = await sideOnScreen(page);
-  await page.getByRole("button", { name: `They drive on the ${side}` }).click();
+  await page
+    .getByRole("button", {
+      name: `${side === "left" ? "Left" : "Right"}: they drive on the ${side}`,
+    })
+    .click();
   await expect(card.getByRole("heading")).toHaveText("Correct");
   await expect(card).toContainText(`they drive on the ${side}.`);
   await expect(page.getByTestId("side-photo")).toContainText(`Drives on the ${side}`);
@@ -80,7 +86,9 @@ test("Left or right? takes calls by tap and swipe until the first miss, and keep
   // A wrong call ends the run, and the best is kept for the next visit.
   side = await sideOnScreen(page);
   await page
-    .getByRole("button", { name: `They drive on the ${side === "left" ? "right" : "left"}` })
+    .getByRole("button", {
+      name: side === "left" ? "Right: they drive on the right" : "Left: they drive on the left",
+    })
     .click();
   await expect(card.getByRole("heading")).toHaveText("Wrong");
   await expect(card).toContainText("Run over: 2 photos in a row. That's your new best!");
@@ -105,7 +113,11 @@ test("a 320px phone fits the photo, both sides and the answer without scrolling 
   expect(
     ((await games.boundingBox())!.x ?? 0) + (await games.boundingBox())!.width,
   ).toBeLessThanOrEqual(320);
-  await page.getByRole("button", { name: `They drive on the ${side}` }).click();
+  await page
+    .getByRole("button", {
+      name: `${side === "left" ? "Left" : "Right"}: they drive on the ${side}`,
+    })
+    .click();
   const next = page.getByRole("button", { name: "Next photo" });
   await expect(next).toBeVisible();
   expect((await next.boundingBox())!.y).toBeLessThanOrEqual(640);

@@ -61,7 +61,9 @@ async function setup() {
 }
 
 const button = (side: "left" | "right") =>
-  screen.getByRole("button", { name: `They drive on the ${side}` });
+  screen.getByRole("button", {
+    name: `${side === "left" ? "Left" : "Right"}: they drive on the ${side}`,
+  });
 const photo = () => screen.getByTestId("side-photo");
 const streak = () => screen.getByText("Streak").nextElementSibling;
 

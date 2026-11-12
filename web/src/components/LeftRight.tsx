@@ -289,7 +289,7 @@ function SideButton({
       onClick={() => onPick(side)}
       disabled={!ready}
       data-testid={`side-${side}`}
-      aria-label={`They drive on the ${side}`}
+      aria-label={`${side === "left" ? "Left" : "Right"}: they drive on the ${side}`}
       aria-keyshortcuts={side === "left" ? "ArrowLeft" : "ArrowRight"}
       className="flex items-center justify-center gap-2 rounded-2xl bg-gold px-4 py-4 font-sign text-2xl font-extrabold text-ocean-deep transition hover:brightness-110 disabled:cursor-wait disabled:opacity-60"
     >
