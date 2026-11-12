@@ -25,3 +25,11 @@ export const bundledPhotoCountries: Record<string, string> = Object.fromEntries(
     bundledById.get(id)!.photo.country,
   ]),
 );
+
+/**
+ * Each photo Left or right? can deal, by its country's driving side: what the browser needs to
+ * deal an even run of left and right photos without fetching every record (`leftRight.ts`).
+ */
+export const bundledDrivingSides: Record<string, "left" | "right"> = Object.fromEntries(
+  bundledRecords.flatMap((r) => (r.photo.drivingSide ? [[r.photo.id, r.photo.drivingSide]] : [])),
+);

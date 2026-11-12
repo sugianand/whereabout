@@ -278,6 +278,19 @@ accounts: anything kept stays in the browser.
 - [ ] Web: the first photo sooner on a phone: the round's first photo is preloaded at the width the phone will ask for and the globe's script loads after it, measured by a Playwright test of when the photo is on screen on an emulated slow phone network (the number reported from the run, not promised)
 - [ ] Web: bigger text without breaking: every game screen still fits and keeps its buttons on screen at 200% text size on a 320 px phone, checked by the end-to-end suite, with whatever overflows fixed
 
+## Milestone 19 — Read the clues
+
+Quick games that drill one clue at a time, the clues the reveal already teaches (driving side and
+climate from `data/labels/concept_labels.csv`), so a player learns to read a photo, not just pin it.
+Each is quick with a thumb and plays against Atlas's own read of the same clue. Still the static
+site with no accounts: anything kept stays in the browser.
+
+- [x] Web: Left or right?: one photo, call the side of the road they drive on where it was taken by tapping a side, swiping the photo or pressing ← or →, endless until the first miss, with Atlas's call beside yours and a best kept in the browser; `/left-right`, in the Games menu and on the results screen (`web/src/lib/game/leftRight.ts`: the truth is the photo's own driving-side label, so a photo with no road still has an answer read from the country. About three in four catalog photos are right-hand traffic, so `leftRightOrder` shuffles the left and right piles and draws each photo from one by a fair coin until either runs out, pure in the seed, and always calling one side is a coin flip. Atlas's call is `atlasDrivingSide` in `web/src/lib/trueClues.ts`, now shared with the reveal's real clues: its "Drives on the …" clue, else the side of the country it gave most. The page ships each photo's side (`bundledDrivingSides`) so the run is dealt without fetching records. `web/src/components/LeftRight.tsx` follows a drag on the photo, which tilts toward the side and calls it past a quarter of its width (at most 140 px), springing back short of that, and leaves vertical drags to the page. Unit tests for the deal's evenness, purity and end, the reducer, the words, Atlas's read and the best; component tests play by tap, key and swipe, a short swipe that springs back, Atlas's two kinds of read and too few photos; e2e on desktop and phone calls by tap and swipe, misses, finds the best in the Games menu, checks every listed key and fits a 320px phone)
+- [ ] Web: today's Left or right?: a daily run dealt from the UTC date with the same even deal, one try a day, resumed after a reload and shared as counts only, and on Today
+- [ ] Web: challenge a friend to Left or right?: the same photos from a link, with the run to beat and the side the sender called on the photo that ended it, and its head-to-head picture
+- [ ] Web: Which climate?: one photo and the five Köppen groups (tropical, arid, temperate, continental, polar), five photos a game scored against Atlas's climate read, the answer showing where the place sits on a climate band, with a best kept in the browser and in the Games menu
+- [ ] Web: your clue reading on Your map: how often you've read the road and the climate right in the clue games, against Atlas on the same photos, from what those games keep in this browser
+
 ## Beyond
 
 Rooms, distillation, deployment and a research write-up (`docs/architecture.md`). New

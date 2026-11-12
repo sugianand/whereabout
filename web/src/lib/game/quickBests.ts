@@ -4,7 +4,7 @@
  *
  * Nothing new is stored here. Each mode keeps its own best under its own key (blitz.ts,
  * streak.ts, survival.ts, furtherNorth.ts, oddOneOut.ts, howFar.ts, whichWay.ts, hotCold.ts,
- * nameCountry.ts, lineUp.ts, closeUp.ts); this only reads them back through the
+ * nameCountry.ts, lineUp.ts, closeUp.ts, leftRight.ts); this only reads them back through the
  * same loaders, so a value a mode would refuse (a negative streak, junk JSON) is refused here too.
  */
 
@@ -15,6 +15,7 @@ import { loadBlitzBest } from "./blitz";
 import { loadBestNorth } from "./furtherNorth";
 import { loadBestHot } from "./hotCold";
 import { loadBestHowFar } from "./howFar";
+import { loadBestLeftRight } from "./leftRight";
 import { ROW, ROWS, loadBestLine } from "./lineUp";
 import { CLOSE_MAX, loadBestClose } from "./closeUp";
 import { loadBestName } from "./nameCountry";
@@ -37,6 +38,7 @@ export const QUICK_MODES = [
   "name-country",
   "line-up",
   "close-up",
+  "left-right",
 ] as const;
 
 export type QuickMode = (typeof QUICK_MODES)[number];
@@ -70,6 +72,8 @@ export interface QuickBests {
   "line-up": number | null;
   /** The most points in a whole game. */
   "close-up": number | null;
+  /** The longest run of right calls. */
+  "left-right": number | null;
 }
 
 export const NO_BESTS: QuickBests = {
@@ -84,6 +88,7 @@ export const NO_BESTS: QuickBests = {
   "name-country": null,
   "line-up": null,
   "close-up": null,
+  "left-right": null,
 };
 
 /**
@@ -118,6 +123,7 @@ export function loadQuickBests(): QuickBests {
     "name-country": positive(loadBestName()),
     "line-up": positive(loadBestLine()),
     "close-up": positive(loadBestClose()),
+    "left-right": positive(loadBestLeftRight()),
   };
 }
 
@@ -154,7 +160,8 @@ export function bestLine(mode: QuickMode, bests: QuickBests): string | null {
     case "further-north":
     case "odd-one-out":
     case "which-way":
-    case "name-country": {
+    case "name-country":
+    case "left-right": {
       const n = bests[mode];
       return n === null ? null : `Best: ${inARow(n)}`;
     }

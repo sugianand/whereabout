@@ -88,6 +88,11 @@ const BLURBS: Record<QuickMode, { name: string; blurb: string }> = {
     blurb:
       "A tight crop of a photo and four country names: each wrong name zooms out and costs a point. Five photos against Atlas.",
   },
+  "left-right": {
+    name: "Left or right?",
+    blurb:
+      "One photo: do they drive on the left or the right where it was taken? Swipe or tap your call until your first miss, against Atlas's read of the road.",
+  },
 };
 
 const CARD =
@@ -212,6 +217,7 @@ export default function QuickGames({
           "name-country",
           "line-up",
           "close-up",
+          "left-right",
         ] as const
       ).map((mode) => (
         <li key={mode}>{card(mode, `/${mode}`)}</li>

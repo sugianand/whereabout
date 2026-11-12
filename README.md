@@ -130,6 +130,12 @@ a day, a wrong name kept as it is tapped so a reload opens on the same wider cro
 squares for the tries on each photo. After a free game, *Challenge a friend* sends a link that deals the
 very same five crops and names, carrying your points on each and nothing else: the friend sees the
 points to beat, yours beside theirs on every photo, and can send theirs back.
+**Left or right?** (at `/left-right`, in the Games menu) shows one photo and asks which side of the
+road they drive on where it was taken: tap *Left* or *Right*, swipe the photo to a side, or press
+← or →. The answer names the country and its side, and Atlas calls each photo too, from its road
+clue or else the side of the country it picked. Left and right photos are dealt by a fair coin, not
+in the catalog's proportions (most photos are from right-hand-traffic countries), so always
+calling one side is a coin flip. Endless until the first miss; your best run is kept in your browser.
 **Today** (at `/today`, in the Games menu and on the results screen) puts every daily game on one
 page: the Daily Five, Further North, Odd one out, Which way?, How far apart?, Name the country,
 Hot and cold, Line them up and Close-up, each with where it stands in your browser (not started, under way or its result), the time to the next deal, and one

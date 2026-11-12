@@ -98,20 +98,37 @@ export function climateGroupOf(label: string): string | null {
   return ZERO_SHOT_CLIMATE[label] ?? null;
 }
 
-function drivingClue(truth: DrivingSide, atlas: AtlasRead | null): TrueClue {
-  const clue = { kind: "driving_side" as const, truth: `Drives on the ${truth}` };
-  if (!atlas) return { ...clue, atlas: null, right: null };
+/**
+ * Which side of the road Atlas reads a photo as: its "Drives on the …" clue when the clue head
+ * wrote one, otherwise the side of the country it gave the most (the baseline `clue_heads.py`
+ * scores the probe against). Null when Atlas said neither.
+ */
+export type AtlasSideRead =
+  | { side: DrivingSide; from: "clue" }
+  | { side: DrivingSide; from: "pick"; country: string };
+
+export function atlasDrivingSide(atlas: AtlasRead | null | undefined): AtlasSideRead | null {
+  if (!atlas) return null;
   for (const c of atlas.clues) {
     const m = /^Drives on the (left|right)$/.exec(c.label);
-    if (m) return { ...clue, atlas: `drives on the ${m[1]}`, right: m[1] === truth };
+    if (m) return { side: m[1] as DrivingSide, from: "clue" };
   }
   const pick = [...atlas.topCountries].sort((a, b) => b.p - a.p)[0]?.country;
   const side = drivingSideOf(pick);
-  if (!pick || !side) return { ...clue, atlas: null, right: null };
+  return pick && side ? { side, from: "pick", country: pick } : null;
+}
+
+function drivingClue(truth: DrivingSide, atlas: AtlasRead | null): TrueClue {
+  const clue = { kind: "driving_side" as const, truth: `Drives on the ${truth}` };
+  const read = atlasDrivingSide(atlas);
+  if (!read) return { ...clue, atlas: null, right: null };
   return {
     ...clue,
-    atlas: `drives on the ${side} (its pick, ${countryName(pick)})`,
-    right: side === truth,
+    atlas:
+      read.from === "clue"
+        ? `drives on the ${read.side}`
+        : `drives on the ${read.side} (its pick, ${countryName(read.country)})`,
+    right: read.side === truth,
   };
 }
 

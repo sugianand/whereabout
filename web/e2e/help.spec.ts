@@ -240,6 +240,29 @@ test.describe("on a keyboard", () => {
     await expect(page.getByText("Photo 2 of 5")).toBeVisible();
   });
 
+  test("? lists Left or right?'s controls, and every one of its keys works", async ({ page }) => {
+    await page.goto("./left-right");
+    await expect(page.getByRole("button", { name: "They drive on the left" })).toBeEnabled();
+    const sheet = await openWithKey(page, "Controls for Left or right?");
+    await expectSheetLists(sheet, "left-right", false);
+    // An arrow pressed in the sheet doesn't make a call behind it.
+    await page.keyboard.press("ArrowLeft");
+    await page.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+    const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
+    await expect(card).toBeHidden();
+
+    // Each arrow makes a call; Enter moves on from the answer, or deals a new run after a miss.
+    for (const pick of keysOf("left-right", "pick")) {
+      await expect(page.getByRole("button", { name: "They drive on the left" })).toBeEnabled();
+      await page.keyboard.press(pick);
+      await expect(card).toBeVisible();
+      await expect(card.getByRole("button")).toBeFocused();
+      await page.keyboard.press(keysOf("left-right", "next")[0]);
+      await expect(card).toBeHidden();
+    }
+  });
+
   test("? lists Line them up's controls, and every one of its keys works", async ({ page }) => {
     await page.goto("./line-up");
     const lock = page.getByRole("button", { name: "Lock it in" });
@@ -364,6 +387,7 @@ test.describe("on a touch screen", () => {
     ["name-country", "./name-country", "Controls for Name the country"],
     ["line-up", "./line-up", "Controls for Line them up"],
     ["close-up", "./close-up", "Controls for Close-up"],
+    ["left-right", "./left-right", "Controls for Left or right?"],
     ["how-far", "./how-far", "Controls for How far apart?"],
     ["which-way", "./which-way", "Controls for Which way?"],
   ] as const) {

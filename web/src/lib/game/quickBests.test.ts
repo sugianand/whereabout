@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { BLITZ_BEST_KEY } from "./blitz";
 import { BEST_NORTH_KEY } from "./furtherNorth";
 import { BEST_HOW_FAR_KEY } from "./howFar";
+import { BEST_LEFT_RIGHT_KEY } from "./leftRight";
 import { BEST_ODD_KEY } from "./oddOneOut";
 import { BEST_HOT_KEY } from "./hotCold";
 import { BEST_CLOSE_KEY } from "./closeUp";
@@ -33,6 +34,7 @@ describe("loadQuickBests", () => {
     localStorage.setItem(BEST_NAME_KEY, "7");
     localStorage.setItem(BEST_LINE_KEY, "14");
     localStorage.setItem(BEST_CLOSE_KEY, "11");
+    localStorage.setItem(BEST_LEFT_RIGHT_KEY, "12");
     expect(loadQuickBests()).toEqual({
       blitz: 18250,
       streak: { streak: 6, region: null },
@@ -45,6 +47,7 @@ describe("loadQuickBests", () => {
       "name-country": 7,
       "line-up": 14,
       "close-up": 11,
+      "left-right": 12,
     });
   });
 
@@ -95,6 +98,7 @@ describe("bestLine", () => {
     "name-country": 7,
     "line-up": 14,
     "close-up": 11,
+    "left-right": 12,
   };
 
   it("reads each best the way its card shows it", () => {
@@ -109,6 +113,7 @@ describe("bestLine", () => {
     expect(bestLine("name-country", bests)).toBe("Best: 7 in a row");
     expect(bestLine("line-up", bests)).toBe("Best: 14 of 20 in place");
     expect(bestLine("close-up", bests)).toBe("Best: 11 of 15 points");
+    expect(bestLine("left-right", bests)).toBe("Best: 12 in a row");
   });
 
   it("names no continent for an all-world streak, and counts photos in the plural", () => {
