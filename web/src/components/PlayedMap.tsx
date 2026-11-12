@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { MAP_COLORS, buildGlobeStyle } from "@/lib/basemap";
+import { markImage, markShapeAt } from "@/lib/closenessMarks";
 import { countryName } from "@/lib/countries";
 import { CLOSENESS_KM, closenessOf, type Closeness } from "@/lib/feel";
 import { formatDistance, formatPoints } from "@/lib/geo";
@@ -21,19 +22,34 @@ import {
   type PlayedPhoto,
 } from "@/lib/playedMap";
 
+import ClosenessMark from "./ClosenessMark";
 import ClosestCalls, { type ClosestCallsDeck } from "./ClosestCalls";
 import ContinentForm from "./ContinentForm";
 import WeeklyForm from "./WeeklyForm";
 import { INITIAL_VIEW } from "./Globe";
 import UnitsSwitch from "./UnitsSwitch";
 
-/** Each closeness band's dot colour: gold for a bullseye, cooling to a dim grey far away. */
+/**
+ * Each closeness band's colour: gold for a bullseye, then sonar and flare, cooling to periwinkle
+ * far away. Each band also has its own shape (`lib/closenessMarks.ts`), and the colours stay
+ * apart for protanopia, deuteranopia and tritanopia (checked in PlayedMap.test.tsx); the far
+ * band was a grey that read as the flare pink without red-green vision.
+ */
 export const BAND_COLORS: Readonly<Record<Closeness, string>> = {
   bullseye: MAP_COLORS.gold,
   close: MAP_COLORS.sonar,
   near: MAP_COLORS.flare,
-  far: "#7d97a0",
+  far: "#8f9bff",
 };
+
+/** The edge round each globe mark, so it stands off land and sea alike. */
+export const MARK_EDGE = "#082331";
+
+/** The globe's marks are drawn at twice their size on screen, for sharp edges on any phone. */
+const MARK_PIXEL_RATIO = 2;
+const MARK_PIXELS = 40;
+
+const markName = (b: Closeness) => `played-mark-${b}`;
 
 const km = (n: number) => n.toLocaleString("en-US");
 
@@ -59,21 +75,30 @@ function setData(map: MapLibreMap, id: string, data: unknown) {
 function addLayers(map: MapLibreMap) {
   map.addSource(SOURCE, { type: "geojson", data: EMPTY });
   map.addSource(SELECTED_SOURCE, { type: "geojson", data: EMPTY });
-  const color = [
+  // One shape per band, so the globe never says how close a pin was by colour alone.
+  BANDS.forEach((b, i) =>
+    map.addImage(
+      markName(b),
+      markImage(markShapeAt(i), BAND_COLORS[b], MARK_EDGE, MARK_PIXELS, 3),
+      { pixelRatio: MARK_PIXEL_RATIO },
+    ),
+  );
+  const icon = [
     "match",
     ["get", "band"],
-    ...BANDS.flatMap((b) => [b, BAND_COLORS[b]]),
-    BAND_COLORS.far,
+    ...BANDS.flatMap((b) => [b, markName(b)]),
+    markName("far"),
   ] as unknown as string;
   map.addLayer({
     id: "played-dots",
-    type: "circle",
+    type: "symbol",
     source: SOURCE,
-    paint: {
-      "circle-color": color,
-      "circle-radius": ["interpolate", ["linear"], ["zoom"], 1, 4, 6, 8] as unknown as number,
-      "circle-stroke-color": "#082331",
-      "circle-stroke-width": 1.5,
+    layout: {
+      "icon-image": icon,
+      // 12 px across with the whole globe in view, 20 px close in.
+      "icon-size": ["interpolate", ["linear"], ["zoom"], 1, 0.6, 6, 1] as unknown as number,
+      "icon-allow-overlap": true,
+      "icon-ignore-placement": true,
     },
   });
   map.addLayer({
@@ -90,7 +115,7 @@ function addLayers(map: MapLibreMap) {
 }
 
 /**
- * Your map: every photo you've played on the globe, a dot coloured by how close your pin
+ * Your map: every photo you've played on the globe, a mark shaped and coloured by how close your pin
  * landed, with the countries and continents you've seen counted and your rounds listed newest
  * first. Picking a round in the list flies the globe to it. Everything comes from this browser
  * (`lib/playedMap.ts`), read after mount so the static page never guesses at it. With the
@@ -182,7 +207,7 @@ export default function PlayedMap({ deck }: { deck?: ClosestCallsDeck } = {}) {
     return (
       <div className="mt-10 max-w-xl">
         <p className="text-lg text-chalk-dim">
-          Nothing on your map yet. Every photo you play lands here, coloured by how close your pin
+          Nothing on your map yet. Every photo you play lands here, marked by how close your pin
           got.
         </p>
         <Link
@@ -222,7 +247,7 @@ export default function PlayedMap({ deck }: { deck?: ClosestCallsDeck } = {}) {
           className="h-full w-full"
           // A group, not an image: MapLibre puts focusable controls (zoom keys, credits) inside.
           role="group"
-          aria-label={`Globe with the ${plural(summary.photos, "photo", "photos")} you've played, coloured by how close your pin landed`}
+          aria-label={`Globe with the ${plural(summary.photos, "photo", "photos")} you've played, each marked by how close your pin landed`}
           data-testid="played-globe"
           data-dots={ready ? played.length : undefined}
         />
@@ -237,11 +262,7 @@ export default function PlayedMap({ deck }: { deck?: ClosestCallsDeck } = {}) {
         <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm" aria-label="Closeness">
           {BANDS.map((b) => (
             <li key={b} className="flex items-center gap-2">
-              <span
-                aria-hidden="true"
-                className="inline-block h-3 w-3 rounded-full"
-                style={{ background: BAND_COLORS[b] }}
-              />
+              <ClosenessMark band={BANDS.indexOf(b)} color={BAND_COLORS[b]} />
               {bandLabel(b, units)}: <strong>{summary.bands[b]}</strong>
             </li>
           ))}
@@ -294,11 +315,7 @@ export default function PlayedMap({ deck }: { deck?: ClosestCallsDeck } = {}) {
                     aria-pressed={isSelected}
                     className={`flex w-full items-center gap-3 py-3 text-left transition hover:text-gold ${isSelected ? "text-gold" : ""}`}
                   >
-                    <span
-                      aria-hidden="true"
-                      className="h-3 w-3 shrink-0 rounded-full"
-                      style={{ background: BAND_COLORS[band] }}
-                    />
+                    <ClosenessMark band={BANDS.indexOf(band)} color={BAND_COLORS[band]} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate">{p.place}</span>
                       <span className="block text-xs text-chalk-dim">

@@ -7,6 +7,7 @@
  * The drawing is split in two: `shareImageLayout` decides every shape and word (pure, tested), and
  * `drawShareImage` only paints a layout onto a 2D context.
  */
+import { markGeometry, markShapeAt, type MarkShape } from "@/lib/closenessMarks";
 import { formatDistance, formatPoints } from "@/lib/geo";
 import type { Units } from "@/lib/units";
 
@@ -28,8 +29,13 @@ export const INK = {
 export const SIGN = '"Big Shoulders Display Variable", "Arial Narrow", sans-serif';
 export const SANS = '"Atkinson Hyperlegible Next Variable", system-ui, sans-serif';
 
-/** One colour per distance band, closest first, in the order of DISTANCE_BANDS. */
-export const BAND_COLORS: readonly string[] = [INK.sonar, INK.gold, "#ff9f43", INK.flare];
+/**
+ * One colour per distance band, closest first, in the order of DISTANCE_BANDS: green, yellow,
+ * orange and red like the text card's squares, but picked to stay apart for protanopia,
+ * deuteranopia and tritanopia (shareImage.test.ts checks them with `lib/colorVision.ts`). Each
+ * band also has its own shape (`lib/closenessMarks.ts`), drawn on its tile and in the legend.
+ */
+export const BAND_COLORS: readonly string[] = ["#4fe3c1", "#ffe066", "#ff8c42", "#d6336c"];
 
 /** Who got closer on a round, in words, since emoji draw differently on every phone. */
 export const VERSUS_WORD: Record<Versus, { text: string; color: string }> = {
@@ -49,9 +55,18 @@ export function legendLabels(units: Units = "km"): string[] {
   ];
 }
 
-export function bandColor(band: DistanceBand): string {
+function bandIndex(band: DistanceBand): number {
   const i = DISTANCE_BANDS.indexOf(band);
-  return BAND_COLORS[i < 0 ? BAND_COLORS.length - 1 : i];
+  return i < 0 ? BAND_COLORS.length - 1 : i;
+}
+
+export function bandColor(band: DistanceBand): string {
+  return BAND_COLORS[bandIndex(band)];
+}
+
+/** The band's shape, the same on its tile, in the legend and on Your map. */
+export function bandShape(band: DistanceBand): MarkShape {
+  return markShapeAt(bandIndex(band));
 }
 
 export interface ImageRect {
@@ -73,11 +88,22 @@ export interface ImageText {
   align: "left" | "center" | "right";
 }
 
+/** A closeness band's shape, centred on (x, y) and `radius` from it to the edge of its box. */
+export interface ImageMark {
+  shape: MarkShape;
+  x: number;
+  y: number;
+  radius: number;
+  fill: string;
+}
+
 export interface ShareImageLayout {
   width: number;
   height: number;
   background: string;
   rects: ImageRect[];
+  /** Painted over the rects, under the words. */
+  marks?: ImageMark[];
   texts: ImageText[];
 }
 
@@ -91,6 +117,7 @@ export function shareImageLayout(card: ShareCard, units: Units = "km"): ShareIma
     { x: 32, y: 32, w: W - 64, h: W - 64, radius: 40, stroke: INK.frame },
   ];
   const texts: ImageText[] = [];
+  const marks: ImageMark[] = [];
   const text = (t: string, x: number, y: number, font: string, color: string, align = "left") =>
     texts.push({ text: t, x, y, font, color, align: align as ImageText["align"] });
 
@@ -108,14 +135,16 @@ export function shareImageLayout(card: ShareCard, units: Units = "km"): ShareIma
   card.rounds.forEach((r, i) => {
     const x = left + i * (TILE + gap);
     rects.push({ x, y: top, w: TILE, h: TILE, radius: 24, fill: bandColor(r.band) });
-    text(
-      String(i + 1),
-      x + TILE / 2,
-      top + TILE / 2 + 22,
-      `800 64px ${SIGN}`,
-      INK.background,
-      "center",
-    );
+    // The band's shape above the round's number, in the tile's dark ink, so the tile says how
+    // close it was without its colour.
+    marks.push({
+      shape: bandShape(r.band),
+      x: x + TILE / 2,
+      y: top + 46,
+      radius: 24,
+      fill: INK.background,
+    });
+    text(String(i + 1), x + TILE / 2, top + 122, `800 64px ${SIGN}`, INK.background, "center");
     if (card.atlasRounds > 0) {
       const v = VERSUS_WORD[r.versus];
       text(v.text, x + TILE / 2, top + TILE + 56, `700 36px ${SANS}`, v.color, "center");
@@ -138,17 +167,23 @@ export function shareImageLayout(card: ShareCard, units: Units = "km"): ShareIma
     text(hints, MARGIN, y, `400 32px ${SANS}`, INK.dim);
   }
 
-  // How close each colour means, then where to play.
+  // How close each shape and colour means, then where to play.
   const legendY = 968;
   let lx = MARGIN;
   legendLabels(units).forEach((label, i) => {
-    rects.push({ x: lx, y: legendY - 22, w: 26, h: 26, radius: 6, fill: BAND_COLORS[i] });
-    text(label, lx + 38, legendY, `400 28px ${SANS}`, INK.dim);
-    lx += 38 + label.length * 15 + 40;
+    marks.push({
+      shape: markShapeAt(i),
+      x: lx + 15,
+      y: legendY - 10,
+      radius: 15,
+      fill: BAND_COLORS[i],
+    });
+    text(label, lx + 40, legendY, `400 28px ${SANS}`, INK.dim);
+    lx += 40 + label.length * 15 + 40;
   });
   text(card.url.replace(/^https?:\/\//, ""), MARGIN, 1020, `400 28px ${SANS}`, INK.dim);
 
-  return { width: W, height: W, background: INK.background, rects, texts };
+  return { width: W, height: W, background: INK.background, rects, marks, texts };
 }
 
 /** The parts of CanvasRenderingContext2D the drawing uses, so tests can record it. */
@@ -162,6 +197,10 @@ export type DrawingContext = Pick<
   | "fillRect"
   | "beginPath"
   | "roundRect"
+  | "arc"
+  | "moveTo"
+  | "lineTo"
+  | "closePath"
   | "fill"
   | "stroke"
   | "fillText"
@@ -182,6 +221,17 @@ export function drawShareImage(ctx: DrawingContext, layout: ShareImageLayout): v
       ctx.lineWidth = 4;
       ctx.stroke();
     }
+  }
+  for (const m of layout.marks ?? []) {
+    const g = markGeometry(m.shape, m.x, m.y, m.radius);
+    ctx.beginPath();
+    if (g.kind === "circle") ctx.arc(g.cx, g.cy, g.r, 0, 2 * Math.PI);
+    else {
+      g.points.forEach(([px, py], i) => (i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py)));
+      ctx.closePath();
+    }
+    ctx.fillStyle = m.fill;
+    ctx.fill();
   }
   for (const t of layout.texts) {
     ctx.font = t.font;

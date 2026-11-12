@@ -36,6 +36,8 @@ export class FakeMap {
   layers: Array<{ id: string; source?: string }> = [];
   /** Paint values set after load, by layer id then property. */
   paint: Record<string, Record<string, unknown>> = {};
+  /** Images added for symbol layers, by name. */
+  images: Record<string, { image: unknown; options?: unknown }> = {};
 
   constructor(options: Record<string, unknown>) {
     this.options = options;
@@ -118,6 +120,10 @@ export class FakeMap {
 
   addLayer(layer: { id: string; source?: string }) {
     this.layers.push(layer);
+  }
+
+  addImage(name: string, image: unknown, options?: unknown) {
+    this.images[name] = { image, options };
   }
 
   setPaintProperty(layer: string, property: string, value: unknown) {

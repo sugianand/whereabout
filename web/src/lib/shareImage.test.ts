@@ -6,10 +6,13 @@ import { countryName } from "@/lib/countries";
 import type { RoundResult } from "@/lib/game/state";
 import type { AtlasData, CatalogPhoto } from "@/lib/game/types";
 
+import { MARK_SHAPES } from "./closenessMarks";
+import { MIN_SEPARATION, contrastRatio, separations } from "./colorVision";
 import { DISTANCE_BANDS, shareCard, type ShareCard } from "./share";
 import {
   BAND_COLORS,
   IMAGE_SIZE,
+  INK,
   VERSUS_WORD,
   drawShareImage,
   legendLabels,
@@ -170,9 +173,63 @@ describe("shareImageLayout", () => {
 
   it("colours a round with no pin (a Blitz clock ran out) as the farthest band", () => {
     const c = shareCard("Blitz", [result(null, 0, 2000)], GAME);
-    expect(shareImageLayout(c).rects.find((r) => r.w === 150)?.fill).toBe(
+    const layout = shareImageLayout(c);
+    expect(layout.rects.find((r) => r.w === 150)?.fill).toBe(
       BAND_COLORS[DISTANCE_BANDS.length - 1],
     );
+    expect(layout.marks?.[0].shape).toBe("cross");
+  });
+
+  it("marks each tile with its band's shape, so a tile reads without its colour", () => {
+    const layout = shareImageLayout(card());
+    const tiles = layout.rects.filter((r) => r.w === 150);
+    const onTiles = (layout.marks ?? []).filter((m) => m.fill === INK.background);
+    expect(onTiles.map((m) => m.shape)).toEqual([
+      "circle",
+      "diamond",
+      "triangle",
+      "cross",
+      "diamond",
+    ]);
+    onTiles.forEach((m, i) => {
+      expect(m.x).toBe(tiles[i].x + 75);
+      expect(m.y - m.radius).toBeGreaterThanOrEqual(tiles[i].y);
+    });
+    // The round's number sits under its mark, still inside the tile.
+    const numbers = layout.texts.filter((t) => /^[1-5]$/.test(t.text));
+    numbers.forEach((t, i) => {
+      expect(t.y - 48).toBeGreaterThan(onTiles[i].y + onTiles[i].radius);
+      expect(t.y).toBeLessThan(tiles[i].y + tiles[i].h);
+    });
+  });
+
+  it("keys every band in the legend by shape and colour, beside its distance", () => {
+    const layout = shareImageLayout(card(), "mi");
+    const legend = (layout.marks ?? []).filter((m) => m.fill !== INK.background);
+    expect(legend.map((m) => m.shape)).toEqual([...MARK_SHAPES]);
+    expect(legend.map((m) => m.fill)).toEqual([...BAND_COLORS]);
+    const labels = legendLabels("mi").map((l) => layout.texts.find((t) => t.text === l));
+    labels.forEach((t, i) => {
+      expect(t).toBeDefined();
+      expect(t!.x).toBeGreaterThan(legend[i].x + legend[i].radius);
+      if (i > 0) expect(legend[i].x - legend[i].radius).toBeGreaterThan(labels[i - 1]!.x + 60);
+    });
+    // The last label ends inside the frame.
+    const last = labels[labels.length - 1]!;
+    expect(last.x + last.text.length * 15).toBeLessThan(IMAGE_SIZE - 32);
+  });
+
+  it("keeps the band colours apart for every kind of colour vision, and clear of the background", () => {
+    for (const s of separations(BAND_COLORS)) {
+      expect(s.distance, `${s.kind}: ${s.pair.join(" and ")}`).toBeGreaterThanOrEqual(
+        MIN_SEPARATION,
+      );
+    }
+    // WCAG's 3:1 for graphics against the picture's ink, which is also the large-text bar the
+    // tile's 64 px round number in that ink meets on its tile.
+    for (const c of BAND_COLORS) {
+      expect(contrastRatio(c, INK.background), c).toBeGreaterThanOrEqual(3);
+    }
   });
 
   it("draws the same words whichever photos were played, for every photo in the catalog", () => {
@@ -211,6 +268,10 @@ describe("drawShareImage", () => {
       fillRect: vi.fn(() => calls.push("background")),
       beginPath: vi.fn(),
       roundRect: vi.fn(() => calls.push("rect")),
+      arc: vi.fn(() => calls.push("mark")),
+      moveTo: vi.fn(() => calls.push("mark")),
+      lineTo: vi.fn(),
+      closePath: vi.fn(),
       fill: vi.fn(),
       stroke: vi.fn(),
       fillText: vi.fn((t: string) => calls.push(`text:${t}`)),
@@ -222,7 +283,9 @@ describe("drawShareImage", () => {
     expect(calls.filter((c) => c.startsWith("text:"))).toEqual(
       layout.texts.map((t) => `text:${t.text}`),
     );
-    expect(calls.lastIndexOf("rect")).toBeLessThan(calls.indexOf("text:WHEREABOUT"));
+    expect(calls.filter((c) => c === "mark")).toHaveLength(layout.marks!.length);
+    expect(calls.lastIndexOf("rect")).toBeLessThan(calls.indexOf("mark"));
+    expect(calls.lastIndexOf("mark")).toBeLessThan(calls.indexOf("text:WHEREABOUT"));
   });
 });
 

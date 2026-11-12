@@ -1,10 +1,12 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { PLAYED_KEY, type PlayedPhoto } from "@/lib/playedMap";
+import { MAP_COLORS } from "@/lib/basemap";
+import { MIN_SEPARATION, contrastRatio, separations } from "@/lib/colorVision";
+import { BANDS, PLAYED_KEY, type PlayedPhoto } from "@/lib/playedMap";
 import { FakeMap, resetFakes } from "@/test/maplibre-mock";
 
-import PlayedMap, { LIST_FIRST } from "./PlayedMap";
+import PlayedMap, { BAND_COLORS, LIST_FIRST, MARK_EDGE } from "./PlayedMap";
 
 vi.mock("maplibre-gl", async () => (await import("@/test/maplibre-mock")).maplibreMock);
 
@@ -72,6 +74,65 @@ describe("PlayedMap", () => {
     expect(rounds[0]).toHaveTextContent("No pin · 0 points");
     expect(rounds[2]).toHaveTextContent("Shibuya, Tokyo");
     expect(rounds[2]).toHaveTextContent("8.0 km off · 4,600 points");
+  });
+
+  it("marks each band by shape as well as colour, on the globe, in the legend and in the list", async () => {
+    store([
+      photo("a", { km: 8 }),
+      photo("b", { km: 300 }),
+      photo("c", { km: 1200 }),
+      photo("d", { km: null, score: 0 }),
+    ]);
+    const { container } = render(<PlayedMap />);
+    await waitFor(() => expect(FakeMap.instances).toHaveLength(1));
+    const map = FakeMap.instances[0];
+    act(() => map.emit("load"));
+
+    // A picture per band for the globe's symbol layer, sharp at twice its size.
+    expect(Object.keys(map.images)).toEqual(BANDS.map((b) => `played-mark-${b}`));
+    for (const b of BANDS) {
+      const { image, options } = map.images[`played-mark-${b}`];
+      expect((image as { width: number }).width).toBe(40);
+      expect(options).toEqual({ pixelRatio: 2 });
+    }
+    const dots = map.layers.find((l) => l.id === "played-dots") as unknown as {
+      type: string;
+      layout: Record<string, unknown>;
+    };
+    expect(dots.type).toBe("symbol");
+    expect(dots.layout["icon-image"]).toEqual([
+      "match",
+      ["get", "band"],
+      ...BANDS.flatMap((b) => [b, `played-mark-${b}`]),
+      "played-mark-far",
+    ]);
+    expect(dots.layout["icon-allow-overlap"]).toBe(true);
+
+    const legend = screen.getByRole("list", { name: "Closeness" });
+    expect(
+      Array.from(legend.querySelectorAll("svg")).map((svg) => svg.getAttribute("data-mark")),
+    ).toEqual(["circle", "diamond", "triangle", "cross"]);
+    // Newest first: no pin, 1,200 km, 300 km, 8 km.
+    const rounds = within(screen.getByRole("list", { name: "Your rounds" }));
+    expect(
+      rounds.getAllByRole("button").map((b) => b.querySelector("svg")?.getAttribute("data-mark")),
+    ).toEqual(["cross", "triangle", "diamond", "circle"]);
+    expect(container.querySelectorAll("svg[aria-hidden='true'][data-mark]").length).toBe(8);
+  });
+
+  it("keeps the band colours apart for every kind of colour vision, and clear of the globe", () => {
+    const palette = BANDS.map((b) => BAND_COLORS[b]);
+    for (const s of separations(palette)) {
+      expect(s.distance, `${s.kind}: ${s.pair.join(" and ")}`).toBeGreaterThanOrEqual(
+        MIN_SEPARATION,
+      );
+    }
+    // WCAG's 3:1 for graphics, on the page, the sea and the land, and against each mark's edge.
+    for (const c of palette) {
+      for (const under of [MAP_COLORS.ocean, MAP_COLORS.land, MARK_EDGE]) {
+        expect(contrastRatio(c, under), `${c} on ${under}`).toBeGreaterThanOrEqual(3);
+      }
+    }
   });
 
   it("flies to a round picked from the list and rings it", async () => {

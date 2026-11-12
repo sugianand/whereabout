@@ -29,6 +29,7 @@ import {
   type PlayerRecord,
 } from "@/lib/playerRecord";
 import {
+  DISTANCE_BANDS,
   VERSUS_LABEL,
   VERSUS_MARK,
   sendShare,
@@ -38,6 +39,8 @@ import {
   type ShareOutcome,
 } from "@/lib/share";
 import {
+  BAND_COLORS,
+  bandColor,
   legendLabels,
   renderShareImage,
   sendShareImage,
@@ -52,6 +55,7 @@ import {
 } from "@/lib/headToHead";
 import { useCountUp } from "@/lib/useCountUp";
 
+import ClosenessMark from "./ClosenessMark";
 import DailyArchive from "./DailyArchive";
 import { useKeepChallenge } from "./HeadToHeadButton";
 import TodayLink from "./TodayLink";
@@ -422,6 +426,11 @@ function ShareCardPreview({ card, units }: { card: ShareCard; units: Units }) {
             className="flex flex-col items-center gap-1 text-2xl leading-none"
           >
             <span aria-hidden="true">{r.band.square}</span>
+            <ClosenessMark
+              band={DISTANCE_BANDS.indexOf(r.band)}
+              color={bandColor(r.band)}
+              size={16}
+            />
             {card.atlasRounds > 0 && (
               <span aria-hidden="true" className="text-lg">
                 {VERSUS_MARK[r.versus]}
@@ -431,7 +440,14 @@ function ShareCardPreview({ card, units }: { card: ShareCard; units: Units }) {
         ))}
       </div>
       <p className="mt-3 text-xs text-chalk-dim">
-        🟩 within {near} · 🟨 {mid} · 🟧 {far} · 🟥 further
+        {[`within ${near}`, mid, far, "further"].map((words, i) => (
+          <span key={i} className="whitespace-nowrap">
+            {i > 0 && " · "}
+            {DISTANCE_BANDS[i].square}
+            <ClosenessMark band={i} color={BAND_COLORS[i]} size={11} className="mx-0.5" />
+            {words}
+          </span>
+        ))}
         {card.atlasRounds > 0 && " · ✅ beat Atlas · ❌ Atlas closer · 🤝 tie · ▫️ Atlas sat out"}
       </p>
     </figure>
