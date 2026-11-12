@@ -16,6 +16,12 @@
  */
 
 import { MAX_POINTS, formatPoints } from "@/lib/geo";
+import {
+  foldRowsAround,
+  rowWinner,
+  type HeadToHead,
+  type HeadToHeadRow,
+} from "@/lib/headToHead";
 
 import { challengeOutcome, type ChallengeOutcome } from "./challenge";
 import { seededShuffle } from "./daily";
@@ -241,4 +247,75 @@ export function survivalChallengeLine(run: SurvivalBest, c: SurvivalChallenge): 
     return `You both survived ${photos(c.survived)}, but your friend's points win by ${gap}.`;
   }
   return `A dead heat: you both survived ${photos(c.survived)} with ${formatPoints(c.total)} points.`;
+}
+
+/** One side's cell on a photo of the head-to-head, with the health it shows, if any. */
+type HealthCell = { text: string; health: number | null };
+
+/**
+ * The health left after photo `i`, "Out" on the photo that emptied the bar, a dash past where that
+ * run ended, and "…" before `ranOnTo` past a long link's last photo, where the sender's run went
+ * on but the link doesn't say how their bar stood.
+ */
+function healthCell(healths: readonly number[], i: number, ranOnTo = 0): HealthCell {
+  if (i < healths.length) {
+    const h = healths[i];
+    return { text: h === 0 ? "Out" : `${formatPoints(h)} left`, health: h };
+  }
+  return { text: i < ranOnTo ? "…" : "—", health: null };
+}
+
+/**
+ * Who took a photo: the bar with more health left after it, both on a photo that emptied both
+ * bars. Level bars, or a photo only one of you reached and ran out on, are no one's.
+ */
+function healthWinner(you: HealthCell, friend: HealthCell): HeadToHeadRow["winner"] {
+  if (you.health !== null && friend.health !== null) {
+    if (you.health === 0 && friend.health === 0) return "tie";
+    return you.health === friend.health ? "none" : rowWinner(you.health, friend.health);
+  }
+  if (you.health) return friend.text === "—" ? "you" : "none";
+  if (friend.health) return you.text === "—" ? "friend" : "none";
+  return "none";
+}
+
+/**
+ * The head-to-head of a Survival challenge: both bars photo by photo, the health left after each
+ * photo either of you reached, and "Out" where each run ended. Photos survived decide the game and
+ * then points, as the end screen says, so the totals give photos survived, or points when you
+ * survived the same number. A long run keeps both endings and folds the photos between. Only
+ * numbers are drawn, never a photo, place or country.
+ */
+export function survivalHeadToHead(
+  run: FinishedSurvivalRun,
+  c: SurvivalChallenge,
+  url: string,
+): HeadToHead {
+  // Past a full link's last photo the sender went on, for as many photos as they survived.
+  const friendOn = c.healths[c.healths.length - 1] === 0 ? 0 : c.survived;
+  const n = Math.max(run.healths.length, c.healths.length, friendOn);
+  const rows = Array.from({ length: n }, (_, i): HeadToHeadRow => {
+    const you = healthCell(run.healths, i);
+    const friend = healthCell(c.healths, i, friendOn);
+    return {
+      label: `Photo ${i + 1}`,
+      you: you.text,
+      friend: friend.text,
+      winner: healthWinner(you, friend),
+    };
+  });
+  const level = run.survived === c.survived;
+  const total = (survived: number, points: number) =>
+    level ? `${formatPoints(points)} pts` : photos(survived);
+  return {
+    game: "Survival",
+    youTotal: total(run.survived, run.total),
+    friendTotal: total(c.survived, c.total),
+    outcome: survivalChallengeOutcome(run, c),
+    rows: foldRowsAround(rows, [run.healths.length - 1, c.healths.length - 1], {
+      one: "Photo",
+      many: "Photos",
+    }),
+    url,
+  };
 }

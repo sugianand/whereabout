@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import photos from "@/data/photos.json";
+import { countryName } from "@/lib/countries";
+import { MAX_ROWS, headToHeadLayout } from "@/lib/headToHead";
+
 import { seededShuffle } from "./daily";
 import { HEAL_POINTS, SURVIVAL_HEALTH } from "./survival";
 import {
@@ -14,6 +18,7 @@ import {
   survivalChallengeOutcome,
   survivalChallengeText,
   survivalChallengeUrl,
+  survivalHeadToHead,
   type SurvivalChallenge,
 } from "./survivalChallenge";
 
@@ -210,5 +215,98 @@ describe("Survival challenge results", () => {
     expect(
       survivalChallengeText({ ...run, survived: 2, total: 9100 }, HREF, C).split("\n")[1],
     ).toBe("We tied. Play them again to break it?");
+  });
+});
+
+describe("the Survival head to head", () => {
+  const rowsOf = (h: ReturnType<typeof survivalHeadToHead>) =>
+    h.rows.map((r) => [r.label, r.you, r.friend, r.winner]);
+
+  it("lists both bars photo by photo, with the health left and where each run ended", () => {
+    // Bitten to 2,000, healed to 3,000, bitten to 500, then out on the fifth: four survived.
+    const run = {
+      order: DEALABLE,
+      seed: C.seed,
+      healths: [2000, 3000, 4000, 500, 0],
+      survived: 4,
+      total: 11_000,
+    };
+    const h = survivalHeadToHead(run, C, HREF);
+    expect([h.game, h.youTotal, h.friendTotal, h.outcome]).toEqual([
+      "Survival",
+      "4 photos",
+      "2 photos",
+      "won",
+    ]);
+    expect(rowsOf(h)).toEqual([
+      ["Photo 1", "2,000 left", "3,000 left", "friend"],
+      ["Photo 2", "3,000 left", "4,000 left", "friend"],
+      ["Photo 3", "4,000 left", "Out", "you"],
+      ["Photo 4", "500 left", "—", "you"],
+      ["Photo 5", "Out", "—", "none"],
+    ]);
+  });
+
+  it("rings both bars on a photo that emptied both, and neither on level bars", () => {
+    const run = { order: DEALABLE, seed: 1, healths: [3000, 2000, 0], survived: 2, total: 9100 };
+    const h = survivalHeadToHead(run, { ...C, healths: [3000, 4000, 0] }, HREF);
+    // Same photos survived, so points decide it, and the totals say points.
+    expect([h.youTotal, h.friendTotal, h.outcome]).toEqual(["9,100 pts", "9,100 pts", "tied"]);
+    expect(rowsOf(h)).toEqual([
+      ["Photo 1", "3,000 left", "3,000 left", "none"],
+      ["Photo 2", "2,000 left", "4,000 left", "friend"],
+      ["Photo 3", "Out", "Out", "tie"],
+    ]);
+    expect(survivalHeadToHead({ ...run, total: 9000 }, C, HREF).outcome).toBe("lost");
+  });
+
+  it("shows a cleared run with health to spare and no Out", () => {
+    const cleared = { order: ["c3", "a1"], seed: 1, healths: [5000, 4000], survived: 2, total: 9500 };
+    expect(rowsOf(survivalHeadToHead(cleared, C, HREF))).toEqual([
+      ["Photo 1", "5,000 left", "3,000 left", "you"],
+      ["Photo 2", "4,000 left", "4,000 left", "none"],
+      ["Photo 3", "—", "Out", "none"],
+    ]);
+  });
+
+  it("keeps both endings of a long run on the picture and folds the photos between", () => {
+    // You run out on photo 30; your friend on photo 3.
+    const healths = Array.from({ length: 30 }, (_, i) => (i === 29 ? 0 : 4000 - i * 100));
+    const run = { order: DEALABLE, seed: 1, healths, survived: 29, total: 100_000 };
+    const h = survivalHeadToHead(run, C, HREF);
+    expect(h.rows).toHaveLength(MAX_ROWS);
+    const labels = h.rows.map((r) => r.label);
+    expect(labels[0]).toBe("Photo 1");
+    expect(labels).toEqual(expect.arrayContaining(["Photo 3", "Photo 29", "Photo 30"]));
+    // Each folded stretch shows the bars after its last photo.
+    const folded = h.rows.find((r) => r.label.startsWith("Photos "))!;
+    const last = Number(folded.label.split("–")[1]);
+    expect(folded.you).toBe(`${(healths[last - 1]).toLocaleString("en-US")} left`);
+    expect(h.rows.at(-1)).toMatchObject({ label: "Photo 30", you: "Out", friend: "—" });
+  });
+
+  it("marks the photos a long link's sender went on through without naming their bar", () => {
+    const ids = DEALABLE.slice(0, 2);
+    // A link of two photos from a run that survived three, as a full link would carry.
+    const c: SurvivalChallenge = { ids, seed: 1, healths: [4000, 4500], survived: 3, total: 9000 };
+    const run = { order: DEALABLE, seed: 1, healths: [4000, 0], survived: 1, total: 4000 };
+    expect(rowsOf(survivalHeadToHead(run, c, HREF))).toEqual([
+      ["Photo 1", "4,000 left", "4,000 left", "none"],
+      ["Photo 2", "Out", "4,500 left", "friend"],
+      ["Photo 3", "—", "…", "none"],
+    ]);
+  });
+
+  it("draws no photo, place or country, only the bars", () => {
+    const run = { order: C.ids, seed: 1, healths: [1000, 0], survived: 1, total: 3000 };
+    const words = headToHeadLayout(survivalHeadToHead(run, C, HREF))
+      .texts.map((t) => t.text)
+      .join("\n");
+    for (const p of photos) {
+      expect(words).not.toContain(p.id);
+      expect(words).not.toContain(p.place);
+      expect(words).not.toContain(countryName(p.country));
+    }
+    expect(words).not.toContain("challenge=");
   });
 });

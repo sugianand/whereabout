@@ -7,6 +7,7 @@ import { BEST_SURVIVAL_KEY, HEAL_POINTS, SURVIVAL_HEALTH, biteFor } from "@/lib/
 import { encodeSurvivalChallenge } from "@/lib/game/survivalChallenge";
 import type { CatalogPhoto } from "@/lib/game/types";
 import { formatPoints } from "@/lib/geo";
+import { stubCanvas } from "@/test/canvas";
 import { gameFor } from "@/test/deck";
 import { FakeMap, resetFakes } from "@/test/maplibre-mock";
 
@@ -226,6 +227,34 @@ describe("a friend's Survival challenge", () => {
       `http://localhost:3000/survival?challenge=${played.join(".")}_${SEED.toString(36)}_${healths.join(".")}_3_10000`,
     ]);
 
+    // The head to head is drawn photo by photo, saved, and the reply link copied beside it.
+    const drawn = stubCanvas();
+    const reply = box.sent;
+    box.sent = "";
+    fireEvent.click(within(step.card).getByRole("button", { name: "Share head to head" }));
+    expect(
+      await screen.findByText("Head to head saved. Post it with the link, which is copied too."),
+    ).toBeInTheDocument();
+    expect(drawn.saved).toEqual(["whereabout-survival-head-to-head.png"]);
+    expect(drawn.words).toEqual(
+      expect.arrayContaining([
+        "Survival: head to head",
+        "You won",
+        "3 photos",
+        "1 photo",
+        "Photo 1",
+        "Photo 4",
+        "5,000 left",
+        "2,500 left",
+        "Out",
+      ]),
+    );
+    const all = drawn.words.join("\n");
+    for (const id of played) expect(all).not.toContain(id);
+    for (const id of played) expect(all).not.toContain(byId.get(id)!.place);
+    expect(box.sent).toBe(reply);
+    drawn.restore();
+
     // A fresh run leaves the link behind.
     fireEvent.click(within(step.card).getByRole("button", { name: "Play a fresh run" }));
     await waitFor(() =>
@@ -282,5 +311,7 @@ describe("a friend's Survival challenge", () => {
       "Same photos, same order: can you last longer?",
       `http://localhost:3000/survival?challenge=${ORDER[0].id}.${ORDER[1].id}_0_${healths}_1_0`,
     ]);
+    // A plain run answers no one, so there is no head to head to draw.
+    expect(within(card).queryByRole("button", { name: "Share head to head" })).toBeNull();
   });
 });

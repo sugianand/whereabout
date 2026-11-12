@@ -26,6 +26,7 @@ import {
   survivalChallengeLine,
   survivalChallengeOrder,
   survivalChallengeText,
+  survivalHeadToHead,
   type FinishedSurvivalRun,
   type SurvivalChallenge,
 } from "@/lib/game/survivalChallenge";
@@ -36,6 +37,7 @@ import type { Units } from "@/lib/units";
 import { useUnits } from "@/lib/useUnits";
 
 import GamesMenu from "./GamesMenu";
+import { HeadToHeadButton } from "./HeadToHeadButton";
 import Globe from "./Globe";
 import PhotoViewer from "./PhotoViewer";
 import UnitsSwitch from "./UnitsSwitch";
@@ -586,13 +588,23 @@ function ChallengeButton({
   }
   return (
     <span className={compact ? "flex min-w-0 flex-col" : "flex flex-col"}>
-      <button
-        type="button"
-        onClick={send}
-        className={`rounded-full border-2 border-gold font-semibold text-gold transition hover:bg-gold/10 ${compact ? "px-4 py-2" : "px-5 py-2.5"}`}
-      >
-        {answering ? "Send yours back" : "Challenge a friend"}
-      </button>
+      <span className="flex flex-wrap gap-x-3 gap-y-2">
+        <button
+          type="button"
+          onClick={send}
+          className={`rounded-full border-2 border-gold font-semibold text-gold transition hover:bg-gold/10 ${compact ? "px-4 py-2" : "px-5 py-2.5"}`}
+        >
+          {answering ? "Send yours back" : "Challenge a friend"}
+        </button>
+        {answering && (
+          <HeadToHeadButton
+            headToHead={survivalHeadToHead(run, answering, window.location.href)}
+            replyText={() => survivalChallengeText(run, window.location.href, answering)}
+            onNote={setSent}
+            compact={compact}
+          />
+        )}
+      </span>
       <span role="status" className={sent ? "mt-1 text-xs text-chalk-dim" : "sr-only"}>
         {sent}
       </span>

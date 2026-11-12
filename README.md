@@ -22,7 +22,9 @@ How far apart?, Close-up and Line them up challenges end with one too, in their 
 pin that found each country; how many times over or under each estimate was; the name that found
 each crop; how many photos were in place on each row). Odd one out, Further North, Which way?,
 Name the country and Country Streak draw both runs call by call, right, wrong or not reached, so the picture shows where each run
-ended; a long run folds its matching stretches into one row ("Quads 1–14").
+ended; a long run folds its matching stretches into one row ("Quads 1–14"). Survival draws both
+health bars photo by photo, the health left after each and "Out" where each run ended, and a long
+run keeps both endings while it folds the photos between ("Photos 8–26").
 **Blitz** (`?blitz`) gives each photo 30 seconds on a countdown ring: when time runs out your
 guess goes in wherever the pin is, and with no pin the round scores 0. The clock waits for the
 photo to load and pauses while the tab is hidden; your best Blitz is kept in your browser.

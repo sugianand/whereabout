@@ -353,3 +353,56 @@ export function runHeadToHead(
     url,
   };
 }
+
+/**
+ * Fit a long game's rows on the picture by folding stretches into one row each, "Photos 4–17",
+ * that shows the last row of the stretch, while the rows at `keep` (where each side's game ended)
+ * and as many rows near them as fit stay one by one. The first row is always kept, so the picture
+ * starts at the start. Games that fit are left row by row.
+ */
+export function foldRowsAround(
+  rows: readonly HeadToHeadRow[],
+  keep: readonly number[],
+  unit: RunUnit,
+): HeadToHeadRow[] {
+  if (rows.length <= MAX_ROWS) return [...rows];
+  const kept = new Set<number>();
+  // Rows one by one plus a row for each stretch between them.
+  const count = (set: ReadonlySet<number>) => {
+    let n = 0;
+    for (let i = 0; i < rows.length; i++) {
+      if (set.has(i)) n++;
+      else if (i === 0 || set.has(i - 1)) n++;
+    }
+    return n;
+  };
+  const ends = [...new Set(keep.filter((i) => i >= 0 && i < rows.length))];
+  const distance = (i: number) => Math.min(...ends.map((e) => Math.abs(e - i)));
+  // The first row and each end, then the rows nearest an end (ties to the earlier row), while
+  // they fit.
+  const byNearness = [
+    0,
+    ...ends,
+    ...[...rows.keys()].sort((a, b) => distance(a) - distance(b) || a - b),
+  ];
+  for (const i of byNearness) {
+    if (kept.has(i)) continue;
+    kept.add(i);
+    if (count(kept) > MAX_ROWS) kept.delete(i);
+  }
+  const out: HeadToHeadRow[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    if (kept.has(i)) {
+      out.push(rows[i]);
+      continue;
+    }
+    let last = i;
+    while (last + 1 < rows.length && !kept.has(last + 1)) last++;
+    out.push({
+      ...rows[last],
+      label: last === i ? rows[i].label : `${unit.many} ${i + 1}–${last + 1}`,
+    });
+    i = last;
+  }
+  return out;
+}
