@@ -1,13 +1,34 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
+import { answeredFrom, keepChallenge } from "@/lib/challengeLog";
 import {
   HEAD_TO_HEAD_NOTE,
   headToHeadSummary,
   sendHeadToHead,
   type HeadToHead,
 } from "@/lib/headToHead";
+
+/**
+ * Keep a friend's challenge that just ended in the head-to-head log on Your map
+ * (`lib/challengeLog.ts`), once per result: the same link answered again replaces its entry.
+ * `replyText` is read when the result is kept, so the rematch carries this game's own link.
+ */
+export function useKeepChallenge(headToHead: HeadToHead | null, replyText: () => string): void {
+  const reply = useRef(replyText);
+  useEffect(() => {
+    reply.current = replyText;
+  });
+  const { game, outcome, youTotal, friendTotal } = headToHead ?? {};
+  useEffect(() => {
+    if (!headToHead) return;
+    const entry = answeredFrom(headToHead, window.location.href, reply.current(), new Date());
+    if (entry) keepChallenge(entry);
+    // Kept again only when the result itself changes, not on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game, outcome, youTotal, friendTotal]);
+}
 
 /**
  * *Share head to head* at the end of a friend's challenge in one of the quick games: draws both
@@ -29,6 +50,7 @@ export function HeadToHeadButton({
 }) {
   const [drawing, setDrawing] = useState(false);
   const words = useId();
+  useKeepChallenge(headToHead, replyText);
 
   async function share() {
     setDrawing(true);

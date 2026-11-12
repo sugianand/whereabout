@@ -53,6 +53,7 @@ import {
 import { useCountUp } from "@/lib/useCountUp";
 
 import DailyArchive from "./DailyArchive";
+import { useKeepChallenge } from "./HeadToHeadButton";
 import TodayLink from "./TodayLink";
 import GameTour from "./GameTour";
 import QuickGames from "./QuickGames";
@@ -506,6 +507,11 @@ export default function Summary({
         card.url,
       )
     : null;
+
+  // Every friend's challenge answered here is kept for the head to head on Your map.
+  useKeepChallenge(canChallenge ? headToHead : null, () =>
+    challengeText(results, window.location.href, challenge),
+  );
 
   /**
    * The end of a friend's challenge as a picture of both results, sent with the reply link. Where

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import atlasData from "@/data/atlas.json";
 import catalog from "@/data/photos.json";
+import { loadChallengeLog } from "@/lib/challengeLog";
 import { LocalBackend } from "@/lib/game/backends";
 import { pickDaily } from "@/lib/game/daily";
 import { ARCHIVE_NOTICE } from "@/lib/game/dailyArchive";
@@ -653,6 +654,16 @@ describe("Game", { timeout: 20000 }, () => {
       expect(sent).toHaveLength(2);
       expect(sent[1]).toBe(sent[0]);
       drawn.restore();
+      expect(loadChallengeLog()).toEqual([
+        expect.objectContaining({
+          game: "Five photos",
+          outcome: "won",
+          you: "20,000 pts",
+          friend: "14,000 pts",
+          link,
+          reply: sent[0],
+        }),
+      ]);
 
       // A fresh game leaves the challenge behind, address included.
       fireEvent.click(screen.getByRole("button", { name: "Play a fresh game" }));

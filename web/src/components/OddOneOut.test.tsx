@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { loadChallengeLog } from "@/lib/challengeLog";
 import { QUICK_RECORD_KEY, loadFreeTallies } from "@/lib/game/quickRecord";
 import type { GameRecord } from "@/lib/game/deck";
 import { ODD_DAILY_KEY, dailyOddDealer } from "@/lib/game/oddDaily";
@@ -307,6 +308,18 @@ describe("a friend's Odd one out challenge", () => {
     expect(all).not.toContain("Japan");
     expect(box.sent).toBe(reply);
     drawn.restore();
+
+    // The answered challenge is kept once for the head to head on Your map, with the reply.
+    expect(loadChallengeLog()).toEqual([
+      expect.objectContaining({
+        game: "Odd one out",
+        outcome: "won",
+        you: "2 in a row",
+        friend: "1 in a row",
+        link: expect.stringMatching(/^\/odd-one-out\?.*challenge=j1\.e1\.j2\.j3/),
+        reply,
+      }),
+    ]);
 
     // A fresh run leaves the link behind.
     fireEvent.click(within(card).getByRole("button", { name: "Play a fresh run" }));

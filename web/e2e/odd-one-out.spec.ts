@@ -202,6 +202,27 @@ test("a challenge link deals a friend the same quads, laid out the same, with th
   await card.getByRole("button", { name: "Play a fresh run" }).click();
   await expect(page.getByText(/^Odd one out: three photos share a continent/)).toBeVisible();
   expect(new URL(page.url()).search).toBe("");
+
+  // Your map keeps the answered challenge: won, both runs, their link and a rematch to send.
+  await page.goto("./map");
+  const h2h = page.getByTestId("head-to-head-odd-one-out");
+  await expect(page.getByTestId("head-to-head-total")).toHaveText("1 won");
+  const row = h2h.getByTestId("head-to-head-entry");
+  await expect(row).toHaveCount(1);
+  await expect(row).toContainText("You 2 in a row · Friend 1 in a row");
+  const again = row.getByRole("link", { name: "Play theirs again" });
+  const kept = new URL(link);
+  await expect(again).toHaveAttribute("href", `${kept.pathname}${kept.search}`);
+  await page.evaluate(() => ((window as unknown as { sent: string }).sent = ""));
+  await row.getByRole("button", { name: "Send a rematch" }).click();
+  await expect(page.getByText("Rematch link copied. Paste it to your friend.")).toBeVisible();
+  expect(await sent()).toBe(reply);
+  // On a 320px phone the entry and its two buttons wrap without scrolling sideways.
+  await page.setViewportSize({ width: 320, height: 640 });
+  await expect(row.getByRole("button", { name: "Send a rematch" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  await again.click();
+  await expect(page.getByText("A friend's challenge: 1 quad in a row to beat")).toBeVisible();
   expect(errors).toEqual([]);
 });
 
