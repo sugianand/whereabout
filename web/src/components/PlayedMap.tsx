@@ -23,6 +23,7 @@ import {
 
 import ClosestCalls, { type ClosestCallsDeck } from "./ClosestCalls";
 import ContinentForm from "./ContinentForm";
+import WeeklyForm from "./WeeklyForm";
 import { INITIAL_VIEW } from "./Globe";
 import UnitsSwitch from "./UnitsSwitch";
 
@@ -250,6 +251,8 @@ export default function PlayedMap({ deck }: { deck?: ClosestCallsDeck } = {}) {
       {deck && <ClosestCalls played={played} deck={deck} />}
 
       <ContinentForm played={played} regions={deck?.regions ?? {}} />
+
+      <WeeklyForm played={played} />
 
       <section className="mt-12 grid gap-10 md:grid-cols-[1fr_1.4fr]">
         <div>

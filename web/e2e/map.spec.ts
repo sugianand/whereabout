@@ -145,3 +145,59 @@ test("your continents name the weak spot and practise it, and fit a 320px phone"
   await expect(page.getByText("Oceania game", { exact: true })).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("getting closer charts your weeks, opens a week's rounds on tap, and fits a 320px phone", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  // Three weeks of rounds kept as the game keeps them, with a quiet week between the first two.
+  const round = (i: number, day: string, km: number | null) => ({
+    id: `week${i}`,
+    lng: 0,
+    lat: 0,
+    place: `Week place ${i}`,
+    country: "FR",
+    km,
+    score: 2000,
+    day,
+  });
+  const history = [
+    round(0, "2026-10-19", 2400),
+    round(1, "2026-10-21", 1600),
+    round(2, "2026-11-02", 900),
+    round(3, "2026-11-10", 300),
+    round(4, "2026-11-11", null),
+    round(5, "2026-11-12", 500),
+  ];
+  await page.addInitScript((h) => {
+    localStorage.setItem("whereabout:played", h);
+    localStorage.setItem("whereabout:units", "km");
+  }, JSON.stringify(history));
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.goto("./map/");
+
+  await expect(page.getByTestId("weekly-trend")).toHaveText(
+    "Getting closer: 400 km the week of Nov 9, from 900 km the week of Nov 2.",
+  );
+  const bars = page.getByTestId("week-bar");
+  await expect(bars).toHaveCount(3);
+  await expect(page.getByTestId("week-empty")).toHaveCount(1);
+  const detail = page.getByTestId("week-detail");
+  await expect(detail.getByRole("listitem")).toHaveCount(3);
+  await expect(detail.getByRole("listitem").nth(1)).toHaveText("Week place 4No pin · 2,000 pts");
+
+  await bars.nth(0).scrollIntoViewIfNeeded();
+  await bars.nth(0).click();
+  await expect(bars.nth(0)).toHaveAttribute("aria-pressed", "true");
+  await expect(detail.getByRole("heading")).toHaveText(
+    "Week of Oct 19: 2,000 km off over 2 pinned rounds",
+  );
+  await expect(detail.getByRole("listitem")).toHaveCount(2);
+
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
+  expect(errors).toEqual([]);
+});

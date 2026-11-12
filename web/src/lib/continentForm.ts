@@ -49,7 +49,7 @@ export function median(values: readonly number[]): number | null {
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
-function trendOf(beforeKm: number, nowKm: number): Trend {
+export function trendOf(beforeKm: number, nowKm: number): Trend {
   // A tenth either way (or under a kilometre between them) is noise, not a change of form.
   if (Math.abs(nowKm - beforeKm) <= Math.max(1, beforeKm * 0.1)) return "same";
   return nowKm < beforeKm ? "better" : "worse";
