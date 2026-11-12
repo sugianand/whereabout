@@ -161,7 +161,10 @@ same photo and a link to a game on that continent. **Your continents** come next
 your pins land on each continent, by the median of your rounds there so one wild miss doesn't
 swamp it, with how many landed within 500 km and, after ten pinned rounds, whether your last five
 are closer than the five before. Once two continents have five pinned rounds each, the furthest
-is your weak spot, with *Practise* to deal a five-photo game there. Below them, **you and Atlas in the quick
+is your weak spot, with *Practise* to deal a five-photo game there. **Getting closer** charts
+your form over time: a column per week, as tall as the median distance your pins landed off that
+week, with how the newest week compares with the one before; tap a week for its rounds. It waits
+until two weeks have pinned rounds. Below them, **you and Atlas in the quick
 games**: for Further North and Odd one out, the rounds you got right of those you answered beside
 the rounds Atlas got right of those it played, free runs and today's runs together, and who is
 ahead. Then **head to head with friends**: every friend's challenge you've answered from a link,
