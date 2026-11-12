@@ -7,6 +7,7 @@ import { encodeNameChallenge } from "@/lib/game/nameChallenge";
 import { BEST_NAME_KEY, nameOptions, nameSeed } from "@/lib/game/nameCountry";
 import { loadNameDay, rememberNameDay } from "@/lib/game/nameDaily";
 import type { AtlasGuess, CatalogPhoto } from "@/lib/game/types";
+import { loadMixUps } from "@/lib/mixUps";
 import { stubCanvas } from "@/test/canvas";
 import { gameFor } from "@/test/deck";
 
@@ -85,6 +86,7 @@ describe("NameCountry", () => {
     expect(card).toHaveTextContent(`Place ${first}, ${country === "FR" ? "Europe" : "Asia"}`);
     expect(streak()).toHaveTextContent("1");
     expect(localStorage.getItem(BEST_NAME_KEY)).toBe("1");
+    expect(loadMixUps()).toEqual([]);
     fireEvent.click(within(card).getByRole("button", { name: "Next photo" }));
     await waitFor(() => expect(photoId()).not.toBe(first));
     expect(screen.queryByRole("region")).toBeNull();
@@ -94,10 +96,13 @@ describe("NameCountry", () => {
     localStorage.setItem(BEST_NAME_KEY, "3");
     const { truth } = await setup();
     const country = truth();
-    fireEvent.click(option(wrongOf(country)));
+    const tapped = wrongOf(country);
+    fireEvent.click(option(tapped));
     const card = screen.getByRole("region");
     expect(within(card).getByRole("heading")).toHaveTextContent(`Wrong: ${countryName(country)}`);
     expect(card).toHaveTextContent("Run over: 0 countries in a row. Your best is 3 countries.");
+    // The wrong name is kept for Your map's mix-ups; a right one never is.
+    expect(loadMixUps()).toEqual([{ truth: country, picked: tapped }]);
     fireEvent.click(within(card).getByRole("button", { name: "Start a new run" }));
     await waitFor(() => expect(screen.getByTestId("name-option-1")).toBeEnabled());
     expect(screen.queryByRole("region")).toBeNull();

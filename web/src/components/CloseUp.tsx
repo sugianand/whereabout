@@ -54,6 +54,7 @@ import { runToday } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import { nameIds, nameOptions, nameSeed } from "@/lib/game/nameCountry";
 import { thumbUrl } from "@/lib/photoSources";
+import { keepMixUp } from "@/lib/mixUps";
 import { sendShare, type ShareOutcome } from "@/lib/share";
 
 import ControlsHelp from "./ControlsHelp";
@@ -276,6 +277,8 @@ export default function CloseUp({
       const after = closeReducer(state, action);
       if (after.phase !== "guessing" && after.phase !== "answered") return;
       if (after === state) return;
+      // Each wrong name is kept for Your map's mix-ups, in any game: what was tapped for what.
+      if (country !== current.photo.country) keepMixUp(current.photo.country, country);
       if (day) {
         // Today's game is kept as each name is tapped: a wider crop is a clue a reload can't undo.
         const wrong = after.phase === "guessing" ? after.wrong : [];

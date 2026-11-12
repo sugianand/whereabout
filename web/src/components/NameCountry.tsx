@@ -46,6 +46,7 @@ import {
   rememberNameDay,
 } from "@/lib/game/nameDaily";
 
+import { keepMixUp } from "@/lib/mixUps";
 import { sendShare, type ShareOutcome } from "@/lib/share";
 
 import ControlsHelp from "./ControlsHelp";
@@ -240,6 +241,8 @@ export default function NameCountry({
         atlas: current.atlas,
       } as const;
       const after = nameReducer(state, action);
+      // A wrong name is kept for Your map's mix-ups, in any run: what was tapped for what.
+      if (after.phase === "answered" && !after.correct) keepMixUp(current.photo.country, country);
       if (after.phase === "answered" && day) {
         // Today's run is kept after every tap, so a reload resumes it and never deals it again.
         const cleared = after.correct && after.index + 1 >= after.order.length;

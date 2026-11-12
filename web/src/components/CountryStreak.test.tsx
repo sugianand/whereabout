@@ -8,6 +8,7 @@ import type { GameRecord } from "@/lib/game/deck";
 import { BEST_STREAK_KEY, bestStreakKey } from "@/lib/game/streak";
 import { encodeStreakChallenge } from "@/lib/game/streakChallenge";
 import type { CatalogPhoto } from "@/lib/game/types";
+import { loadMixUps } from "@/lib/mixUps";
 import { stubCanvas } from "@/test/canvas";
 import { gameFor } from "@/test/deck";
 import { FakeMap, resetFakes } from "@/test/maplibre-mock";
@@ -97,6 +98,8 @@ describe("CountryStreak", () => {
     fireEvent.click(screen.getByRole("button", { name: "It's United States" }));
     const card = await screen.findByRole("region");
     expect(within(card).getByText("Not United States.")).toBeInTheDocument();
+    // Only the miss is kept for Your map's mix-ups, with the country tapped for it.
+    expect(loadMixUps()).toEqual([{ truth: ORDER[2].country, picked: "US" }]);
     expect(
       within(card).getByText(/Your streak ends at 2 photos\. That's your new best!/),
     ).toBeInTheDocument();

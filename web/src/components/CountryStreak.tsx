@@ -32,6 +32,7 @@ import {
   type FinishedStreakRun,
   type StreakChallenge,
 } from "@/lib/game/streakChallenge";
+import { keepMixUp } from "@/lib/mixUps";
 import { sendShare, type ShareOutcome } from "@/lib/share";
 import type { Continent } from "@/lib/continents";
 import type { LngLat } from "@/lib/geo";
@@ -233,6 +234,8 @@ export default function CountryStreak({ deck, loadRecords, random }: CountryStre
     if (state.phase !== "guessing" || !current || !state.pick?.country) return;
     const correct = state.pick.country === current.photo.country;
     dispatch({ type: "answered", truth: current.photo.country });
+    // A wrong country is kept for Your map's mix-ups, in any run: what was tapped for what.
+    if (!correct) keepMixUp(current.photo.country, state.pick.country);
     // A challenge's photos may have been seen before, so it never counts toward the best.
     if (correct && !challenge) {
       setBest((b) => Math.max(b, rememberStreak(state.streak + 1, slug)));

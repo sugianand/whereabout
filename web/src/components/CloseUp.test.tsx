@@ -7,6 +7,7 @@ import { encodeCloseChallenge } from "@/lib/game/closeChallenge";
 import { BEST_CLOSE_KEY, dealClose } from "@/lib/game/closeUp";
 import type { GameRecord } from "@/lib/game/deck";
 import type { AtlasGuess, CatalogPhoto } from "@/lib/game/types";
+import { loadMixUps } from "@/lib/mixUps";
 import { nameIds, nameOptions, nameSeed } from "@/lib/game/nameCountry";
 import { stubCanvas } from "@/test/canvas";
 import { gameFor } from "@/test/deck";
@@ -95,8 +96,11 @@ describe("Close-up", () => {
     expect(screen.getByTestId("close-photo")).toHaveAttribute("data-stage", "1");
     expect(scale()).toBeLessThan(tight);
 
+    // The name ruled out is kept for Your map's mix-ups, once; the right name keeps nothing.
+    fireEvent.click(option(wrong));
     fireEvent.click(option(truth()));
     expect(screen.getByRole("heading", { name: /^Right/ })).toBeInTheDocument();
+    expect(loadMixUps()).toEqual([{ truth: truth(), picked: wrong }]);
     expect(screen.getByTestId("close-photo")).toHaveAttribute("data-stage", "whole");
     expect(screen.getByText(/^2 points, after 1 wrong\./)).toBeInTheDocument();
   });
