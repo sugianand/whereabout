@@ -190,3 +190,23 @@ export function globePaint(light: GlobeLight): ChartPaint[] {
     ["borders", "line-color", c.border],
   ];
 }
+
+/**
+ * Repaint a loaded globe's chart (sea, land, borders, graticule, heatmap colour and sky) in the
+ * other light, at once: each colour's transition is set to zero first, so the globe flips in the
+ * same frame as the page's CSS and the marks drawn on it. With MapLibre's default 300 ms fade a
+ * frame could show new marks on the old sea, and in CI's Chromium the fade never moved past it.
+ */
+export function paintChartNow(
+  map: {
+    setPaintProperty(layer: string, property: string, value: unknown): unknown;
+    setSky(sky: SkySpecification): unknown;
+  },
+  light: GlobeLight,
+): void {
+  for (const [layer, property, value] of globePaint(light)) {
+    map.setPaintProperty(layer, `${property}-transition`, { duration: 0, delay: 0 });
+    map.setPaintProperty(layer, property, value);
+  }
+  map.setSky(globeSky(light));
+}

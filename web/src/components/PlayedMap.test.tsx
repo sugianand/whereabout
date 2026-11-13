@@ -198,8 +198,12 @@ describe("PlayedMap", () => {
     expect(screen.getByTestId("played-globe")).toHaveAttribute("data-light", "night");
 
     act(() => setTheme("light"));
-    expect(map.paint.ocean).toEqual({ "background-color": DAY_MAP_COLORS.ocean });
-    expect(map.paint.land).toEqual({ "fill-color": DAY_MAP_COLORS.land });
+    // At once, with no fade, in the same frame as the marks.
+    expect(map.paint.ocean).toEqual({
+      "background-color-transition": { duration: 0, delay: 0 },
+      "background-color": DAY_MAP_COLORS.ocean,
+    });
+    expect(map.paint.land).toMatchObject({ "fill-color": DAY_MAP_COLORS.land });
     expect(map.sky).toMatchObject({ "sky-color": DAY_MAP_COLORS.space });
     expect(map.updatedImages).toEqual(BANDS.map((b) => `played-mark-${b}`));
     expect(map.paint["played-selected"]).toEqual({ "circle-stroke-color": RING_COLORS.day });
@@ -210,7 +214,7 @@ describe("PlayedMap", () => {
     expect(screen.getByTestId("played-globe")).toHaveAttribute("data-light", "day");
 
     act(() => setTheme("dark"));
-    expect(map.paint.ocean).toEqual({ "background-color": MAP_COLORS.ocean });
+    expect(map.paint.ocean).toMatchObject({ "background-color": MAP_COLORS.ocean });
     expect(map.paint["played-selected"]).toEqual({ "circle-stroke-color": RING_COLORS.night });
   });
 

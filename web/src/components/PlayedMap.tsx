@@ -9,8 +9,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   GLOBE_PALETTES,
   buildGlobeStyle,
-  globePaint,
-  globeSky,
+  paintChartNow,
   type GlobeLight,
 } from "@/lib/basemap";
 import { markImage, markShapeAt } from "@/lib/closenessMarks";
@@ -151,10 +150,7 @@ function addLayers(map: MapLibreMap, scheme: GlobeLight) {
 
 /** Repaint a loaded map's sea, land, marks and ring in a scheme, keeping its camera and data. */
 function paintScheme(map: MapLibreMap, scheme: GlobeLight) {
-  for (const [layer, property, value] of globePaint(scheme)) {
-    map.setPaintProperty(layer, property, value);
-  }
-  map.setSky(globeSky(scheme));
+  paintChartNow(map, scheme);
   for (const b of BANDS) map.updateImage(markName(b), markPixels(b, scheme));
   map.setPaintProperty("played-selected", "circle-stroke-color", RING_COLORS[scheme]);
 }

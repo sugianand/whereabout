@@ -13,6 +13,7 @@ import {
   buildGlobeStyle,
   countryMarkPaint,
   globePaint,
+  paintChartNow,
   globeSky,
   revealLineColor,
   type GlobeLight,
@@ -224,5 +225,25 @@ describe("the globe by day", () => {
     for (const accent of ["flare", "sonar", "gold"] as const) {
       expect(block).toContain(`--color-${accent}: ${GLOBE_PALETTES.day[accent]}`);
     }
+  });
+});
+
+describe("paintChartNow", () => {
+  it("repaints every chart colour and the sky, each with its fade turned off first", () => {
+    const calls: [string, string, unknown][] = [];
+    let sky: unknown;
+    paintChartNow(
+      {
+        setPaintProperty: (layer, property, value) => calls.push([layer, property, value]),
+        setSky: (s) => (sky = s),
+      },
+      "day",
+    );
+    const expected = globePaint("day").flatMap(([layer, property, value]) => [
+      [layer, `${property}-transition`, { duration: 0, delay: 0 }],
+      [layer, property, value],
+    ]);
+    expect(calls).toEqual(expected);
+    expect(sky).toEqual(globeSky("day"));
   });
 });

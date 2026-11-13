@@ -8,8 +8,7 @@ import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } fro
 import {
   GLOBE_PALETTES,
   buildGlobeStyle,
-  globePaint,
-  globeSky,
+  paintChartNow,
   revealLineColor,
   type GlobeLight,
 } from "@/lib/basemap";
@@ -205,10 +204,7 @@ export default function GameTour({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready || paintedRef.current === scheme) return;
-    for (const [layer, property, value] of globePaint(scheme)) {
-      map.setPaintProperty(layer, property, value);
-    }
-    map.setSky(globeSky(scheme));
+    paintChartNow(map, scheme);
     paintTour(map, scheme);
     paintedRef.current = scheme;
   }, [scheme, ready]);

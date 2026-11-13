@@ -120,7 +120,10 @@ describe("GameTour", () => {
     const stop = tour.dataset.stop;
 
     act(() => setTheme("dark"));
-    expect(map.paint.ocean).toEqual({ "background-color": MAP_COLORS.ocean });
+    expect(map.paint.ocean).toEqual({
+      "background-color-transition": { duration: 0, delay: 0 },
+      "background-color": MAP_COLORS.ocean,
+    });
     for (const [layer, property, value] of tourPaint("night")) {
       expect(map.paint[layer][property]).toEqual(value);
     }
