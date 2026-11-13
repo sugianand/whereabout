@@ -149,9 +149,18 @@ test.describe("on a device set to light", () => {
   });
 });
 
-/** The colour MapLibre drew at the middle of a globe, read from a screenshot of it. */
+/**
+ * The colour MapLibre drew a little off the middle of a globe, clear of any mark: the sea or land
+ * under it. Only a few pixels are captured, since a whole-globe screenshot on a busy CI runner can
+ * take longer than a poll waits.
+ */
 async function globeCentre(page: Page, testId: string): Promise<number[]> {
-  const png = (await page.getByTestId(testId).screenshot()).toString("base64");
+  const globe = page.getByTestId(testId);
+  await globe.scrollIntoViewIfNeeded();
+  const box = (await globe.boundingBox())!;
+  const x = Math.round(box.x + box.width * 0.42);
+  const y = Math.round(box.y + box.height * 0.58);
+  const png = (await page.screenshot({ clip: { x, y, width: 2, height: 2 } })).toString("base64");
   return page.evaluate(async (b64) => {
     const img = new Image();
     img.src = `data:image/png;base64,${b64}`;
@@ -161,9 +170,7 @@ async function globeCentre(page: Page, testId: string): Promise<number[]> {
     canvas.height = img.height;
     const ctx = canvas.getContext("2d")!;
     ctx.drawImage(img, 0, 0);
-    // A little off the middle, clear of any mark: the sea or land under it.
-    const d = ctx.getImageData(Math.round(img.width * 0.42), Math.round(img.height * 0.58), 1, 1);
-    return [...d.data.slice(0, 3)];
+    return [...ctx.getImageData(0, 0, 1, 1).data.slice(0, 3)];
   }, png);
 }
 
@@ -195,7 +202,8 @@ test.describe("Your map's globe", () => {
     await expect(globe).toHaveAttribute("data-light", "day");
     // A pale sea or land, where the night chart is a deep blue-green.
     const centre = async () => brightness(await globeCentre(page, "played-globe"));
-    await expect.poll(centre).toBeGreaterThan(180);
+    // MapLibre draws in software on CI, a frame at a time, so give it time.
+    await expect.poll(centre, { timeout: 30_000 }).toBeGreaterThan(180);
     const legendFill = () =>
       page.getByRole("list", { name: "Closeness" }).locator("circle").first().getAttribute("fill");
     expect(await legendFill()).toBe("#8d5e03");
@@ -203,7 +211,7 @@ test.describe("Your map's globe", () => {
     // The phone turns dark at sunset while the page is open (Colours on Auto).
     await page.emulateMedia({ colorScheme: "dark" });
     await expect(globe).toHaveAttribute("data-light", "night");
-    await expect.poll(centre).toBeLessThan(110);
+    await expect.poll(centre, { timeout: 30_000 }).toBeLessThan(110);
     expect(await legendFill()).toBe("#ffc53d");
     // Repainted, not rebuilt: the marks are still on the globe.
     await expect(globe).toHaveAttribute("data-dots", "3");
