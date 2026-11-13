@@ -48,7 +48,9 @@ The game's globe (`web/src/components/Globe.tsx`, in the five-round game, Surviv
 Streak, Hot and cold and pass and play) follows the page: on a light page MapLibre paints it as a
 daylight chart (`GLOBE_PALETTES.day` in `web/src/lib/basemap.ts`), and a change of theme, from
 the Colours switch or the device, repaints it in place mid-game without losing the pin or the
-reveal. Your map's globe and the results tour keep the night chart for now.
+reveal. Your map's globe and the results screen's tour follow it the same way
+(`PlayedMap.tsx`, `GameTour.tsx`): a switch repaints them in place, so the tour keeps flying and
+the marks stay put.
 
 | Role | Night | Day |
 | --- | --- | --- |
@@ -67,6 +69,20 @@ protanopia, deuteranopia and tritanopia (`basemap.test.ts`). The page's daylight
 close to each other once darkened for a mid-blue sea (Atlas's teal and the answer's gold met
 without red vision), so the globe has its own three, and the pins drawn over it take them through
 `.globe[data-light="day"]` in `globals.css`.
+
+Your map's four closeness bands get a daylight set of their own, drawn with a pale edge in place
+of the night's dark one, on the globe and in its legend and list:
+
+| Band | Night | Day |
+| --- | --- | --- |
+| bullseye | `#FFC53D` | `#8D5E03` |
+| close | `#4FE3C1` | `#0F7787` |
+| near | `#FF5D8F` | `#850028` |
+| far | `#8F9BFF` | `#2514A4` |
+
+Each keeps 3:1 against the day sea, the day land, its edge and the light page, and every pair
+stays at least 0.10 apart in OKLab for typical vision and all three simulated dichromacies
+(`PlayedMap.test.tsx`).
 
 ## Type
 

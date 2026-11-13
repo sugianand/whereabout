@@ -148,3 +148,64 @@ test.describe("on a device set to light", () => {
     expect(await pageColour(page)).toBe(NIGHT);
   });
 });
+
+/** The colour MapLibre drew at the middle of a globe, read from a screenshot of it. */
+async function globeCentre(page: Page, testId: string): Promise<number[]> {
+  const png = (await page.getByTestId(testId).screenshot()).toString("base64");
+  return page.evaluate(async (b64) => {
+    const img = new Image();
+    img.src = `data:image/png;base64,${b64}`;
+    await img.decode();
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(img, 0, 0);
+    // A little off the middle, clear of any mark: the sea or land under it.
+    const d = ctx.getImageData(Math.round(img.width * 0.42), Math.round(img.height * 0.58), 1, 1);
+    return [...d.data.slice(0, 3)];
+  }, png);
+}
+
+const brightness = ([r, g, b]: number[]) => (r + g + b) / 3;
+
+test.describe("Your map's globe", () => {
+  test.use({ colorScheme: "light" });
+
+  test("paints by day on a light device and turns to night with it, in place", async ({
+    page,
+  }) => {
+    const history = [8, 400, 6000].map((km, i) => ({
+      id: `seed-${i}`,
+      lng: 30 * i,
+      lat: 20,
+      place: `Seeded place ${i}`,
+      country: "FR",
+      km,
+      score: 3000,
+      day: "2026-11-01",
+    }));
+    await page.addInitScript(
+      (h) => localStorage.setItem("whereabout:played", h),
+      JSON.stringify(history),
+    );
+    await page.goto("./map/");
+    const globe = page.getByTestId("played-globe");
+    await expect(globe).toHaveAttribute("data-dots", "3");
+    await expect(globe).toHaveAttribute("data-light", "day");
+    // A pale sea or land, where the night chart is a deep blue-green.
+    const centre = async () => brightness(await globeCentre(page, "played-globe"));
+    await expect.poll(centre).toBeGreaterThan(180);
+    const legendFill = () =>
+      page.getByRole("list", { name: "Closeness" }).locator("circle").first().getAttribute("fill");
+    expect(await legendFill()).toBe("#8d5e03");
+
+    // The phone turns dark at sunset while the page is open (Colours on Auto).
+    await page.emulateMedia({ colorScheme: "dark" });
+    await expect(globe).toHaveAttribute("data-light", "night");
+    await expect.poll(centre).toBeLessThan(110);
+    expect(await legendFill()).toBe("#ffc53d");
+    // Repainted, not rebuilt: the marks are still on the globe.
+    await expect(globe).toHaveAttribute("data-dots", "3");
+  });
+});

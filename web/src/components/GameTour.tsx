@@ -3,9 +3,16 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import type { Map as MapLibreMap, Marker } from "maplibre-gl";
-import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from "react";
 
-import { MAP_COLORS, buildGlobeStyle } from "@/lib/basemap";
+import {
+  GLOBE_PALETTES,
+  buildGlobeStyle,
+  globePaint,
+  globeSky,
+  revealLineColor,
+  type GlobeLight,
+} from "@/lib/basemap";
 import type { RoundResult } from "@/lib/game/state";
 import {
   TOUR_FINALE_MS,
@@ -24,6 +31,7 @@ import { formatDistance } from "@/lib/geo";
 import { maplibreWorkerUrl } from "@/lib/maplibre-worker";
 import { easeOut } from "@/lib/reveal";
 import type { Units } from "@/lib/units";
+import { useColorScheme } from "@/lib/useTheme";
 import { useUnits } from "@/lib/useUnits";
 
 import { INITIAL_VIEW, NO_PADDING, createPinElement } from "./Globe";
@@ -44,16 +52,19 @@ function setData(map: MapLibreMap, id: string, data: unknown) {
   source?.setData(data);
 }
 
-function addLayers(map: MapLibreMap) {
-  const color = [
-    "match",
-    ["get", "actor"],
-    "player",
-    MAP_COLORS.flare,
-    "atlas",
-    MAP_COLORS.sonar,
-    MAP_COLORS.gold,
-  ] as unknown as string;
+/** The tour's colours in a scheme: each actor's line and dot, and the dots' edge. */
+export function tourPaint(scheme: GlobeLight): [layer: string, property: string, value: unknown][] {
+  const color = revealLineColor(scheme);
+  return [
+    ["tour-glow", "line-color", color],
+    ["tour-line", "line-color", color],
+    ["tour-pins", "circle-color", color],
+    // The dots' edge is the sky beyond the globe: dark at night, the pale card by day.
+    ["tour-pins", "circle-stroke-color", GLOBE_PALETTES[scheme].space],
+  ];
+}
+
+function addLayers(map: MapLibreMap, scheme: GlobeLight) {
   map.addSource(LINES, { type: "geojson", data: EMPTY });
   map.addSource(PINS, { type: "geojson", data: EMPTY });
   map.addLayer({
@@ -61,26 +72,28 @@ function addLayers(map: MapLibreMap) {
     type: "line",
     source: LINES,
     layout: { "line-cap": "round", "line-join": "round" },
-    paint: { "line-color": color, "line-width": 8, "line-opacity": 0.2, "line-blur": 4 },
+    paint: { "line-width": 8, "line-opacity": 0.2, "line-blur": 4 },
   });
   map.addLayer({
     id: "tour-line",
     type: "line",
     source: LINES,
     layout: { "line-cap": "round", "line-join": "round" },
-    paint: { "line-color": color, "line-width": 2.25 },
+    paint: { "line-width": 2.25 },
   });
   map.addLayer({
     id: "tour-pins",
     type: "circle",
     source: PINS,
-    paint: {
-      "circle-color": color,
-      "circle-radius": 4.5,
-      "circle-stroke-color": MAP_COLORS.space,
-      "circle-stroke-width": 1.5,
-    },
+    paint: { "circle-radius": 4.5, "circle-stroke-width": 1.5 },
   });
+  paintTour(map, scheme);
+}
+
+function paintTour(map: MapLibreMap, scheme: GlobeLight) {
+  for (const [layer, property, value] of tourPaint(scheme)) {
+    map.setPaintProperty(layer, property as "line-color", value as string);
+  }
 }
 
 /** Where each drawn round's guesses landed, as small dots in their actor's colour. */
@@ -143,6 +156,14 @@ export default function GameTour({
   const truthMarkersRef = useRef<Marker[]>([]);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
+  // By day when the site is light, followed live (the Colours switch or the device's setting).
+  const scheme: GlobeLight = useColorScheme() === "light" ? "day" : "night";
+  // The scheme to build the map in, and the one it is painted in until the next repaint.
+  const schemeRef = useRef<GlobeLight>(scheme);
+  const paintedRef = useRef<GlobeLight>(scheme);
+  useLayoutEffect(() => {
+    schemeRef.current = scheme;
+  }, [scheme]);
 
   useEffect(() => {
     let cancelled = false;
@@ -151,9 +172,10 @@ export default function GameTour({
       .then(({ Map, Marker, getVersion, setWorkerUrl }) => {
         if (cancelled || !containerRef.current) return;
         setWorkerUrl(maplibreWorkerUrl(getVersion()));
+        paintedRef.current = schemeRef.current;
         map = new Map({
           container: containerRef.current,
-          style: buildGlobeStyle(),
+          style: buildGlobeStyle(paintedRef.current),
           center: [INITIAL_VIEW.center.lng, INITIAL_VIEW.center.lat],
           zoom: INITIAL_VIEW.zoom,
           interactive: false,
@@ -161,7 +183,7 @@ export default function GameTour({
         });
         map.on("load", () => {
           if (cancelled || !map) return;
-          addLayers(map);
+          addLayers(map, paintedRef.current);
           setReady(true);
         });
         mapRef.current = map;
@@ -178,6 +200,18 @@ export default function GameTour({
       mapRef.current = null;
     };
   }, []);
+
+  // Colours (or the system) turned light or dark: repaint in place, mid-flight or not.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || paintedRef.current === scheme) return;
+    for (const [layer, property, value] of globePaint(scheme)) {
+      map.setPaintProperty(layer, property, value);
+    }
+    map.setSky(globeSky(scheme));
+    paintTour(map, scheme);
+    paintedRef.current = scheme;
+  }, [scheme, ready]);
 
   // Paint the tour: the camera, the arcs (the round being flown to draws in as the camera
   // moves), the guess dots and a numbered gold pin on every drawn round's answer.
@@ -263,6 +297,8 @@ export default function GameTour({
       <div
         ref={containerRef}
         data-ready={ready || undefined}
+        // By day the answer pins and credits take the globe's daylight colours (globals.css).
+        data-light={scheme}
         className="globe relative h-64 w-full overflow-hidden rounded-2xl border border-graticule/60 bg-ocean-deep sm:h-80"
       />
       <p aria-live="polite" className="mt-3 min-h-12 text-chalk sm:min-h-6">

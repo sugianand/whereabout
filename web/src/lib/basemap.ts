@@ -55,7 +55,7 @@ export const GLOBE_PALETTES: Record<GlobeLight, GlobePalette> = {
   },
 };
 
-/** The night chart: Your map, the results tour and the app icon keep it in either theme. */
+/** The night chart: the app icon keeps it in either theme, and every globe on a dark page. */
 export const MAP_COLORS = GLOBE_PALETTES.night;
 
 /** The fill layer that shades countries by Atlas's belief at the reveal (opacity 0 until then). */

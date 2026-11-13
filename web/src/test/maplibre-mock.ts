@@ -137,6 +137,14 @@ export class FakeMap {
     this.sky = sky;
   }
 
+  /** Images replaced in place, by name, in order. */
+  updatedImages: string[] = [];
+
+  updateImage(name: string, image: unknown) {
+    this.images[name] = { ...this.images[name], image };
+    this.updatedImages.push(name);
+  }
+
   resize() {
     return this;
   }

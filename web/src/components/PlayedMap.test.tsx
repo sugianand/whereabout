@@ -1,14 +1,25 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { MAP_COLORS } from "@/lib/basemap";
+import { GLOBE_PALETTES, MAP_COLORS } from "@/lib/basemap";
 import { MIN_SEPARATION, contrastRatio, separations } from "@/lib/colorVision";
 import { BANDS, PLAYED_KEY, type PlayedPhoto } from "@/lib/playedMap";
+import { setTheme } from "@/lib/theme";
+import { stubColorScheme } from "@/test/colorScheme";
 import { FakeMap, resetFakes } from "@/test/maplibre-mock";
 
-import PlayedMap, { BAND_COLORS, LIST_FIRST, MARK_EDGE } from "./PlayedMap";
+import PlayedMap, {
+  BAND_COLORS,
+  DAY_BAND_COLORS,
+  LIST_FIRST,
+  MARK_EDGE,
+  MARK_EDGES,
+  RING_COLORS,
+} from "./PlayedMap";
 
 vi.mock("maplibre-gl", async () => (await import("@/test/maplibre-mock")).maplibreMock);
+
+const DAY_MAP_COLORS = GLOBE_PALETTES.day;
 
 function photo(id: string, over: Partial<PlayedPhoto> = {}): PlayedPhoto {
   return {
@@ -32,7 +43,11 @@ beforeEach(() => {
   resetFakes();
   window.localStorage.clear();
 });
-afterEach(() => vi.clearAllMocks());
+afterEach(() => {
+  act(() => setTheme("system"));
+  vi.clearAllMocks();
+  vi.unstubAllGlobals();
+});
 
 describe("PlayedMap", () => {
   it("asks for a first game when nothing has been played, and draws no globe", async () => {
@@ -133,6 +148,70 @@ describe("PlayedMap", () => {
         expect(contrastRatio(c, under), `${c} on ${under}`).toBeGreaterThanOrEqual(3);
       }
     }
+  });
+
+  it("keeps the daylight bands apart too, and clear of the globe by day and the light page", () => {
+    const palette = BANDS.map((b) => DAY_BAND_COLORS[b]);
+    for (const s of separations(palette)) {
+      expect(s.distance, `${s.kind}: ${s.pair.join(" and ")}`).toBeGreaterThanOrEqual(
+        MIN_SEPARATION,
+      );
+    }
+    // The light page's ocean token is where the legend and list draw them.
+    const page = "#e9f0ee";
+    for (const c of [...palette, RING_COLORS.day]) {
+      for (const under of [DAY_MAP_COLORS.ocean, DAY_MAP_COLORS.land, MARK_EDGES.day, page]) {
+        expect(contrastRatio(c, under), `${c} on ${under}`).toBeGreaterThanOrEqual(3);
+      }
+    }
+  });
+
+  it("draws the globe by day on a light page, with the daylight marks in the legend", async () => {
+    stubColorScheme(true);
+    store([photo("a", { km: 8 }), photo("b", { km: 6000 })]);
+    const { container } = render(<PlayedMap />);
+    await waitFor(() => expect(FakeMap.instances).toHaveLength(1));
+    const map = FakeMap.instances[0];
+    const style = map.options.style as { layers: { id: string; paint?: object }[] };
+    expect(style.layers.find((l) => l.id === "ocean")?.paint).toEqual({
+      "background-color": DAY_MAP_COLORS.ocean,
+    });
+    act(() => map.emit("load"));
+    expect(screen.getByTestId("played-globe")).toHaveAttribute("data-light", "day");
+    expect(map.updatedImages).toEqual([]); // Built by day: nothing to repaint.
+    const legend = within(screen.getByRole("list", { name: "Closeness" }));
+    const fills = legend
+      .getAllByRole("listitem")
+      .map((li) => li.querySelector("circle, polygon")?.getAttribute("fill"));
+    expect(fills).toEqual(BANDS.map((b) => DAY_BAND_COLORS[b]));
+    expect(container.querySelector(`[fill="${BAND_COLORS.bullseye}"]`)).toBeNull();
+  });
+
+  it("repaints the globe in place when Colours turns the page light, then dark again", async () => {
+    stubColorScheme(false);
+    store([photo("a", { km: 8 }), photo("b", { km: 6000 })]);
+    render(<PlayedMap />);
+    await waitFor(() => expect(FakeMap.instances).toHaveLength(1));
+    const map = FakeMap.instances[0];
+    act(() => map.emit("load"));
+    const dots = map.sources.played.data;
+    expect(screen.getByTestId("played-globe")).toHaveAttribute("data-light", "night");
+
+    act(() => setTheme("light"));
+    expect(map.paint.ocean).toEqual({ "background-color": DAY_MAP_COLORS.ocean });
+    expect(map.paint.land).toEqual({ "fill-color": DAY_MAP_COLORS.land });
+    expect(map.sky).toMatchObject({ "sky-color": DAY_MAP_COLORS.space });
+    expect(map.updatedImages).toEqual(BANDS.map((b) => `played-mark-${b}`));
+    expect(map.paint["played-selected"]).toEqual({ "circle-stroke-color": RING_COLORS.day });
+    // The same map, marks and data: nothing was rebuilt.
+    expect(FakeMap.instances).toHaveLength(1);
+    expect(map.removed).toBe(false);
+    expect(map.sources.played.data).toBe(dots);
+    expect(screen.getByTestId("played-globe")).toHaveAttribute("data-light", "day");
+
+    act(() => setTheme("dark"));
+    expect(map.paint.ocean).toEqual({ "background-color": MAP_COLORS.ocean });
+    expect(map.paint["played-selected"]).toEqual({ "circle-stroke-color": RING_COLORS.night });
   });
 
   it("flies to a round picked from the list and rings it", async () => {

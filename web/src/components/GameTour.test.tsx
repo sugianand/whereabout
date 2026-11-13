@@ -3,11 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { FakeMap, FakeMarker, resetFakes } from "@/test/maplibre-mock";
 import type { RoundResult } from "@/lib/game/state";
+import { GLOBE_PALETTES, MAP_COLORS } from "@/lib/basemap";
 import { TOUR_FLY_MS, TOUR_HOLD_MS, tourStops } from "@/lib/gameTour";
+import { setTheme } from "@/lib/theme";
+import { stubColorScheme } from "@/test/colorScheme";
 
-import GameTour, { stopCaption, wholeGameCaption } from "./GameTour";
+import GameTour, { stopCaption, tourPaint, wholeGameCaption } from "./GameTour";
 
 vi.mock("maplibre-gl", async () => (await import("@/test/maplibre-mock")).maplibreMock);
+
+const DAY_MAP_COLORS = GLOBE_PALETTES.day;
 
 function round(i: number, pin: boolean, atlas: boolean): RoundResult {
   const truth = { lng: i * 20, lat: 10 };
@@ -61,6 +66,7 @@ beforeEach(() => {
   vi.stubGlobal("requestAnimationFrame", undefined);
 });
 afterEach(() => {
+  act(() => setTheme("system"));
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
@@ -83,6 +89,47 @@ describe("captions", () => {
 });
 
 describe("GameTour", () => {
+  it("paints the tour's lines and dots at night on a dark page", async () => {
+    const { map, tour } = await renderTour(false);
+    expect(map.paint["tour-line"]["line-color"]).toEqual([
+      "match",
+      ["get", "actor"],
+      "player",
+      MAP_COLORS.flare,
+      "atlas",
+      MAP_COLORS.sonar,
+      MAP_COLORS.gold,
+    ]);
+    expect(map.paint["tour-pins"]["circle-stroke-color"]).toBe(MAP_COLORS.space);
+    expect(tour.querySelector(".globe")).toHaveAttribute("data-light", "night");
+  });
+
+  it("flies by day on a light page, and repaints mid-tour when Colours goes dark", async () => {
+    stubColorScheme(true);
+    const { map, tour } = await renderTour(true);
+    const style = map.options.style as { layers: { id: string; paint?: object }[] };
+    expect(style.layers.find((l) => l.id === "land")?.paint).toEqual({
+      "fill-color": DAY_MAP_COLORS.land,
+    });
+    for (const [layer, property, value] of tourPaint("day")) {
+      expect(map.paint[layer][property]).toEqual(value);
+    }
+    expect(map.paint["tour-pins"]["circle-stroke-color"]).toBe(DAY_MAP_COLORS.space);
+    // The answer pins take the page's daylight colours, not the night chart's.
+    expect(tour.querySelector(".globe")).toHaveAttribute("data-light", "day");
+    const stop = tour.dataset.stop;
+
+    act(() => setTheme("dark"));
+    expect(map.paint.ocean).toEqual({ "background-color": MAP_COLORS.ocean });
+    for (const [layer, property, value] of tourPaint("night")) {
+      expect(map.paint[layer][property]).toEqual(value);
+    }
+    // Still the same flight: the tour didn't restart.
+    expect(FakeMap.instances).toHaveLength(1);
+    expect(tour.dataset.stop).toBe(stop);
+    expect(tour.querySelector(".globe")).toHaveAttribute("data-light", "night");
+  });
+
   it("shows the globe only, without taking taps or drags", async () => {
     const { map } = await renderTour();
     expect(map.options.interactive).toBe(false);

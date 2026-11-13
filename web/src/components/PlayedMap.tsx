@@ -4,14 +4,21 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 import type { Map as MapLibreMap } from "maplibre-gl";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
-import { MAP_COLORS, buildGlobeStyle } from "@/lib/basemap";
+import {
+  GLOBE_PALETTES,
+  buildGlobeStyle,
+  globePaint,
+  globeSky,
+  type GlobeLight,
+} from "@/lib/basemap";
 import { markImage, markShapeAt } from "@/lib/closenessMarks";
 import { countryName } from "@/lib/countries";
 import { CLOSENESS_KM, closenessOf, type Closeness } from "@/lib/feel";
 import { formatDistance, formatPoints } from "@/lib/geo";
 import type { Units } from "@/lib/units";
+import { useColorScheme } from "@/lib/useTheme";
 import { useUnits } from "@/lib/useUnits";
 import { maplibreWorkerUrl } from "@/lib/maplibre-worker";
 import {
@@ -36,14 +43,40 @@ import UnitsSwitch from "./UnitsSwitch";
  * band was a grey that read as the flare pink without red-green vision.
  */
 export const BAND_COLORS: Readonly<Record<Closeness, string>> = {
-  bullseye: MAP_COLORS.gold,
-  close: MAP_COLORS.sonar,
-  near: MAP_COLORS.flare,
+  bullseye: GLOBE_PALETTES.night.gold,
+  close: GLOBE_PALETTES.night.sonar,
+  near: GLOBE_PALETTES.night.flare,
   far: "#8f9bff",
+};
+
+/**
+ * The same bands on the globe by day and the light page: ochre, teal, crimson and indigo, each
+ * dark enough for 3:1 against the day sea, the day land and the page, and still apart for every
+ * kind of colour vision (PlayedMap.test.tsx), with a pale edge in place of the night's dark one.
+ */
+export const DAY_BAND_COLORS: Readonly<Record<Closeness, string>> = {
+  bullseye: "#8d5e03",
+  close: "#0f7787",
+  near: "#850028",
+  far: "#2514a4",
+};
+
+export const BAND_SCHEMES: Readonly<Record<GlobeLight, Readonly<Record<Closeness, string>>>> = {
+  night: BAND_COLORS,
+  day: DAY_BAND_COLORS,
 };
 
 /** The edge round each globe mark, so it stands off land and sea alike. */
 export const MARK_EDGE = "#082331";
+
+/** Each scheme's mark edge: dark on the night chart, pale by day. */
+export const MARK_EDGES: Readonly<Record<GlobeLight, string>> = { night: MARK_EDGE, day: "#fbfcfb" };
+
+/** The ring round the round picked from the list: night gold, or the daylight ink. */
+export const RING_COLORS: Readonly<Record<GlobeLight, string>> = {
+  night: GLOBE_PALETTES.night.gold,
+  day: "#0d2b38",
+};
 
 /** The globe's marks are drawn at twice their size on screen, for sharp edges on any phone. */
 const MARK_PIXEL_RATIO = 2;
@@ -72,16 +105,18 @@ function setData(map: MapLibreMap, id: string, data: unknown) {
   source?.setData(data);
 }
 
-function addLayers(map: MapLibreMap) {
+function markPixels(band: Closeness, scheme: GlobeLight) {
+  const i = BANDS.indexOf(band);
+  const fill = BAND_SCHEMES[scheme][band];
+  return markImage(markShapeAt(i), fill, MARK_EDGES[scheme], MARK_PIXELS, 3);
+}
+
+function addLayers(map: MapLibreMap, scheme: GlobeLight) {
   map.addSource(SOURCE, { type: "geojson", data: EMPTY });
   map.addSource(SELECTED_SOURCE, { type: "geojson", data: EMPTY });
   // One shape per band, so the globe never says how close a pin was by colour alone.
-  BANDS.forEach((b, i) =>
-    map.addImage(
-      markName(b),
-      markImage(markShapeAt(i), BAND_COLORS[b], MARK_EDGE, MARK_PIXELS, 3),
-      { pixelRatio: MARK_PIXEL_RATIO },
-    ),
+  BANDS.forEach((b) =>
+    map.addImage(markName(b), markPixels(b, scheme), { pixelRatio: MARK_PIXEL_RATIO }),
   );
   const icon = [
     "match",
@@ -108,10 +143,20 @@ function addLayers(map: MapLibreMap) {
     paint: {
       "circle-radius": 11,
       "circle-color": "rgba(0,0,0,0)",
-      "circle-stroke-color": MAP_COLORS.gold,
+      "circle-stroke-color": RING_COLORS[scheme],
       "circle-stroke-width": 2.5,
     },
   });
+}
+
+/** Repaint a loaded map's sea, land, marks and ring in a scheme, keeping its camera and data. */
+function paintScheme(map: MapLibreMap, scheme: GlobeLight) {
+  for (const [layer, property, value] of globePaint(scheme)) {
+    map.setPaintProperty(layer, property, value);
+  }
+  map.setSky(globeSky(scheme));
+  for (const b of BANDS) map.updateImage(markName(b), markPixels(b, scheme));
+  map.setPaintProperty("played-selected", "circle-stroke-color", RING_COLORS[scheme]);
 }
 
 /**
@@ -130,6 +175,15 @@ export default function PlayedMap({ deck }: { deck?: ClosestCallsDeck } = {}) {
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const units = useUnits();
+  // By day when the site is light, followed live (the Colours switch or the device's setting).
+  const scheme: GlobeLight = useColorScheme() === "light" ? "day" : "night";
+  const bands = BAND_SCHEMES[scheme];
+  // The scheme to build a new map in, and the one the map is painted in until the next repaint.
+  const schemeRef = useRef<GlobeLight>(scheme);
+  const paintedRef = useRef<GlobeLight>(scheme);
+  useLayoutEffect(() => {
+    schemeRef.current = scheme;
+  }, [scheme]);
 
   useEffect(() => {
     // Storage only exists in the browser, so the history is read once the page is mounted.
@@ -147,9 +201,10 @@ export default function PlayedMap({ deck }: { deck?: ClosestCallsDeck } = {}) {
       .then(({ Map, getVersion, setWorkerUrl }) => {
         if (cancelled || !containerRef.current) return;
         setWorkerUrl(maplibreWorkerUrl(getVersion()));
+        paintedRef.current = schemeRef.current;
         map = new Map({
           container: containerRef.current,
-          style: buildGlobeStyle(),
+          style: buildGlobeStyle(paintedRef.current),
           center: [INITIAL_VIEW.center.lng, INITIAL_VIEW.center.lat],
           zoom: INITIAL_VIEW.zoom,
           minZoom: 0.5,
@@ -163,7 +218,7 @@ export default function PlayedMap({ deck }: { deck?: ClosestCallsDeck } = {}) {
         map.touchZoomRotate.disableRotation();
         map.on("load", () => {
           if (cancelled || !map) return;
-          addLayers(map);
+          addLayers(map, paintedRef.current);
           setReady(true);
         });
         mapRef.current = map;
@@ -177,6 +232,14 @@ export default function PlayedMap({ deck }: { deck?: ClosestCallsDeck } = {}) {
       mapRef.current = null;
     };
   }, [hasPlayed]);
+
+  // Colours (or the system) turned light or dark: repaint in place.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || paintedRef.current === scheme) return;
+    paintScheme(map, scheme);
+    paintedRef.current = scheme;
+  }, [scheme, ready]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -249,6 +312,7 @@ export default function PlayedMap({ deck }: { deck?: ClosestCallsDeck } = {}) {
           role="group"
           aria-label={`Globe with the ${plural(summary.photos, "photo", "photos")} you've played, each marked by how close your pin landed`}
           data-testid="played-globe"
+          data-light={scheme}
           data-dots={ready ? played.length : undefined}
         />
         {failed && (
@@ -262,7 +326,7 @@ export default function PlayedMap({ deck }: { deck?: ClosestCallsDeck } = {}) {
         <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm" aria-label="Closeness">
           {BANDS.map((b) => (
             <li key={b} className="flex items-center gap-2">
-              <ClosenessMark band={BANDS.indexOf(b)} color={BAND_COLORS[b]} />
+              <ClosenessMark band={BANDS.indexOf(b)} color={bands[b]} />
               {bandLabel(b, units)}: <strong>{summary.bands[b]}</strong>
             </li>
           ))}
@@ -315,7 +379,7 @@ export default function PlayedMap({ deck }: { deck?: ClosestCallsDeck } = {}) {
                     aria-pressed={isSelected}
                     className={`flex w-full items-center gap-3 py-3 text-left transition hover:text-gold ${isSelected ? "text-gold" : ""}`}
                   >
-                    <ClosenessMark band={BANDS.indexOf(band)} color={BAND_COLORS[band]} />
+                    <ClosenessMark band={BANDS.indexOf(band)} color={bands[band]} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate">{p.place}</span>
                       <span className="block text-xs text-chalk-dim">
