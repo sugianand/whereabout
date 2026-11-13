@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useReducer,
   useRef,
@@ -265,8 +266,10 @@ export default function LineUp({ deck, daily = false, now, loadRecords, random }
     dispatch({ type: "next" });
   }, [state, daily, challenge]);
 
-  // 1 to 4 pick a place up and put it down on another; Escape lets go.
-  useEffect(() => {
+  // 1 to 4 pick a place up and put it down on another; Escape lets go. A layout effect, so the
+  // keys work from the same commit that shows the row: a passive effect can run a moment after
+  // the photos appear, and a key pressed in that gap was lost.
+  useLayoutEffect(() => {
     if (!ready || closer) return;
     const onKey = (e: KeyboardEvent) => {
       if (!isShortcut(e)) return;
