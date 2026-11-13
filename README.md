@@ -149,9 +149,12 @@ says what the group means and how far from the equator the place sits. Atlas pla
 climate clue, and scores nothing on a photo it said nothing about. Each photo's group is drawn by a
 fair die over the groups, not in the catalog's proportions, so always naming one group scores about
 a fifth. Five photos a game; your best game is kept in your browser.
+**Today's game** (at `/which-climate/daily`) deals everyone the same five photos on the same UTC
+day with the same even deal: one try a day, each call kept as it is made so a reload picks up at
+the next photo, and shared as a score and a square a photo, naming no place or climate.
 **Today** (at `/today`, in the Games menu and on the results screen) puts every daily game on one
 page: the Daily Five, Further North, Odd one out, Which way?, How far apart?, Name the country,
-Hot and cold, Line them up, Close-up and Left or right?, each with where it stands in your browser (not started, under way or its result), the time to the next deal, and one
+Hot and cold, Line them up, Close-up, Left or right? and Which climate?, each with where it stands in your browser (not started, under way or its result), the time to the next deal, and one
 share line gathering every finished game, as scores and counts only. **Atlas's day** sets you
 against Atlas on each finished game it played all the way through, game by game, and says who took
 the day, a line the share carries too. Below them, **Full days**
@@ -193,7 +196,7 @@ among its four names, the countries take turns so a big one never crowds out its
 run keeps its own best. Below them, **your clue reading**: how often you've read the road in
 Left or right? and the climate in Which climate?, in photos called right, beside Atlas's own read
 of the same photos (it sits out a photo it said nothing about), with today's Left or right? runs
-counted in. Then **you and Atlas in the quick
+and Which climate? games counted in. Then **you and Atlas in the quick
 games**: for Further North and Odd one out, the rounds you got right of those you answered beside
 the rounds Atlas got right of those it played, free runs and today's runs together, and who is
 ahead. Then **head to head with friends**: every friend's challenge you've answered from a link,

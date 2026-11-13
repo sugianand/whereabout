@@ -3,7 +3,13 @@ import { resolve } from "node:path";
 
 import { expect, test } from "@playwright/test";
 
+import { TODAY_GAMES } from "../src/lib/game/today";
+
 const PHOTO = readFileSync(resolve(process.cwd(), "e2e/fixtures/photo.png"));
+
+/** The daily games dealt on `day`: a game joins Today from its own first day. */
+const dealtOn = (day: string) => TODAY_GAMES.filter((g) => !g.since || g.since <= day).length;
+const utcDay = (msAgo = 0) => new Date(Date.now() - msAgo).toISOString().slice(0, 10);
 
 test.beforeEach(async ({ page }) => {
   await page.route(/wikimedia\.org/, (route) =>
@@ -32,10 +38,10 @@ test("Today lists every daily game from the Games menu, follows a real run, and 
     .click();
   await expect(page.getByRole("heading", { level: 1, name: "Today" })).toBeVisible();
   await expect(page.getByTestId("today-standing")).toContainText(
-    /^0 of 10 played\. The next deal is in \d/,
+    new RegExp(`^0 of ${dealtOn(today)} played\\. The next deal is in \\d`),
   );
   const games = page.getByRole("list", { name: "Today's games" }).getByRole("listitem");
-  await expect(games).toHaveCount(10);
+  await expect(games).toHaveCount(dealtOn(today));
   await expect(page.getByRole("button", { name: "Share your day" })).toHaveCount(0);
 
   // Fits a phone, whole.
@@ -78,7 +84,7 @@ test("Today lists every daily game from the Games menu, follows a real run, and 
     );
   }, today);
   await page.reload();
-  await expect(page.getByTestId("today-standing")).toContainText(/^2 of 10 played/);
+  await expect(page.getByTestId("today-standing")).toContainText(`2 of ${dealtOn(today)} played`);
   await expect(page.getByTestId("today-daily-five")).toContainText("18,240 of 25,000");
   await expect(page.getByTestId("today-further-north")).toContainText("Atlas: 3 of 7");
   await expect(page.getByTestId("today-odd-one-out")).toHaveAttribute("data-status", "going");
@@ -107,9 +113,11 @@ test("Today lists every daily game from the Games menu, follows a real run, and 
   await page.getByRole("button", { name: "Share your day" }).click();
   await expect(page.getByText("Result copied. Paste it anywhere.")).toBeVisible();
   const sent = await page.evaluate(() => (window as unknown as { sent: string }).sent);
-  expect(sent).toContain(`Whereabout · Today · ${today}\n2 of 10 daily games\n`);
+  expect(sent).toContain(`Whereabout · Today · ${today}\n2 of ${dealtOn(today)} daily games\n`);
   expect(sent).toContain("🌍 Daily Five: 18,240 of 25,000\n");
-  expect(sent).toContain("⬆️ Further North: 6 pairs in a row\n🤖 You took the day from Atlas, 1–0\n");
+  expect(sent).toContain(
+    "⬆️ Further North: 6 pairs in a row\n🤖 You took the day from Atlas, 1–0\n",
+  );
   expect(sent).not.toContain("Odd one out");
   expect(sent).toMatch(/\/whereabout\/today\/?$/);
 
@@ -122,11 +130,13 @@ test("Today lists every daily game from the Games menu, follows a real run, and 
 test("full days count up on a calendar that fits the screen", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
+  const before = (n: number) => utcDay(n * 86_400_000);
   await page.goto("./today");
-  await expect(page.getByTestId("full-day-streak")).toContainText(/^Finish all 10/);
+  await expect(page.getByTestId("full-day-streak")).toContainText(
+    `Finish all ${dealtOn(before(0))}`,
+  );
 
   // The last two days finished, as each game keeps them, and the day before that partly.
-  const before = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
   await page.evaluate(
     ({ full, partly }) => {
       const run = { streak: 3, atlasRight: 1, atlasPlayed: 2, ended: "miss" };
@@ -155,15 +165,23 @@ test("full days count up on a calendar that fits the screen", async ({ page }) =
       keep("whereabout:hot-cold-daily", { results: Array(5).fill(hot), pins: [] });
       keep("whereabout:line-up-daily", { results: Array(5).fill(row) });
       const close = (id: string) => ({ id, wrong: [], atlas: null });
-      keep("whereabout:close-up-daily", { results: ["a", "b", "c", "d", "e"].map(close), wrong: [] });
+      keep("whereabout:close-up-daily", {
+        results: ["a", "b", "c", "d", "e"].map(close),
+        wrong: [],
+      });
+      const call = (id: string) => ({ id, picked: "Arid", truth: "Arid", atlas: null });
+      keep("whereabout:which-climate-daily", { results: ["a", "b", "c", "d", "e"].map(call) });
     },
     { full: [before(1), before(2)], partly: before(3) },
   );
   await page.reload();
   await expect(page.getByTestId("full-day-streak")).toHaveText(
-    "2 full days in a row. Finish today's 10 to make it 3.",
+    `2 full days in a row. Finish today's ${dealtOn(before(0))} to make it 3.`,
   );
-  await expect(page.getByTestId(`day-${before(1)}`)).toHaveAttribute("data-done", /^(9|10)$/);
+  await expect(page.getByTestId(`day-${before(1)}`)).toHaveAttribute(
+    "data-done",
+    String(dealtOn(before(1))),
+  );
   await expect(page.getByTestId(`day-${before(1)}`)).toContainText("All");
   await expect(page.getByTestId(`day-${before(3)}`)).toHaveAttribute("data-done", "2");
   await expect(page.getByTestId(`day-${before(0)}`)).toHaveAttribute("aria-current", "date");
@@ -196,7 +214,7 @@ test("the results screen leads to Today, already counting the game just finished
   await expect(page.getByText("out of 25,000 points")).toBeVisible();
 
   const link = page.getByRole("link", { name: /^Today/ });
-  await expect(link).toContainText("1 of 10 played");
+  await expect(link).toContainText(`1 of ${dealtOn(utcDay())} played`);
   await link.click();
   // The summary's globe is still working on a software renderer, so the page can take a while.
   await expect(page.getByTestId("today-daily-five")).toHaveAttribute("data-status", "done", {

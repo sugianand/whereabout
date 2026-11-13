@@ -80,6 +80,7 @@ describe("readStamps", () => {
       "beat-atlas-line-up",
       "beat-atlas-close-up",
       "beat-atlas-left-right",
+      "beat-atlas-which-climate",
     ]);
     expect(stamps.every((s) => !s.earned)).toBe(true);
     // Every id read is one the store accepts.

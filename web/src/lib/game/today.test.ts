@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { rememberClimateDay } from "./climateDaily";
 import { rememberCloseDay } from "./closeDaily";
 import { type CloseResult } from "./closeUp";
 import { ARCHIVE_DAYS, DAILY_SCORES_KEY, daysBefore } from "./dailyArchive";
@@ -30,6 +31,7 @@ import {
   type TodayGameId,
 } from "./today";
 import { rememberWayDay } from "./wayDaily";
+import { type ClimateResult } from "./whichClimate";
 
 const DAY = "2026-11-03";
 const NOW = new Date(`${DAY}T12:00:00Z`);
@@ -258,6 +260,15 @@ const CLOSE: CloseResult = {
   atlas: { order: ["DE", "FR"], rank: 1, points: 2 },
 };
 
+/** A whole Which climate? game: 3 right, Atlas 2 right of the 5 it read. */
+const CLIMATE_GAME: ClimateResult[] = [
+  { id: "a", picked: "Arid", truth: "Arid", correct: true, atlas: "Arid" },
+  { id: "b", picked: "Polar", truth: "Polar", correct: true, atlas: "Temperate" },
+  { id: "c", picked: "Tropical", truth: "Tropical", correct: true, atlas: "Arid" },
+  { id: "d", picked: "Arid", truth: "Temperate", correct: false, atlas: "Temperate" },
+  { id: "e", picked: "Polar", truth: "Continental", correct: false, atlas: "Temperate" },
+];
+
 /** Finish one game joined later on `day`, as it writes its own store. */
 const finishJoined: Partial<Record<TodayGameId, (day: string) => void>> = {
   "line-up": (day) => rememberLineDay(day, { results: Array<RowResult>(5).fill(ROW) }),
@@ -268,6 +279,7 @@ const finishJoined: Partial<Record<TodayGameId, (day: string) => void>> = {
     }),
   "left-right": (day) =>
     rememberSideDay(day, { streak: 4, atlasRight: 3, atlasPlayed: 5, ended: "miss" }),
+  "which-climate": (day) => rememberClimateDay(day, CLIMATE_GAME),
 };
 
 /** Every daily game finished on `day` but `except`, each as it writes its own store. */
@@ -369,6 +381,39 @@ describe("today's Left or right? on Today", () => {
       atlas: "3 of 5",
       versus: { you: 4, atlas: 3, unit: "right", call: "you" },
     });
+  });
+});
+
+describe("today's Which climate? on Today", () => {
+  const DAY_IN = "2026-11-14";
+  const AT = new Date(`${DAY_IN}T12:00:00Z`);
+  const game = () => todayGames(DAY_IN, IDS, AT).find((g) => g.id === "which-climate")!;
+
+  it("reads the calls as they are kept, and calls the game against Atlas when it read every photo", () => {
+    expect(todayGames("2026-11-13", IDS, AT).some((g) => g.id === "which-climate")).toBe(false);
+    expect(game()).toMatchObject({
+      status: "new",
+      line: "Not started",
+      href: "/which-climate/daily",
+    });
+    rememberClimateDay(DAY_IN, CLIMATE_GAME.slice(0, 2));
+    expect(game()).toMatchObject({
+      status: "going",
+      line: "2 of 5 photos, 2 right",
+      atlas: "1 of 2",
+    });
+    finishJoined["which-climate"]!(DAY_IN);
+    expect(game()).toMatchObject({
+      status: "done",
+      line: "3 of 5 right",
+      atlas: "2 of 5",
+      versus: { you: 3, atlas: 2, unit: "right", call: "you" },
+    });
+  });
+
+  it("makes no call against Atlas when it sat a photo out", () => {
+    rememberClimateDay(DAY_IN, [{ ...CLIMATE_GAME[0], atlas: null }, ...CLIMATE_GAME.slice(1)]);
+    expect(game()).toMatchObject({ status: "done", atlas: "1 of 4", versus: null });
   });
 });
 

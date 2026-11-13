@@ -2,8 +2,8 @@
  * Today: every daily game on one page. Each game already keeps its own day in this browser, so
  * this reads those records back and adds none of its own: the Daily Five's first score and the
  * game in progress (./dailyArchive.ts, ./saved.ts), the streak games' runs (./dailyRuns.ts)
- * and the photos and rows of How far apart?, Hot and cold, Line them up and Close-up (./farDaily.ts, ./hotDaily.ts,
- * ./lineDaily.ts, ./closeDaily.ts). What a game can't read back counts as not started.
+ * and the photos and rows of How far apart?, Hot and cold, Line them up, Close-up and Which climate?
+ * (./farDaily.ts, ./hotDaily.ts, ./lineDaily.ts, ./closeDaily.ts, ./climateDaily.ts). What a game can't read back counts as not started.
  *
  * Like every share in the game, the combined line is scores and counts only, so it spoils no
  * photo. Only finished games go in it: a run still going has no result yet.
@@ -17,6 +17,7 @@
 
 import { MAX_POINTS, formatPoints } from "@/lib/geo";
 
+import { loadClimateDay } from "./climateDaily";
 import { loadCloseDay } from "./closeDaily";
 import { CLOSE_PHOTOS, CLOSE_POINTS, closeTotals } from "./closeUp";
 import { ARCHIVE_DAYS, archiveDays, loadDailyScores } from "./dailyArchive";
@@ -34,6 +35,7 @@ import { loadSaved } from "./saved";
 import { loadSideDay } from "./sideDaily";
 import { ROUNDS_PER_GAME } from "./state";
 import { loadWayDay } from "./wayDaily";
+import { CLIMATE_PHOTOS, climateTotals } from "./whichClimate";
 
 export type TodayGameId =
   | "daily-five"
@@ -45,7 +47,8 @@ export type TodayGameId =
   | "hot-cold"
   | "line-up"
   | "close-up"
-  | "left-right";
+  | "left-right"
+  | "which-climate";
 
 /** One daily game: where it lives, whatever the browser holds. */
 export interface TodayGameInfo {
@@ -136,6 +139,15 @@ export const TODAY_GAMES: readonly TodayGameInfo[] = [
     icon: "🛣️",
     blurb: "Which side of the road do they drive on? Call it until your first miss.",
     since: "2026-11-13",
+  },
+  {
+    id: "which-climate",
+    name: "Which climate?",
+    href: "/which-climate/daily",
+    icon: "🌦️",
+    blurb: "Five photos: tropical, arid, temperate, continental or polar?",
+    // From the next UTC day, so a day already played in full isn't left one game short.
+    since: "2026-11-14",
   },
 ];
 
@@ -294,6 +306,26 @@ function closeUp(day: string) {
   return { status: "done" as const, line, atlas: rival, versus: called };
 }
 
+function whichClimate(day: string) {
+  const results = loadClimateDay(day)?.results ?? [];
+  if (results.length === 0)
+    return { status: "new" as const, line: NOT_STARTED, atlas: null, versus: null };
+  const { right, atlasRight, atlasRead } = climateTotals(results);
+  const atlas = atlasRead > 0 ? `${atlasRight} of ${atlasRead}` : null;
+  if (results.length < CLIMATE_PHOTOS) {
+    const line = `${results.length} of ${CLIMATE_PHOTOS} photos, ${right} right`;
+    return { status: "going" as const, line, atlas, versus: null };
+  }
+  // Atlas's tally is only a score against yours when it read every photo.
+  const called = atlasRead === CLIMATE_PHOTOS ? versus(right, atlasRight, "right") : null;
+  return {
+    status: "done" as const,
+    line: `${right} of ${CLIMATE_PHOTOS} right`,
+    atlas,
+    versus: called,
+  };
+}
+
 /** Every daily game dealt on `day`, with its standing in this browser. */
 export function todayGames(
   day: string,
@@ -323,6 +355,8 @@ export function todayGames(
         return { ...info, ...closeUp(day) };
       case "left-right":
         return { ...info, ...streakGame(loadSideDay(day), "photo") };
+      case "which-climate":
+        return { ...info, ...whichClimate(day) };
     }
   });
 }

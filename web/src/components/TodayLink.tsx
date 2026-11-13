@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { runToday } from "@/lib/game/dailyRuns";
-import { TODAY_GAMES, gamesDone, todayGames } from "@/lib/game/today";
+import { gamesDone, todayGames } from "@/lib/game/today";
 
 /**
  * The way to Today, on the results screen and in the Games menu, saying how many of the day's
@@ -19,16 +19,22 @@ export default function TodayLink({
   /** On Today itself: the card says so and isn't a link. */
   current?: boolean;
 }) {
-  const [done, setDone] = useState<number | null>(null);
+  const [day, setDay] = useState<{ done: number; total: number } | null>(null);
 
   useEffect(() => {
-    // Storage only exists in the browser, so the count is read once the page is mounted.
+    // Storage and the day only exist in the browser, so both are read once the page is mounted:
+    // a game that joins Today on a later day isn't counted before then.
+    const games = todayGames(runToday(), []);
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setDone(gamesDone(todayGames(runToday(), [])));
+    setDay({ done: gamesDone(games), total: games.length });
   }, []);
 
-  const total = TODAY_GAMES.length;
-  const line = done === null || done === 0 ? `${total} daily games` : `${done} of ${total} played`;
+  const line =
+    day === null
+      ? "Every daily game"
+      : day.done === 0
+        ? `${day.total} daily games`
+        : `${day.done} of ${day.total} played`;
   const box = compact ? "mt-4 rounded-xl px-4 py-3" : "mt-4 rounded-2xl p-5";
   const title = `block font-sign font-bold ${compact ? "text-xl" : "text-2xl"}`;
   const body = (

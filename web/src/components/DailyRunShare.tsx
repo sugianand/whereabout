@@ -24,13 +24,16 @@ export function ShareDay({
   shareText,
   freeHref,
   focus = false,
-  label = "Share today's run",
+  unit = "run",
+  label = `Share today's ${unit}`,
   squares = true,
 }: {
   shareText: (href: string) => string;
   /** Where the way on to a free run goes; omitted, there is no such link. */
   freeHref?: string;
   focus?: boolean;
+  /** What one play of the game is called: a "run", or a "game" of a set number of photos. */
+  unit?: string;
   label?: string;
   /** Whether the line has squares, so the classic or colour-blind safe switch belongs beside it. */
   squares?: boolean;
@@ -60,7 +63,7 @@ export function ShareDay({
             href={freeHref}
             className="text-chalk-dim underline underline-offset-2 hover:text-chalk"
           >
-            Play a free run
+            {`Play a free ${unit}`}
           </Link>
         )}
       </div>
@@ -86,6 +89,7 @@ export function DailyRunResult({
   shareText,
   freeHref,
   now,
+  unit = "run",
   children,
 }: {
   game: string;
@@ -96,20 +100,22 @@ export function DailyRunResult({
   shareText: (href: string) => string;
   freeHref: string;
   now?: () => Date;
+  /** What one play of the game is called: a "run", or a "game" of a set number of photos. */
+  unit?: string;
   /** The day's detail, under the share. */
   children?: ReactNode;
 }) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center px-6 py-16">
-      <p className="text-sm text-gold">{`${game} · today's run · ${day}`}</p>
+      <p className="text-sm text-gold">{`${game} · today's ${unit} · ${day}`}</p>
       <h1 className="mt-2 font-sign text-5xl font-extrabold leading-none tracking-tight">
         {headline}
       </h1>
       <p className="mt-4 text-lg text-chalk-dim">
-        {`${summary} The next run is dealt in ${untilNextRun(now?.())}.`}
+        {`${summary} The next ${unit} is dealt in ${untilNextRun(now?.())}.`}
       </p>
       <div className="mt-4">
-        <ShareDay shareText={shareText} freeHref={freeHref} focus />
+        <ShareDay shareText={shareText} freeHref={freeHref} unit={unit} focus />
       </div>
       {children}
     </main>

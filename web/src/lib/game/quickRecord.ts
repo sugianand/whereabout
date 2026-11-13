@@ -7,14 +7,15 @@
  * - free runs, tallied here round by round as they are answered (`recordFreeRound`), under
  *   `QUICK_RECORD_KEY`, so leaving mid-run still counts the rounds played;
  * - today's runs, read back from the days each game already keeps (src/lib/game/dailyRuns.ts),
- *   so nothing is counted twice: the daily screens never call `recordFreeRound`. Which climate?
- *   has no daily, so its record is its free games alone.
+ *   so nothing is counted twice: the daily screens never call `recordFreeRound`. Today's Which
+ *   climate? keeps every call (./climateDaily.ts), and is read back call by call.
  *
  * You are judged on every round you answered, Atlas on the rounds it played (it sits out a
  * round where it never guessed one of the photos), so each side's rate is over its own rounds
  * and the record says how many each one is. Storage is best effort, as for the bests.
  */
 
+import { loadClimateDays, type ClimateDay } from "./climateDaily";
 import { loadDailyRuns, type DailyRun } from "./dailyRuns";
 import { NORTH_DAILY_KEY } from "./northDaily";
 import { ODD_DAILY_KEY } from "./oddDaily";
@@ -36,11 +37,12 @@ export const CLUE_GAMES = ["left-right", "which-climate"] as const satisfies rea
 /** The rest: picking between photos. */
 export const PICK_GAMES = ["further-north", "odd-one-out"] as const satisfies readonly RecordGame[];
 
-/** What each game's daily days are kept under; a game with no daily has none. */
-const DAILY_KEYS: Partial<Record<RecordGame, string>> = {
-  "further-north": NORTH_DAILY_KEY,
-  "odd-one-out": ODD_DAILY_KEY,
-  "left-right": SIDE_DAILY_KEY,
+/** Each game's daily days, read back as one tally. */
+const DAILY_TALLIES: Record<RecordGame, () => Tally> = {
+  "further-north": () => dailyTally(loadDailyRuns(NORTH_DAILY_KEY)),
+  "odd-one-out": () => dailyTally(loadDailyRuns(ODD_DAILY_KEY)),
+  "left-right": () => dailyTally(loadDailyRuns(SIDE_DAILY_KEY)),
+  "which-climate": () => climateDayTally(loadClimateDays()),
 };
 
 /** Rounds played and got right, by you and by Atlas. */
@@ -118,6 +120,26 @@ export function dailyTally(days: Readonly<Record<string, DailyRun>>): Tally {
   return tally;
 }
 
+/**
+ * Today's Which climate? games as a tally: each day kept is a game, each call a photo, and Atlas
+ * is judged on the photos it gave a climate read for. A day started but not called is nothing.
+ */
+export function climateDayTally(days: Readonly<Record<string, ClimateDay>>): Tally {
+  let tally = EMPTY_TALLY;
+  for (const { results } of Object.values(days)) {
+    if (results.length === 0) continue;
+    const read = results.filter((r) => r.atlas !== null);
+    tally = addTallies(tally, {
+      runs: 1,
+      rounds: results.length,
+      right: results.filter((r) => r.correct).length,
+      atlasPlayed: read.length,
+      atlasRight: read.filter((r) => r.atlas === r.truth).length,
+    });
+  }
+  return tally;
+}
+
 function storage(): Storage | null {
   try {
     return typeof window === "undefined" ? null : window.localStorage;
@@ -184,8 +206,7 @@ export function loadQuickRecord(): QuickRecord {
   const free = loadFreeTallies();
   const record = {} as QuickRecord;
   for (const game of RECORD_GAMES) {
-    const key = DAILY_KEYS[game];
-    const daily = key ? dailyTally(loadDailyRuns(key)) : EMPTY_TALLY;
+    const daily = DAILY_TALLIES[game]();
     record[game] = { free: free[game], daily, total: addTallies(free[game], daily) };
   }
   return record;

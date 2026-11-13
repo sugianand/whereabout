@@ -63,6 +63,16 @@ describe("Today", () => {
     expect(screen.getByLabelText("November 12: 0 of 9 finished")).toBeInTheDocument();
   });
 
+  it("lists Which climate? from its first day, after Left or right?", async () => {
+    render(<Today deckIds={IDS} now={at("2026-11-14T09:00:00Z")} />);
+    const card = await screen.findByTestId("today-which-climate");
+    expect(card).toHaveAttribute("href", "/which-climate/daily");
+    expect(card).toHaveTextContent("Which climate?");
+    expect(screen.getByRole("status")).toHaveTextContent(/^0 of 11 played/);
+    expect(screen.getByLabelText("Today: 0 of 11 finished")).toBeInTheDocument();
+    expect(screen.getByLabelText("November 13: 0 of 10 finished")).toBeInTheDocument();
+  });
+
   it("shows a finished run's result and shares the day", async () => {
     rememberNorthDay("2026-11-03", { streak: 4, atlasRight: 2, atlasPlayed: 3, ended: "miss" });
     const writeText = vi.fn(async () => undefined);
@@ -99,14 +109,13 @@ describe("Today", () => {
     render(<Today deckIds={IDS} now={at("2026-11-03T12:00:00Z")} />);
 
     const card = await screen.findByRole("region", { name: "Atlas's day" });
-    expect(within(card).getByTestId("atlas-day-call")).toHaveTextContent(
-      "Level with Atlas, 1–1.",
-    );
+    expect(within(card).getByTestId("atlas-day-call")).toHaveTextContent("Level with Atlas, 1–1.");
     const rows = within(card).getByRole("list", { name: "Game by game" });
-    expect(within(rows).getAllByRole("listitem").map((li) => li.dataset.call)).toEqual([
-      "you",
-      "atlas",
-    ]);
+    expect(
+      within(rows)
+        .getAllByRole("listitem")
+        .map((li) => li.dataset.call),
+    ).toEqual(["you", "atlas"]);
     expect(within(card).getByTestId("atlas-day-further-north")).toHaveTextContent(
       "Further NorthYou 4 · Atlas 2 rightYou",
     );

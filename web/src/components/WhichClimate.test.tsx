@@ -3,7 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GameRecord } from "@/lib/game/deck";
 import type { CatalogPhoto } from "@/lib/game/types";
-import { loadFreeTallies } from "@/lib/game/quickRecord";
+import { CLIMATE_DAILY_KEY, dailyClimateOrder } from "@/lib/game/climateDaily";
+import { EMPTY_TALLY, loadFreeTallies, loadQuickRecord } from "@/lib/game/quickRecord";
 import { BEST_CLIMATE_KEY, dealClimate, type ClimateMap } from "@/lib/game/whichClimate";
 import { atlasClimateGroup, type ClimateGroup } from "@/lib/trueClues";
 import { gameFor } from "@/test/deck";
@@ -163,5 +164,116 @@ describe("WhichClimate", () => {
       <WhichClimate deck={game.deck} groups={{ a1: "Arid" }} loadRecords={game.loadRecords} />,
     );
     expect(await screen.findByText("No photos to play yet")).toBeInTheDocument();
+  });
+});
+
+describe("WhichClimate, today's game", () => {
+  const DAY = "2026-11-13";
+  const now = () => new Date(`${DAY}T18:48:00Z`);
+  const order = dailyClimateOrder(GROUPS, DAY);
+  const dayTruth = (n: number) => GROUPS[order[n]];
+
+  function play() {
+    const game = gameFor(RECORDS);
+    return render(
+      <WhichClimate
+        deck={game.deck}
+        groups={GROUPS}
+        loadRecords={game.loadRecords}
+        daily
+        now={now}
+      />,
+    );
+  }
+
+  async function call(n: number, group: ClimateGroup) {
+    await waitFor(() => expect(photo()).toHaveAttribute("data-photo", order[n]));
+    await waitFor(() => expect(button("Arid")).toBeEnabled());
+    fireEvent.click(button(group));
+    return screen.findByRole("region");
+  }
+
+  it("deals the day's photos, picks up after a reload, and shares the score once all five are called", async () => {
+    expect(order).toHaveLength(5);
+    const first = play();
+    await waitFor(() => expect(button("Arid")).toBeEnabled());
+    expect(screen.getByText(/today's game \(2026-11-13\)/)).toBeInTheDocument();
+    expect(screen.queryByText("Best")).toBeNull();
+    expect(screen.getByRole("link", { name: "Free games" })).toHaveAttribute(
+      "href",
+      "/which-climate",
+    );
+    await call(0, dayTruth(0));
+    expect(JSON.parse(localStorage.getItem(CLIMATE_DAILY_KEY)!)[DAY].results).toHaveLength(1);
+    first.unmount();
+
+    // A reload carries on at the second photo with the score so far: the first can't be retaken.
+    play();
+    await waitFor(() => expect(photo()).toHaveAttribute("data-photo", order[1]));
+    expect(score()).toHaveTextContent("1");
+    expect(screen.getByText("Photo 2 of 5")).toBeInTheDocument();
+
+    for (let n = 1; n < 5; n++) {
+      const card = await call(n, n < 3 ? dayTruth(n) : wrongFor(dayTruth(n)));
+      fireEvent.click(
+        within(card).getByRole("button", { name: n === 4 ? "See today's result" : "Next photo" }),
+      );
+    }
+    expect(await screen.findByRole("heading", { level: 1, name: "3 of 5" })).toBeInTheDocument();
+    expect(screen.getByText(/^That's today's game played\./)).toBeInTheDocument();
+    expect(screen.getByText(/The next game is dealt in 5h 12m\./)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByTestId("climate-row")[0]).toHaveTextContent("Place"));
+    expect(screen.getAllByTestId("climate-row")).toHaveLength(5);
+
+    // Today's game keeps its own result, apart from the free games' best, and Your map reads it
+    // from the day kept, so the free games' tally never counts it a second time.
+    expect(localStorage.getItem(BEST_CLIMATE_KEY)).toBeNull();
+    expect(loadFreeTallies()["which-climate"]).toEqual(EMPTY_TALLY);
+    expect(loadQuickRecord()["which-climate"].daily).toMatchObject({
+      runs: 1,
+      rounds: 5,
+      right: 3,
+    });
+
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    const share = screen.getByRole("button", { name: "Share today's game" });
+    expect(share).toHaveFocus();
+    fireEvent.click(share);
+    expect(await screen.findByText("Result copied. Paste it anywhere.")).toBeVisible();
+    const text = writeText.mock.calls[0][0] as string;
+    expect(text).toMatch(/^Whereabout · Which climate\? · 2026-11-13\n🌦️ 3 of 5\n🟩🟩🟩🟥🟥\n/);
+    for (const r of RECORDS) {
+      expect(text).not.toContain(r.photo.id);
+      expect(text).not.toContain(r.photo.place);
+    }
+  });
+
+  it("shows the day's result instead of dealing it again once every photo is called", async () => {
+    const results = order.map((id) => ({
+      id,
+      picked: GROUPS[id],
+      truth: GROUPS[id],
+      correct: true,
+      atlas: null,
+    }));
+    localStorage.setItem(CLIMATE_DAILY_KEY, JSON.stringify({ [DAY]: { results } }));
+    play();
+    expect(await screen.findByRole("heading", { level: 1, name: "5 of 5" })).toBeInTheDocument();
+    expect(screen.getByText(/Atlas said nothing about the climate today\./)).toBeInTheDocument();
+    expect(screen.queryByTestId("climate-photo")).toBeNull();
+    expect(screen.getByRole("link", { name: "Play a free game" })).toHaveAttribute(
+      "href",
+      "/which-climate",
+    );
+  });
+
+  it("links the free games to today's game", async () => {
+    await setup();
+    expect(screen.getByRole("link", { name: "Today's game" })).toHaveAttribute(
+      "href",
+      "/which-climate/daily",
+    );
   });
 });

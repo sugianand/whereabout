@@ -60,6 +60,7 @@ const GAMES: Record<RecordGame, GameInfo> = {
   "which-climate": {
     name: "Which climate?",
     href: "/which-climate",
+    daily: "/which-climate/daily",
     clue: "The climate",
     unit: "photo",
     run: ["game", "games"],
@@ -172,7 +173,7 @@ function GameCard({ game, total, daily }: { game: RecordGame; total: Tally; dail
             href={dailyHref}
             className="rounded-full border border-chalk/30 px-4 py-2 font-semibold transition hover:border-chalk"
           >
-            Today&apos;s run
+            {`Today's ${run[0]}`}
           </Link>
         )}
       </div>

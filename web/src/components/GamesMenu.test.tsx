@@ -24,6 +24,26 @@ describe("GamesMenu", () => {
     expect(link).toHaveTextContent(`1 of ${todayGames(day, []).length} played`);
   });
 
+  it("counts only the games dealt today, not one that joins Today on a later day", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      // Which climate? joins Today on 2026-11-14.
+      vi.setSystemTime(new Date("2026-11-13T23:30:00Z"));
+      const { unmount } = render(<GamesMenu screen="round" streakHref="/streak" />);
+      expect(within(openMenu()).getByRole("link", { name: /^Today/ })).toHaveTextContent(
+        "10 daily games",
+      );
+      unmount();
+      vi.setSystemTime(new Date("2026-11-14T00:30:00Z"));
+      render(<GamesMenu screen="round" streakHref="/streak" />);
+      expect(within(openMenu()).getByRole("link", { name: /^Today/ })).toHaveTextContent(
+        "11 daily games",
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("marks Today as the current screen when opened from it", () => {
     render(<GamesMenu screen="today" streakHref="/streak" />);
     const sheet = openMenu();

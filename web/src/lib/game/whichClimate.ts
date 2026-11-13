@@ -85,7 +85,12 @@ export type ClimateState =
   | (Game & { phase: "done" });
 
 export type ClimateAction =
-  | { type: "start"; order: readonly string[] }
+  | {
+      type: "start";
+      order: readonly string[];
+      /** Calls already made to pick up from (today's game after a reload): play goes on after them. */
+      from?: readonly ClimateResult[];
+    }
   | { type: "picked"; group: ClimateGroup; truth: ClimateGroup; atlas: ClimateGroup | null }
   | { type: "next" };
 
@@ -93,10 +98,12 @@ export const initialClimate: ClimateState = { phase: "idle" };
 
 export function climateReducer(state: ClimateState, action: ClimateAction): ClimateState {
   switch (action.type) {
-    case "start":
-      return action.order.length === 0
-        ? { phase: "done", order: [], results: [] }
-        : { phase: "picking", order: action.order, results: [] };
+    case "start": {
+      const results = action.from ?? [];
+      return results.length >= action.order.length
+        ? { phase: "done", order: action.order, results }
+        : { phase: "picking", order: action.order, results };
+    }
     case "picked": {
       if (state.phase !== "picking") return state;
       const id = state.order[state.results.length];

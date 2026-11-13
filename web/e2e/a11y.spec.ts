@@ -61,6 +61,7 @@ const FIRST_SCREENS = [
   "./left-right",
   "./left-right/daily",
   "./which-climate",
+  "./which-climate/daily",
   "./pass-and-play",
   "./today",
   "./map",

@@ -4,6 +4,13 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
 import { isShortcut } from "@/lib/controls";
+import {
+  climateDailyShare,
+  dailyClimateOrder,
+  loadClimateDay,
+  rememberClimateDay,
+} from "@/lib/game/climateDaily";
+import { runToday } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import { recordFreeRound } from "@/lib/game/quickRecord";
 import {
@@ -26,6 +33,7 @@ import { placeholderUrl, sources } from "@/lib/photoSources";
 import { CLIMATE_GROUPS, atlasClimateGroup, type ClimateGroup } from "@/lib/trueClues";
 
 import ControlsHelp from "./ControlsHelp";
+import { DailyRunResult } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
 
 type WhichClimateProps = {
@@ -36,6 +44,13 @@ type WhichClimateProps = {
   loadRecords?: (ids: string[]) => Promise<GameRecord[]>;
   /** For tests: the randomness that picks each game's seed. */
   random?: () => number;
+  /**
+   * Today's game (src/lib/game/climateDaily.ts): dealt from the UTC date, one try a day, picked
+   * up after a reload and shared as a score only. It never touches the free games' best.
+   */
+  daily?: boolean;
+  /** For tests: the clock that picks today's game. */
+  now?: () => Date;
 };
 
 /** 1 to 5 name the groups in the order the buttons show them. */
@@ -48,20 +63,43 @@ const KEY_GROUP: Record<string, ClimateGroup> = Object.fromEntries(
  * climate the place sits in by tapping a group or pressing 1 to 5; the answer shows the place on
  * the band of groups, with your call and Atlas's on it. Five photos a game, against Atlas.
  */
-export default function WhichClimate({ deck, groups, loadRecords, random }: WhichClimateProps) {
+export default function WhichClimate({
+  deck,
+  groups,
+  loadRecords,
+  random,
+  daily = false,
+  now,
+}: WhichClimateProps) {
   const [state, dispatch] = useReducer(climateReducer, initialClimate);
   const [best, setBest] = useState(0);
   const [bestBeforeGame, setBestBeforeGame] = useState(0);
   const [records, setRecords] = useState<ReadonlyMap<string, GameRecord>>(() => new Map());
   const [error, setError] = useState<string | null>(null);
+  // Today's game: the day it was dealt for, kept when the clock passes midnight mid-game.
+  const [day, setDay] = useState<string | null>(null);
 
   const start = useCallback(() => {
+    if (daily) {
+      const today = runToday(now?.());
+      const kept = loadClimateDay(today)?.results ?? [];
+      setDay(today);
+      // The calls kept come first. With the same photos they are the day's deal anyway; a day
+      // kept from an earlier deal (the catalog changed since) still reads back as it was played.
+      const played = kept.map((r) => r.id);
+      const order = [
+        ...played,
+        ...dailyClimateOrder(groups, today).filter((id) => !played.includes(id)),
+      ].slice(0, Math.max(CLIMATE_PHOTOS, played.length));
+      dispatch({ type: "start", order, from: kept });
+      return;
+    }
     const stored = loadBestClimate();
     setBest(stored);
     setBestBeforeGame(stored);
     const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
     dispatch({ type: "start", order: dealClimate(groups, seed) });
-  }, [groups, random]);
+  }, [groups, random, daily, now]);
 
   // The game is dealt in the browser after hydration, never at build time.
   useEffect(() => {
@@ -77,9 +115,12 @@ export default function WhichClimate({ deck, groups, loadRecords, random }: Whic
   // The photo being called (or just answered) and the one after it.
   const playing = state.phase === "picking" || state.phase === "answered" ? state : null;
   const index = playing ? playing.results.length - (playing.phase === "answered" ? 1 : 0) : 0;
+  // Today's finished game lists every photo it called, so it needs them all.
+  const dayOver = state.phase === "done" && day !== null ? state.results : null;
   const wanted = useMemo(
-    () => (playing ? playing.order.slice(index, index + 2) : []),
-    [playing, index],
+    () =>
+      playing ? playing.order.slice(index, index + 2) : dayOver ? dayOver.map((r) => r.id) : [],
+    [playing, index, dayOver],
   );
   const missing = wanted.filter((id) => !records.has(id)).join(",");
 
@@ -123,7 +164,10 @@ export default function WhichClimate({ deck, groups, loadRecords, random }: Whic
         atlas: atlasClimateGroup(record.atlas),
       } as const;
       const after = climateReducer(state, action);
-      if (after.phase === "answered") {
+      if (after.phase === "answered" && day) {
+        // Today's game is kept after every call, so a reload resumes it and never deals it again.
+        rememberClimateDay(day, after.results);
+      } else if (after.phase === "answered") {
         // Count the call in your clue reading on Your map, as it is made, so leaving mid-game
         // still counts the photos called.
         const call = after.results[after.results.length - 1];
@@ -139,7 +183,7 @@ export default function WhichClimate({ deck, groups, loadRecords, random }: Whic
       }
       dispatch(action);
     },
-    [state, record, groups],
+    [state, record, groups, day],
   );
 
   // 1 to 5 make the call from the keyboard.
@@ -154,6 +198,10 @@ export default function WhichClimate({ deck, groups, loadRecords, random }: Whic
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [ready, choose]);
+
+  if (state.phase === "done" && day && state.results.length > 0) {
+    return <ClimateDayResult day={day} results={state.results} records={records} now={now} />;
+  }
 
   if (state.phase === "done") {
     return (
@@ -187,7 +235,17 @@ export default function WhichClimate({ deck, groups, loadRecords, random }: Whic
           >
             Whereabout
           </Link>
-          <p className="mt-1 text-sm text-chalk-dim">Which climate? Name the Köppen group.</p>
+          <p className="mt-1 text-sm text-chalk-dim">
+            {day
+              ? `Which climate?, today's game (${day}).`
+              : "Which climate? Name the Köppen group."}
+          </p>
+          <Link
+            href={daily ? "/which-climate" : "/which-climate/daily"}
+            className="mt-0.5 inline-block text-sm text-gold underline underline-offset-2 hover:brightness-110"
+          >
+            {daily ? "Free games" : "Today's game"}
+          </Link>
           <p className="text-sm text-chalk-dim" aria-live="polite">
             {`Photo ${Math.min(index + 1, CLIMATE_PHOTOS)} of ${CLIMATE_PHOTOS}`}
           </p>
@@ -198,10 +256,12 @@ export default function WhichClimate({ deck, groups, loadRecords, random }: Whic
           <dl className="text-right">
             <dt className="text-sm text-chalk-dim">Score</dt>
             <dd className="font-sign tabular text-3xl font-bold leading-none">{totals.right}</dd>
-            <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
-              <dt>Best</dt>
-              <dd className="tabular">{best}</dd>
-            </div>
+            {!daily && (
+              <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
+                <dt>Best</dt>
+                <dd className="tabular">{best}</dd>
+              </div>
+            )}
           </dl>
         </div>
       </header>
@@ -251,7 +311,7 @@ export default function WhichClimate({ deck, groups, loadRecords, random }: Whic
             lat={record.photo.lat}
             atlasTally={[totals.atlasRight, results.length]}
             onNext={() => dispatch({ type: "next" })}
-            nextLabel={last ? "See the results" : "Next photo"}
+            nextLabel={last ? (day ? "See today's result" : "See the results") : "Next photo"}
           />
         </div>
       )}
@@ -446,20 +506,7 @@ function ClimateSummary({
           <p className="mt-1 text-chalk-dim">
             {newBest ? "That's your new best!" : `Your best is ${best} of ${CLIMATE_PHOTOS}.`}
           </p>
-          <ol className="mt-6 space-y-2" aria-label="Your calls">
-            {results.map((r) => (
-              <li
-                key={r.id}
-                className="rounded-xl border border-graticule/70 px-3 py-2 text-sm"
-                data-testid="climate-row"
-              >
-                <span className="block text-chalk">{records.get(r.id)?.photo.place ?? r.id}</span>
-                <span className="block text-chalk-dim">
-                  {`${r.truth}. You: ${r.picked} ${r.correct ? "✓" : "✗"}. Atlas: ${r.atlas === null ? "no read" : `${r.atlas} ${r.atlas === r.truth ? "✓" : "✗"}`}`}
-                </span>
-              </li>
-            ))}
-          </ol>
+          <ClimateRows results={results} records={records} />
         </>
       )}
       <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -478,5 +525,68 @@ function ClimateSummary({
         </Link>
       </div>
     </main>
+  );
+}
+
+/** Each photo called: the place, its climate, your call and Atlas's. */
+function ClimateRows({
+  results,
+  records,
+}: {
+  results: readonly ClimateResult[];
+  records: ReadonlyMap<string, GameRecord>;
+}) {
+  return (
+    <ol className="mt-6 space-y-2" aria-label="Your calls">
+      {results.map((r, i) => (
+        <li
+          key={r.id}
+          className="rounded-xl border border-graticule/70 px-3 py-2 text-sm"
+          data-testid="climate-row"
+        >
+          <span className="block text-chalk">
+            {records.get(r.id)?.photo.place ?? `Photo ${i + 1}`}
+          </span>
+          <span className="block text-chalk-dim">
+            {`${r.truth}. You: ${r.picked} ${r.correct ? "✓" : "✗"}. Atlas: ${r.atlas === null ? "no read" : `${r.atlas} ${r.atlas === r.truth ? "✓" : "✗"}`}`}
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** Today's Which climate? once every photo is called: the score, the share and each call. */
+function ClimateDayResult({
+  day,
+  results,
+  records,
+  now,
+}: {
+  day: string;
+  results: readonly ClimateResult[];
+  records: ReadonlyMap<string, GameRecord>;
+  now?: () => Date;
+}) {
+  const { right, atlasRight, atlasRead } = climateTotals(results);
+  const atlas =
+    atlasRead === results.length
+      ? climateVerdict(right, atlasRight)
+      : atlasRead > 0
+        ? `Atlas got ${atlasRight} of the ${atlasRead} it read.`
+        : "Atlas said nothing about the climate today.";
+  return (
+    <DailyRunResult
+      game="Which climate?"
+      day={day}
+      headline={`${right} of ${results.length}`}
+      summary={`That's today's game played. ${atlas}`}
+      shareText={(href) => climateDailyShare(day, results, href)}
+      freeHref="/which-climate"
+      now={now}
+      unit="game"
+    >
+      <ClimateRows results={results} records={records} />
+    </DailyRunResult>
   );
 }

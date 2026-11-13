@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { rememberClimateDay } from "./climateDaily";
 import type { DailyRun } from "./dailyRuns";
 import { NORTH_DAILY_KEY } from "./northDaily";
 import { ODD_DAILY_KEY } from "./oddDaily";
@@ -138,7 +139,7 @@ describe("loadQuickRecord", () => {
     });
   });
 
-  it("counts today's Left or right? runs in the road's record; Which climate? has no daily", () => {
+  it("counts today's Left or right? runs in the road's record", () => {
     recordFreeRound("left-right", { first: true, correct: false, atlas: null });
     localStorage.setItem(
       SIDE_DAILY_KEY,
@@ -147,7 +148,6 @@ describe("loadQuickRecord", () => {
         "2026-11-13": day({ streak: 2, atlasRight: 1, atlasPlayed: 1 }),
       }),
     );
-    recordFreeRound("which-climate", { first: true, correct: true, atlas: true });
     const record = loadQuickRecord();
     expect(record["left-right"].daily).toEqual({
       runs: 2,
@@ -163,8 +163,25 @@ describe("loadQuickRecord", () => {
       atlasPlayed: 4,
       atlasRight: 3,
     });
-    expect(record["which-climate"].daily).toEqual(EMPTY_TALLY);
-    expect(record["which-climate"].total.rounds).toBe(1);
+  });
+
+  it("counts today's Which climate? games call by call in the climate's record", () => {
+    recordFreeRound("which-climate", { first: true, correct: true, atlas: true });
+    rememberClimateDay("2026-11-13", [
+      { id: "a", picked: "Arid", truth: "Arid", correct: true, atlas: "Arid" },
+      { id: "b", picked: "Polar", truth: "Continental", correct: false, atlas: null },
+      { id: "c", picked: "Tropical", truth: "Tropical", correct: true, atlas: "Temperate" },
+    ]);
+    rememberClimateDay("2026-11-14", []);
+    const record = loadQuickRecord();
+    expect(record["which-climate"].daily).toEqual({
+      runs: 1,
+      rounds: 3,
+      right: 2,
+      atlasPlayed: 2,
+      atlasRight: 1,
+    });
+    expect(record["which-climate"].total).toMatchObject({ runs: 2, rounds: 4, right: 3 });
   });
 
   it("is empty in a fresh browser", () => {

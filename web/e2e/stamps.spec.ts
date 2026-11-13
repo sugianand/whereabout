@@ -60,6 +60,8 @@ test("stamps come from what the browser keeps, are marked new once, and fit a 32
         results: ["a", "b", "c", "d", "e"].map(close),
         wrong: [],
       });
+      const call = (id: string) => ({ id, picked: "Arid", truth: "Arid", atlas: null });
+      keep("whereabout:which-climate-daily", { results: ["a", "b", "c", "d", "e"].map(call) });
     },
     { played: [pin("p1", "AU", 900), pin("p2", "NZ", 120), pin("p3", "PF", 3000)], day: yesterday },
   );
