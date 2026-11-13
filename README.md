@@ -142,6 +142,13 @@ same even deal, one try a day, picked up after a reload and shared as counts onl
 plays them in the same order, sees which side you called on the photo that ended your run once
 they've called it, plays on past it through the photos left, and can send theirs back with a
 head-to-head picture.
+**Which climate?** (at `/which-climate`, in the Games menu) shows one photo and the five Köppen
+climate groups: tropical, arid, temperate, continental and polar. Tap one or press 1 to 5. The
+answer lights the place's own group on a band of all five, with your call and Atlas's marked on it,
+says what the group means and how far from the equator the place sits. Atlas plays from its own
+climate clue, and scores nothing on a photo it said nothing about. Each photo's group is drawn by a
+fair die over the groups, not in the catalog's proportions, so always naming one group scores about
+a fifth. Five photos a game; your best game is kept in your browser.
 **Today** (at `/today`, in the Games menu and on the results screen) puts every daily game on one
 page: the Daily Five, Further North, Odd one out, Which way?, How far apart?, Name the country,
 Hot and cold, Line them up, Close-up and Left or right?, each with where it stands in your browser (not started, under way or its result), the time to the next deal, and one

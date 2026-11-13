@@ -132,13 +132,32 @@ function drivingClue(truth: DrivingSide, atlas: AtlasRead | null): TrueClue {
   };
 }
 
-function climateClue(truth: string, atlas: AtlasRead | null): TrueClue {
-  const clue = { kind: "climate" as const, truth: `${truth} climate` };
+export type ClimateGroup = (typeof CLIMATE_GROUPS)[number];
+
+/** True for one of the five Köppen groups the game names. */
+export function isClimateGroup(value: unknown): value is ClimateGroup {
+  return (CLIMATE_GROUPS as readonly unknown[]).includes(value);
+}
+
+/**
+ * Which Köppen group Atlas reads a photo as: its first climate clue, read the way
+ * `ZERO_SHOT_CLIMATE` in `clue_heads.py` does. Null when Atlas said nothing about the climate.
+ */
+export function atlasClimateGroup(
+  atlas: Pick<AtlasRead, "clues"> | null | undefined,
+): ClimateGroup | null {
   for (const c of atlas?.clues ?? []) {
     const group = climateGroupOf(c.label);
-    if (group) return { ...clue, atlas: `${group.toLowerCase()} climate`, right: group === truth };
+    if (isClimateGroup(group)) return group;
   }
-  return { ...clue, atlas: null, right: null };
+  return null;
+}
+
+function climateClue(truth: string, atlas: AtlasRead | null): TrueClue {
+  const clue = { kind: "climate" as const, truth: `${truth} climate` };
+  const group = atlasClimateGroup(atlas);
+  if (!group) return { ...clue, atlas: null, right: null };
+  return { ...clue, atlas: `${group.toLowerCase()} climate`, right: group === truth };
 }
 
 function landClue(truth: string, atlas: AtlasRead | null): TrueClue {

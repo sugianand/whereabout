@@ -10,6 +10,7 @@ import catalog from "@/data/photos.json";
 import { buildDeck, gameRecords } from "./deck";
 import { nameIds } from "./nameCountry";
 import type { AtlasData, CatalogPhoto } from "./types";
+import { climateMap } from "./whichClimate";
 
 export const bundledRecords = gameRecords(catalog as CatalogPhoto[], atlasData as AtlasData);
 export const bundledDeck = buildDeck(bundledRecords);
@@ -33,3 +34,9 @@ export const bundledPhotoCountries: Record<string, string> = Object.fromEntries(
 export const bundledDrivingSides: Record<string, "left" | "right"> = Object.fromEntries(
   bundledRecords.flatMap((r) => (r.photo.drivingSide ? [[r.photo.id, r.photo.drivingSide]] : [])),
 );
+
+/**
+ * Each photo Which climate? can deal, by its Köppen group: what the browser needs to deal an even
+ * game across the five groups without fetching every record (`whichClimate.ts`).
+ */
+export const bundledClimateGroups = climateMap(bundledRecords.map((r) => r.photo));

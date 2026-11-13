@@ -93,6 +93,11 @@ const BLURBS: Record<QuickMode, { name: string; blurb: string }> = {
     blurb:
       "One photo: do they drive on the left or the right where it was taken? Swipe or tap your call until your first miss, against Atlas's read of the road.",
   },
+  "which-climate": {
+    name: "Which climate?",
+    blurb:
+      "One photo and the five Köppen climates: tropical, arid, temperate, continental or polar? Five photos against Atlas's read of the climate.",
+  },
 };
 
 const CARD =
@@ -218,6 +223,7 @@ export default function QuickGames({
           "line-up",
           "close-up",
           "left-right",
+          "which-climate",
         ] as const
       ).map((mode) => (
         <li key={mode}>{card(mode, `/${mode}`)}</li>

@@ -12,6 +12,7 @@ import { BEST_NAME_KEY } from "./nameCountry";
 import { NO_BESTS, QUICK_MODES, bestLine, bestStreak, loadQuickBests } from "./quickBests";
 import { BEST_STREAK_KEY, bestStreakKey } from "./streak";
 import { BEST_SURVIVAL_KEY } from "./survival";
+import { BEST_CLIMATE_KEY } from "./whichClimate";
 import { BEST_WAY_KEY } from "./whichWay";
 
 afterEach(() => localStorage.clear());
@@ -35,6 +36,7 @@ describe("loadQuickBests", () => {
     localStorage.setItem(BEST_LINE_KEY, "14");
     localStorage.setItem(BEST_CLOSE_KEY, "11");
     localStorage.setItem(BEST_LEFT_RIGHT_KEY, "12");
+    localStorage.setItem(BEST_CLIMATE_KEY, "4");
     expect(loadQuickBests()).toEqual({
       blitz: 18250,
       streak: { streak: 6, region: null },
@@ -48,6 +50,7 @@ describe("loadQuickBests", () => {
       "line-up": 14,
       "close-up": 11,
       "left-right": 12,
+      "which-climate": 4,
     });
   });
 
@@ -57,7 +60,9 @@ describe("loadQuickBests", () => {
     localStorage.setItem(BEST_SURVIVAL_KEY, "{");
     localStorage.setItem(BEST_HOW_FAR_KEY, "9000");
     localStorage.setItem(BEST_WAY_KEY, "-1");
+    localStorage.setItem(BEST_CLIMATE_KEY, "6");
     const bests = loadQuickBests();
+    expect(bests["which-climate"]).toBeNull();
     expect(bests["how-far"]).toBeNull();
     expect(bests["which-way"]).toBeNull();
     expect(bests["further-north"]).toBeNull();
@@ -99,6 +104,7 @@ describe("bestLine", () => {
     "line-up": 14,
     "close-up": 11,
     "left-right": 12,
+    "which-climate": 3,
   };
 
   it("reads each best the way its card shows it", () => {
@@ -114,6 +120,7 @@ describe("bestLine", () => {
     expect(bestLine("line-up", bests)).toBe("Best: 14 of 20 in place");
     expect(bestLine("close-up", bests)).toBe("Best: 11 of 15 points");
     expect(bestLine("left-right", bests)).toBe("Best: 12 in a row");
+    expect(bestLine("which-climate", bests)).toBe("Best: 3 of 5 right");
   });
 
   it("names no continent for an all-world streak, and counts photos in the plural", () => {

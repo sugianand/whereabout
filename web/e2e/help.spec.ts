@@ -240,6 +240,32 @@ test.describe("on a keyboard", () => {
     await expect(page.getByText("Photo 2 of 5")).toBeVisible();
   });
 
+  test("? lists Which climate?'s controls, and every one of its keys works", async ({ page }) => {
+    await page.goto("./which-climate");
+    await expect(page.locator('[aria-keyshortcuts="5"]')).toBeEnabled();
+    const sheet = await openWithKey(page, "Controls for Which climate?");
+    await expectSheetLists(sheet, "which-climate", false);
+    // A pick key pressed in the sheet doesn't make a call behind it.
+    await page.keyboard.press("1");
+    await page.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+    await expect(page.getByText("Photo 1 of 5", { exact: true })).toBeVisible();
+
+    // Each of 1 to 5 names a climate; Enter moves on from the answer.
+    const picks = keysOf("which-climate", "pick");
+    for (const [n, pick] of picks.entries()) {
+      await expect(page.getByText(`Photo ${n + 1} of 5`, { exact: true })).toBeVisible();
+      await expect(page.locator(`[aria-keyshortcuts="${pick}"]`)).toBeEnabled();
+      await page.keyboard.press(pick);
+      const next = page.getByRole("button", {
+        name: n === picks.length - 1 ? "See the results" : "Next photo",
+      });
+      await expect(next).toBeFocused();
+      await page.keyboard.press(keysOf("which-climate", "next")[0]);
+    }
+    await expect(page.getByRole("button", { name: "Play again" })).toBeFocused();
+  });
+
   test("? lists Left or right?'s controls, and every one of its keys works", async ({ page }) => {
     await page.goto("./left-right");
     await expect(page.getByRole("button", { name: "Left: they drive on the left" })).toBeEnabled();
@@ -395,6 +421,7 @@ test.describe("on a touch screen", () => {
     ["left-right", "./left-right", "Controls for Left or right?"],
     ["how-far", "./how-far", "Controls for How far apart?"],
     ["which-way", "./which-way", "Controls for Which way?"],
+    ["which-climate", "./which-climate", "Controls for Which climate?"],
   ] as const) {
     test(`the help button lists ${screen}'s gestures on screen`, async ({ page }) => {
       await page.goto(path);

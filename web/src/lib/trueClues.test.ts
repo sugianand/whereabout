@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import photos from "@/data/photos.json";
 
-import { climateGroupOf, trueClues, type AtlasRead } from "./trueClues";
+import { atlasClimateGroup, climateGroupOf, trueClues, type AtlasRead } from "./trueClues";
 
 const atlas = (labels: string[], top = "FR"): AtlasRead => ({
   clues: labels.map((label) => ({ label, p: 0.8 })),
@@ -20,6 +20,22 @@ describe("climateGroupOf", () => {
     expect(climateGroupOf("Snow and ice")).toBe("Continental");
     expect(climateGroupOf("Sunny climate")).toBeNull();
     expect(climateGroupOf("City")).toBeNull();
+  });
+});
+
+describe("atlasClimateGroup", () => {
+  const read = (...labels: string[]) => ({ clues: labels.map((label) => ({ label, p: 0.6 })) });
+
+  it("is Atlas's first climate clue, zero-shot labels read as their Köppen group", () => {
+    expect(atlasClimateGroup(read("Mountains", "Arid climate"))).toBe("Arid");
+    expect(atlasClimateGroup(read("Mediterranean", "Polar climate"))).toBe("Temperate");
+    expect(atlasClimateGroup(read("Snow and ice"))).toBe("Continental");
+  });
+
+  it("is null when Atlas said nothing about the climate, or sat the photo out", () => {
+    expect(atlasClimateGroup(read("City", "Drives on the left"))).toBeNull();
+    expect(atlasClimateGroup(read("Martian climate"))).toBeNull();
+    expect(atlasClimateGroup(null)).toBeNull();
   });
 });
 

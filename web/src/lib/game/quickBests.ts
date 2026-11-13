@@ -4,7 +4,8 @@
  *
  * Nothing new is stored here. Each mode keeps its own best under its own key (blitz.ts,
  * streak.ts, survival.ts, furtherNorth.ts, oddOneOut.ts, howFar.ts, whichWay.ts, hotCold.ts,
- * nameCountry.ts, lineUp.ts, closeUp.ts, leftRight.ts); this only reads them back through the
+ * nameCountry.ts, lineUp.ts, closeUp.ts, leftRight.ts,
+ * whichClimate.ts); this only reads them back through the
  * same loaders, so a value a mode would refuse (a negative streak, junk JSON) is refused here too.
  */
 
@@ -23,6 +24,7 @@ import { loadBestOdd } from "./oddOneOut";
 import { regionSlug } from "./regions";
 import { loadBestStreak } from "./streak";
 import { loadBestSurvival, type SurvivalBest } from "./survival";
+import { CLIMATE_PHOTOS, loadBestClimate } from "./whichClimate";
 import { loadBestWay } from "./whichWay";
 
 /** The quick modes the results screen links to, in the order its cards show them. */
@@ -39,6 +41,7 @@ export const QUICK_MODES = [
   "line-up",
   "close-up",
   "left-right",
+  "which-climate",
 ] as const;
 
 export type QuickMode = (typeof QUICK_MODES)[number];
@@ -74,6 +77,8 @@ export interface QuickBests {
   "close-up": number | null;
   /** The longest run of right calls. */
   "left-right": number | null;
+  /** The most photos named right in a whole game. */
+  "which-climate": number | null;
 }
 
 export const NO_BESTS: QuickBests = {
@@ -89,6 +94,7 @@ export const NO_BESTS: QuickBests = {
   "line-up": null,
   "close-up": null,
   "left-right": null,
+  "which-climate": null,
 };
 
 /**
@@ -124,6 +130,7 @@ export function loadQuickBests(): QuickBests {
     "line-up": positive(loadBestLine()),
     "close-up": positive(loadBestClose()),
     "left-right": positive(loadBestLeftRight()),
+    "which-climate": positive(loadBestClimate()),
   };
 }
 
@@ -156,6 +163,10 @@ export function bestLine(mode: QuickMode, bests: QuickBests): string | null {
     case "close-up": {
       const n = bests[mode];
       return n === null ? null : `Best: ${n} of ${CLOSE_MAX} points`;
+    }
+    case "which-climate": {
+      const n = bests[mode];
+      return n === null ? null : `Best: ${n} of ${CLIMATE_PHOTOS} right`;
     }
     case "further-north":
     case "odd-one-out":

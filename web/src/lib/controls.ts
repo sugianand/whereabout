@@ -38,7 +38,8 @@ export type HelpScreen =
   | "name-country"
   | "line-up"
   | "close-up"
-  | "left-right";
+  | "left-right"
+  | "which-climate";
 
 const k = (label: string, press = label): Key => ({ label, press });
 
@@ -373,6 +374,28 @@ export const CONTROLS: Record<HelpScreen, readonly ControlGroup[]> = {
       ],
     },
   ],
+  "which-climate": [
+    {
+      title: "The climates",
+      controls: [
+        {
+          id: "pick",
+          does: "Name the climate: tropical, arid, temperate, continental or polar",
+          keys: [k("1"), k("2"), k("3"), k("4"), k("5")],
+          mouse: "Click a climate",
+          touch: "Tap a climate",
+        },
+        {
+          id: "next",
+          does: "Next photo, from the answer",
+          keys: [k("Enter")],
+          mouse: "Next photo",
+          touch: "Next photo",
+        },
+        HELP,
+      ],
+    },
+  ],
 };
 
 /** The sheet's title for each screen. */
@@ -387,6 +410,7 @@ export const SCREEN_TITLES: Record<HelpScreen, string> = {
   "line-up": "Controls for Line them up",
   "close-up": "Controls for Close-up",
   "left-right": "Controls for Left or right?",
+  "which-climate": "Controls for Which climate?",
 };
 
 /**
