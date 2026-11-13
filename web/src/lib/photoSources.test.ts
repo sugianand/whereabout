@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   originalUrl,
+  PHOTO_SIZES,
   PLACEHOLDER_WIDTH,
+  photoPreload,
   placeholderUrl,
   sources,
   thumbUrl,
@@ -72,5 +74,25 @@ describe("photoSources", () => {
     const u = "https://example.com/photo.jpg";
     expect(thumbUrl(u, 1920)).toBe(u);
     expect(sources({ imageUrl: u, width: 5000 })).toEqual({ src: u, srcSet: u, full: u });
+  });
+
+  it("preloads the same candidates and sizes the photo asks for", () => {
+    const photo = { imageUrl: thumb("upload.wikimedia.org"), width: 5000 };
+    const { src, srcSet } = sources(photo);
+    expect(photoPreload(photo)).toEqual({
+      href: src,
+      imageSrcSet: srcSet,
+      imageSizes: PHOTO_SIZES,
+    });
+    expect(PHOTO_SIZES).toBe("100vw");
+  });
+
+  it("preloads a photo with one source as just that source", () => {
+    const url = "https://example.org/photo.jpg";
+    expect(photoPreload({ imageUrl: url })).toEqual({
+      href: url,
+      imageSrcSet: url,
+      imageSizes: PHOTO_SIZES,
+    });
   });
 });

@@ -55,3 +55,23 @@ export function sources(photo: { imageUrl: string; width?: number }): PhotoSourc
     full: entries[entries.length - 1].url,
   };
 }
+
+/** The round's photo fills the screen's width, so it asks for a source that wide. */
+export const PHOTO_SIZES = "100vw";
+
+/** What `<link rel="preload" as="image">` needs to fetch the very source the photo will ask for. */
+export interface PhotoPreload {
+  href: string;
+  imageSrcSet: string;
+  imageSizes: string;
+}
+
+/**
+ * A preload for a photo, with the same candidates and sizes as `PhotoViewer`'s `<img>`, so the
+ * browser picks the same width for both and fetches it once, early. A photo with a single
+ * source preloads just that.
+ */
+export function photoPreload(photo: { imageUrl: string; width?: number }): PhotoPreload {
+  const { src, srcSet } = sources(photo);
+  return { href: src, imageSrcSet: srcSet, imageSizes: PHOTO_SIZES };
+}

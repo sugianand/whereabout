@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { preload } from "react-dom";
 import {
   useCallback,
   useEffect,
@@ -60,6 +61,7 @@ import type { CatalogPhoto, GameBackend } from "@/lib/game/types";
 import { formatPoints, haversineKm, maxPoints, scoreDistance, type LngLat } from "@/lib/geo";
 import { ROUND_KEYS, isShortcut } from "@/lib/controls";
 import type { Clue } from "@/lib/hints";
+import { photoPreload } from "@/lib/photoSources";
 import { feelRevealInBrowser } from "@/lib/feel";
 import { hasSeenIntro, INTRO_TEXT, markIntroSeen } from "@/lib/intro";
 import { keepForOffline, photoUrlsToKeep } from "@/lib/offline/register";
@@ -183,6 +185,9 @@ function syncUrl(mode: GameMode) {
  * room for about 330px of controls), leaving labels that still say what each one does.
  */
 const NARROW_HIDDEN = "max-[399px]:hidden";
+
+/** The longest the globe waits for the first photo before loading anyway, in milliseconds. */
+export const GLOBE_HOLD_MS = 6000;
 
 /** What the picker can deal from: a difficulty third, a continent, or the whole catalog. */
 export type PhotoChoice = { tier: Tier } | { region: Continent } | null;
@@ -409,6 +414,25 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
     return dealt.map((id) => records.get(id)!.photo);
   }, [dealt, records]);
 
+  // The game's first photo is fetched the moment its record arrives, at the width the screen
+  // will ask for, before the round itself is set up. React drops a repeated preload.
+  const firstPhoto = gamePhotos?.[resumedFor?.results.length ?? 0];
+  if (firstPhoto) {
+    const { href, imageSrcSet, imageSizes } = photoPreload(firstPhoto);
+    preload(href, { as: "image", fetchPriority: "high", imageSrcSet, imageSizes });
+  }
+
+  // The globe's library waits for the first photo to be on screen (or to fail), so on a slow
+  // phone connection the photo isn't sharing the line with a megabyte of script. A photo that
+  // takes longer than GLOBE_HOLD_MS lets the globe load anyway.
+  const [globeHeld, setGlobeHeld] = useState(true);
+  useEffect(() => {
+    if (!globeHeld) return;
+    const timer = setTimeout(() => setGlobeHeld(false), GLOBE_HOLD_MS);
+    return () => clearTimeout(timer);
+  }, [globeHeld]);
+  if (globeHeld && state.phase === "loading" && state.error) setGlobeHeld(false);
+
   // Keep all five photos and records on the device as soon as they are dealt, so a game that has
   // started keeps going if the connection drops (the service worker, src/sw/sw.ts, stores them).
   useEffect(() => {
@@ -509,6 +533,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   // The round whose clock already locked its guess in, so time up fires once.
   const lockedFor = useRef<string | null>(null);
   const onPhotoShown = useCallback(() => {
+    setGlobeHeld(false);
     if (!blitz || !guessingId) return;
     const t = performance.now();
     const kept = restoredClock.current;
@@ -874,7 +899,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
             roundKey={round.roundId}
             width={roundSize?.width}
             height={roundSize?.height}
-            onShown={blitz ? onPhotoShown : undefined}
+            onShown={onPhotoShown}
           />
         ) : (
           <div
@@ -1075,6 +1100,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
             onPinChange={onPinChange}
             disabled={state.phase !== "guessing" || state.submitting}
             reveal={revealView}
+            hold={globeHeld}
             className="h-full"
           />
         </div>

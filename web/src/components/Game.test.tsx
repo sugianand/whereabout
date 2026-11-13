@@ -27,7 +27,8 @@ import { stubCanvas } from "@/test/canvas";
 import { bundledGame } from "@/test/deck";
 import { FakeMap, resetFakes } from "@/test/maplibre-mock";
 
-import Game, { CHALLENGE_NOTICE, modeTitle } from "./Game";
+import Game, { CHALLENGE_NOTICE, GLOBE_HOLD_MS, modeTitle } from "./Game";
+import { GLOBE_LOAD_MARK } from "./Globe";
 
 vi.mock("maplibre-gl", async () => (await import("@/test/maplibre-mock")).maplibreMock);
 
@@ -47,7 +48,12 @@ afterEach(() => {
   delete window.matchMedia;
 });
 
-async function mapReady() {
+/**
+ * The first photo shows, which lets the globe load (it waits for the photo), then the map
+ * loads. `photo: false` for a game with no photo to show: the globe loads on its own.
+ */
+async function mapReady({ photo = true }: { photo?: boolean } = {}) {
+  if (photo) fireEvent.load(await screen.findByAltText(/^The photo to locate/, {}, { timeout: 4000 }));
   await waitFor(() => expect(FakeMap.instances.length).toBeGreaterThan(0));
   const map = FakeMap.instances.at(-1)!;
   act(() => map.emit("load"));
@@ -279,8 +285,9 @@ describe("Game", { timeout: 20000 }, () => {
         today={TODAY}
       />,
     );
-    await mapReady();
     expect(await screen.findByRole("alert", {}, WAIT)).toHaveTextContent(LOAD_ERROR);
+    // No photo is coming, so the globe stops waiting for one.
+    await mapReady({ photo: false });
     expect(asked).toEqual([daily.map((p) => p.id)]);
     expect(screen.queryByRole("img")).toBeNull();
     expect(screen.getByRole("button", { name: "Place your pin on the globe" })).toBeDisabled();
@@ -366,7 +373,6 @@ describe("Game", { timeout: 20000 }, () => {
 
   it("holds the photo's place with a still blur of its own thumbnail, never a spinner", async () => {
     render(<Game {...bundledGame} start="daily" today={TODAY} />);
-    await mapReady();
     const img = await screen.findByRole("img", {}, WAIT);
     const frame = img.closest(".wb-photo")!;
     const holder = frame.querySelector("[data-photo-placeholder]")!;
@@ -380,6 +386,43 @@ describe("Game", { timeout: 20000 }, () => {
     expect(document.querySelector(".wb-shimmer")).toBeNull();
     fireEvent.load(img);
     expect(holder).toHaveAttribute("data-photo-placeholder", "covered");
+  });
+
+  it("asks for the first photo at the screen's width before the round starts, then loads the globe", async () => {
+    const marks = vi.spyOn(performance, "mark");
+    render(<Game {...bundledGame} start="daily" today={TODAY} />);
+    const img = await screen.findByRole("img", { name: /photo to locate/ }, WAIT);
+    // A preload for the very candidates and sizes the photo asks for, at high priority.
+    const link = [
+      ...document.head.querySelectorAll<HTMLLinkElement>('link[rel="preload"][as="image"]'),
+    ].find((l) => l.getAttribute("imagesrcset") === img.getAttribute("srcset"));
+    expect(link).toBeDefined();
+    expect(link!.getAttribute("imagesizes")).toBe(img.getAttribute("sizes"));
+    expect(link!.getAttribute("fetchpriority")).toBe("high");
+    expect(img).toHaveAttribute("fetchpriority", "high");
+
+    // The globe's script waits for the photo.
+    await new Promise((r) => setTimeout(r, 50));
+    expect(FakeMap.instances).toHaveLength(0);
+    expect(marks).not.toHaveBeenCalledWith(GLOBE_LOAD_MARK);
+    fireEvent.load(img);
+    await waitFor(() => expect(FakeMap.instances).toHaveLength(1));
+    expect(marks).toHaveBeenCalledWith(GLOBE_LOAD_MARK);
+    marks.mockRestore();
+  });
+
+  it("loads the globe anyway when the first photo is slow", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      render(<Game {...bundledGame} start="daily" today={TODAY} />);
+      await screen.findByRole("img", { name: /photo to locate/ }, WAIT);
+      act(() => vi.advanceTimersByTime(GLOBE_HOLD_MS - 100));
+      expect(FakeMap.instances).toHaveLength(0);
+      act(() => vi.advanceTimersByTime(100));
+      await waitFor(() => expect(FakeMap.instances).toHaveLength(1));
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("greets a first-time visitor over the photo until their first tap, then never again", async () => {
@@ -549,7 +592,6 @@ describe("Game", { timeout: 20000 }, () => {
       render(
         <Game {...bundledGame} apiUrl="http://api.test" backendFor={() => api} today={TODAY} />,
       );
-      await mapReady();
       await screen.findByText("Fresh game", {}, WAIT);
       expect(screen.queryByRole("combobox", { name: /Which photos/ })).toBeNull();
     });
@@ -699,7 +741,6 @@ describe("Game", { timeout: 20000 }, () => {
       render(
         <Game {...bundledGame} apiUrl="http://api.test" backendFor={() => api} today={TODAY} />,
       );
-      await mapReady();
       expect(await screen.findByText("Fresh game", {}, WAIT)).toBeInTheDocument();
       expect(screen.queryByText(/Score to beat/)).toBeNull();
     });
@@ -722,12 +763,12 @@ describe("Blitz", { timeout: 20000 }, () => {
   /** Start a Blitz game and show its first photo, which starts the clock. */
   async function startBlitz() {
     render(<Game {...bundledGame} today={TODAY} />);
-    const map = await mapReady();
     expect(await screen.findByText("Blitz", { selector: "p" }, WAIT)).toBeInTheDocument();
     const clock = await screen.findByTestId("blitz-clock", {}, WAIT);
     // Waiting for the photo: the full 30 seconds, not running yet.
+    await screen.findByRole("img", { name: /photo to locate/ }, WAIT);
     expect(clock).toHaveAttribute("data-paused", "true");
-    fireEvent.load(await screen.findByRole("img", { name: /photo to locate/ }, WAIT));
+    const map = await mapReady();
     await waitFor(() => expect(clock).toHaveAttribute("data-paused", "false"));
     expect(clock).toHaveAttribute("data-seconds", "30");
     return { map, clock };
@@ -1193,7 +1234,6 @@ describe("Daily Five archive", { timeout: 30000 }, () => {
     window.history.replaceState(null, "", `/?daily=${PAST}`);
     const api = new LocalBackend(daily);
     render(<Game {...bundledGame} apiUrl="http://api.test" backendFor={() => api} today={TODAY} />);
-    await mapReady();
     expect(await screen.findByText("Daily Five, October 9", {}, WAIT)).toBeInTheDocument();
     expect(screen.queryByText(ARCHIVE_NOTICE.old)).toBeNull();
   });

@@ -21,7 +21,7 @@ import {
   type Point,
   type View,
 } from "@/lib/photoView";
-import { placeholderUrl, sources } from "@/lib/photoSources";
+import { PHOTO_SIZES, placeholderUrl, sources } from "@/lib/photoSources";
 
 type PhotoViewerProps = {
   src: string;
@@ -287,7 +287,9 @@ function PhotoViewerInner({ src, width, onShown }: PhotoViewerProps) {
             <img
               src={fullLoaded ? full : photoSources.src}
               srcSet={fullLoaded ? undefined : photoSources.srcSet}
-              sizes="100vw"
+              sizes={PHOTO_SIZES}
+              // The round's photo is the screen: ask for it ahead of scripts and the globe.
+              fetchPriority="high"
               decoding="async"
               alt="The photo to locate. Look for clues: signs, plants, roads, buildings, the sky."
               draggable={false}

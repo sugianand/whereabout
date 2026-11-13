@@ -52,8 +52,17 @@ export type GlobeProps = {
   reveal?: RevealView | null;
   /** Countries to fill in (Country Streak): the player's pick, and the answer once shown. */
   countries?: CountryMarks | null;
+  /**
+   * While true, MapLibre (about a megabyte of script) is not fetched yet, so something more
+   * urgent, the round's first photo, has the connection to itself. Once false it loads, and
+   * setting it back to true changes nothing.
+   */
+  hold?: boolean;
   className?: string;
 };
+
+/** The performance mark the globe sets as it starts fetching MapLibre (`e2e/first-photo.spec.ts`). */
+export const GLOBE_LOAD_MARK = "whereabout:globe-load";
 
 const REVEAL_SOURCE = "reveal";
 const EMPTY_LINES: RevealLines = { type: "FeatureCollection", features: [] };
@@ -208,8 +217,12 @@ export default function Globe({
   disabled = false,
   reveal = null,
   countries = null,
+  hold = false,
   className,
 }: GlobeProps) {
+  // Latched: once released, the map is built and kept, whatever `hold` does next.
+  const [released, setReleased] = useState(!hold);
+  if (!hold && !released) setReleased(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markerRef = useRef<Marker | null>(null);
@@ -240,9 +253,11 @@ export default function Globe({
   }, [onPinChange, disabled, light]);
 
   useEffect(() => {
+    if (!released) return;
     let cancelled = false;
     let map: MapLibreMap | null = null;
 
+    performance.mark?.(GLOBE_LOAD_MARK);
     // MapLibre touches `window` on import, so load it only in the browser.
     import("maplibre-gl")
       .then(({ Map, Marker, getVersion, setWorkerUrl }) => {
@@ -302,7 +317,7 @@ export default function Globe({
       map?.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [released]);
 
   // Keep the marker in sync with the controlled `pin` prop.
   useEffect(() => {

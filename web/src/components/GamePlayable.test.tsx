@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import catalog from "@/data/photos.json";
@@ -36,9 +36,11 @@ describe("Game deals only photos Atlas has guessed", () => {
 
   it.each(["daily", "fresh"] as const)("in a %s game", async (start) => {
     render(<Game {...gameFor(records)} start={start} today={new Date("2026-10-16T12:00:00Z")} />);
+    const img = await screen.findByRole("img", {}, { timeout: 4000 });
+    // The globe loads once the first photo is on screen.
+    fireEvent.load(img);
     await waitFor(() => expect(FakeMap.instances.length).toBeGreaterThan(0));
     act(() => FakeMap.instances.at(-1)!.emit("load"));
-    const img = await screen.findByRole("img", {}, { timeout: 4000 });
     const shown = catalog.find((p) => p.imageUrl === img.getAttribute("src"));
     expect(shown && GUESSED.includes(shown.id)).toBe(true);
   });

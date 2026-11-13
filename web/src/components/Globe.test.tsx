@@ -48,6 +48,21 @@ beforeEach(resetFakes);
 afterEach(() => vi.clearAllMocks());
 
 describe("Globe", () => {
+  it("fetches no map while held, then builds one map and keeps it whatever hold does next", async () => {
+    const props = { pin: null, onPinChange: () => {} };
+    const view = render(<Globe {...props} hold />);
+    await new Promise((r) => setTimeout(r, 30));
+    expect(FakeMap.instances).toHaveLength(0);
+    // Keyboard placement doesn't need the map, so the globe is there to focus already.
+    expect(screen.getByRole("application")).toBeInTheDocument();
+    view.rerender(<Globe {...props} hold={false} />);
+    await waitFor(() => expect(FakeMap.instances).toHaveLength(1));
+    view.rerender(<Globe {...props} hold />);
+    await new Promise((r) => setTimeout(r, 30));
+    expect(FakeMap.instances).toHaveLength(1);
+    expect(FakeMap.instances[0].removed).toBeFalsy();
+  });
+
   it("creates a globe-projection map with its own keyboard handling", async () => {
     const { map } = await renderGlobe();
     const style = map.options.style as { projection: { type: string } };
