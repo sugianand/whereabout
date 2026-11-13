@@ -259,7 +259,10 @@ test.describe("on a keyboard", () => {
       ).toBeEnabled();
       await page.keyboard.press(pick);
       await expect(card).toBeVisible();
-      await expect(card.getByRole("button")).toBeFocused();
+      // After a miss the card also offers a challenge link; focus is on the button that goes on.
+      await expect(
+        card.getByRole("button", { name: /^(Next photo|Start a new run)$/ }),
+      ).toBeFocused();
       await page.keyboard.press(keysOf("left-right", "next")[0]);
       await expect(card).toBeHidden();
     }
