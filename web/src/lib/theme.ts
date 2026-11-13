@@ -4,9 +4,9 @@
  *
  * The colours themselves are CSS variables (globals.css): the night chart is the default set, and
  * a daylight set replaces it when `<html data-theme="light">` is set, or when the system asks for
- * light and no theme is set. The globe and everything drawn over it or over a photo keeps the
- * night chart in both (`.wb-night` in globals.css), because MapLibre paints the sea and land in
- * literal colours and words over a photo need a dark scrim.
+ * light and no theme is set. Words over a photo keep the night chart in both (`.wb-night`, and a
+ * stage's photo and header while the photo shows, in globals.css), because they need a dark scrim;
+ * the globe follows the page with a daylight chart of its own (`lib/basemap.ts`).
  *
  * `THEME_SCRIPT` runs in the page's <head> before anything paints, so a kept choice never flashes
  * the other theme first; it also follows a choice made in another tab.

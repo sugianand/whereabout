@@ -163,7 +163,10 @@ function contrast(a: string, b: string): number {
 /** The daylight set as globals.css declares it for `:root[data-theme="light"]`. */
 function daylightTokens(): Record<string, string> {
   const css = readFileSync(join(__dirname, "../app/globals.css"), "utf8");
-  const block = css.match(/:root\[data-theme="light"\] \{([^}]*)\}/)?.[1] ?? "";
+  const block =
+    css.match(
+      /:root\[data-theme="light"\],\s*:root\[data-theme="light"\] \.wb-stage \{([^}]*)\}/,
+    )?.[1] ?? "";
   return Object.fromEntries(
     [...block.matchAll(/--color-([a-z-]+):\s*(#[0-9a-f]{6})/gi)].map((m) => [m[1], m[2]]),
   );
@@ -174,11 +177,32 @@ describe("the daylight colours", () => {
 
   it("are the same set whether picked or followed from the system", () => {
     const css = readFileSync(join(__dirname, "../app/globals.css"), "utf8");
-    const media = css.match(/:root:not\(\[data-theme="dark"\]\) \{([^}]*)\}/)?.[1] ?? "";
+    const media =
+      css.match(
+        /:root:not\(\[data-theme="dark"\]\),\s*:root:not\(\[data-theme="dark"\]\) \.wb-stage \{([^}]*)\}/,
+      )?.[1] ?? "";
     for (const [name, hex] of Object.entries(day))
       expect(media).toContain(`--color-${name}: ${hex}`);
     expect(Object.keys(day)).toHaveLength(8);
     expect(day.ocean.toLowerCase()).toBe(THEME_COLOR.light);
+  });
+
+  it("dress the globe stages too, while every night copy over a photo is the night chart", () => {
+    const css = readFileSync(join(__dirname, "../app/globals.css"), "utf8");
+    const tokens = (block: string) =>
+      Object.fromEntries(
+        [...block.matchAll(/--color-([a-z-]+):\s*(#[0-9a-f]{6})/gi)].map((m) => [m[1], m[2]]),
+      );
+    const night = tokens(css.match(/@theme \{([^}]*)\}/)?.[1] ?? "");
+    expect(Object.keys(night)).toHaveLength(8);
+    // The stages' night block also holds their photo and the header while the photo shows …
+    const stage = css.match(/\.wb-stage,\s*\.wb-night,([^{]*)\{([^}]*)\}/);
+    expect(stage?.[1]).toContain(".wb-stage .wb-photo");
+    expect(stage?.[1]).toContain('.wb-stage:not([data-phase="revealed"]) .wb-header');
+    expect(tokens(stage?.[2] ?? "")).toEqual(night);
+    // … and on a wide screen the guess bar floating over the photo.
+    const bar = css.match(/\.wb-stage \.wb-guess-bar \{([^}]*)\}/)?.[1] ?? "";
+    expect(tokens(bar)).toEqual(night);
   });
 
   it("keep every text pairing the night chart uses at 4.5:1 or better", () => {

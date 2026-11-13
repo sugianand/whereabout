@@ -39,8 +39,12 @@ an accent turn pale with them:
 | `gold` | `#FFC53D` | `#7A4E00` |
 
 Every text pairing keeps 4.5:1 in daylight (`theme.test.ts`), and the axe audit runs every screen
-in both. The globe stages' panels (`.wb-stage`) and the photo tiles of the quick games
-(`.wb-night`) keep the night chart in either theme, because words over a photo need a dark scrim.
+in both. Words over a photo keep the night chart in either theme, because they need a dark scrim:
+the quick games' photo tiles (`.wb-night`), and on the globe stages (`.wb-stage`) the photo with its
+credit, zoom button and intro card, the header while the photo is showing, and, on a wide screen,
+the hints and buttons that float over it. The rest of a stage follows the page: on a light page the
+globe's panel, the frame round the globe, the reveal card and the header once the globe fills the
+screen at the reveal are daylight, around the daylight globe.
 
 ### The globe by day
 

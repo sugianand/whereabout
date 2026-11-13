@@ -163,5 +163,22 @@ for (const colorScheme of ["dark", "light"] as const) {
       ).toBeVisible();
       await expectAccessible(page, "survival reveal");
     });
+
+    // Hot and cold's clue line and arrow sit over the photo and the globe's panel.
+    test("hot-cold passes axe after its first pin", async ({ page }) => {
+      await page.goto("./hot-cold");
+      await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
+      await page.getByRole("application", { name: /Globe/ }).focus();
+      await page.keyboard.press("Enter");
+      await page.keyboard.press("g");
+      // A miss gives a heading to follow; a first-pin hit goes straight to the card.
+      await expect(
+        page
+          .getByTestId("hot-cold-clue")
+          .or(page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) }))
+          .first(),
+      ).toBeVisible();
+      await expectAccessible(page, "hot-cold after a pin");
+    });
   });
 }

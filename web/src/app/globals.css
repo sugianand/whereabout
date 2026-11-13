@@ -22,7 +22,8 @@
    accents darken so they read as text on a pale page, and text on an accent (text-ocean,
    text-ocean-deep) turns pale with them, so every pairing keeps its contrast. */
 @media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
+  :root:not([data-theme="dark"]),
+  :root:not([data-theme="dark"]) .wb-stage {
     --color-ocean: #e9f0ee;
     --color-ocean-deep: #fbfcfb;
     --color-graticule: #7d9aa3;
@@ -31,11 +32,14 @@
     --color-flare: #a80c45;
     --color-sonar: #006454;
     --color-gold: #7a4e00;
+    --wb-shadow: rgb(13 43 56 / 0.18);
     color-scheme: light;
+    color: var(--color-chalk);
   }
 }
 
-:root[data-theme="light"] {
+:root[data-theme="light"],
+:root[data-theme="light"] .wb-stage {
   --color-ocean: #e9f0ee;
   --color-ocean-deep: #fbfcfb;
   --color-graticule: #7d9aa3;
@@ -44,7 +48,9 @@
   --color-flare: #a80c45;
   --color-sonar: #006454;
   --color-gold: #7a4e00;
+  --wb-shadow: rgb(13 43 56 / 0.18);
   color-scheme: light;
+  color: var(--color-chalk);
 }
 
 :root,
@@ -52,11 +58,16 @@
   color-scheme: dark;
 }
 
-/* The night chart, kept in either theme: the globe stages, where words sit over a photo or the
-   globe, and MapLibre paints the sea and land in literal night colours (lib/basemap.ts). */
+/* The night chart, the stages' default and kept in either theme wherever words sit over a photo:
+   the photo itself with its credit, zoom and intro card, the header while the photo is showing,
+   and the quick games' photo tiles (.wb-night). On a light page the stage around them (its panel,
+   globe frame and reveal card, and the header once the globe fills the screen) takes the daylight
+   set from the rules above, and the globe its daylight chart (.globe[data-light="day"]). */
 .wb-stage,
 .wb-night,
-.globe {
+.globe,
+.wb-stage .wb-photo,
+.wb-stage:not([data-phase="revealed"]) .wb-header {
   --color-ocean: #0d3346;
   --color-ocean-deep: #082331;
   --color-graticule: #2a5b6e;
@@ -65,9 +76,27 @@
   --color-flare: #ff5d8f;
   --color-sonar: #4fe3c1;
   --color-gold: #ffc53d;
+  --wb-shadow: rgb(0 0 0 / 0.45);
   color-scheme: dark;
   /* Text inherits a computed colour, not the variable: start from night chalk here too. */
   color: var(--color-chalk);
+}
+
+/* On a wide screen the globe panel floats over the photo, so its hints and buttons keep the
+   night chart there too; on a phone they sit on the panel's own (daylight) ground. */
+@media (min-width: 768px) {
+  .wb-stage .wb-guess-bar {
+    --color-ocean: #0d3346;
+    --color-ocean-deep: #082331;
+    --color-graticule: #2a5b6e;
+    --color-chalk: #eef4f2;
+    --color-chalk-dim: #a9c2c8;
+    --color-flare: #ff5d8f;
+    --color-sonar: #4fe3c1;
+    --color-gold: #ffc53d;
+    color-scheme: dark;
+    color: var(--color-chalk);
+  }
 }
 
 /* The globe by day (lib/basemap.ts GLOBE_PALETTES.day): when the page is light, the globe's canvas
@@ -199,8 +228,13 @@ body {
   transition: opacity 600ms ease;
 }
 
+/* A scrim in the header's own ground: night over the photo, daylight over a light page's globe. */
 .wb-header {
-  background: linear-gradient(to bottom, rgb(8 35 49 / 0.85), rgb(8 35 49 / 0));
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-ocean-deep) 85%, transparent),
+    color-mix(in srgb, var(--color-ocean-deep) 0%, transparent)
+  );
   padding-bottom: 2.5rem;
 }
 
@@ -221,8 +255,8 @@ body {
   min-height: 0;
   overflow: hidden;
   border-radius: 1rem;
-  border: 1px solid rgb(42 91 110 / 0.8);
-  box-shadow: 0 18px 50px rgb(0 0 0 / 0.45);
+  border: 1px solid color-mix(in srgb, var(--color-graticule) 80%, transparent);
+  box-shadow: 0 18px 50px var(--wb-shadow, rgb(0 0 0 / 0.45));
 }
 
 /* Inside the panel the globe fills the frame, and its status line floats over the map. */

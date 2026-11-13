@@ -1,9 +1,15 @@
-import { expect, test, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+import { expect, test, type Locator, type Page } from "@playwright/test";
+
+const PHOTO = readFileSync(resolve(process.cwd(), "e2e/fixtures/photo.png"));
 
 // The site's colours follow the device's light or dark setting until the player picks one in the
 // Games menu; the pick is kept in this browser and is on the page before it first paints. The
-// globe follows it, painted as a daylight chart on a light page; the globe stages' panels keep
-// the night chart in both.
+// globe follows it, painted as a daylight chart on a light page, and so does the stage around it
+// (its panel, frame, reveal card and the header over the globe), while words over the photo keep
+// the night chart's dark scrim in both.
 
 const NIGHT = "rgb(13, 51, 70)"; // ocean, the night page
 const DAY = "rgb(233, 240, 238)"; // ocean, the daylight page
@@ -116,18 +122,14 @@ test.describe("on a device set to light", () => {
     expect(await globeBrightness(page)).toBeGreaterThan(0.55);
   });
 
-  test("the site follows it, a dark pick holds, and the globe stage keeps the night chart", async ({
+  test("the site follows it, a dark pick holds, and words on a photo keep night chalk", async ({
     page,
   }) => {
     await page.goto("./today");
     expect(await pageColour(page)).toBe(DAY);
 
     await page.goto("./");
-    const stage = page.locator(".wb-stage");
-    await expect(stage).toBeVisible();
-    expect(await stage.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(
-      "rgb(8, 35, 49)",
-    );
+    await expect(page.locator(".wb-stage")).toBeVisible();
     // The Games menu opens over the stage in the page's own colours.
     await page.getByRole("button", { name: "Games" }).click();
     const sheet = page.getByRole("dialog");
@@ -146,6 +148,71 @@ test.describe("on a device set to light", () => {
     expect(await pageColour(page)).toBe(NIGHT);
     await page.goto("./map");
     expect(await pageColour(page)).toBe(NIGHT);
+  });
+});
+
+const NIGHT_CHALK = "rgb(238, 244, 242)";
+const DAY_INK = "rgb(13, 43, 56)";
+const PAPER = "rgb(251, 252, 251)"; // ocean-deep by day
+
+const colourOf = (locator: Locator) => locator.evaluate((el) => getComputedStyle(el).color);
+const groundOf = (locator: Locator) =>
+  locator.evaluate((el) => getComputedStyle(el).backgroundColor);
+
+test.describe("the globe stage on a device set to light", () => {
+  test.use({ colorScheme: "light" });
+
+  test.beforeEach(async ({ page }) => {
+    await page.route(/wikimedia\.org/, (route) =>
+      route.fulfill({ body: PHOTO, contentType: "image/png" }),
+    );
+  });
+
+  test("the panel, frame and reveal card are daylight, words on the photo stay night, and Dark turns it all back", async ({
+    page,
+    isMobile,
+  }) => {
+    await page.goto("./");
+    const stage = page.locator(".wb-stage");
+    await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
+    await expect(page.locator(".globe")).toHaveAttribute("data-light", "day");
+
+    // The stage and the globe's panel are the daylight page; the frame's edge is the day graticule.
+    expect(await groundOf(stage)).toBe(PAPER);
+    expect(await colourOf(stage)).toBe(DAY_INK);
+    expect(
+      await page.locator(".wb-globe-frame").evaluate((el) => getComputedStyle(el).borderTopColor),
+    ).toMatch(/^(rgba\(125, 154, 163|color\(srgb 0\.49)/);
+
+    // Over the photo: the header, the credit and the zoom button keep night chalk on a dark scrim.
+    const header = page.locator(".wb-header");
+    expect(await colourOf(header)).toBe(NIGHT_CHALK);
+    expect(await header.evaluate((el) => getComputedStyle(el).backgroundImage)).toMatch(
+      /rgba\(8, 35, 49, 0\.85\)|srgb 0\.031/,
+    );
+    const zoom = page.getByRole("button", { name: "Zoom in on the photo" });
+    expect(await colourOf(zoom)).toBe(NIGHT_CHALK);
+
+    // The pin button sits on the panel's daylight ground on a phone, over the photo on a desktop.
+    const bar = page.locator(".wb-guess-bar");
+    expect(await colourOf(bar)).toBe(isMobile ? DAY_INK : NIGHT_CHALK);
+
+    // The reveal: the card and the header over the full-screen globe are daylight.
+    await page.getByRole("application", { name: /Globe/ }).focus();
+    await page.keyboard.press("Enter");
+    await page.getByRole("button", { name: "Guess here" }).click();
+    const card = page.getByRole("region").filter({ hasText: "It was taken in" });
+    await expect(card).toBeVisible();
+    expect(await colourOf(card)).toBe(DAY_INK);
+    expect(await colourOf(card.getByText("It was taken in"))).toBe("rgb(122, 78, 0)");
+    expect(await colourOf(header)).toBe(DAY_INK);
+
+    // Dark from the Games menu at the reveal: the same card, on the night chart again.
+    await pickColours(page, "Dark");
+    await expect(card).toBeVisible();
+    expect(await colourOf(card)).toBe(NIGHT_CHALK);
+    expect(await groundOf(stage)).toBe("rgb(8, 35, 49)");
+    await expect(page.locator(".globe")).toHaveAttribute("data-light", "night");
   });
 });
 
@@ -179,9 +246,7 @@ const brightness = ([r, g, b]: number[]) => (r + g + b) / 3;
 test.describe("Your map's globe", () => {
   test.use({ colorScheme: "light" });
 
-  test("paints by day on a light device and turns to night with it, in place", async ({
-    page,
-  }) => {
+  test("paints by day on a light device and turns to night with it, in place", async ({ page }) => {
     const history = [8, 400, 6000].map((km, i) => ({
       id: `seed-${i}`,
       lng: 30 * i,
