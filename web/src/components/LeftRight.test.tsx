@@ -5,6 +5,7 @@ import type { GameRecord } from "@/lib/game/deck";
 import { BEST_LEFT_RIGHT_KEY, leftRightOrder, type SideMap } from "@/lib/game/leftRight";
 import { SIDE_DAILY_KEY, dailySideOrder } from "@/lib/game/sideDaily";
 import type { CatalogPhoto } from "@/lib/game/types";
+import { stubCanvas } from "@/test/canvas";
 import { gameFor } from "@/test/deck";
 
 import LeftRight from "./LeftRight";
@@ -265,5 +266,178 @@ describe("LeftRight, today's run", () => {
       "href",
       "/left-right/daily",
     );
+  });
+});
+
+describe("a friend's Left or right? challenge", () => {
+  // The friend called f1 and j1 right, then called f2 (right-hand traffic) left.
+  const FRIEND = "f1.j1.f2_5_2";
+  const shown = () => photo().getAttribute("data-photo")!;
+  const truth = () => byId.get(shown())!.photo.drivingSide!;
+
+  afterEach(() => window.history.replaceState(null, "", "/"));
+
+  function clipboard() {
+    const box = { sent: "" };
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: async (t: string) => void (box.sent = t) },
+      configurable: true,
+    });
+    return box;
+  }
+
+  async function linked(value: string) {
+    window.history.replaceState(null, "", `/left-right?challenge=${value}&x=1`);
+    return setup();
+  }
+
+  async function callRight() {
+    fireEvent.click(button(truth()));
+    return screen.findByRole("region");
+  }
+
+  it("deals the friend's photos, shows the call that ended their run, plays on, and answers", async () => {
+    await linked(FRIEND);
+    expect(screen.getByText("A friend's challenge: 2 photos in a row to beat")).toBeVisible();
+    const run = [shown()];
+    expect(run).toEqual(["f1"]);
+    let card = await callRight();
+    expect(card).not.toHaveTextContent("Your friend's run ended here");
+    fireEvent.click(within(card).getByRole("button", { name: "Next photo" }));
+    await waitFor(() => expect(button("left")).toBeEnabled());
+    run.push(shown());
+    card = await callRight();
+    fireEvent.click(within(card).getByRole("button", { name: "Next photo" }));
+    await waitFor(() => expect(button("left")).toBeEnabled());
+
+    // The photo that ended the friend's run: nothing about it shows until the call is in.
+    run.push(shown());
+    expect(run).toEqual(["f1", "j1", "f2"]);
+    expect(screen.queryByText(/Your friend's run ended here/)).toBeNull();
+    card = await callRight();
+    expect(card).toHaveTextContent("That beats your friend's 2 in a row!");
+    expect(card).toHaveTextContent("Your friend's run ended here: they called left.");
+
+    // Past the friend's photos, the photos left, dealt evenly: miss the next one.
+    fireEvent.click(within(card).getByRole("button", { name: "Next photo" }));
+    await waitFor(() => expect(button("left")).toBeEnabled());
+    run.push(shown());
+    expect(["j2", "f3"]).toContain(run[3]);
+    fireEvent.click(button(other(truth())));
+    card = await screen.findByRole("region");
+    expect(card).toHaveTextContent(
+      "Run over: 3 photos in a row. You beat your friend's 2 in a row by 1.",
+    );
+    expect(card).not.toHaveTextContent("Your friend's run ended here");
+    // A challenge's photos may have been seen, so it is played for the friend only.
+    expect(localStorage.getItem(BEST_LEFT_RIGHT_KEY)).toBeNull();
+
+    const box = clipboard();
+    fireEvent.click(within(card).getByRole("button", { name: "Send yours back" }));
+    await waitFor(() =>
+      expect(
+        screen.getByText(
+          "Challenge link copied. Whoever opens it plays these photos, in the same order.",
+        ),
+      ).toBeInTheDocument(),
+    );
+    expect(box.sent.split("\n")).toEqual([
+      "Whereabout · Left or right?: I called 3 photos in a row.",
+      "That beats your 2. Your turn to read the road.",
+      `http://localhost:3000/left-right?challenge=${run.join(".")}_5_3`,
+    ]);
+
+    // The head to head is drawn photo by photo, saved, and the reply link copied beside it.
+    const drawn = stubCanvas();
+    const reply = box.sent;
+    box.sent = "";
+    fireEvent.click(within(card).getByRole("button", { name: "Share head to head" }));
+    expect(
+      await screen.findByText("Head to head saved. Post it with the link, which is copied too."),
+    ).toBeInTheDocument();
+    expect(drawn.saved).toEqual(["whereabout-left-or-right-head-to-head.png"]);
+    expect(drawn.words).toEqual(
+      expect.arrayContaining([
+        "Left or right?: head to head",
+        "You won",
+        "3 in a row",
+        "2 in a row",
+        "Photo 1",
+        "Photo 4",
+        "Right",
+        "Wrong",
+      ]),
+    );
+    const all = drawn.words.join("\n");
+    for (const id of run) expect(all).not.toContain(id);
+    expect(box.sent).toBe(reply);
+    drawn.restore();
+
+    // A fresh run leaves the link behind.
+    fireEvent.click(within(card).getByRole("button", { name: "Play a fresh run" }));
+    await waitFor(() =>
+      expect(
+        screen.getByText("Left or right? Which side of the road do they drive on here?"),
+      ).toBeVisible(),
+    );
+    expect(window.location.search).toBe("?x=1");
+  });
+
+  it("says when a link is cut short or its photos have gone, and deals a fresh run", async () => {
+    await linked("f1.j1_5_0");
+    expect(screen.getByText(/That challenge link was cut short/)).toBeVisible();
+    expect(
+      screen.getByText("Left or right? Which side of the road do they drive on here?"),
+    ).toBeVisible();
+    expect(photo()).toHaveAttribute("data-photo", ORDER[0]);
+    expect(window.location.search).toBe("?x=1");
+    cleanup();
+    await linked("f1.gone_5_1");
+    expect(screen.getByText(/That challenge's photos aren't in the game any more/)).toBeVisible();
+  });
+
+  it("offers a challenge from the end of a free run, carrying the photos up to the miss", async () => {
+    await setup();
+    fireEvent.click(button(other(sideOf(0))));
+    const card = await screen.findByRole("region");
+    expect(within(card).queryByRole("button", { name: "Share head to head" })).toBeNull();
+    const box = clipboard();
+    fireEvent.click(within(card).getByRole("button", { name: "Challenge a friend" }));
+    await waitFor(() => expect(box.sent).not.toBe(""));
+    expect(box.sent.split("\n")).toEqual([
+      "Whereabout · Left or right?: I called 0 photos in a row.",
+      "Same photos, same order: which side do they drive on?",
+      `http://localhost:3000/?challenge=${ORDER[0]}_0_0`,
+    ]);
+  });
+
+  it("offers a challenge from a cleared run, naming every photo with no miss", async () => {
+    await setup();
+    for (let n = 0; n < ORDER.length; n++) {
+      fireEvent.click(button(sideOf(n)));
+      const card = await screen.findByRole("region");
+      fireEvent.click(within(card).getByRole("button", { name: "Next photo" }));
+      if (n < ORDER.length - 1) await waitFor(() => expect(button("left")).toBeEnabled());
+    }
+    await screen.findByRole("heading", { name: "You called every photo" });
+    const box = clipboard();
+    fireEvent.click(screen.getByRole("button", { name: "Challenge a friend" }));
+    await waitFor(() => expect(box.sent).not.toBe(""));
+    expect(box.sent.split("\n").at(-1)).toBe(
+      `http://localhost:3000/?challenge=${ORDER.join(".")}_0_${ORDER.length}`,
+    );
+  });
+
+  it("never offers a challenge from today's run", async () => {
+    const game = gameFor(RECORDS);
+    const now = () => new Date("2026-11-13T12:00:00Z");
+    render(
+      <LeftRight deck={game.deck} sides={SIDES} loadRecords={game.loadRecords} daily now={now} />,
+    );
+    await waitFor(() => expect(button("left")).toBeEnabled());
+    fireEvent.click(button(other(truth())));
+    await screen.findByRole("region");
+    expect(screen.queryByRole("button", { name: "Challenge a friend" })).toBeNull();
   });
 });

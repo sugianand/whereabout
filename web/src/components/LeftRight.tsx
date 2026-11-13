@@ -33,12 +33,25 @@ import {
   sideDailyShare,
   type SideDay,
 } from "@/lib/game/sideDaily";
+import {
+  SIDE_CHALLENGE_PARAM,
+  friendMissCall,
+  parseSideChallenge,
+  sideChallengeLine,
+  sideChallengeOrder,
+  sideChallengeText,
+  sideHeadToHead,
+  type SideChallenge,
+  type SideRun,
+} from "@/lib/game/sideChallenge";
 import { placeholderUrl, sources } from "@/lib/photoSources";
+import { sendShare, type ShareOutcome } from "@/lib/share";
 import { atlasDrivingSide } from "@/lib/trueClues";
 
 import ControlsHelp from "./ControlsHelp";
 import { DailyRunResult, ShareDay } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
+import { HeadToHeadButton } from "./HeadToHeadButton";
 
 type LeftRightProps = {
   deck: Deck;
@@ -69,6 +82,27 @@ function photos(n: number): string {
   return `${n} photo${n === 1 ? "" : "s"}`;
 }
 
+/** Why a challenge link was set aside for a fresh run. */
+export const SIDE_CHALLENGE_NOTICE = {
+  malformed: "That challenge link was cut short, so here's a fresh run instead.",
+  missing: "That challenge's photos aren't in the game any more, so here's a fresh run instead.",
+} as const;
+
+/** Take the challenge out of the address, so a reload deals a fresh run, not the old link. */
+function dropChallengeParam() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has(SIDE_CHALLENGE_PARAM)) return;
+  url.searchParams.delete(SIDE_CHALLENGE_PARAM);
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+const CHALLENGE_NOTE: Record<ShareOutcome, string> = {
+  shared: "Challenge sent.",
+  copied: "Challenge link copied. Whoever opens it plays these photos, in the same order.",
+  cancelled: "",
+  failed: "Couldn't copy the link. Your browser blocked the clipboard.",
+};
+
 /**
  * Left or right? (src/lib/game/leftRight.ts): one photo, and the player calls which side of the
  * road they drive on where it was taken, by swiping the photo, tapping a side or pressing an
@@ -91,38 +125,61 @@ export default function LeftRight({
   // once it has ended, how it went, which shows instead of the game.
   const [day, setDay] = useState<string | null>(null);
   const [dayDone, setDayDone] = useState<SideDay | null>(null);
+  // A free run's seed, for the challenge link its end can send.
+  const [seed, setSeed] = useState(0);
+  // A friend's challenge this run answers: their photos, and the run to beat.
+  const [challenge, setChallenge] = useState<SideChallenge | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  const start = useCallback(() => {
-    if (daily) {
-      const today = runToday(now?.());
-      const kept = loadSideDay(today);
-      setDay(today);
-      if (kept?.ended) {
-        setDayDone(kept);
+  /** Deal a run; `fromLink` takes up a challenge the address carries, as the page opens. */
+  const start = useCallback(
+    (fromLink = false) => {
+      if (daily) {
+        const today = runToday(now?.());
+        const kept = loadSideDay(today);
+        setDay(today);
+        if (kept?.ended) {
+          setDayDone(kept);
+          return;
+        }
+        const { streak, atlasRight, atlasPlayed } = kept ?? {
+          streak: 0,
+          atlasRight: 0,
+          atlasPlayed: 0,
+        };
+        dispatch({
+          type: "start",
+          order: dailySideOrder(sides, today),
+          from: { streak, atlasRight, atlasPlayed },
+        });
         return;
       }
-      const { streak, atlasRight, atlasPlayed } = kept ?? {
-        streak: 0,
-        atlasRight: 0,
-        atlasPlayed: 0,
-      };
-      dispatch({
-        type: "start",
-        order: dailySideOrder(sides, today),
-        from: { streak, atlasRight, atlasPlayed },
-      });
-      return;
-    }
-    const stored = loadBestLeftRight();
-    setBest(stored);
-    setBestBeforeRun(stored);
-    const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
-    dispatch({ type: "start", order: leftRightOrder(sides, seed) });
-  }, [sides, random, daily, now]);
+      const stored = loadBestLeftRight();
+      setBest(stored);
+      setBestBeforeRun(stored);
+      const value = fromLink
+        ? new URLSearchParams(window.location.search).get(SIDE_CHALLENGE_PARAM)
+        : null;
+      const linked = value === null ? null : parseSideChallenge(value, sides);
+      setNotice(linked && !linked.ok ? SIDE_CHALLENGE_NOTICE[linked.reason] : null);
+      if (linked?.ok) {
+        setChallenge(linked.challenge);
+        setSeed(linked.challenge.seed);
+        dispatch({ type: "start", order: sideChallengeOrder(linked.challenge, sides) });
+        return;
+      }
+      setChallenge(null);
+      dropChallengeParam();
+      const fresh = Math.floor((random ?? Math.random)() * 2 ** 32);
+      setSeed(fresh);
+      dispatch({ type: "start", order: leftRightOrder(sides, fresh) });
+    },
+    [sides, random, daily, now],
+  );
 
   // The run is dealt in the browser after hydration, never at build time.
   useEffect(() => {
-    const id = requestAnimationFrame(() => start());
+    const id = requestAnimationFrame(() => start(true));
     return () => cancelAnimationFrame(id);
   }, [start]);
 
@@ -190,13 +247,14 @@ export default function LeftRight({
           atlasPlayed: after.atlasPlayed,
           ended: !after.verdict.correct ? "miss" : cleared ? "cleared" : null,
         });
-      } else if (after.phase === "answered" && after.verdict.correct) {
-        // Keep the run as the best after every right call, so leaving mid-run keeps it.
+      } else if (after.phase === "answered" && after.verdict.correct && !challenge) {
+        // Keep the run as the best after every right call, so leaving mid-run keeps it. A
+        // challenge's photos may have been seen before, so it is played for the friend only.
         setBest(rememberLeftRight(after.streak));
       }
       dispatch(action);
     },
-    [state, record, sides, day],
+    [state, record, sides, day, challenge],
   );
 
   // ← and → make the call from the keyboard.
@@ -244,6 +302,9 @@ export default function LeftRight({
             ? "Left or right? needs photos from both sides of the road to deal."
             : `${photos(state.streak)} in a row, as many as the game can deal evenly.`}
         </p>
+        {!none && challenge && (
+          <p className="mt-2 text-chalk">{sideChallengeLine(state.streak, challenge)}</p>
+        )}
         <div className="mt-8 flex flex-wrap items-center gap-4">
           {!none && (
             <button
@@ -253,6 +314,12 @@ export default function LeftRight({
             >
               Play again
             </button>
+          )}
+          {!none && (
+            <ChallengeButton
+              run={{ order: state.order, index: state.index - 1, seed, streak: state.streak }}
+              answering={challenge}
+            />
           )}
           <Link href="/" className="text-chalk-dim underline underline-offset-2 hover:text-chalk">
             Back to the main game
@@ -280,7 +347,9 @@ export default function LeftRight({
           <p className="mt-1 text-sm text-chalk-dim">
             {day
               ? `Left or right?, today's run (${day}): which side do they drive on here?`
-              : "Left or right? Which side of the road do they drive on here?"}
+              : challenge
+                ? `A friend's challenge: ${photos(challenge.streak)} in a row to beat`
+                : "Left or right? Which side of the road do they drive on here?"}
           </p>
           <Link
             href={daily ? "/left-right" : "/left-right/daily"}
@@ -322,6 +391,12 @@ export default function LeftRight({
         </div>
       )}
 
+      {notice && state.phase === "picking" && streak === 0 && (
+        <p role="status" className="px-4 pb-2 text-center text-sm text-chalk-dim">
+          {notice}
+        </p>
+      )}
+
       {error && (
         <p role="alert" className="absolute inset-x-4 bottom-4 text-center text-sm text-flare">
           {error}
@@ -338,17 +413,42 @@ export default function LeftRight({
             place={record.photo.place}
             atlas={answered.atlas ? atlasLine(answered.atlas) : null}
             atlasTally={[answered.atlasRight, answered.atlasPlayed]}
+            friendCall={
+              challenge ? friendMissCall(answered.index, challenge, answered.verdict.truth) : null
+            }
+            beaten={
+              challenge !== null &&
+              answered.verdict.correct &&
+              answered.streak === challenge.streak + 1
+                ? challenge.streak
+                : null
+            }
             end={
               over && day
                 ? `Today's run is over: ${photos(answered.streak)} in a row.`
                 : over
                   ? `Run over: ${photos(answered.streak)} in a row. ` +
-                    (answered.streak > bestBeforeRun
-                      ? "That's your new best!"
-                      : best > 0
-                        ? `Your best is ${photos(best)}.`
-                        : "")
+                    (challenge
+                      ? sideChallengeLine(answered.streak, challenge)
+                      : answered.streak > bestBeforeRun
+                        ? "That's your new best!"
+                        : best > 0
+                          ? `Your best is ${photos(best)}.`
+                          : "")
                   : null
+            }
+            challengeRun={
+              over && !day
+                ? {
+                    run: {
+                      order: answered.order,
+                      index: answered.index,
+                      seed,
+                      streak: answered.streak,
+                    },
+                    answering: challenge,
+                  }
+                : null
             }
             share={
               over && day
@@ -366,7 +466,7 @@ export default function LeftRight({
                 : null
             }
             onNext={over ? () => start() : () => dispatch({ type: "next" })}
-            nextLabel={over ? "Start a new run" : "Next photo"}
+            nextLabel={over ? (challenge ? "Play a fresh run" : "Start a new run") : "Next photo"}
           />
         </div>
       )}
@@ -536,7 +636,10 @@ function SideCard({
   place,
   atlas,
   atlasTally,
+  friendCall,
+  beaten,
   end,
+  challengeRun,
   onNext,
   nextLabel,
   share,
@@ -547,7 +650,13 @@ function SideCard({
   place: string;
   atlas: string | null;
   atlasTally: readonly [number, number];
+  /** On the photo that ended a friend's challenge: the side they called, which was wrong. */
+  friendCall: DrivingSide | null;
+  /** The friend's streak, on the call that just went past it. */
+  beaten: number | null;
   end: string | null;
+  /** A free run that has ended: the link it can send, answering the friend's when it was one. */
+  challengeRun: { run: SideRun; answering: SideChallenge | null } | null;
   onNext: () => void;
   nextLabel: string;
   /** Today's run's share line, once it is over: shown in place of the next button. */
@@ -576,20 +685,71 @@ function SideCard({
           {`${atlas} Atlas this run: ${atlasRight} of ${photos(atlasPlayed)}.`}
         </p>
       )}
+      {friendCall && (
+        <p className="mt-2 text-sm text-chalk">
+          {`Your friend's run ended here: they called ${friendCall}.`}
+        </p>
+      )}
+      {beaten !== null && (
+        <p className="mt-2 font-semibold text-sonar">
+          {`That beats your friend's ${beaten} in a row!`}
+        </p>
+      )}
       {end && <p className="mt-2 text-chalk">{end}</p>}
       {share ? (
         <ShareDay shareText={share} freeHref="/left-right" focus />
       ) : (
-        <button
-          ref={nextRef}
-          type="button"
-          onClick={onNext}
-          className="mt-3 rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
-        >
-          {nextLabel}
-        </button>
+        <div className="mt-3 flex flex-wrap items-start gap-x-3 gap-y-2">
+          <button
+            ref={nextRef}
+            type="button"
+            onClick={onNext}
+            className="shrink-0 rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
+          >
+            {nextLabel}
+          </button>
+          {challengeRun && (
+            <ChallengeButton run={challengeRun.run} answering={challengeRun.answering} />
+          )}
+        </div>
       )}
     </section>
+  );
+}
+
+/**
+ * Challenge a friend from a finished run (src/lib/game/sideChallenge.ts): a link to the same
+ * photos in the same order, and the run to beat. Answering a challenge, it sends one back, with
+ * the head-to-head picture beside it.
+ */
+function ChallengeButton({ run, answering }: { run: SideRun; answering: SideChallenge | null }) {
+  const [sent, setSent] = useState("");
+  async function send() {
+    const text = sideChallengeText(run, window.location.href, answering ?? undefined);
+    setSent(CHALLENGE_NOTE[await sendShare(text, navigator)]);
+  }
+  return (
+    <span className="flex min-w-0 flex-col">
+      <span className="flex flex-wrap gap-x-3 gap-y-2">
+        <button
+          type="button"
+          onClick={send}
+          className="rounded-full border-2 border-gold px-5 py-2.5 font-semibold text-gold transition hover:bg-gold/10"
+        >
+          {answering ? "Send yours back" : "Challenge a friend"}
+        </button>
+        {answering && (
+          <HeadToHeadButton
+            headToHead={sideHeadToHead(run, answering, window.location.href)}
+            replyText={() => sideChallengeText(run, window.location.href, answering)}
+            onNote={setSent}
+          />
+        )}
+      </span>
+      <span role="status" className={sent ? "mt-1 text-xs text-chalk-dim" : "sr-only"}>
+        {sent}
+      </span>
+    </span>
   );
 }
 
