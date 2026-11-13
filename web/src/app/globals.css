@@ -413,6 +413,106 @@ body {
   }
 }
 
+/* Big text on a small screen: the stage becomes one column that scrolls. Media queries count
+   em in the browser's own text size, so these hold when the screen is narrow or short for the
+   text the player chose: a 320px phone from about 115% text, a 412px one from about 150%, and
+   no phone at the default size. In page order, the photo leads, then the header, which stops
+   floating over the photo (at 200% it covered all of it), then the globe, each with a usable
+   height of its own; the guess bar sticks to the foot of the screen, so Guess here is always in
+   reach. The globe panel steps aside (display: contents) so the bar's sticky range is the whole
+   stage. Stages opt in with .wb-stage-flow once their header and guess bar are ready for it. */
+@media (max-width: 17.5em),
+  (orientation: portrait) and (max-width: 47.99em) and (max-height: 26em) {
+  .wb-stage-flow:not([data-phase="revealed"]) {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  /* Whatever takes focus or is scrolled to stops above the pinned guess bar, never under it. */
+  html:has(.wb-stage-flow:not([data-phase="revealed"])) {
+    scroll-padding-bottom: 7rem;
+  }
+
+  .wb-stage-flow:not([data-phase="revealed"]) .wb-header {
+    position: relative;
+    pointer-events: auto;
+    padding-bottom: 0.75rem;
+    /* Solid ground, not the scrim: nothing sits behind it now. */
+    background: var(--color-ocean-deep);
+  }
+
+  .wb-stage-flow:not([data-phase="revealed"]) .wb-photo {
+    position: relative;
+    inset: auto;
+    flex: none;
+    height: 50dvh;
+    min-height: 200px;
+  }
+
+  .wb-stage-flow:not([data-phase="revealed"]) .wb-globe-panel {
+    display: contents;
+  }
+
+  .wb-stage-flow:not([data-phase="revealed"]) .wb-globe-frame {
+    flex: none;
+    height: 60dvh;
+    min-height: 240px;
+    margin: 0.6rem 0.75rem;
+  }
+
+  .wb-stage-flow:not([data-phase="revealed"]) .wb-guess-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 30;
+    margin-top: auto;
+    padding: 0.6rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    background: var(--color-ocean-deep);
+    border-top: 1px solid color-mix(in srgb, var(--color-graticule) 80%, transparent);
+  }
+
+  /* A wide hint button and the guess button share a row only while both fit, and the bar's
+     buttons trade padding for text so the bar leaves the photo and globe most of the screen. */
+  .wb-stage-flow:not([data-phase="revealed"]) .wb-guess-row {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .wb-stage-flow:not([data-phase="revealed"]) .wb-guess-row > :last-child {
+    flex-basis: 10rem;
+  }
+
+  .wb-stage-flow:not([data-phase="revealed"]) .wb-guess-row > button {
+    padding-block: 0.35rem;
+    line-height: 1.2;
+  }
+
+  /* The wordmark is the logo, not words to read, and the round's dots are drawn marks: both keep
+     their size, so the round and score stay beside the logo instead of wrapping under it. */
+  .wb-stage-flow:not([data-phase="revealed"]) .wb-wordmark {
+    font-size: 24px;
+  }
+
+  .wb-stage-flow:not([data-phase="revealed"]) .wb-dots > li {
+    width: 16px;
+    height: 6px;
+  }
+
+  /* The globe's zoom and recentre buttons are icons: they keep a 40px target, not one that
+     grows with the text over half the globe, and the pin's coordinates wrap short of them. */
+  .wb-stage-flow:not([data-phase="revealed"]) .globe-controls > button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .wb-stage-flow:not([data-phase="revealed"]) .wb-globe-frame #globe-pin-status {
+    right: calc(40px + 1rem);
+    line-height: 1.1;
+  }
+}
+
 /* ── Loading and the result card ── */
 
 /* Holds the photo's place while it loads: a still, soft blur (the photo's own 60px thumbnail when

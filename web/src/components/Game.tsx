@@ -882,7 +882,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   return (
     <main
       ref={stageRef}
-      className="wb-stage relative h-dvh w-full overflow-hidden bg-ocean-deep"
+      className="wb-stage wb-stage-flow relative h-dvh w-full overflow-hidden bg-ocean-deep"
       data-phase={shown ? "revealed" : state.phase}
       data-replay={replayed ? "true" : undefined}
     >
@@ -928,7 +928,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
             space must not swallow taps meant for the photo's own buttons underneath. A zero
             basis keeps a long notice from pushing the score onto a line of its own. */}
         <div className="min-w-0 flex-1 basis-0">
-          <p className="font-sign text-3xl font-extrabold leading-none tracking-tight md:text-4xl">
+          <p className="wb-wordmark font-sign text-3xl font-extrabold leading-none tracking-tight md:text-4xl">
             Whereabout
           </p>
           <p className="mt-1 text-sm text-chalk-dim">{title}</p>
@@ -977,7 +977,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
           )}
         </div>
         <div className="pointer-events-auto text-right">
-          <ol className="flex justify-end gap-1.5" aria-hidden="true">
+          <ol className="wb-dots flex justify-end gap-1.5" aria-hidden="true">
             {Array.from({ length: ROUNDS_PER_GAME }, (_, i) => (
               <li
                 key={i}
@@ -1123,7 +1123,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
                 </p>
               </div>
             )}
-            <div className="flex items-center gap-2">
+            <div className="wb-guess-row flex items-center gap-2">
               {blitz && state.phase === "guessing" && (
                 <BlitzRing
                   seconds={roundClock ? secondsShown(roundClock, now) : BLITZ_SECONDS}
