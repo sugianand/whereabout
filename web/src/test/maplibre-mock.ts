@@ -130,6 +130,13 @@ export class FakeMap {
     (this.paint[layer] ??= {})[property] = value;
   }
 
+  /** The sky last set after load, if any. */
+  sky: unknown = undefined;
+
+  setSky(sky: unknown) {
+    this.sky = sky;
+  }
+
   resize() {
     return this;
   }

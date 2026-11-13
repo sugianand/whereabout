@@ -1,9 +1,18 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { StyleSpecification } from "maplibre-gl";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { FakeMap, FakeMarker, resetFakes, workerUrls } from "@/test/maplibre-mock";
+import {
+  GLOBE_PALETTES,
+  countryMarkPaint,
+  globePaint,
+  globeSky,
+  revealLineColor,
+} from "@/lib/basemap";
 import type { LngLat } from "@/lib/geo";
+import { setTheme } from "@/lib/theme";
 import type { RevealLines, RevealView } from "@/lib/reveal";
 
 import Globe, { CLICK_TOLERANCE_PX, INITIAL_VIEW, NO_PADDING, movedTooFarForClick } from "./Globe";
@@ -216,7 +225,9 @@ describe("Globe", () => {
       FakeMarker.instances.filter((m) => m.map).map((m) => m.element.className);
 
     function setReducedMotion(reduce: boolean) {
-      window.matchMedia = vi.fn().mockReturnValue({ matches: reduce }) as typeof window.matchMedia;
+      window.matchMedia = vi.fn((query: string) => ({
+        matches: query.includes("reduced-motion") ? reduce : false,
+      })) as unknown as typeof window.matchMedia;
     }
     afterEach(() => {
       // @ts-expect-error jsdom has no matchMedia; remove the stub between tests.
@@ -339,6 +350,100 @@ describe("Globe", () => {
         expect(heat(map)).toBeUndefined();
       });
     });
+  });
+});
+
+describe("Globe by day", () => {
+  type Listener = () => void;
+  let deviceLight = false;
+  const listeners = new Set<Listener>();
+  beforeEach(() => {
+    deviceLight = false;
+    listeners.clear();
+    window.matchMedia = vi.fn((query: string) => ({
+      get matches() {
+        return query === "(prefers-color-scheme: light)" ? deviceLight : false;
+      },
+      addEventListener: (_: string, fn: Listener) => listeners.add(fn),
+      removeEventListener: (_: string, fn: Listener) => listeners.delete(fn),
+    })) as unknown as typeof window.matchMedia;
+  });
+  afterEach(() => {
+    setTheme("system");
+    localStorage.clear();
+    // @ts-expect-error jsdom has no matchMedia; remove the stub between tests.
+    delete window.matchMedia;
+  });
+
+  const ocean = (map: FakeMap) => (map.options.style as StyleSpecification).layers[0].paint;
+
+  it("loads by night on a dark device and by day on a light one", async () => {
+    const { map, globe } = await renderGlobe();
+    expect(ocean(map)).toEqual({ "background-color": GLOBE_PALETTES.night.ocean });
+    expect(globe).toHaveAttribute("data-light", "night");
+    expect(map.sky).toBeUndefined(); // Nothing to repaint.
+    cleanup();
+    resetFakes();
+
+    deviceLight = true;
+    const day = await renderGlobe();
+    expect(ocean(day.map)).toEqual({ "background-color": GLOBE_PALETTES.day.ocean });
+    expect((day.map.options.style as StyleSpecification).sky).toEqual(globeSky("day"));
+    expect(day.globe).toHaveAttribute("data-light", "day");
+    expect(day.map.sky).toBeUndefined();
+    // The arcs are drawn in the day's accents from the start.
+    const line = day.map.layers.find((l) => l.id === "reveal-line") as unknown as {
+      paint: Record<string, unknown>;
+    };
+    expect(line.paint["line-color"]).toEqual(revealLineColor("day"));
+  });
+
+  it("repaints in place when the player picks Light, and back for Dark, keeping the pin", async () => {
+    const { map, globe } = await renderGlobe();
+    act(() => map.click(2.35, 48.86));
+    const pin = marker();
+
+    act(() => setTheme("light"));
+    expect(globe).toHaveAttribute("data-light", "day");
+    for (const [layer, property, value] of globePaint("day")) {
+      expect(map.paint[layer]?.[property], layer).toEqual(value);
+    }
+    expect(map.paint["reveal-line"]["line-color"]).toEqual(revealLineColor("day"));
+    expect(map.paint["reveal-glow"]["line-color"]).toEqual(revealLineColor("day"));
+    expect(map.sky).toEqual(globeSky("day"));
+    // The same map and the same pin: no reload, nothing lost.
+    expect(FakeMap.instances).toHaveLength(1);
+    expect(marker()).toBe(pin);
+    expect(pin?.map).toBe(map);
+
+    act(() => setTheme("dark"));
+    expect(globe).toHaveAttribute("data-light", "night");
+    expect(map.paint.ocean["background-color"]).toBe(GLOBE_PALETTES.night.ocean);
+    expect(map.sky).toEqual(globeSky("night"));
+  });
+
+  it("follows the device when it turns light, unless the player holds Dark", async () => {
+    const { map, globe } = await renderGlobe();
+    deviceLight = true;
+    act(() => listeners.forEach((fn) => fn()));
+    expect(globe).toHaveAttribute("data-light", "day");
+    expect(map.paint.land["fill-color"]).toBe(GLOBE_PALETTES.day.land);
+
+    act(() => setTheme("dark"));
+    expect(globe).toHaveAttribute("data-light", "night");
+    act(() => listeners.forEach((fn) => fn()));
+    expect(globe).toHaveAttribute("data-light", "night");
+  });
+
+  it("marks Country Streak's countries in the day's colours", async () => {
+    deviceLight = true;
+    render(<Globe pin={null} onPinChange={() => {}} countries={{ picked: "FR", answer: "ES" }} />);
+    await waitFor(() => expect(FakeMap.instances).toHaveLength(1));
+    const map = FakeMap.instances[0];
+    act(() => map.emit("load"));
+    expect(map.paint.pick["fill-color"]).toEqual(
+      countryMarkPaint({ picked: "FR", answer: "ES" }, "day").color,
+    );
   });
 });
 

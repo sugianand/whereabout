@@ -102,3 +102,12 @@ export const THEME_SCRIPT = `(function(){var K=${JSON.stringify(THEME_KEY)},C=${
 )};function apply(){var t=null;try{t=localStorage.getItem(K)}catch(e){}var x=t==="light"||t==="dark";var r=document.documentElement;if(x)r.setAttribute("data-theme",t);else r.removeAttribute("data-theme");var m=document.querySelectorAll('meta[name="theme-color"]');for(var i=0;i<m.length;i++){m[i].setAttribute("content",x?C[t]:/light/.test(m[i].media)?C.light:C.dark)}}apply();document.addEventListener("DOMContentLoaded",apply);window.addEventListener("storage",function(e){if(e.key===K||e.key===null){apply();window.dispatchEvent(new Event(${JSON.stringify(
   THEME_CHANGED,
 )}))}})})();`;
+
+/** The scheme on screen: an explicit pick, else the system's (`prefersLight`). */
+export function colorScheme(choice: ThemeChoice, prefersLight: boolean): "light" | "dark" {
+  if (isExplicit(choice)) return choice;
+  return prefersLight ? "light" : "dark";
+}
+
+/** The media query the system's light setting answers, as `globals.css` uses it. */
+export const LIGHT_QUERY = "(prefers-color-scheme: light)";

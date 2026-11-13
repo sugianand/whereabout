@@ -39,9 +39,34 @@ an accent turn pale with them:
 | `gold` | `#FFC53D` | `#7A4E00` |
 
 Every text pairing keeps 4.5:1 in daylight (`theme.test.ts`), and the axe audit runs every screen
-in both. The globe, the globe stages (`.wb-stage`) and the photo tiles of the quick games
-(`.wb-night`) keep the night chart in either theme: MapLibre paints the globe in literal night
-colours, and words over a photo need a dark scrim.
+in both. The globe stages' panels (`.wb-stage`) and the photo tiles of the quick games
+(`.wb-night`) keep the night chart in either theme, because words over a photo need a dark scrim.
+
+### The globe by day
+
+The game's globe (`web/src/components/Globe.tsx`, in the five-round game, Survival, Country
+Streak, Hot and cold and pass and play) follows the page: on a light page MapLibre paints it as a
+daylight chart (`GLOBE_PALETTES.day` in `web/src/lib/basemap.ts`), and a change of theme, from
+the Colours switch or the device, repaints it in place mid-game without losing the pin or the
+reveal. Your map's globe and the results tour keep the night chart for now.
+
+| Role | Night | Day |
+| --- | --- | --- |
+| sea | `#0D3346` | `#A9CFDC` |
+| land | `#16495E` | `#F3EEDD` |
+| borders | `#2A5B6E` | `#8A9EA4` |
+| graticule | `#2A5B6E` | `#7FA9B8` |
+| sky | `#061A24` | `#F4F7F6` |
+| player (flare) | `#FF5D8F` | `#8A002F` |
+| Atlas (sonar) | `#4FE3C1` | `#004A6E` |
+| answer (gold) | `#FFC53D` | `#876508` |
+
+The three marks (pins, arcs, Country Streak's countries, Atlas's heatmap) keep 3:1 against both
+the sea and the land, and each pair stays at least 0.10 apart in OKLab under simulated
+protanopia, deuteranopia and tritanopia (`basemap.test.ts`). The page's daylight accents were too
+close to each other once darkened for a mid-blue sea (Atlas's teal and the answer's gold met
+without red vision), so the globe has its own three, and the pins drawn over it take them through
+`.globe[data-light="day"]` in `globals.css`.
 
 ## Type
 

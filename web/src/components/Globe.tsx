@@ -15,15 +15,19 @@ import {
 
 import {
   BELIEF_LAYER,
-  MAP_COLORS,
   PICK_LAYER,
   buildGlobeStyle,
   countryMarkPaint,
+  globePaint,
+  globeSky,
+  revealLineColor,
   type CountryMarks,
+  type GlobeLight,
 } from "@/lib/basemap";
 import { beliefFillOpacity, type Belief } from "@/lib/belief";
 import { formatLngLat, normalize, nudge, type Direction, type LngLat } from "@/lib/geo";
 import { maplibreWorkerUrl } from "@/lib/maplibre-worker";
+import { useColorScheme } from "@/lib/useTheme";
 import {
   REVEAL_DRAW_MS,
   easeOut,
@@ -62,17 +66,9 @@ function prefersReducedMotion(): boolean {
 }
 
 /** Adds the arc layers once the style has loaded. Colors follow docs/design.md. */
-function addRevealLayers(map: MapLibreMap) {
+function addRevealLayers(map: MapLibreMap, light: GlobeLight) {
   map.addSource(REVEAL_SOURCE, { type: "geojson", data: EMPTY_LINES });
-  const color = [
-    "match",
-    ["get", "actor"],
-    "player",
-    MAP_COLORS.flare,
-    "atlas",
-    MAP_COLORS.sonar,
-    MAP_COLORS.gold,
-  ] as unknown as string;
+  const color = revealLineColor(light);
   map.addLayer({
     id: "reveal-glow",
     type: "line",
@@ -87,6 +83,16 @@ function addRevealLayers(map: MapLibreMap) {
     layout: { "line-cap": "round", "line-join": "round" },
     paint: { "line-color": color, "line-width": 2.5 },
   });
+}
+
+/** Repaints a loaded globe in the other chart: sea, land, borders, sky, heatmap and arcs. */
+function paintChart(map: MapLibreMap, light: GlobeLight) {
+  for (const [layer, property, value] of globePaint(light)) {
+    map.setPaintProperty(layer, property, value);
+  }
+  map.setPaintProperty("reveal-glow", "line-color", revealLineColor(light));
+  map.setPaintProperty("reveal-line", "line-color", revealLineColor(light));
+  map.setSky(globeSky(light));
 }
 
 function setRevealLines(map: MapLibreMap, data: RevealLines) {
@@ -216,6 +222,11 @@ export default function Globe({
   const pressRef = useRef<{ x: number; y: number } | null>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
+  // By day when the site is light: the chart follows the theme, live, while a game is open.
+  const light: GlobeLight = useColorScheme() === "light" ? "day" : "night";
+  const lightRef = useRef(light);
+  // The chart the map is painted in now, so a repaint only happens on a real change.
+  const paintedRef = useRef<GlobeLight | null>(null);
 
   // The map is created once; these refs let its event handlers see the latest props. They are
   // synced in a layout effect, before paint: a passive effect runs after paint, and a click in
@@ -225,7 +236,8 @@ export default function Globe({
   useLayoutEffect(() => {
     onPinChangeRef.current = onPinChange;
     disabledRef.current = disabled;
-  }, [onPinChange, disabled]);
+    lightRef.current = light;
+  }, [onPinChange, disabled, light]);
 
   useEffect(() => {
     let cancelled = false;
@@ -236,9 +248,10 @@ export default function Globe({
       .then(({ Map, Marker, getVersion, setWorkerUrl }) => {
         if (cancelled || !containerRef.current) return;
         setWorkerUrl(maplibreWorkerUrl(getVersion()));
+        paintedRef.current = lightRef.current;
         map = new Map({
           container: containerRef.current,
-          style: buildGlobeStyle(),
+          style: buildGlobeStyle(lightRef.current),
           center: [INITIAL_VIEW.center.lng, INITIAL_VIEW.center.lat],
           zoom: INITIAL_VIEW.zoom,
           minZoom: 0.5,
@@ -268,7 +281,7 @@ export default function Globe({
         });
         map.on("load", () => {
           if (cancelled || !map) return;
-          addRevealLayers(map);
+          addRevealLayers(map, lightRef.current);
           recordCamera(map, containerRef.current);
           setReady(true);
         });
@@ -417,10 +430,19 @@ export default function Globe({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
-    const paint = countryMarkPaint({ picked, answer });
+    const paint = countryMarkPaint({ picked, answer }, light);
     map.setPaintProperty(PICK_LAYER, "fill-color", paint.color);
     map.setPaintProperty(PICK_LAYER, "fill-opacity", paint.opacity);
-  }, [picked, answer, ready]);
+  }, [picked, answer, light, ready]);
+
+  // The theme changed after the globe loaded (the Colours switch, or the device's own setting):
+  // repaint the chart in place, keeping the camera, pins and reveal as they are.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || paintedRef.current === light) return;
+    paintChart(map, light);
+    paintedRef.current = light;
+  }, [light, ready]);
 
   function recenter() {
     const map = mapRef.current;
@@ -476,7 +498,10 @@ export default function Globe({
   }
 
   return (
-    <div className={["relative flex flex-col", className].filter(Boolean).join(" ")}>
+    <div
+      data-light={light}
+      className={["globe-wrap relative flex flex-col", className].filter(Boolean).join(" ")}
+    >
       <div
         ref={containerRef}
         role="application"
@@ -488,6 +513,7 @@ export default function Globe({
         onKeyDown={handleKeyDown}
         onPointerDown={handlePointerDown}
         data-ready={ready || undefined}
+        data-light={light}
         className="globe relative min-h-72 w-full flex-1 overflow-hidden rounded-lg bg-ocean-deep"
       />
       {ready && (

@@ -9,6 +9,7 @@ import {
   THEME_KEY,
   THEME_SCRIPT,
   applyTheme,
+  colorScheme,
   currentTheme,
   readTheme,
   setTheme,
@@ -63,6 +64,15 @@ describe("readTheme", () => {
     expect(readTheme()).toBe("system");
     expect(readTheme(blocked)).toBe("system");
     expect(readTheme(null)).toBe("system");
+  });
+});
+
+describe("colorScheme", () => {
+  it("is the pick when there is one, else the device's setting", () => {
+    expect(colorScheme("light", false)).toBe("light");
+    expect(colorScheme("dark", true)).toBe("dark");
+    expect(colorScheme("system", true)).toBe("light");
+    expect(colorScheme("system", false)).toBe("dark");
   });
 });
 

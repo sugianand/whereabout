@@ -70,6 +70,23 @@
   color: var(--color-chalk);
 }
 
+/* The globe by day (lib/basemap.ts GLOBE_PALETTES.day): when the page is light, the globe's canvas
+   is painted as a daylight chart, and the pins, credits and status line drawn over it take the
+   daylight set, with the globe's own three marks, so a flare pin is a dark drop with a pale rim
+   on the pale sea. */
+.globe[data-light="day"] {
+  --color-ocean: #e9f0ee;
+  --color-ocean-deep: #fbfcfb;
+  --color-graticule: #7d9aa3;
+  --color-chalk: #0d2b38;
+  --color-chalk-dim: #405d68;
+  --color-flare: #8a002f;
+  --color-sonar: #004a6e;
+  --color-gold: #876508;
+  color-scheme: light;
+  color: var(--color-chalk);
+}
+
 html {
   background: var(--color-ocean);
   color: var(--color-chalk);
@@ -229,6 +246,14 @@ body {
   display: flex;
 }
 
+/* By day the status line over the globe is dark ink with a pale halo. */
+.wb-globe-frame .globe-wrap[data-light="day"] #globe-pin-status {
+  color: #0d2b38;
+  text-shadow:
+    0 0 3px rgb(251 252 251 / 0.95),
+    0 1px 6px rgb(251 252 251 / 0.9);
+}
+
 .wb-stage[data-phase="revealed"] .wb-photo {
   opacity: 0.18;
 }
@@ -274,6 +299,15 @@ body {
 
 .globe .maplibregl-ctrl-attrib a {
   color: var(--color-chalk-dim);
+}
+
+.globe[data-light="day"] .maplibregl-ctrl-attrib,
+.globe[data-light="day"] .maplibregl-ctrl-attrib.maplibregl-compact {
+  background: rgb(251 252 251 / 0.85);
+}
+
+.globe[data-light="day"] .maplibregl-ctrl-attrib-button {
+  filter: opacity(0.7);
 }
 
 /* The credits are links in a line of text: underlined, so they don't rely on colour alone. */
