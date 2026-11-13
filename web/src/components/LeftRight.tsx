@@ -364,7 +364,7 @@ function SwipePhoto({
   return (
     <div className="relative min-h-0 flex-1 px-2 pb-2 md:px-6">
       <div
-        className={`relative h-full w-full touch-pan-y select-none overflow-hidden rounded-2xl border-2 bg-graticule/40 ${ring} ${dx === 0 ? "transition-transform duration-200" : ""} ${ready ? "cursor-grab active:cursor-grabbing" : ""}`}
+        className={`wb-night relative h-full w-full touch-pan-y select-none overflow-hidden rounded-2xl border-2 bg-graticule/40 ${ring} ${dx === 0 ? "transition-transform duration-200" : ""} ${ready ? "cursor-grab active:cursor-grabbing" : ""}`}
         data-testid="side-photo"
         data-photo={photo?.id}
         style={{

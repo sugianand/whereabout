@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { createPortal } from "react-dom";
 
 import type { QuickMode } from "@/lib/game/quickBests";
 
 import QuickGames from "./QuickGames";
+import ThemeSwitch from "./ThemeSwitch";
 import TodayLink from "./TodayLink";
 
 /** A screen the Games menu can be opened from: a five-round game, a quick mode, Today or Stamps. */
@@ -133,83 +135,92 @@ export default function GamesMenu({
         </svg>
         Games
       </button>
-      {open && (
-        <div
-          className="pointer-events-auto fixed inset-0 z-50 flex items-end justify-center bg-ocean-deep/70 p-0 backdrop-blur-sm md:items-center md:p-6"
-          onPointerDown={(e) => {
-            if (e.target === e.currentTarget) close();
-          }}
-        >
+      {/* On the body, not in the screen's header: the globe stages keep the night chart in either
+          theme (globals.css), but the sheet, with its Colours switch, follows the player's. */}
+      {open &&
+        createPortal(
           <div
-            ref={sheetRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            onKeyDown={onSheetKey}
-            className="wb-games max-h-[85dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-graticule/70 bg-ocean-deep p-4 text-left text-chalk shadow-2xl md:rounded-2xl md:p-6"
+            className="pointer-events-auto fixed inset-0 z-50 flex items-end justify-center bg-ocean-deep/70 p-0 backdrop-blur-sm md:items-center md:p-6"
+            onPointerDown={(e) => {
+              if (e.target === e.currentTarget) close();
+            }}
           >
-            <div className="flex items-start justify-between gap-4">
-              <h2 id={titleId} className="font-sign text-2xl font-extrabold leading-tight">
-                Ways to play
-              </h2>
-              <button
-                ref={closeRef}
-                type="button"
-                onClick={() => close()}
-                className="shrink-0 rounded-full border border-chalk/30 px-3 py-1 text-sm font-semibold transition hover:border-chalk"
-              >
-                Close
-              </button>
-            </div>
-
-            {screen === "round" ? (
-              <div aria-current="page" className={`${ROUND_CARD} border-chalk/30 bg-chalk/5`}>
-                <RoundBody current />
-              </div>
-            ) : onPlayRound ? (
-              <button
-                type="button"
-                onClick={() => {
-                  picked();
-                  onPlayRound();
-                }}
-                className={`${ROUND_CARD} ${ROUND_LINK}`}
-              >
-                <RoundBody />
-              </button>
-            ) : (
-              <Link href="/" className={`${ROUND_CARD} ${ROUND_LINK}`}>
-                <RoundBody />
-              </Link>
-            )}
-
-            <TodayLink compact current={screen === "today"} />
-
-            <h3 className="mt-4 text-sm font-semibold text-gold">Quick games</h3>
-            <div className="mt-2">
-              <QuickGames
-                compact
-                current={current}
-                onPlayBlitz={blitz ? onPlayBlitz : undefined}
-                blitzHref={blitz && !onPlayBlitz ? "/?blitz" : undefined}
-                streakHref={streakHref}
-                onPicked={picked}
-              />
-            </div>
-
-            <h3 className="mt-4 text-sm font-semibold text-gold">With friends</h3>
-            <Link
-              href="/pass-and-play"
-              className="mt-2 block rounded-xl border border-flare/40 px-4 py-3 transition hover:border-flare hover:bg-flare/5"
+            <div
+              ref={sheetRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={titleId}
+              onKeyDown={onSheetKey}
+              className="wb-games max-h-[85dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-graticule/70 bg-ocean-deep p-4 text-left text-chalk shadow-2xl md:rounded-2xl md:p-6"
             >
-              <span className="block font-sign text-xl font-bold text-flare">Pass and play</span>
-              <span className="mt-1 block text-sm text-chalk-dim">
-                Two to four players take turns on this device, then one reveal shows every pin.
-              </span>
-            </Link>
-          </div>
-        </div>
-      )}
+              <div className="flex items-start justify-between gap-4">
+                <h2 id={titleId} className="font-sign text-2xl font-extrabold leading-tight">
+                  Ways to play
+                </h2>
+                <button
+                  ref={closeRef}
+                  type="button"
+                  onClick={() => close()}
+                  className="shrink-0 rounded-full border border-chalk/30 px-3 py-1 text-sm font-semibold transition hover:border-chalk"
+                >
+                  Close
+                </button>
+              </div>
+
+              {screen === "round" ? (
+                <div aria-current="page" className={`${ROUND_CARD} border-chalk/30 bg-chalk/5`}>
+                  <RoundBody current />
+                </div>
+              ) : onPlayRound ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    picked();
+                    onPlayRound();
+                  }}
+                  className={`${ROUND_CARD} ${ROUND_LINK}`}
+                >
+                  <RoundBody />
+                </button>
+              ) : (
+                <Link href="/" className={`${ROUND_CARD} ${ROUND_LINK}`}>
+                  <RoundBody />
+                </Link>
+              )}
+
+              <TodayLink compact current={screen === "today"} />
+
+              <h3 className="mt-4 text-sm font-semibold text-gold">Quick games</h3>
+              <div className="mt-2">
+                <QuickGames
+                  compact
+                  current={current}
+                  onPlayBlitz={blitz ? onPlayBlitz : undefined}
+                  blitzHref={blitz && !onPlayBlitz ? "/?blitz" : undefined}
+                  streakHref={streakHref}
+                  onPicked={picked}
+                />
+              </div>
+
+              <h3 className="mt-4 text-sm font-semibold text-gold">With friends</h3>
+              <Link
+                href="/pass-and-play"
+                className="mt-2 block rounded-xl border border-flare/40 px-4 py-3 transition hover:border-flare hover:bg-flare/5"
+              >
+                <span className="block font-sign text-xl font-bold text-flare">Pass and play</span>
+                <span className="mt-1 block text-sm text-chalk-dim">
+                  Two to four players take turns on this device, then one reveal shows every pin.
+                </span>
+              </Link>
+
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-graticule/50 pt-4">
+                <span className="text-sm text-chalk-dim">Colours</span>
+                <ThemeSwitch />
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

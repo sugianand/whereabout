@@ -474,7 +474,7 @@ function PhotoChoice({
 
   return (
     <div
-      className={`relative min-h-0 overflow-hidden rounded-2xl border-2 bg-graticule/40 transition-colors ${ring}`}
+      className={`wb-night relative min-h-0 overflow-hidden rounded-2xl border-2 bg-graticule/40 transition-colors ${ring}`}
       data-testid={`north-photo-${n}`}
       data-photo={photo?.id}
       style={blur ? { backgroundImage: `url(${blur})`, backgroundSize: "cover" } : undefined}

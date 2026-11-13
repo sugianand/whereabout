@@ -19,6 +19,30 @@ thing everywhere: on pins, arcs, distances and score bars.
 | `sonar` | `#4FE3C1` | Atlas, the AI: its pin, its arc, its score |
 | `gold` | `#FFC53D` | The true location |
 
+### The chart by day
+
+The site follows the device's light or dark setting, and the Games menu's *Colours* switch (Auto,
+Light, Dark) holds one, kept in this browser under `whereabout:theme` (`web/src/lib/theme.ts`).
+A script in the page's `<head>` applies the kept choice before the first paint. The daylight set
+keeps every token's role; the accents darken so they read as text on a pale page, and words on
+an accent turn pale with them:
+
+| Token | Night | Day |
+| --- | --- | --- |
+| `ocean` | `#0D3346` | `#E9F0EE` |
+| `ocean-deep` | `#082331` | `#FBFCFB` |
+| `graticule` | `#2A5B6E` | `#7D9AA3` |
+| `chalk` | `#EEF4F2` | `#0D2B38` |
+| `chalk-dim` | `#A9C2C8` | `#405D68` |
+| `flare` | `#FF5D8F` | `#A80C45` |
+| `sonar` | `#4FE3C1` | `#006454` |
+| `gold` | `#FFC53D` | `#7A4E00` |
+
+Every text pairing keeps 4.5:1 in daylight (`theme.test.ts`), and the axe audit runs every screen
+in both. The globe, the globe stages (`.wb-stage`) and the photo tiles of the quick games
+(`.wb-night`) keep the night chart in either theme: MapLibre paints the globe in literal night
+colours, and words over a photo need a dark scrim.
+
 ## Type
 
 - **Big Shoulders Display**, a condensed face drawn from city wayfinding signs, for place

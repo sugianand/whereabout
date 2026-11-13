@@ -17,6 +17,59 @@
   --font-sans: "Atkinson Hyperlegible Next Variable", system-ui, sans-serif;
 }
 
+/* The chart by day (docs/design.md): the same roles in daylight. The page follows the system's
+   setting unless the player picked one (data-theme, set by lib/theme.ts before first paint). The
+   accents darken so they read as text on a pale page, and text on an accent (text-ocean,
+   text-ocean-deep) turns pale with them, so every pairing keeps its contrast. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --color-ocean: #e9f0ee;
+    --color-ocean-deep: #fbfcfb;
+    --color-graticule: #7d9aa3;
+    --color-chalk: #0d2b38;
+    --color-chalk-dim: #405d68;
+    --color-flare: #a80c45;
+    --color-sonar: #006454;
+    --color-gold: #7a4e00;
+    color-scheme: light;
+  }
+}
+
+:root[data-theme="light"] {
+  --color-ocean: #e9f0ee;
+  --color-ocean-deep: #fbfcfb;
+  --color-graticule: #7d9aa3;
+  --color-chalk: #0d2b38;
+  --color-chalk-dim: #405d68;
+  --color-flare: #a80c45;
+  --color-sonar: #006454;
+  --color-gold: #7a4e00;
+  color-scheme: light;
+}
+
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* The night chart, kept in either theme: the globe stages, where words sit over a photo or the
+   globe, and MapLibre paints the sea and land in literal night colours (lib/basemap.ts). */
+.wb-stage,
+.wb-night,
+.globe {
+  --color-ocean: #0d3346;
+  --color-ocean-deep: #082331;
+  --color-graticule: #2a5b6e;
+  --color-chalk: #eef4f2;
+  --color-chalk-dim: #a9c2c8;
+  --color-flare: #ff5d8f;
+  --color-sonar: #4fe3c1;
+  --color-gold: #ffc53d;
+  color-scheme: dark;
+  /* Text inherits a computed colour, not the variable: start from night chalk here too. */
+  color: var(--color-chalk);
+}
+
 html {
   background: var(--color-ocean);
   color: var(--color-chalk);

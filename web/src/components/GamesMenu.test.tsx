@@ -117,7 +117,7 @@ describe("GamesMenu", () => {
 
     // Shift+Tab from the first control wraps to the last, and Tab from there back to the first.
     fireEvent.keyDown(close, { key: "Tab", shiftKey: true });
-    const last = within(sheet).getByRole("link", { name: /^Pass and play/ });
+    const last = within(sheet).getByRole("button", { name: "Dark" });
     expect(last).toHaveFocus();
     fireEvent.keyDown(last, { key: "Tab" });
     expect(close).toHaveFocus();
@@ -128,6 +128,21 @@ describe("GamesMenu", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(button).toHaveFocus();
     window.removeEventListener("keydown", onWindowKey);
+  });
+
+  it("opens on the page's body, outside the night-chart stage, with the Colours switch", () => {
+    render(
+      <div className="wb-stage" data-testid="stage">
+        <GamesMenu screen="round" streakHref="/streak" />
+      </div>,
+    );
+    const sheet = openMenu();
+    expect(screen.getByTestId("stage")).not.toContainElement(sheet);
+    const colours = within(sheet).getByRole("group", { name: "Colours" });
+    fireEvent.click(within(colours).getByRole("button", { name: "Light" }));
+    expect(document.documentElement.dataset.theme).toBe("light");
+    fireEvent.click(within(colours).getByRole("button", { name: "Auto" }));
+    expect(document.documentElement.dataset.theme).toBeUndefined();
   });
 
   it("closes on a tap outside the sheet", () => {

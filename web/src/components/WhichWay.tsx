@@ -499,7 +499,7 @@ function WayPhoto({
   const blur = photo ? placeholderUrl(photo.imageUrl) : null;
   return (
     <figure
-      className="relative m-0 min-h-0 overflow-hidden rounded-2xl border-2 border-graticule bg-graticule/40"
+      className="wb-night relative m-0 min-h-0 overflow-hidden rounded-2xl border-2 border-graticule bg-graticule/40"
       data-testid={`way-photo-${n}`}
       data-photo={photo?.id}
       style={blur ? { backgroundImage: `url(${blur})`, backgroundSize: "cover" } : undefined}

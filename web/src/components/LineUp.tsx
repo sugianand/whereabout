@@ -553,7 +553,7 @@ function Tile({
 
   return (
     <div
-      className={`relative min-h-0 overflow-hidden rounded-2xl border-2 bg-graticule/40 transition-colors ${ring} ${offset ? "z-20 shadow-2xl" : ""}`}
+      className={`wb-night relative min-h-0 overflow-hidden rounded-2xl border-2 bg-graticule/40 transition-colors ${ring} ${offset ? "z-20 shadow-2xl" : ""}`}
       data-testid={`line-photo-${n}`}
       data-place={place}
       data-photo={id}

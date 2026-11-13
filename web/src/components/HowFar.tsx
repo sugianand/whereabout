@@ -388,7 +388,7 @@ function PairPhoto({
   const blur = photo ? placeholderUrl(photo.imageUrl) : null;
   return (
     <div
-      className="relative min-h-0 overflow-hidden rounded-2xl border-2 border-graticule bg-graticule/40"
+      className="wb-night relative min-h-0 overflow-hidden rounded-2xl border-2 border-graticule bg-graticule/40"
       data-testid={`how-far-photo-${n}`}
       data-photo={photo?.id}
       style={blur ? { backgroundImage: `url(${blur})`, backgroundSize: "cover" } : undefined}
