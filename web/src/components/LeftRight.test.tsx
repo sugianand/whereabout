@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GameRecord } from "@/lib/game/deck";
 import { BEST_LEFT_RIGHT_KEY, leftRightOrder, type SideMap } from "@/lib/game/leftRight";
+import { SIDE_DAILY_KEY, dailySideOrder } from "@/lib/game/sideDaily";
 import type { CatalogPhoto } from "@/lib/game/types";
 import { gameFor } from "@/test/deck";
 
@@ -161,5 +162,108 @@ describe("LeftRight", () => {
     expect(
       await screen.findByRole("heading", { name: "No photos to play yet" }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("LeftRight, today's run", () => {
+  const DAY = "2026-11-13";
+  const now = () => new Date(`${DAY}T18:48:00Z`);
+  const order = dailySideOrder(SIDES, DAY);
+  const daySide = (n: number) => byId.get(order[n])!.photo.drivingSide!;
+
+  function play() {
+    const game = gameFor(RECORDS);
+    return render(
+      <LeftRight deck={game.deck} sides={SIDES} loadRecords={game.loadRecords} daily now={now} />,
+    );
+  }
+
+  it("deals the day's photos, picks the run back up after a reload, and ends on a miss", async () => {
+    expect(order.length).toBeGreaterThanOrEqual(2);
+    const first = play();
+    await waitFor(() => expect(button("left")).toBeEnabled());
+    expect(photo()).toHaveAttribute("data-photo", order[0]);
+    expect(screen.getByText(/today's run \(2026-11-13\)/)).toBeInTheDocument();
+    expect(screen.queryByText("Best")).toBeNull();
+    expect(screen.getByRole("link", { name: "Free runs" })).toHaveAttribute("href", "/left-right");
+    fireEvent.click(button(daySide(0)));
+    await screen.findByRole("button", { name: "Next photo" });
+    expect(JSON.parse(localStorage.getItem(SIDE_DAILY_KEY)!)[DAY]).toMatchObject({
+      streak: 1,
+      ended: null,
+    });
+    first.unmount();
+
+    // A reload carries on at the next photo, with the streak so far: no fresh start.
+    play();
+    await waitFor(() => expect(button("left")).toBeEnabled());
+    expect(photo()).toHaveAttribute("data-photo", order[1]);
+    expect(streak()).toHaveTextContent("1");
+
+    fireEvent.click(button(other(daySide(1))));
+    const card = await screen.findByRole("region");
+    expect(within(card).getByRole("heading")).toHaveTextContent("Wrong");
+    expect(card).toHaveTextContent("Today's run is over: 1 photo in a row.");
+    expect(within(card).queryByRole("button", { name: "Start a new run" })).toBeNull();
+    expect(within(card).getByRole("link", { name: "Play a free run" })).toHaveAttribute(
+      "href",
+      "/left-right",
+    );
+    const kept = JSON.parse(localStorage.getItem(SIDE_DAILY_KEY)!)[DAY];
+    expect(kept).toMatchObject({ streak: 1, ended: "miss" });
+    // Today's run keeps its own result, apart from the free runs' best.
+    expect(localStorage.getItem(BEST_LEFT_RIGHT_KEY)).toBeNull();
+
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    fireEvent.click(within(card).getByRole("button", { name: "Share today's run" }));
+    expect(await within(card).findByText("Result copied. Paste it anywhere.")).toBeVisible();
+    const text = writeText.mock.calls[0][0] as string;
+    expect(text).toMatch(/^Whereabout · Left or right\? · 2026-11-13\n🛣️ 1 photo in a row\n🟩🟥\n/);
+    // Counts only: no place, country or photo.
+    for (const r of RECORDS) {
+      expect(text).not.toContain(r.photo.id);
+      expect(text).not.toContain(r.photo.place);
+    }
+  });
+
+  it("shows the day's result instead of dealing it again once it has ended", async () => {
+    localStorage.setItem(
+      SIDE_DAILY_KEY,
+      JSON.stringify({ [DAY]: { streak: 4, atlasRight: 1, atlasPlayed: 3, ended: "miss" } }),
+    );
+    play();
+    expect(await screen.findByRole("heading", { name: "4 photos in a row" })).toBeInTheDocument();
+    expect(
+      screen.getByText(/Atlas got 1 of the 3 photos it called\. The next run is dealt in 5h 12m\./),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Share today's run" })).toHaveFocus();
+    expect(screen.queryByTestId("side-left")).toBeNull();
+  });
+
+  it("calls every photo the day deals, then shows the day as cleared", async () => {
+    play();
+    for (let n = 0; n < order.length; n++) {
+      await waitFor(() => expect(photo()).toHaveAttribute("data-photo", order[n]));
+      await waitFor(() => expect(button("left")).toBeEnabled());
+      fireEvent.click(button(daySide(n)));
+      fireEvent.click(await screen.findByRole("button", { name: "Next photo" }));
+    }
+    expect(
+      await screen.findByRole("heading", { name: "You called every photo" }),
+    ).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem(SIDE_DAILY_KEY)!)[DAY]).toMatchObject({
+      streak: order.length,
+      ended: "cleared",
+    });
+  });
+
+  it("links the free runs to today's run", async () => {
+    await setup();
+    expect(screen.getByRole("link", { name: "Today's run" })).toHaveAttribute(
+      "href",
+      "/left-right/daily",
+    );
   });
 });

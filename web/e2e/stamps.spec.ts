@@ -48,6 +48,7 @@ test("stamps come from what the browser keeps, are marked new once, and fit a 32
       keep("whereabout:odd-one-out-daily", run);
       keep("whereabout:which-way-daily", run);
       keep("whereabout:name-country-daily", run);
+      keep("whereabout:left-right-daily", run);
       keep("whereabout:how-far-daily", { results: Array(5).fill(pair) });
       keep("whereabout:hot-cold-daily", {
         results: Array(5).fill({ id: "a", pins: [hotPin], atlas: null }),

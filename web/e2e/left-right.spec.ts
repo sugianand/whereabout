@@ -123,3 +123,76 @@ test("a 320px phone fits the photo, both sides and the answer without scrolling 
   expect((await next.boundingBox())!.y).toBeLessThanOrEqual(640);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });
+
+test("today's Left or right? deals the day's photos once, resumes after a reload, and shares as counts", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const today = new Date().toISOString().slice(0, 10);
+
+  // The free runs link to today's run, and Today lists it.
+  await page.goto("./left-right");
+  await page.getByRole("link", { name: "Today's run" }).click();
+  await expect(page.getByText(`today's run (${today})`)).toBeVisible();
+  await expect(page.getByText("Best", { exact: true })).toHaveCount(0);
+  const { width, height } = page.viewportSize()!;
+
+  // Everyone on one day gets the same photos: a fresh player (nothing kept) is dealt the same.
+  const first = await sideOnScreen(page).then(() =>
+    page.getByTestId("side-photo").getAttribute("data-photo"),
+  );
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await expect(page.getByTestId("side-photo")).toHaveAttribute("data-photo", first!);
+
+  // Right on the first photo, a reload picks up at the next one with the streak so far.
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
+  const right = page.getByRole("button", { name: "Right: they drive on the right" });
+  const left = page.getByRole("button", { name: "Left: they drive on the left" });
+  await expect(right).toBeEnabled();
+  await ((await sideOnScreen(page)) === "left" ? left : right).click();
+  await expect(card.getByRole("heading")).toHaveText("Correct");
+  await page.reload();
+  await expect(page.getByTestId("side-photo")).not.toHaveAttribute("data-photo", first!);
+  await expect(page.getByText("Streak", { exact: true }).locator("+ dd")).toHaveText("1");
+
+  // Then a wrong call ends the day.
+  await expect(right).toBeEnabled();
+  await ((await sideOnScreen(page)) === "left" ? right : left).click();
+  await expect(card.getByRole("heading")).toHaveText("Wrong");
+  await expect(card).toContainText("Today's run is over: 1 photo in a row.");
+  await expect(card.getByRole("button", { name: "Start a new run" })).toHaveCount(0);
+  const box = (await card.boundingBox())!;
+  expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
+  expect(box.y + box.height).toBeLessThanOrEqual(height + 1);
+
+  // A reload shows the day's result, never the photos again.
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "1 photo in a row" })).toBeVisible();
+  await expect(page.getByText(/The next run is dealt in \d+/)).toBeVisible();
+  await expect(page.getByTestId("side-left")).toHaveCount(0);
+
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  await page.getByRole("button", { name: "Share today's run" }).click();
+  await expect(page.getByText("Result copied. Paste it anywhere.")).toBeVisible();
+  const sent = await page.evaluate(() => (window as unknown as { sent: string }).sent);
+  expect(sent).toContain(`Whereabout · Left or right? · ${today}\n🛣️ 1 photo in a row\n🟩🟥\n`);
+  expect(sent).toMatch(/\/whereabout\/left-right\/daily\/?$/);
+
+  // The free runs' best is its own, and Today counts the day as finished.
+  expect(await page.evaluate(() => localStorage.getItem("whereabout:left-right-best"))).toBe(null);
+  await page.goto("./today");
+  await expect(page.getByTestId("today-left-right")).toHaveAttribute("data-status", "done");
+  const scroll = await page.evaluate(() => document.documentElement.scrollWidth);
+  expect(scroll).toBeLessThanOrEqual(width);
+  expect(errors).toEqual([]);
+});

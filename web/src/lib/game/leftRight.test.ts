@@ -109,6 +109,14 @@ describe("leftRightReducer", () => {
     expect(leftRightOver(s)).toBe(true);
     expect(start([]).phase).toBe("cleared");
   });
+
+  it("picks a kept run up at the photo after its last right call, with Atlas's tally", () => {
+    const from = { streak: 2, atlasRight: 1, atlasPlayed: 2 };
+    const s = leftRightReducer(initialLeftRight, { type: "start", order: ["a", "b", "c"], from });
+    expect(s).toMatchObject({ phase: "picking", index: 2, ...from });
+    const done = leftRightReducer(initialLeftRight, { type: "start", order: ["a", "b"], from });
+    expect(done).toMatchObject({ phase: "cleared", streak: 2 });
+  });
 });
 
 describe("the words", () => {

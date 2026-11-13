@@ -13,6 +13,7 @@ import { rememberNameDay } from "./nameDaily";
 import { rememberNorthDay } from "./northDaily";
 import { rememberOddDay } from "./oddDaily";
 import { SAVED_GAME_KEY } from "./saved";
+import { rememberSideDay } from "./sideDaily";
 import {
   CALENDAR_WEEKS,
   TODAY_GAMES,
@@ -265,6 +266,8 @@ const finishJoined: Partial<Record<TodayGameId, (day: string) => void>> = {
       results: ["a", "b", "c", "d", "e"].map((id) => ({ ...CLOSE, id })),
       wrong: [],
     }),
+  "left-right": (day) =>
+    rememberSideDay(day, { streak: 4, atlasRight: 3, atlasPlayed: 5, ended: "miss" }),
 };
 
 /** Every daily game finished on `day` but `except`, each as it writes its own store. */
@@ -346,6 +349,25 @@ describe("the later games on Today", () => {
       status: "done",
       line: "10 of 15 points",
       atlas: "10 of 15",
+    });
+  });
+});
+
+describe("today's Left or right? on Today", () => {
+  const DAY_IN = "2026-11-14";
+  const AT = new Date(`${DAY_IN}T12:00:00Z`);
+  const game = () => todayGames(DAY_IN, IDS, AT).find((g) => g.id === "left-right")!;
+
+  it("reads the run as it is kept, and calls it against Atlas when Atlas called every photo", () => {
+    expect(game()).toMatchObject({ status: "new", line: "Not started", href: "/left-right/daily" });
+    rememberSideDay(DAY_IN, { streak: 1, atlasRight: 1, atlasPlayed: 1, ended: null });
+    expect(game()).toMatchObject({ status: "going", line: "1 photo in a row so far" });
+    finishJoined["left-right"]!(DAY_IN);
+    expect(game()).toMatchObject({
+      status: "done",
+      line: "4 photos in a row",
+      atlas: "3 of 5",
+      versus: { you: 4, atlas: 3, unit: "right", call: "you" },
     });
   });
 });

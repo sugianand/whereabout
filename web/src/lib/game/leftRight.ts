@@ -93,7 +93,12 @@ export type LeftRightState =
   | (Run & { phase: "cleared" });
 
 export type LeftRightAction =
-  | { type: "start"; order: readonly string[] }
+  | {
+      type: "start";
+      order: readonly string[];
+      /** A kept run to pick up from (today's run after a reload): it goes on at `order[streak]`. */
+      from?: { streak: number; atlasRight: number; atlasPlayed: number };
+    }
   | { type: "picked"; side: DrivingSide; truth: DrivingSide; atlas: AtlasSideRead | null }
   | { type: "next" };
 
@@ -102,8 +107,9 @@ export const initialLeftRight: LeftRightState = { phase: "idle" };
 export function leftRightReducer(state: LeftRightState, action: LeftRightAction): LeftRightState {
   switch (action.type) {
     case "start": {
-      const run: Run = { order: action.order, index: 0, streak: 0, atlasRight: 0, atlasPlayed: 0 };
-      return action.order.length === 0
+      const from = action.from ?? { streak: 0, atlasRight: 0, atlasPlayed: 0 };
+      const run: Run = { order: action.order, index: from.streak, ...from };
+      return run.index >= action.order.length
         ? { phase: "cleared", ...run }
         : { phase: "picking", ...run };
     }

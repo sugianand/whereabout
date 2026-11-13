@@ -13,6 +13,7 @@ import {
 
 import { isShortcut } from "@/lib/controls";
 import type { DrivingSide } from "@/lib/drivingSides";
+import { runToday } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import {
   atlasLine,
@@ -25,10 +26,18 @@ import {
   truthLine,
   type SideMap,
 } from "@/lib/game/leftRight";
+import {
+  dailySideOrder,
+  loadSideDay,
+  rememberSideDay,
+  sideDailyShare,
+  type SideDay,
+} from "@/lib/game/sideDaily";
 import { placeholderUrl, sources } from "@/lib/photoSources";
 import { atlasDrivingSide } from "@/lib/trueClues";
 
 import ControlsHelp from "./ControlsHelp";
+import { DailyRunResult, ShareDay } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
 
 type LeftRightProps = {
@@ -39,6 +48,13 @@ type LeftRightProps = {
   loadRecords?: (ids: string[]) => Promise<GameRecord[]>;
   /** For tests: the randomness that picks each run's seed. */
   random?: () => number;
+  /**
+   * Today's run (src/lib/game/sideDaily.ts): dealt from the UTC date, one try a day, picked up
+   * after a reload and shared as counts only. It never touches the free runs' best.
+   */
+  daily?: boolean;
+  /** For tests: the clock that picks today's run. */
+  now?: () => Date;
 };
 
 /** How far a drag has to travel, as a share of the photo's width, to count as a call. */
@@ -58,20 +74,51 @@ function photos(n: number): string {
  * road they drive on where it was taken, by swiping the photo, tapping a side or pressing an
  * arrow key. The first wrong call ends the run.
  */
-export default function LeftRight({ deck, sides, loadRecords, random }: LeftRightProps) {
+export default function LeftRight({
+  deck,
+  sides,
+  loadRecords,
+  random,
+  daily = false,
+  now,
+}: LeftRightProps) {
   const [state, dispatch] = useReducer(leftRightReducer, initialLeftRight);
   const [best, setBest] = useState(0);
   const [bestBeforeRun, setBestBeforeRun] = useState(0);
   const [records, setRecords] = useState<ReadonlyMap<string, GameRecord>>(() => new Map());
   const [error, setError] = useState<string | null>(null);
+  // Today's run: the day it was dealt for (kept when the clock passes midnight mid-run) and,
+  // once it has ended, how it went, which shows instead of the game.
+  const [day, setDay] = useState<string | null>(null);
+  const [dayDone, setDayDone] = useState<SideDay | null>(null);
 
   const start = useCallback(() => {
+    if (daily) {
+      const today = runToday(now?.());
+      const kept = loadSideDay(today);
+      setDay(today);
+      if (kept?.ended) {
+        setDayDone(kept);
+        return;
+      }
+      const { streak, atlasRight, atlasPlayed } = kept ?? {
+        streak: 0,
+        atlasRight: 0,
+        atlasPlayed: 0,
+      };
+      dispatch({
+        type: "start",
+        order: dailySideOrder(sides, today),
+        from: { streak, atlasRight, atlasPlayed },
+      });
+      return;
+    }
     const stored = loadBestLeftRight();
     setBest(stored);
     setBestBeforeRun(stored);
     const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
     dispatch({ type: "start", order: leftRightOrder(sides, seed) });
-  }, [sides, random]);
+  }, [sides, random, daily, now]);
 
   // The run is dealt in the browser after hydration, never at build time.
   useEffect(() => {
@@ -134,13 +181,22 @@ export default function LeftRight({ deck, sides, loadRecords, random }: LeftRigh
         atlas: atlasDrivingSide(record.atlas),
       } as const;
       const after = leftRightReducer(state, action);
-      // Keep the run as the best after every right call, so leaving mid-run keeps it.
-      if (after.phase === "answered" && after.verdict.correct) {
+      if (after.phase === "answered" && day) {
+        // Today's run is kept after every call, so a reload resumes it and never deals it again.
+        const cleared = after.verdict.correct && after.index + 1 >= after.order.length;
+        rememberSideDay(day, {
+          streak: after.streak,
+          atlasRight: after.atlasRight,
+          atlasPlayed: after.atlasPlayed,
+          ended: !after.verdict.correct ? "miss" : cleared ? "cleared" : null,
+        });
+      } else if (after.phase === "answered" && after.verdict.correct) {
+        // Keep the run as the best after every right call, so leaving mid-run keeps it.
         setBest(rememberLeftRight(after.streak));
       }
       dispatch(action);
     },
-    [state, record, sides],
+    [state, record, sides, day],
   );
 
   // ← and → make the call from the keyboard.
@@ -157,6 +213,23 @@ export default function LeftRight({ deck, sides, loadRecords, random }: LeftRigh
   }, [ready, choose]);
 
   const streak = state.phase === "idle" ? 0 : state.streak;
+
+  if (dayDone && day) return <SideDayResult day={day} entry={dayDone} now={now} />;
+
+  if (state.phase === "cleared" && day && state.order.length > 0) {
+    return (
+      <SideDayResult
+        day={day}
+        entry={{
+          streak: state.streak,
+          atlasRight: state.atlasRight,
+          atlasPlayed: state.atlasPlayed,
+          ended: "cleared",
+        }}
+        now={now}
+      />
+    );
+  }
 
   if (state.phase === "cleared") {
     const none = state.order.length === 0;
@@ -205,8 +278,16 @@ export default function LeftRight({ deck, sides, loadRecords, random }: LeftRigh
             Whereabout
           </Link>
           <p className="mt-1 text-sm text-chalk-dim">
-            Left or right? Which side of the road do they drive on here?
+            {day
+              ? `Left or right?, today's run (${day}): which side do they drive on here?`
+              : "Left or right? Which side of the road do they drive on here?"}
           </p>
+          <Link
+            href={daily ? "/left-right" : "/left-right/daily"}
+            className="mt-0.5 inline-block text-sm text-gold underline underline-offset-2 hover:brightness-110"
+          >
+            {daily ? "Free runs" : "Today's run"}
+          </Link>
         </div>
         <div className="flex shrink-0 items-start gap-3">
           <GamesMenu screen="left-right" streakHref="/streak" />
@@ -216,10 +297,12 @@ export default function LeftRight({ deck, sides, loadRecords, random }: LeftRigh
             <dd className="font-sign tabular text-3xl font-bold leading-none" aria-live="polite">
               {streak}
             </dd>
-            <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
-              <dt>Best</dt>
-              <dd className="tabular">{best}</dd>
-            </div>
+            {!daily && (
+              <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
+                <dt>Best</dt>
+                <dd className="tabular">{best}</dd>
+              </div>
+            )}
           </dl>
         </div>
       </header>
@@ -256,13 +339,30 @@ export default function LeftRight({ deck, sides, loadRecords, random }: LeftRigh
             atlas={answered.atlas ? atlasLine(answered.atlas) : null}
             atlasTally={[answered.atlasRight, answered.atlasPlayed]}
             end={
-              over
-                ? `Run over: ${photos(answered.streak)} in a row. ` +
-                  (answered.streak > bestBeforeRun
-                    ? "That's your new best!"
-                    : best > 0
-                      ? `Your best is ${photos(best)}.`
-                      : "")
+              over && day
+                ? `Today's run is over: ${photos(answered.streak)} in a row.`
+                : over
+                  ? `Run over: ${photos(answered.streak)} in a row. ` +
+                    (answered.streak > bestBeforeRun
+                      ? "That's your new best!"
+                      : best > 0
+                        ? `Your best is ${photos(best)}.`
+                        : "")
+                  : null
+            }
+            share={
+              over && day
+                ? (href: string) =>
+                    sideDailyShare(
+                      day,
+                      {
+                        streak: answered.streak,
+                        atlasRight: answered.atlasRight,
+                        atlasPlayed: answered.atlasPlayed,
+                        ended: "miss",
+                      },
+                      href,
+                    )
                 : null
             }
             onNext={over ? () => start() : () => dispatch({ type: "next" })}
@@ -439,6 +539,7 @@ function SideCard({
   end,
   onNext,
   nextLabel,
+  share,
 }: {
   headline: string;
   correct: boolean;
@@ -449,6 +550,8 @@ function SideCard({
   end: string | null;
   onNext: () => void;
   nextLabel: string;
+  /** Today's run's share line, once it is over: shown in place of the next button. */
+  share: ((href: string) => string) | null;
 }) {
   const nextRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -474,14 +577,41 @@ function SideCard({
         </p>
       )}
       {end && <p className="mt-2 text-chalk">{end}</p>}
-      <button
-        ref={nextRef}
-        type="button"
-        onClick={onNext}
-        className="mt-3 rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
-      >
-        {nextLabel}
-      </button>
+      {share ? (
+        <ShareDay shareText={share} freeHref="/left-right" focus />
+      ) : (
+        <button
+          ref={nextRef}
+          type="button"
+          onClick={onNext}
+          className="mt-3 rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
+        >
+          {nextLabel}
+        </button>
+      )}
     </section>
+  );
+}
+
+/** Today's Left or right? once it has ended. */
+function SideDayResult({ day, entry, now }: { day: string; entry: SideDay; now?: () => Date }) {
+  const cleared = entry.ended === "cleared";
+  return (
+    <DailyRunResult
+      game="Left or right?"
+      day={day}
+      headline={cleared ? "You called every photo" : `${photos(entry.streak)} in a row`}
+      summary={
+        (cleared
+          ? `${photos(entry.streak)} in a row, every photo today's run could deal.`
+          : "That's today's run played.") +
+        (entry.atlasPlayed > 0
+          ? ` Atlas got ${entry.atlasRight} of the ${photos(entry.atlasPlayed)} it called.`
+          : "")
+      }
+      shareText={(href) => sideDailyShare(day, entry, href)}
+      freeHref="/left-right"
+      now={now}
+    />
   );
 }

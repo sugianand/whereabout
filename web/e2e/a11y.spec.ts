@@ -59,6 +59,7 @@ const FIRST_SCREENS = [
   "./line-up",
   "./close-up",
   "./left-right",
+  "./left-right/daily",
   "./pass-and-play",
   "./today",
   "./map",

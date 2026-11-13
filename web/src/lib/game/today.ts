@@ -31,6 +31,7 @@ import { loadNameDay } from "./nameDaily";
 import { loadNorthDay } from "./northDaily";
 import { loadOddDay } from "./oddDaily";
 import { loadSaved } from "./saved";
+import { loadSideDay } from "./sideDaily";
 import { ROUNDS_PER_GAME } from "./state";
 import { loadWayDay } from "./wayDaily";
 
@@ -43,7 +44,8 @@ export type TodayGameId =
   | "name-country"
   | "hot-cold"
   | "line-up"
-  | "close-up";
+  | "close-up"
+  | "left-right";
 
 /** One daily game: where it lives, whatever the browser holds. */
 export interface TodayGameInfo {
@@ -126,6 +128,14 @@ export const TODAY_GAMES: readonly TodayGameInfo[] = [
     icon: "🔍",
     blurb: "Five tight crops and four names each: every wrong name zooms out.",
     since: "2026-11-07",
+  },
+  {
+    id: "left-right",
+    name: "Left or right?",
+    href: "/left-right/daily",
+    icon: "🛣️",
+    blurb: "Which side of the road do they drive on? Call it until your first miss.",
+    since: "2026-11-13",
   },
 ];
 
@@ -311,6 +321,8 @@ export function todayGames(
         return { ...info, ...lineUp(day) };
       case "close-up":
         return { ...info, ...closeUp(day) };
+      case "left-right":
+        return { ...info, ...streakGame(loadSideDay(day), "photo") };
     }
   });
 }
