@@ -137,7 +137,11 @@ clue or else the side of the country it picked. Left and right photos are dealt 
 in the catalog's proportions (most photos are from right-hand-traffic countries), so always
 calling one side is a coin flip. Endless until the first miss; your best run is kept in your browser.
 **Today's run** (at `/left-right/daily`) deals everyone the same photos on the same UTC day with the
-same even deal, one try a day, picked up after a reload and shared as counts only.
+same even deal, one try a day, picked up after a reload and shared as counts only. After a free run,
+*Challenge a friend* sends a link naming the photos you were shown and your run to beat: the friend
+plays them in the same order, sees which side you called on the photo that ended your run once
+they've called it, plays on past it through the photos left, and can send theirs back with a
+head-to-head picture.
 **Today** (at `/today`, in the Games menu and on the results screen) puts every daily game on one
 page: the Daily Five, Further North, Odd one out, Which way?, How far apart?, Name the country,
 Hot and cold, Line them up, Close-up and Left or right?, each with where it stands in your browser (not started, under way or its result), the time to the next deal, and one
