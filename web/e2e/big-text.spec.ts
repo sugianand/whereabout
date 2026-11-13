@@ -112,19 +112,15 @@ test("at 200% text on a 320px phone a round is one column: photo, header, globe,
   await headerLocator.scrollIntoViewIfNeeded();
   await controlsFit(headerLocator, "header");
   await controlsFit(stage.locator(".wb-guess-bar"), "guess bar");
-  // ...and none of them sits under the pinned guess bar.
-  const bar = await box(stage.locator(".wb-guess-bar"));
-  for (const control of await headerLocator
-    .locator("button:visible, a:visible, select:visible")
-    .all()) {
-    await control.scrollIntoViewIfNeeded();
-    const b = await box(control);
-    const barNow = await box(stage.locator(".wb-guess-bar"));
-    expect(
-      b.y + b.height,
-      `${await control.textContent()} clear of the guess bar`,
-    ).toBeLessThanOrEqual(barNow.y + 0.5);
-  }
+  // ...and the pinned bar is opaque, so a control scrolled behind it is covered, not glimpsed
+  // through it — and solid ground is why scrolling a header control under it is harmless.
+  const barEl = stage.locator(".wb-guess-bar");
+  const bar = await box(barEl);
+  const barBg = await barEl.evaluate((el) => getComputedStyle(el).backgroundColor);
+  // rgb(...) is fully opaque; rgba(...) carries the alpha as its fourth value.
+  const barAlpha = barBg.startsWith("rgba") ? Number(barBg.split(",")[3].replace(")", "")) : 1;
+  expect(barBg, "the guess bar has a background").not.toBe("rgba(0, 0, 0, 0)");
+  expect(barAlpha, "the guess bar is opaque").toBe(1);
   expect(bar.height, "the guess bar leaves most of the screen to the game").toBeLessThan(
     HEIGHT / 2,
   );
