@@ -3,8 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GameRecord } from "@/lib/game/deck";
 import type { CatalogPhoto } from "@/lib/game/types";
+import { loadFreeTallies } from "@/lib/game/quickRecord";
 import { BEST_CLIMATE_KEY, dealClimate, type ClimateMap } from "@/lib/game/whichClimate";
-import type { ClimateGroup } from "@/lib/trueClues";
+import { atlasClimateGroup, type ClimateGroup } from "@/lib/trueClues";
 import { gameFor } from "@/test/deck";
 
 import WhichClimate from "./WhichClimate";
@@ -116,6 +117,17 @@ describe("WhichClimate", () => {
     expect(screen.getByText("That's your new best!")).toBeInTheDocument();
     expect(localStorage.getItem(BEST_CLIMATE_KEY)).toBe("3");
     expect(screen.getByText(/Atlas read the climate on \d of the 5 photos/)).toBeInTheDocument();
+    // Every call is in your clue reading on Your map, with Atlas's read of the same photos.
+    const reads = ORDER.map((id) =>
+      atlasClimateGroup(RECORDS.find((r) => r.photo.id === id)!.atlas),
+    );
+    expect(loadFreeTallies()["which-climate"]).toEqual({
+      runs: 1,
+      rounds: 5,
+      right: 3,
+      atlasPlayed: reads.filter((g) => g !== null).length,
+      atlasRight: reads.filter((g, n) => g !== null && g === truthOf(n)).length,
+    });
   });
 
   it("says when Atlas read nothing about the climate", async () => {

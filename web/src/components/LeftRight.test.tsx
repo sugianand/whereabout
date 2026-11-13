@@ -3,9 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GameRecord } from "@/lib/game/deck";
 import { BEST_LEFT_RIGHT_KEY, leftRightOrder, type SideMap } from "@/lib/game/leftRight";
+import { EMPTY_TALLY, loadFreeTallies } from "@/lib/game/quickRecord";
 import { SIDE_DAILY_KEY, dailySideOrder } from "@/lib/game/sideDaily";
 import type { CatalogPhoto } from "@/lib/game/types";
 import { stubCanvas } from "@/test/canvas";
+import { atlasDrivingSide } from "@/lib/trueClues";
 import { gameFor } from "@/test/deck";
 
 import LeftRight from "./LeftRight";
@@ -114,6 +116,36 @@ describe("LeftRight", () => {
     expect(streak()).toHaveTextContent("0");
   });
 
+  it("counts every free call in your clue reading, against Atlas where it read the road", async () => {
+    await setup();
+    fireEvent.click(button(sideOf(0)));
+    let card = await screen.findByRole("region");
+    expect(loadFreeTallies()["left-right"]).toMatchObject({ runs: 1, rounds: 1, right: 1 });
+    fireEvent.click(within(card).getByRole("button", { name: "Next photo" }));
+    await waitFor(() => expect(photo()).toHaveAttribute("data-photo", ORDER[1]));
+    fireEvent.click(button(other(sideOf(1))));
+    card = await screen.findByRole("region");
+    // Atlas is judged on the same photos, and only those it gave a read on.
+    const reads = ORDER.slice(0, 2).map((id, n) => {
+      const read = atlasDrivingSide(byId.get(id)!.atlas);
+      return read && read.side === sideOf(n);
+    });
+    const played = reads.filter((r) => r !== null);
+    expect(loadFreeTallies()["left-right"]).toEqual({
+      runs: 1,
+      rounds: 2,
+      right: 1,
+      atlasPlayed: played.length,
+      atlasRight: played.filter(Boolean).length,
+    });
+    // The next run is counted as a new one.
+    fireEvent.click(within(card).getByRole("button", { name: "Start a new run" }));
+    await waitFor(() => expect(button("left")).toBeEnabled());
+    fireEvent.click(button(sideOf(0)));
+    await screen.findByRole("region");
+    expect(loadFreeTallies()["left-right"]).toMatchObject({ runs: 2, rounds: 3, right: 2 });
+  });
+
   it("judges Atlas on what it read: its road clue first, else its top country", async () => {
     // A run with only f3 and j2: Atlas read "left" for the French photo from a clue, and picked
     // South Korea (right-hand traffic) for the Japanese one.
@@ -212,8 +244,10 @@ describe("LeftRight, today's run", () => {
     );
     const kept = JSON.parse(localStorage.getItem(SIDE_DAILY_KEY)!)[DAY];
     expect(kept).toMatchObject({ streak: 1, ended: "miss" });
-    // Today's run keeps its own result, apart from the free runs' best.
+    // Today's run keeps its own result, apart from the free runs' best, and Your map reads it
+    // from the day kept, so the free runs' clue reading never counts it a second time.
     expect(localStorage.getItem(BEST_LEFT_RIGHT_KEY)).toBeNull();
+    expect(loadFreeTallies()["left-right"]).toEqual(EMPTY_TALLY);
 
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "share", { value: undefined, configurable: true });

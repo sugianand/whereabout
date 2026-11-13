@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "r
 
 import { isShortcut } from "@/lib/controls";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
+import { recordFreeRound } from "@/lib/game/quickRecord";
 import {
   CLIMATE_GIST,
   CLIMATE_PHOTOS,
@@ -122,9 +123,19 @@ export default function WhichClimate({ deck, groups, loadRecords, random }: Whic
         atlas: atlasClimateGroup(record.atlas),
       } as const;
       const after = climateReducer(state, action);
-      if (after.phase === "answered" && after.results.length === after.order.length) {
+      if (after.phase === "answered") {
+        // Count the call in your clue reading on Your map, as it is made, so leaving mid-game
+        // still counts the photos called.
+        const call = after.results[after.results.length - 1];
+        recordFreeRound("which-climate", {
+          first: after.results.length === 1,
+          correct: call.correct,
+          atlas: call.atlas === null ? null : call.atlas === call.truth,
+        });
         // Only a whole game counts as a best.
-        setBest(rememberClimate(climateTotals(after.results).right));
+        if (after.results.length === after.order.length) {
+          setBest(rememberClimate(climateTotals(after.results).right));
+        }
       }
       dispatch(action);
     },

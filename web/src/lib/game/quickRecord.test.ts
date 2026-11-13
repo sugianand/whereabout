@@ -4,6 +4,9 @@ import type { DailyRun } from "./dailyRuns";
 import { NORTH_DAILY_KEY } from "./northDaily";
 import { ODD_DAILY_KEY } from "./oddDaily";
 import {
+  CLUE_GAMES,
+  PICK_GAMES,
+  RECORD_GAMES,
   EMPTY_TALLY,
   QUICK_RECORD_KEY,
   addRound,
@@ -18,6 +21,7 @@ import {
   standingLine,
   type Tally,
 } from "./quickRecord";
+import { SIDE_DAILY_KEY } from "./sideDaily";
 
 const tally = (over: Partial<Tally>): Tally => ({ ...EMPTY_TALLY, ...over });
 const day = (over: Partial<DailyRun>): DailyRun => ({
@@ -46,9 +50,12 @@ describe("recordFreeRound", () => {
     recordFreeRound("further-north", { first: true, correct: true, atlas: true });
     recordFreeRound("further-north", { first: false, correct: false, atlas: false });
     recordFreeRound("odd-one-out", { first: true, correct: false, atlas: null });
+    recordFreeRound("which-climate", { first: true, correct: true, atlas: false });
     expect(loadFreeTallies()).toEqual({
       "further-north": { runs: 1, rounds: 2, right: 1, atlasPlayed: 2, atlasRight: 1 },
       "odd-one-out": { runs: 1, rounds: 1, right: 0, atlasPlayed: 0, atlasRight: 0 },
+      "left-right": EMPTY_TALLY,
+      "which-climate": { runs: 1, rounds: 1, right: 1, atlasPlayed: 1, atlasRight: 0 },
     });
   });
 
@@ -131,10 +138,43 @@ describe("loadQuickRecord", () => {
     });
   });
 
+  it("counts today's Left or right? runs in the road's record; Which climate? has no daily", () => {
+    recordFreeRound("left-right", { first: true, correct: false, atlas: null });
+    localStorage.setItem(
+      SIDE_DAILY_KEY,
+      JSON.stringify({
+        "2026-11-12": day({ streak: 3, atlasRight: 2, atlasPlayed: 3, ended: "miss" }),
+        "2026-11-13": day({ streak: 2, atlasRight: 1, atlasPlayed: 1 }),
+      }),
+    );
+    recordFreeRound("which-climate", { first: true, correct: true, atlas: true });
+    const record = loadQuickRecord();
+    expect(record["left-right"].daily).toEqual({
+      runs: 2,
+      rounds: 6,
+      right: 5,
+      atlasPlayed: 4,
+      atlasRight: 3,
+    });
+    expect(record["left-right"].total).toEqual({
+      runs: 3,
+      rounds: 7,
+      right: 5,
+      atlasPlayed: 4,
+      atlasRight: 3,
+    });
+    expect(record["which-climate"].daily).toEqual(EMPTY_TALLY);
+    expect(record["which-climate"].total.rounds).toBe(1);
+  });
+
   it("is empty in a fresh browser", () => {
     const record = loadQuickRecord();
-    expect(record["further-north"].total).toEqual(EMPTY_TALLY);
-    expect(record["odd-one-out"].total).toEqual(EMPTY_TALLY);
+    for (const game of RECORD_GAMES) expect(record[game].total).toEqual(EMPTY_TALLY);
+  });
+
+  it("splits the games into the clue games and the picking games, each listed once", () => {
+    expect([...PICK_GAMES, ...CLUE_GAMES].sort()).toEqual([...RECORD_GAMES].sort());
+    expect(CLUE_GAMES).toEqual(["left-right", "which-climate"]);
   });
 });
 
@@ -167,5 +207,11 @@ describe("standing", () => {
   it("reads counts in words", () => {
     expect(rightOf(1, 1)).toBe("1 of 1 round right");
     expect(rightOf(1200, 1500)).toBe("1,200 of 1,500 rounds right");
+    expect(rightOf(3, 1, "photo")).toBe("3 of 1 photo right");
+    expect(rightOf(4, 5, "photo")).toBe("4 of 5 photos right");
+    expect(standingLine(EMPTY_TALLY, "photo")).toBe("No photos played yet.");
+    expect(standingLine(tally({ rounds: 2, right: 1 }), "photo")).toBe(
+      "Atlas hasn't played a photo with you yet.",
+    );
   });
 });

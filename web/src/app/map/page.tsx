@@ -18,7 +18,7 @@ const streakable = ((r) => CONTINENTS.filter((c) => r[c]))(
 export const metadata: Metadata = {
   title: "Your map — Whereabout",
   description:
-    "Every photo you've played in Whereabout on one globe, coloured by how close your pin landed, with the countries you've seen and how you stand against Atlas in the quick games, the countries you mix up, and every friend's challenge you've answered. Kept only in your browser.",
+    "Every photo you've played in Whereabout on one globe, coloured by how close your pin landed, with the countries you've seen and how you stand against Atlas in the quick games, how often you read the road and the climate right, the countries you mix up, and every friend's challenge you've answered. Kept only in your browser.",
 };
 
 export default function YourMapPage() {

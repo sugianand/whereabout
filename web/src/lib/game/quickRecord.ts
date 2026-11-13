@@ -1,12 +1,14 @@
 /**
- * Atlas's quick-game record: how your picks in Further North and Odd one out compare with
- * Atlas's on the same rounds, from the runs played in this browser.
+ * Atlas's quick-game record: how your picks in Further North and Odd one out, and your clue
+ * reading in Left or right? (the road) and Which climate? (the climate), compare with Atlas's
+ * on the same photos, from the games played in this browser.
  *
  * Two sources are added up per game:
  * - free runs, tallied here round by round as they are answered (`recordFreeRound`), under
  *   `QUICK_RECORD_KEY`, so leaving mid-run still counts the rounds played;
  * - today's runs, read back from the days each game already keeps (src/lib/game/dailyRuns.ts),
- *   so nothing is counted twice: the daily screens never call `recordFreeRound`.
+ *   so nothing is counted twice: the daily screens never call `recordFreeRound`. Which climate?
+ *   has no daily, so its record is its free games alone.
  *
  * You are judged on every round you answered, Atlas on the rounds it played (it sits out a
  * round where it never guessed one of the photos), so each side's rate is over its own rounds
@@ -16,17 +18,29 @@
 import { loadDailyRuns, type DailyRun } from "./dailyRuns";
 import { NORTH_DAILY_KEY } from "./northDaily";
 import { ODD_DAILY_KEY } from "./oddDaily";
+import { SIDE_DAILY_KEY } from "./sideDaily";
 
 export const QUICK_RECORD_KEY = "whereabout:quick-record";
 
 /** The quick games Atlas plays along in, in the order the record lists them. */
-export const RECORD_GAMES = ["further-north", "odd-one-out"] as const;
+export const RECORD_GAMES = [
+  "further-north",
+  "odd-one-out",
+  "left-right",
+  "which-climate",
+] as const;
 export type RecordGame = (typeof RECORD_GAMES)[number];
 
-/** What each game's daily days are kept under. */
-const DAILY_KEYS: Record<RecordGame, string> = {
+/** The clue games, each drilling one clue the reveal teaches: the road and the climate. */
+export const CLUE_GAMES = ["left-right", "which-climate"] as const satisfies readonly RecordGame[];
+/** The rest: picking between photos. */
+export const PICK_GAMES = ["further-north", "odd-one-out"] as const satisfies readonly RecordGame[];
+
+/** What each game's daily days are kept under; a game with no daily has none. */
+const DAILY_KEYS: Partial<Record<RecordGame, string>> = {
   "further-north": NORTH_DAILY_KEY,
   "odd-one-out": ODD_DAILY_KEY,
+  "left-right": SIDE_DAILY_KEY,
 };
 
 /** Rounds played and got right, by you and by Atlas. */
@@ -114,10 +128,10 @@ function storage(): Storage | null {
 
 /** The free runs' tallies kept in this browser; a game with nothing (or junk) kept is empty. */
 export function loadFreeTallies(): Record<RecordGame, Tally> {
-  const tallies: Record<RecordGame, Tally> = {
-    "further-north": EMPTY_TALLY,
-    "odd-one-out": EMPTY_TALLY,
-  };
+  const tallies = Object.fromEntries(RECORD_GAMES.map((g) => [g, EMPTY_TALLY])) as Record<
+    RecordGame,
+    Tally
+  >;
   try {
     const raw = storage()?.getItem(QUICK_RECORD_KEY);
     if (!raw) return tallies;
@@ -170,7 +184,8 @@ export function loadQuickRecord(): QuickRecord {
   const free = loadFreeTallies();
   const record = {} as QuickRecord;
   for (const game of RECORD_GAMES) {
-    const daily = dailyTally(loadDailyRuns(DAILY_KEYS[game]));
+    const key = DAILY_KEYS[game];
+    const daily = key ? dailyTally(loadDailyRuns(key)) : EMPTY_TALLY;
     record[game] = { free: free[game], daily, total: addTallies(free[game], daily) };
   }
   return record;
@@ -198,13 +213,17 @@ export function standing(tally: Tally): Standing {
   return { you, atlas, lead: gap > 0 ? "you" : gap < 0 ? "atlas" : "level", gap };
 }
 
-const rounds = (n: number) => `${n.toLocaleString("en-US")} round${n === 1 ? "" : "s"}`;
+const counted = (n: number, unit: string) =>
+  `${n.toLocaleString("en-US")} ${unit}${n === 1 ? "" : "s"}`;
 
-/** The record in one sentence, from its own numbers. */
-export function standingLine(tally: Tally): string {
+/**
+ * The record in one sentence, from its own numbers. `unit` is what a round is called: a round
+ * of picking between photos, or a photo in the clue games.
+ */
+export function standingLine(tally: Tally, unit = "round"): string {
   const s = standing(tally);
-  if (s.you === null) return "No rounds played yet.";
-  if (s.atlas === null) return "Atlas hasn't played a round with you yet.";
+  if (s.you === null) return `No ${unit}s played yet.`;
+  if (s.atlas === null) return `Atlas hasn't played a ${unit} with you yet.`;
   const points = Math.abs(s.gap);
   const by = `${points} point${points === 1 ? "" : "s"}`;
   if (s.lead === "you") return `You're ahead of Atlas by ${by}.`;
@@ -213,6 +232,6 @@ export function standingLine(tally: Tally): string {
 }
 
 /** "31 of 40 rounds right" for you, the same for Atlas over the rounds it played. */
-export function rightOf(right: number, played: number): string {
-  return `${right.toLocaleString("en-US")} of ${rounds(played)} right`;
+export function rightOf(right: number, played: number, unit = "round"): string {
+  return `${right.toLocaleString("en-US")} of ${counted(played, unit)} right`;
 }

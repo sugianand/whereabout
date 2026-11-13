@@ -15,6 +15,7 @@ import { isShortcut } from "@/lib/controls";
 import type { DrivingSide } from "@/lib/drivingSides";
 import { runToday } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
+import { recordFreeRound } from "@/lib/game/quickRecord";
 import {
   atlasLine,
   initialLeftRight,
@@ -247,10 +248,17 @@ export default function LeftRight({
           atlasPlayed: after.atlasPlayed,
           ended: !after.verdict.correct ? "miss" : cleared ? "cleared" : null,
         });
-      } else if (after.phase === "answered" && after.verdict.correct && !challenge) {
+      } else if (after.phase === "answered") {
+        // Count the call in your clue reading on Your map, as it is made. Today's run is
+        // counted from the day kept above instead, so it is never counted twice.
+        recordFreeRound("left-right", {
+          first: state.index === 0,
+          correct: after.verdict.correct,
+          atlas: after.atlas ? after.atlas.correct : null,
+        });
         // Keep the run as the best after every right call, so leaving mid-run keeps it. A
         // challenge's photos may have been seen before, so it is played for the friend only.
-        setBest(rememberLeftRight(after.streak));
+        if (after.verdict.correct && !challenge) setBest(rememberLeftRight(after.streak));
       }
       dispatch(action);
     },
