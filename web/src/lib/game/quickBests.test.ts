@@ -7,6 +7,7 @@ import { BEST_LEFT_RIGHT_KEY } from "./leftRight";
 import { BEST_ODD_KEY } from "./oddOneOut";
 import { BEST_HOT_KEY } from "./hotCold";
 import { BEST_CLOSE_KEY } from "./closeUp";
+import { BEST_CLUE_MIX_KEY } from "./clueMix";
 import { BEST_LINE_KEY } from "./lineUp";
 import { BEST_NAME_KEY } from "./nameCountry";
 import { NO_BESTS, QUICK_MODES, bestLine, bestStreak, loadQuickBests } from "./quickBests";
@@ -37,6 +38,7 @@ describe("loadQuickBests", () => {
     localStorage.setItem(BEST_CLOSE_KEY, "11");
     localStorage.setItem(BEST_LEFT_RIGHT_KEY, "12");
     localStorage.setItem(BEST_CLIMATE_KEY, "4");
+    localStorage.setItem(BEST_CLUE_MIX_KEY, "9");
     expect(loadQuickBests()).toEqual({
       blitz: 18250,
       streak: { streak: 6, region: null },
@@ -51,6 +53,7 @@ describe("loadQuickBests", () => {
       "close-up": 11,
       "left-right": 12,
       "which-climate": 4,
+      "clue-mix": 9,
     });
   });
 
@@ -105,6 +108,7 @@ describe("bestLine", () => {
     "close-up": 11,
     "left-right": 12,
     "which-climate": 3,
+    "clue-mix": 11,
   };
 
   it("reads each best the way its card shows it", () => {
@@ -121,6 +125,7 @@ describe("bestLine", () => {
     expect(bestLine("close-up", bests)).toBe("Best: 11 of 15 points");
     expect(bestLine("left-right", bests)).toBe("Best: 12 in a row");
     expect(bestLine("which-climate", bests)).toBe("Best: 3 of 5 right");
+    expect(bestLine("clue-mix", bests)).toBe("Best: 11 in a row");
   });
 
   it("names no continent for an all-world streak, and counts photos in the plural", () => {

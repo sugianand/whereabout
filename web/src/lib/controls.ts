@@ -39,7 +39,8 @@ export type HelpScreen =
   | "line-up"
   | "close-up"
   | "left-right"
-  | "which-climate";
+  | "which-climate"
+  | "clue-mix";
 
 const k = (label: string, press = label): Key => ({ label, press });
 
@@ -396,6 +397,35 @@ export const CONTROLS: Record<HelpScreen, readonly ControlGroup[]> = {
       ],
     },
   ],
+  "clue-mix": [
+    {
+      title: "The clues",
+      controls: [
+        {
+          id: "pick-road",
+          does: "Call the side of the road, when a photo asks it",
+          keys: [k("←", "ArrowLeft"), k("→", "ArrowRight")],
+          mouse: "Click Left or Right",
+          touch: "Tap Left or Right",
+        },
+        {
+          id: "pick",
+          does: "Name the climate or the continent, by its number, when a photo asks it",
+          keys: [k("1"), k("2"), k("3"), k("4"), k("5"), k("6"), k("7")],
+          mouse: "Click a climate or a continent",
+          touch: "Tap a climate or a continent",
+        },
+        {
+          id: "next",
+          does: "Next photo, from the answer",
+          keys: [k("Enter")],
+          mouse: "Next photo",
+          touch: "Next photo",
+        },
+        HELP,
+      ],
+    },
+  ],
 };
 
 /** The sheet's title for each screen. */
@@ -411,6 +441,7 @@ export const SCREEN_TITLES: Record<HelpScreen, string> = {
   "close-up": "Controls for Close-up",
   "left-right": "Controls for Left or right?",
   "which-climate": "Controls for Which climate?",
+  "clue-mix": "Controls for Clue mix",
 };
 
 /**

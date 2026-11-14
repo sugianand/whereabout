@@ -157,6 +157,13 @@ on each as Köppen's letters (A to E): the friend plays the same five in the sam
 call marked *Friend* on the band only once they've made theirs, and can send theirs back with a
 head-to-head picture. The score to beat is worked out from your calls against each photo's own
 label, never carried in the link, and a challenge never counts as a best.
+**Clue mix** (at `/clue-mix`, in the Games menu) asks each photo a different clue in turn: the side
+of the road (← and → or a tap), then the climate (1 to 5), then the continent (1 to 7), round and
+round until your first miss. Each step's answer is drawn by a fair die over that clue's answers, as
+in the single-clue games, and a photo is dealt once a run, so always giving one answer is a guess
+on every step. Atlas plays along with the same reads it is scored on elsewhere (its road and
+climate clues, and the continent of the country it gave most) and sits out a step it said nothing
+about. Your longest run is kept in your browser.
 **Today** (at `/today`, in the Games menu and on the results screen) puts every daily game on one
 page: the Daily Five, Further North, Odd one out, Which way?, How far apart?, Name the country,
 Hot and cold, Line them up, Close-up, Left or right? and Which climate?, each with where it stands in your browser (not started, under way or its result), the time to the next deal, and one

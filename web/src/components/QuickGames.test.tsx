@@ -69,6 +69,7 @@ describe("QuickGames", () => {
       "href",
       "/which-climate",
     );
+    expect(screen.getByRole("link", { name: /^Clue mix/ })).toHaveAttribute("href", "/clue-mix");
     fireEvent.click(screen.getByRole("button", { name: /^Blitz/ }));
     expect(onPlayBlitz).toHaveBeenCalledOnce();
   });

@@ -7,6 +7,7 @@
 import atlasData from "@/data/atlas.json";
 import catalog from "@/data/photos.json";
 
+import { continentMap } from "./clueMix";
 import { buildDeck, gameRecords } from "./deck";
 import { nameIds } from "./nameCountry";
 import type { AtlasData, CatalogPhoto } from "./types";
@@ -40,3 +41,9 @@ export const bundledDrivingSides: Record<string, "left" | "right"> = Object.from
  * game across the five groups without fetching every record (`whichClimate.ts`).
  */
 export const bundledClimateGroups = climateMap(bundledRecords.map((r) => r.photo));
+
+/**
+ * Each playable photo's continent, from its catalog country: with the driving sides and climate
+ * groups above, what Clue mix needs to deal every clue evenly in the browser (`clueMix.ts`).
+ */
+export const bundledContinents = continentMap(bundledRecords.map((r) => r.photo));

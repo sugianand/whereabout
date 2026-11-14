@@ -5,7 +5,7 @@
  * Nothing new is stored here. Each mode keeps its own best under its own key (blitz.ts,
  * streak.ts, survival.ts, furtherNorth.ts, oddOneOut.ts, howFar.ts, whichWay.ts, hotCold.ts,
  * nameCountry.ts, lineUp.ts, closeUp.ts, leftRight.ts,
- * whichClimate.ts); this only reads them back through the
+ * whichClimate.ts, clueMix.ts); this only reads them back through the
  * same loaders, so a value a mode would refuse (a negative streak, junk JSON) is refused here too.
  */
 
@@ -19,6 +19,7 @@ import { loadBestHowFar } from "./howFar";
 import { loadBestLeftRight } from "./leftRight";
 import { ROW, ROWS, loadBestLine } from "./lineUp";
 import { CLOSE_MAX, loadBestClose } from "./closeUp";
+import { loadBestClueMix } from "./clueMix";
 import { loadBestName } from "./nameCountry";
 import { loadBestOdd } from "./oddOneOut";
 import { regionSlug } from "./regions";
@@ -42,6 +43,7 @@ export const QUICK_MODES = [
   "close-up",
   "left-right",
   "which-climate",
+  "clue-mix",
 ] as const;
 
 export type QuickMode = (typeof QUICK_MODES)[number];
@@ -79,6 +81,8 @@ export interface QuickBests {
   "left-right": number | null;
   /** The most photos named right in a whole game. */
   "which-climate": number | null;
+  /** The longest run of clues read right. */
+  "clue-mix": number | null;
 }
 
 export const NO_BESTS: QuickBests = {
@@ -95,6 +99,7 @@ export const NO_BESTS: QuickBests = {
   "close-up": null,
   "left-right": null,
   "which-climate": null,
+  "clue-mix": null,
 };
 
 /**
@@ -131,6 +136,7 @@ export function loadQuickBests(): QuickBests {
     "close-up": positive(loadBestClose()),
     "left-right": positive(loadBestLeftRight()),
     "which-climate": positive(loadBestClimate()),
+    "clue-mix": positive(loadBestClueMix()),
   };
 }
 
@@ -172,7 +178,8 @@ export function bestLine(mode: QuickMode, bests: QuickBests): string | null {
     case "odd-one-out":
     case "which-way":
     case "name-country":
-    case "left-right": {
+    case "left-right":
+    case "clue-mix": {
       const n = bests[mode];
       return n === null ? null : `Best: ${inARow(n)}`;
     }

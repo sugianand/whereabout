@@ -98,6 +98,11 @@ const BLURBS: Record<QuickMode, { name: string; blurb: string }> = {
     blurb:
       "One photo and the five Köppen climates: tropical, arid, temperate, continental or polar? Five photos against Atlas's read of the climate.",
   },
+  "clue-mix": {
+    name: "Clue mix",
+    blurb:
+      "Each photo asks a different clue in turn: the side of the road, the climate, then the continent. Read them right until your first miss, against Atlas's reads.",
+  },
 };
 
 const CARD =
@@ -224,6 +229,7 @@ export default function QuickGames({
           "close-up",
           "left-right",
           "which-climate",
+          "clue-mix",
         ] as const
       ).map((mode) => (
         <li key={mode}>{card(mode, `/${mode}`)}</li>

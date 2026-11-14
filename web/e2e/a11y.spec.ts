@@ -63,6 +63,7 @@ const FIRST_SCREENS = [
   "./which-climate",
   "./which-climate/daily",
   "./which-climate/mix-ups",
+  "./clue-mix",
   "./pass-and-play",
   "./today",
   "./map",
@@ -136,6 +137,7 @@ for (const colorScheme of ["dark", "light"] as const) {
       ["close-up", "1"],
       ["left-right", "ArrowLeft"],
       ["which-climate", "1"],
+      ["clue-mix", "ArrowLeft"],
     ] as const;
 
     for (const [path, key] of KEYED) {

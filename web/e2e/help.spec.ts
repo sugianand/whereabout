@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+import { continentOf } from "../src/lib/continents";
 import { CONTROLS, type HelpScreen } from "../src/lib/controls";
 
 const PHOTO = readFileSync(resolve(process.cwd(), "e2e/fixtures/photo.png"));
@@ -294,6 +295,65 @@ test.describe("on a keyboard", () => {
     }
   });
 
+  test("? lists Clue mix's controls, and every one of its keys works", async ({ page }) => {
+    test.setTimeout(120_000);
+    const catalog: { id: string; country: string; drivingSide?: string; climateGroup?: string }[] =
+      JSON.parse(readFileSync(resolve(process.cwd(), "src/data/photos.json"), "utf8"));
+    const byId = new Map(catalog.map((p) => [p.id, p]));
+    const photo = page.getByTestId("clue-photo");
+    const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
+    /** Play right answers by click until the photo on screen asks `clue`. */
+    async function reach(clue: "road" | "climate" | "continent") {
+      for (;;) {
+        await expect(photo).toHaveAttribute("data-photo", /.+/);
+        await expect(page.getByRole("group").getByRole("button").first()).toBeEnabled();
+        const asked = await photo.getAttribute("data-clue");
+        if (asked === clue) return;
+        const p = byId.get((await photo.getAttribute("data-photo"))!)!;
+        const truth =
+          asked === "road"
+            ? p.drivingSide
+            : asked === "climate"
+              ? p.climateGroup
+              : continentOf(p.country);
+        await page.getByTestId(`clue-${truth}`).click();
+        await card.getByRole("button", { name: "Next photo" }).click();
+        await expect(card).toBeHidden();
+      }
+    }
+
+    await page.goto("./clue-mix");
+    await expect(page.getByRole("button", { name: "Left: they drive on the left" })).toBeEnabled();
+    const sheet = await openWithKey(page, "Controls for Clue mix");
+    await expectSheetLists(sheet, "clue-mix", false);
+    // An arrow pressed in the sheet doesn't make a call behind it.
+    await page.keyboard.press("ArrowLeft");
+    await page.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+    await expect(card).toBeHidden();
+
+    // Each arrow calls the road; Enter moves on from the answer, or deals a new run after a miss.
+    for (const pick of keysOf("clue-mix", "pick-road")) {
+      await reach("road");
+      await page.keyboard.press(pick);
+      await expect(card).toBeVisible();
+      await expect(
+        card.getByRole("button", { name: /^(Next photo|Start a new run)$/ }),
+      ).toBeFocused();
+      await page.keyboard.press(keysOf("clue-mix", "next")[0]);
+      await expect(card).toBeHidden();
+    }
+    // 1 to 5 name a climate; 6 and 7 the continents past the fifth.
+    for (const pick of keysOf("clue-mix", "pick")) {
+      await reach(Number(pick) <= 5 ? "climate" : "continent");
+      await expect(page.locator(`[aria-keyshortcuts="${pick}"]`)).toBeEnabled();
+      await page.keyboard.press(pick);
+      await expect(card).toBeVisible();
+      await page.keyboard.press(keysOf("clue-mix", "next")[0]);
+      await expect(card).toBeHidden();
+    }
+  });
+
   test("? lists Line them up's controls, and every one of its keys works", async ({ page }) => {
     await page.goto("./line-up");
     const lock = page.getByRole("button", { name: "Lock it in" });
@@ -422,6 +482,7 @@ test.describe("on a touch screen", () => {
     ["how-far", "./how-far", "Controls for How far apart?"],
     ["which-way", "./which-way", "Controls for Which way?"],
     ["which-climate", "./which-climate", "Controls for Which climate?"],
+    ["clue-mix", "./clue-mix", "Controls for Clue mix"],
   ] as const) {
     test(`the help button lists ${screen}'s gestures on screen`, async ({ page }) => {
       await page.goto(path);
