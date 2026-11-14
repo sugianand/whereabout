@@ -6,6 +6,7 @@ import { BEST_CLUE_MIX_KEY, clueAnswers, dealClueMix, type ClueMaps } from "@/li
 import type { GameRecord } from "@/lib/game/deck";
 import type { CatalogPhoto } from "@/lib/game/types";
 import type { ClimateGroup } from "@/lib/trueClues";
+import { stubCanvas } from "@/test/canvas";
 import { gameFor } from "@/test/deck";
 
 import ClueMix from "./ClueMix";
@@ -272,5 +273,166 @@ describe("today's Clue mix", () => {
     daily();
     expect(await screen.findByRole("heading", { name: "You read every clue" })).toBeInTheDocument();
     expect(screen.getByText(/Atlas got 3 of the 5 clues it called\./)).toBeInTheDocument();
+  });
+});
+
+describe("a friend's Clue mix challenge", () => {
+  // The friend read f1's road (right) and e1's climate (arid), then put j1 in Europe: it's Asia.
+  const FRIEND = "f1.e1.j1_5_2_eu";
+  const shown = () => photo().getAttribute("data-photo")!;
+  const clueShown = () => photo().getAttribute("data-clue")!;
+  const truth = () => {
+    const id = shown();
+    const clue = clueShown();
+    return clue === "road"
+      ? MAPS.sides[id]
+      : clue === "climate"
+        ? MAPS.climates[id]
+        : MAPS.continents[id];
+  };
+
+  afterEach(() => window.history.replaceState(null, "", "/"));
+
+  function clipboard() {
+    const box = { sent: "" };
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: async (t: string) => void (box.sent = t) },
+      configurable: true,
+    });
+    return box;
+  }
+
+  async function linked(value: string) {
+    window.history.replaceState(null, "", `/clue-mix?challenge=${value}&x=1`);
+    const game = gameFor(RECORDS);
+    render(
+      <ClueMix deck={game.deck} maps={MAPS} loadRecords={game.loadRecords} random={() => 0} />,
+    );
+    await waitFor(() => expect(photo()).toHaveAttribute("data-photo"));
+  }
+
+  async function callRight() {
+    await waitFor(() => expect(screen.getByTestId(`clue-${truth()}`)).toBeEnabled());
+    fireEvent.click(screen.getByTestId(`clue-${truth()}`));
+    return screen.findByRole("region");
+  }
+
+  async function next(card: HTMLElement) {
+    const before = shown();
+    fireEvent.click(within(card).getByRole("button", { name: "Next photo" }));
+    await waitFor(() => expect(shown()).not.toBe(before));
+  }
+
+  it("deals the friend's steps, shows the answer that ended their run, plays on, and answers", async () => {
+    await linked(FRIEND);
+    expect(screen.getByText("A friend's challenge: 2 clues in a row to beat")).toBeVisible();
+    const run = [shown()];
+    expect([run[0], clueShown()]).toEqual(["f1", "road"]);
+    let card = await callRight();
+    expect(card).not.toHaveTextContent("Your friend's run ended here");
+    await next(card);
+    run.push(shown());
+    expect(clueShown()).toBe("climate");
+    card = await callRight();
+    await next(card);
+
+    // The step that ended the friend's run: nothing of their answer shows until the call is in.
+    run.push(shown());
+    expect(run).toEqual(["f1", "e1", "j1"]);
+    expect(clueShown()).toBe("continent");
+    expect(screen.queryByText(/Your friend's run ended here/)).toBeNull();
+    card = await callRight();
+    expect(card).toHaveTextContent("That beats your friend's 2 in a row!");
+    expect(card).toHaveTextContent("Your friend's run ended here: they said Europe.");
+
+    // Past the friend's steps, the cycle goes on with photos not yet shown: miss the road.
+    await next(card);
+    run.push(shown());
+    expect(clueShown()).toBe("road");
+    expect(run.slice(0, 3)).not.toContain(run[3]);
+    const wrong = truth() === "left" ? "right" : "left";
+    await waitFor(() => expect(screen.getByTestId(`clue-${wrong}`)).toBeEnabled());
+    fireEvent.click(screen.getByTestId(`clue-${wrong}`));
+    card = await screen.findByRole("region");
+    expect(card).toHaveTextContent(
+      "Run over: 3 clues in a row. You beat your friend's 2 in a row by 1.",
+    );
+    expect(card).not.toHaveTextContent("Your friend's run ended here");
+    // A challenge's photos may have been seen, so it is played for the friend only.
+    expect(localStorage.getItem(BEST_CLUE_MIX_KEY)).toBeNull();
+
+    const box = clipboard();
+    fireEvent.click(within(card).getByRole("button", { name: "Send yours back" }));
+    await waitFor(() =>
+      expect(
+        screen.getByText(
+          "Challenge link copied. Whoever opens it plays these photos, asking the same clues.",
+        ),
+      ).toBeInTheDocument(),
+    );
+    expect(box.sent.split("\n")).toEqual([
+      "Whereabout · Clue mix: I read 3 clues in a row.",
+      "That beats your 2. Your turn to read the clues.",
+      `http://localhost:3000/clue-mix?challenge=${run.join(".")}_5_3_${wrong[0]}`,
+    ]);
+
+    // The head to head is drawn clue by clue, with no photo in it.
+    const drawn = stubCanvas();
+    fireEvent.click(within(card).getByRole("button", { name: "Share head to head" }));
+    expect(
+      await screen.findByText("Head to head saved. Post it with the link, which is copied too."),
+    ).toBeInTheDocument();
+    expect(drawn.saved).toEqual(["whereabout-clue-mix-head-to-head.png"]);
+    expect(drawn.words).toEqual(
+      expect.arrayContaining(["Clue mix: head to head", "You won", "Clue 1", "Clue 4"]),
+    );
+    const all = drawn.words.join("\n");
+    for (const id of run) expect(all).not.toContain(id);
+    expect(all).not.toMatch(/Europe|Asia/);
+    drawn.restore();
+
+    // A fresh run leaves the link behind.
+    fireEvent.click(within(card).getByRole("button", { name: "Play a fresh run" }));
+    await waitFor(() => expect(screen.getByText("Clue mix: a new clue each photo.")).toBeVisible());
+    expect(window.location.search).toBe("?x=1");
+  });
+
+  it("says when a link is cut short or its photos have gone, and deals a fresh run", async () => {
+    // The friend's "miss" on j1 named its own continent: no miss at all.
+    await linked("f1.e1.j1_5_2_as");
+    expect(screen.getByText(/That challenge link was cut short/)).toBeVisible();
+    expect(screen.getByText("Clue mix: a new clue each photo.")).toBeVisible();
+    expect(photo()).toHaveAttribute("data-photo", ORDER[0].id);
+    expect(window.location.search).toBe("?x=1");
+    cleanup();
+    await linked("f1.gone_5_1_A");
+    expect(screen.getByText(/That challenge's photos aren't in the game any more/)).toBeVisible();
+  });
+
+  it("offers a challenge from the end of a free run, with the answer that ended it", async () => {
+    await setup();
+    const wrong = truthOf(0) === "left" ? "right" : "left";
+    fireEvent.click(screen.getByTestId(`clue-${wrong}`));
+    const card = await screen.findByRole("region");
+    expect(within(card).queryByRole("button", { name: "Share head to head" })).toBeNull();
+    const box = clipboard();
+    fireEvent.click(within(card).getByRole("button", { name: "Challenge a friend" }));
+    await waitFor(() => expect(box.sent).not.toBe(""));
+    expect(box.sent.split("\n")).toEqual([
+      "Whereabout · Clue mix: I read 0 clues in a row.",
+      "Same photos, same clues: the road, the climate, the continent, in turn.",
+      `http://localhost:3000/?challenge=${ORDER[0].id}_0_0_${wrong[0]}`,
+    ]);
+  });
+
+  it("never offers a challenge from today's run", async () => {
+    const game = gameFor(RECORDS);
+    const now = () => new Date("2026-11-15T12:00:00Z");
+    render(<ClueMix deck={game.deck} maps={MAPS} loadRecords={game.loadRecords} daily now={now} />);
+    await waitFor(() => expect(screen.getByTestId("clue-left")).toBeEnabled());
+    fireEvent.click(screen.getByTestId(`clue-${truth() === "left" ? "right" : "left"}`));
+    await screen.findByRole("region");
+    expect(screen.queryByRole("button", { name: "Challenge a friend" })).toBeNull();
   });
 });

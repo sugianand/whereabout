@@ -222,3 +222,145 @@ test("today's Clue mix deals the day's steps once, resumes after a reload, and s
   );
   expect(errors).toEqual([]);
 });
+
+test("a challenge link deals a friend the same steps, with the run to beat and the answer that ended it", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
+  const sent = () => page.evaluate(() => (window as unknown as { sent: string }).sent);
+  const shownId = () => page.getByTestId("clue-photo").getAttribute("data-photo");
+
+  // The sender reads the road and the climate, then names the wrong continent.
+  await page.goto("./clue-mix");
+  const run: string[] = [];
+  let said = "";
+  for (let i = 0; i < 3; i++) {
+    const { truth } = await stepOnScreen(page);
+    run.push((await shownId())!);
+    await expect(page.getByTestId(`clue-${truth}`)).toBeEnabled();
+    if (i < 2) {
+      await page.getByTestId(`clue-${truth}`).click();
+      await card.getByRole("button", { name: "Next photo" }).click();
+    } else {
+      const wrong = page
+        .getByRole("group")
+        .getByRole("button")
+        .and(page.locator(`:not([data-testid="clue-${truth}"])`))
+        .first();
+      said = (await wrong.innerText()).trim();
+      await wrong.click();
+    }
+  }
+  await expect(card).toContainText("Run over: 2 clues in a row.");
+  const challengeButton = card.getByRole("button", { name: "Challenge a friend" });
+  await expect(challengeButton).toBeInViewport();
+  await challengeButton.click();
+  await expect(page.getByText(/^Challenge (sent|link copied)/)).toBeVisible();
+  const message = await sent();
+  expect(message).toContain("I read 2 clues in a row.");
+  expect(message).not.toContain(said);
+  const link = message.split("\n").at(-1)!;
+  expect(link).toMatch(
+    new RegExp(`/whereabout/clue-mix/?\\?challenge=${run.join("\\.")}_[0-9a-z]+_2_[a-z]{2}$`),
+  );
+
+  // The friend, with nothing kept, gets the same steps and reads them all right.
+  await page.evaluate(() => localStorage.clear());
+  await page.goto(link);
+  await expect(page.getByText("A friend's challenge: 2 clues in a row to beat")).toBeVisible();
+  for (let i = 0; i < run.length; i++) {
+    await expect(page.getByTestId("clue-photo")).toHaveAttribute("data-photo", run[i]);
+    const { clue, truth } = await stepOnScreen(page);
+    expect(clue).toBe(["road", "climate", "continent"][i]);
+    await expect(page.getByText(/Your friend's run ended here/)).toHaveCount(0);
+    await expect(page.getByTestId(`clue-${truth}`)).toBeEnabled();
+    await page.getByTestId(`clue-${truth}`).click();
+    if (i === 2) {
+      await expect(card).toContainText("That beats your friend's 2 in a row!");
+      await expect(card).toContainText(`Your friend's run ended here: they said ${said}.`);
+    } else {
+      await expect(card).not.toContainText("Your friend's run ended here");
+    }
+    await card.getByRole("button", { name: "Next photo" }).click();
+  }
+
+  // Past the friend's steps, the road again on a new photo; miss it.
+  const { clue, truth } = await stepOnScreen(page);
+  expect(clue).toBe("road");
+  expect(run).not.toContain(await shownId());
+  await expect(page.getByTestId(`clue-${truth}`)).toBeEnabled();
+  await page.getByTestId(`clue-${truth === "left" ? "right" : "left"}`).click();
+  await expect(card).toContainText(
+    "Run over: 3 clues in a row. You beat your friend's 2 in a row by 1.",
+  );
+  const { width, height } = page.viewportSize()!;
+  const box = (await card.boundingBox())!;
+  expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
+  expect(box.y + box.height).toBeLessThanOrEqual(height + 1);
+  expect(await page.evaluate(() => localStorage.getItem("whereabout:clue-mix-best"))).toBe(null);
+
+  const back = card.getByRole("button", { name: "Send yours back" });
+  await expect(back).toBeInViewport();
+  await back.click();
+  await expect(page.getByText(/^Challenge (sent|link copied)/)).toBeVisible();
+  const reply = await sent();
+  expect(reply).toContain("That beats your 2. Your turn to read the clues.");
+  expect(reply).toMatch(/_3_[lr]$/);
+
+  // Head to head: both runs drawn as a 1080px picture, saved, with the reply link copied.
+  await page.evaluate(() => ((window as unknown as { sent: string }).sent = ""));
+  const picture = card.getByRole("button", { name: "Share head to head" });
+  await expect(picture).toBeInViewport({ ratio: 1 });
+  const [download] = await Promise.all([page.waitForEvent("download"), picture.click()]);
+  expect(download.suggestedFilename()).toBe("whereabout-clue-mix-head-to-head.png");
+  const png = readFileSync((await download.path())!);
+  expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1080, 1080]);
+  expect(await sent()).toBe(reply);
+  const kept = await page.evaluate(() => localStorage.getItem("whereabout:head-to-head"));
+  expect(JSON.parse(kept!)).toEqual([
+    expect.objectContaining({ game: "Clue mix", outcome: "won", you: "3 in a row" }),
+  ]);
+
+  // A fresh run drops the link, so a reload doesn't deal the challenge again.
+  await card.getByRole("button", { name: "Play a fresh run" }).click();
+  await expect(page.getByText("Clue mix: a new clue each photo.")).toBeVisible();
+  expect(new URL(page.url()).search).toBe("");
+  expect(errors).toEqual([]);
+});
+
+test("a broken Clue mix challenge says so and deals a fresh run", async ({ page }) => {
+  await page.goto("./clue-mix?challenge=wm001_3_9");
+  await expect(page.getByText(/That challenge link was cut short/)).toBeVisible();
+  await expect(page.getByText("Clue mix: a new clue each photo.")).toBeVisible();
+  await expect(page.getByTestId("clue-left")).toBeEnabled();
+});
+
+test("the end of a Clue mix run keeps both its buttons on a 320px phone", async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 1000) >= 768, "a phone layout check");
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto("./clue-mix");
+  const { truth } = await stepOnScreen(page);
+  await expect(page.getByTestId(`clue-${truth}`)).toBeEnabled();
+  await page.getByTestId(`clue-${truth === "left" ? "right" : "left"}`).click();
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
+  for (const name of ["Start a new run", "Challenge a friend"]) {
+    await expect(card.getByRole("button", { name })).toBeInViewport({ ratio: 1 });
+  }
+  const scroll = await page.evaluate(() => [
+    document.documentElement.scrollWidth,
+    window.innerWidth,
+  ]);
+  expect(scroll[0]).toBeLessThanOrEqual(scroll[1]);
+});

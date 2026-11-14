@@ -168,6 +168,12 @@ about. Your longest run is kept in your browser.
 day with the same even deal, one try a day, picked up after a reload at the next clue, and shared
 as counts only: the run's squares three to a row under the road, climate and continent marks, so
 a friend sees which clue ended it without seeing a photo.
+**Challenge a friend** from the end of a free run: the link deals them the same photos asking the
+same clues in the same order, with your run to beat. When your run ended on a miss, the link
+carries the answer you gave there as one short code (`l`/`r`, a Köppen letter, or two letters for
+a continent), and the friend sees it only once they have called that step. A friend who gets past
+it plays on through the photos left, dealt from the same seed with the cycle picking up where your
+steps stopped, and can send theirs back with the head-to-head picture.
 **Today** (at `/today`, in the Games menu and on the results screen) puts every daily game on one
 page: the Daily Five, Further North, Odd one out, Which way?, How far apart?, Name the country,
 Hot and cold, Line them up, Close-up, Left or right?, Which climate? and Clue mix, each with where it stands in your browser (not started, under way or its result), the time to the next deal, and one

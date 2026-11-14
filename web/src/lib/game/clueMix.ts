@@ -85,8 +85,17 @@ export function clueTruth(clue: ClueKind, id: string, maps: ClueMaps): string | 
  * The run for `seed`: a step per photo, the clue fixed by `CLUE_CYCLE`, the answer by a fair die
  * over the answers with unused photos, then the next unused photo from that answer's shuffled
  * pile. Ends before the first step whose clue has fewer than two answers left. Pure in the seed.
+ *
+ * `after` deals the rest of a run that has already shown some photos (a friend's challenge): its
+ * `ids` are never dealt again and the cycle picks up at the step after them, so the first step
+ * dealt asks the clue the run's next place in the cycle asks. Without it, the deal is the same as
+ * it always was for a seed.
  */
-export function dealClueMix(maps: ClueMaps, seed: number): ClueStep[] {
+export function dealClueMix(
+  maps: ClueMaps,
+  seed: number,
+  after: readonly string[] = [],
+): ClueStep[] {
   // Each clue's piles, one per answer in button order, each with a read head into it.
   const piles = new Map<ClueKind, { ids: string[]; head: number }[]>();
   CLUE_CYCLE.forEach((clue, c) => {
@@ -102,11 +111,11 @@ export function dealClueMix(maps: ClueMaps, seed: number): ClueStep[] {
       })),
     );
   });
-  const used = new Set<string>();
+  const used = new Set<string>(after);
   const die = mulberry32((seed ^ 0x27d4eb2f) >>> 0);
   const out: ClueStep[] = [];
   for (;;) {
-    const clue = CLUE_CYCLE[out.length % CLUE_CYCLE.length];
+    const clue = CLUE_CYCLE[(after.length + out.length) % CLUE_CYCLE.length];
     // Skip photos another clue has already dealt, so each pile's head is a fresh photo.
     const open = piles.get(clue)!.filter((pile) => {
       while (pile.head < pile.ids.length && used.has(pile.ids[pile.head])) pile.head++;
