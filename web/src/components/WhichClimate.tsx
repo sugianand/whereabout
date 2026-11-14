@@ -5,6 +5,17 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "r
 
 import { isShortcut } from "@/lib/controls";
 import {
+  CLIMATE_CHALLENGE_PARAM,
+  climateChallengeLine,
+  climateChallengeScore,
+  climateChallengeText,
+  climateHeadToHead,
+  friendCall,
+  friendRight,
+  parseClimateChallenge,
+  type ClimateChallenge,
+} from "@/lib/game/climateChallenge";
+import {
   climateDailyShare,
   dailyClimateOrder,
   loadClimateDay,
@@ -30,11 +41,13 @@ import {
   type ClimateResult,
 } from "@/lib/game/whichClimate";
 import { placeholderUrl, sources } from "@/lib/photoSources";
+import { sendShare, type ShareOutcome } from "@/lib/share";
 import { CLIMATE_GROUPS, atlasClimateGroup, type ClimateGroup } from "@/lib/trueClues";
 
 import ControlsHelp from "./ControlsHelp";
 import { DailyRunResult } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
+import { HeadToHeadButton } from "./HeadToHeadButton";
 
 type WhichClimateProps = {
   deck: Deck;
@@ -58,6 +71,27 @@ const KEY_GROUP: Record<string, ClimateGroup> = Object.fromEntries(
   CLIMATE_GROUPS.map((group, i) => [String(i + 1), group]),
 );
 
+/** Why a challenge link was set aside for a fresh game. */
+export const CLIMATE_CHALLENGE_NOTICE = {
+  malformed: "That challenge link was cut short, so here's a fresh game instead.",
+  missing: "That challenge's photos aren't in the game any more, so here's a fresh game instead.",
+} as const;
+
+/** Take the challenge out of the address, so a reload deals a fresh game, not the old link. */
+function dropChallengeParam() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has(CLIMATE_CHALLENGE_PARAM)) return;
+  url.searchParams.delete(CLIMATE_CHALLENGE_PARAM);
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+const CHALLENGE_NOTE: Record<ShareOutcome, string> = {
+  shared: "Challenge sent.",
+  copied: "Challenge link copied. Whoever opens it plays these five photos, in the same order.",
+  cancelled: "",
+  failed: "Couldn't copy the link. Your browser blocked the clipboard.",
+};
+
 /**
  * Which climate? (src/lib/game/whichClimate.ts): one photo and the five Köppen groups. Name the
  * climate the place sits in by tapping a group or pressing 1 to 5; the answer shows the place on
@@ -78,32 +112,52 @@ export default function WhichClimate({
   const [error, setError] = useState<string | null>(null);
   // Today's game: the day it was dealt for, kept when the clock passes midnight mid-game.
   const [day, setDay] = useState<string | null>(null);
+  // A friend's challenge this game answers (src/lib/game/climateChallenge.ts): their five photos
+  // and their call on each, shown once you have made yours.
+  const [challenge, setChallenge] = useState<ClimateChallenge | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  const start = useCallback(() => {
-    if (daily) {
-      const today = runToday(now?.());
-      const kept = loadClimateDay(today)?.results ?? [];
-      setDay(today);
-      // The calls kept come first. With the same photos they are the day's deal anyway; a day
-      // kept from an earlier deal (the catalog changed since) still reads back as it was played.
-      const played = kept.map((r) => r.id);
-      const order = [
-        ...played,
-        ...dailyClimateOrder(groups, today).filter((id) => !played.includes(id)),
-      ].slice(0, Math.max(CLIMATE_PHOTOS, played.length));
-      dispatch({ type: "start", order, from: kept });
-      return;
-    }
-    const stored = loadBestClimate();
-    setBest(stored);
-    setBestBeforeGame(stored);
-    const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
-    dispatch({ type: "start", order: dealClimate(groups, seed) });
-  }, [groups, random, daily, now]);
+  /** Deal a game; `fromLink` takes up a challenge the address carries, as the page opens. */
+  const start = useCallback(
+    (fromLink = false) => {
+      if (daily) {
+        const today = runToday(now?.());
+        const kept = loadClimateDay(today)?.results ?? [];
+        setDay(today);
+        // The calls kept come first. With the same photos they are the day's deal anyway; a day
+        // kept from an earlier deal (the catalog changed since) still reads back as it was played.
+        const played = kept.map((r) => r.id);
+        const order = [
+          ...played,
+          ...dailyClimateOrder(groups, today).filter((id) => !played.includes(id)),
+        ].slice(0, Math.max(CLIMATE_PHOTOS, played.length));
+        dispatch({ type: "start", order, from: kept });
+        return;
+      }
+      const stored = loadBestClimate();
+      setBest(stored);
+      setBestBeforeGame(stored);
+      const value = fromLink
+        ? new URLSearchParams(window.location.search).get(CLIMATE_CHALLENGE_PARAM)
+        : null;
+      const linked = value === null ? null : parseClimateChallenge(value, groups);
+      setNotice(linked && !linked.ok ? CLIMATE_CHALLENGE_NOTICE[linked.reason] : null);
+      if (linked?.ok) {
+        setChallenge(linked.challenge);
+        dispatch({ type: "start", order: linked.challenge.ids });
+        return;
+      }
+      setChallenge(null);
+      dropChallengeParam();
+      const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
+      dispatch({ type: "start", order: dealClimate(groups, seed) });
+    },
+    [groups, random, daily, now],
+  );
 
   // The game is dealt in the browser after hydration, never at build time.
   useEffect(() => {
-    const id = requestAnimationFrame(() => start());
+    const id = requestAnimationFrame(() => start(true));
     return () => cancelAnimationFrame(id);
   }, [start]);
 
@@ -176,14 +230,15 @@ export default function WhichClimate({
           correct: call.correct,
           atlas: call.atlas === null ? null : call.atlas === call.truth,
         });
-        // Only a whole game counts as a best.
-        if (after.results.length === after.order.length) {
+        // Only a whole game counts as a best, and never a friend's challenge: its photos may
+        // have been seen before, so it is played for the friend only.
+        if (after.results.length === after.order.length && !challenge) {
           setBest(rememberClimate(climateTotals(after.results).right));
         }
       }
       dispatch(action);
     },
-    [state, record, groups, day],
+    [state, record, groups, day, challenge],
   );
 
   // 1 to 5 make the call from the keyboard.
@@ -209,8 +264,10 @@ export default function WhichClimate({
         results={state.results}
         records={records}
         best={best}
-        newBest={climateTotals(state.results).right > bestBeforeGame}
-        onAgain={start}
+        newBest={!challenge && climateTotals(state.results).right > bestBeforeGame}
+        groups={groups}
+        challenge={challenge}
+        onAgain={() => start()}
       />
     );
   }
@@ -238,7 +295,9 @@ export default function WhichClimate({
           <p className="mt-1 text-sm text-chalk-dim">
             {day
               ? `Which climate?, today's game (${day}).`
-              : "Which climate? Name the Köppen group."}
+              : challenge
+                ? `A friend's challenge: ${climateChallengeScore(challenge, groups)} of ${CLIMATE_PHOTOS} to beat.`
+                : "Which climate? Name the Köppen group."}
           </p>
           <Link
             href={daily ? "/which-climate" : "/which-climate/daily"}
@@ -296,6 +355,12 @@ export default function WhichClimate({
         </div>
       )}
 
+      {notice && state.phase === "picking" && results.length === 0 && (
+        <p role="status" className="px-4 pb-2 text-center text-sm text-chalk-dim">
+          {notice}
+        </p>
+      )}
+
       {error && (
         <p role="alert" className="absolute inset-x-4 bottom-4 text-center text-sm text-flare">
           {error}
@@ -310,6 +375,14 @@ export default function WhichClimate({
             place={record.photo.place}
             lat={record.photo.lat}
             atlasTally={[totals.atlasRight, results.length]}
+            friend={
+              challenge
+                ? {
+                    call: friendCall(challenge, results.length - 1),
+                    right: results.filter((_, i) => friendRight(challenge, i, groups)).length,
+                  }
+                : null
+            }
             onNext={() => dispatch({ type: "next" })}
             nextLabel={last ? (day ? "See today's result" : "See the results") : "Next photo"}
           />
@@ -380,7 +453,14 @@ const BAND_WORD: Record<ClimateGroup, string> = {
  * The five groups in a row, the place's own lit: where it sits among them, with the player's
  * call and Atlas's marked under theirs in words, so it reads without colour.
  */
-export function ClimateBand({ result }: { result: ClimateResult }) {
+export function ClimateBand({
+  result,
+  friend = null,
+}: {
+  result: ClimateResult;
+  /** On a friend's challenge: the call they made on this photo. */
+  friend?: ClimateGroup | null;
+}) {
   return (
     <ol
       aria-label="The five climate groups"
@@ -392,6 +472,7 @@ export function ClimateBand({ result }: { result: ClimateResult }) {
         const marks = [
           result.picked === group ? "You" : null,
           result.atlas === group ? "Atlas" : null,
+          friend === group ? "Friend" : null,
         ].filter((m): m is string => m !== null);
         return (
           <li
@@ -425,6 +506,7 @@ function ClimateCard({
   place,
   lat,
   atlasTally,
+  friend,
   onNext,
   nextLabel,
 }: {
@@ -432,6 +514,8 @@ function ClimateCard({
   place: string;
   lat: number;
   atlasTally: readonly [number, number];
+  /** On a friend's challenge: their call on this photo and their score so far. */
+  friend: { call: ClimateGroup | null; right: number } | null;
   onNext: () => void;
   nextLabel: string;
 }) {
@@ -453,10 +537,15 @@ function ClimateCard({
       </h2>
       <p className="mt-1 text-chalk">{climateTruthLine(result.truth)}</p>
       <p className="text-sm text-chalk-dim">{`${place} · ${latitudeLabel(lat)}`}</p>
-      <ClimateBand result={result} />
+      <ClimateBand result={result} friend={friend?.call ?? null} />
       <p className="mt-2 text-sm text-chalk-dim">
         {`${climateAtlasLine(result.atlas, result.truth)} Atlas this game: ${atlasRight} of ${played}.`}
       </p>
+      {friend?.call && (
+        <p className="text-sm text-chalk-dim" data-testid="climate-friend">
+          {`Your friend called it ${friend.call.toLowerCase()}${friend.call === result.truth ? ", and got it." : ": wrong."} Your friend so far: ${friend.right} of ${played}.`}
+        </p>
+      )}
       <button
         ref={nextRef}
         type="button"
@@ -474,12 +563,17 @@ function ClimateSummary({
   records,
   best,
   newBest,
+  groups,
+  challenge,
   onAgain,
 }: {
   results: readonly ClimateResult[];
   records: ReadonlyMap<string, GameRecord>;
   best: number;
   newBest: boolean;
+  groups: ClimateMap;
+  /** The friend's challenge this game answered, if it was one. */
+  challenge: ClimateChallenge | null;
   onAgain: () => void;
 }) {
   const none = results.length === 0;
@@ -503,10 +597,16 @@ function ClimateSummary({
           <p className="mt-4 text-lg text-chalk">
             {`${climateVerdict(right, atlasRight)} Atlas read the climate on ${atlasRead} of the ${results.length} photos.`}
           </p>
-          <p className="mt-1 text-chalk-dim">
-            {newBest ? "That's your new best!" : `Your best is ${best} of ${CLIMATE_PHOTOS}.`}
-          </p>
-          <ClimateRows results={results} records={records} />
+          {challenge ? (
+            <p className="mt-1 text-chalk" data-testid="climate-challenge-line">
+              {climateChallengeLine(right, challenge, groups)}
+            </p>
+          ) : (
+            <p className="mt-1 text-chalk-dim">
+              {newBest ? "That's your new best!" : `Your best is ${best} of ${CLIMATE_PHOTOS}.`}
+            </p>
+          )}
+          <ClimateRows results={results} records={records} friend={challenge} />
         </>
       )}
       <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -517,8 +617,11 @@ function ClimateSummary({
             onClick={onAgain}
             className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
           >
-            Play again
+            {challenge ? "Play a fresh game" : "Play again"}
           </button>
+        )}
+        {!none && results.length === CLIMATE_PHOTOS && (
+          <ChallengeButton results={results} groups={groups} answering={challenge} />
         )}
         <Link href="/" className="text-chalk-dim underline underline-offset-2 hover:text-chalk">
           Back to the main game
@@ -532,9 +635,12 @@ function ClimateSummary({
 function ClimateRows({
   results,
   records,
+  friend = null,
 }: {
   results: readonly ClimateResult[];
   records: ReadonlyMap<string, GameRecord>;
+  /** On a friend's challenge: their calls, listed beside yours. */
+  friend?: ClimateChallenge | null;
 }) {
   return (
     <ol className="mt-6 space-y-2" aria-label="Your calls">
@@ -549,10 +655,57 @@ function ClimateRows({
           </span>
           <span className="block text-chalk-dim">
             {`${r.truth}. You: ${r.picked} ${r.correct ? "✓" : "✗"}. Atlas: ${r.atlas === null ? "no read" : `${r.atlas} ${r.atlas === r.truth ? "✓" : "✗"}`}`}
+            {friend?.calls[i] &&
+              `. Friend: ${friend.calls[i]} ${friend.calls[i] === r.truth ? "✓" : "✗"}`}
           </span>
         </li>
       ))}
     </ol>
+  );
+}
+
+/**
+ * Challenge a friend from a whole free game (src/lib/game/climateChallenge.ts): a link to the
+ * same five photos with your call on each. Answering a challenge, it sends one back, with the
+ * head-to-head picture beside it.
+ */
+function ChallengeButton({
+  results,
+  groups,
+  answering,
+}: {
+  results: readonly ClimateResult[];
+  groups: ClimateMap;
+  answering: ClimateChallenge | null;
+}) {
+  const [sent, setSent] = useState("");
+  const text = () =>
+    climateChallengeText(results, window.location.href, groups, answering ?? undefined);
+  async function send() {
+    setSent(CHALLENGE_NOTE[await sendShare(text(), navigator)]);
+  }
+  return (
+    <span className="flex min-w-0 flex-col">
+      <span className="flex flex-wrap gap-x-3 gap-y-2">
+        <button
+          type="button"
+          onClick={send}
+          className="rounded-full border-2 border-gold px-5 py-2.5 font-semibold text-gold transition hover:bg-gold/10"
+        >
+          {answering ? "Send yours back" : "Challenge a friend"}
+        </button>
+        {answering && (
+          <HeadToHeadButton
+            headToHead={climateHeadToHead(results, answering, groups, window.location.href)}
+            replyText={text}
+            onNote={setSent}
+          />
+        )}
+      </span>
+      <span role="status" className={sent ? "mt-1 text-xs text-chalk-dim" : "sr-only"}>
+        {sent}
+      </span>
+    </span>
   );
 }
 
