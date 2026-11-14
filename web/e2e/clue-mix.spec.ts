@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 import { continentOf } from "../src/lib/continents";
+import { TODAY_GAMES } from "../src/lib/game/today";
 
 const PHOTO = readFileSync(resolve(process.cwd(), "e2e/fixtures/photo.png"));
 const CATALOG: { id: string; country: string; drivingSide?: string; climateGroup?: string }[] =
@@ -132,4 +133,92 @@ test("a 320px phone fits every continent and the answer without scrolling sidewa
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
   const games = (await page.getByRole("button", { name: "Games" }).boundingBox())!;
   expect(games.x + games.width).toBeLessThanOrEqual(320);
+});
+
+test("today's Clue mix deals the day's steps once, resumes after a reload, and shares as counts", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const today = new Date().toISOString().slice(0, 10);
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
+  const streak = page
+    .getByText("Streak", { exact: true })
+    .locator("xpath=following-sibling::dd[1]");
+
+  // The free runs link to today's run.
+  await page.goto("./clue-mix");
+  await page.getByRole("link", { name: "Today's run" }).click();
+  await expect(page.getByText(`Clue mix, today's run (${today}).`)).toBeVisible();
+  await expect(page.getByText("Best", { exact: true })).toHaveCount(0);
+  const { width, height } = page.viewportSize()!;
+
+  // Everyone on one day gets the same photos: a fresh player (nothing kept) is dealt the same.
+  await stepOnScreen(page);
+  const first = await page.getByTestId("clue-photo").getAttribute("data-photo");
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await expect(page.getByTestId("clue-photo")).toHaveAttribute("data-photo", first!);
+
+  // Right on the road, a reload picks up at the climate with the streak so far.
+  const road = await stepOnScreen(page);
+  expect(road.clue).toBe("road");
+  await page.getByTestId(`clue-${road.truth}`).click();
+  await expect(card.getByRole("heading")).toHaveText("Correct");
+  await page.reload();
+  await expect(page.getByTestId("clue-photo")).toHaveAttribute("data-clue", "climate");
+  await expect(page.getByTestId("clue-photo")).not.toHaveAttribute("data-photo", first!);
+  await expect(streak).toHaveText("1");
+
+  // Then a wrong climate ends the day, with a share where a new run would be.
+  const { truth } = await stepOnScreen(page);
+  await page
+    .getByRole("group")
+    .getByRole("button")
+    .and(page.locator(`:not([data-testid="clue-${truth}"])`))
+    .first()
+    .click();
+  await expect(card.getByRole("heading")).toHaveText("Wrong");
+  await expect(card).toContainText("Today's run is over: 1 clue in a row, out on the climate.");
+  await expect(card.getByRole("button", { name: "Start a new run" })).toHaveCount(0);
+  await expect(card.getByRole("button", { name: "Share today's run" })).toBeVisible();
+  const box = (await card.boundingBox())!;
+  expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
+  expect(box.y + box.height).toBeLessThanOrEqual(height + 1);
+
+  // A reload shows the day's result, never the photos again.
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "1 clue in a row" })).toBeVisible();
+  await expect(page.getByText(/The next run is dealt in \d+/)).toBeVisible();
+  await expect(page.getByTestId("clue-photo")).toHaveCount(0);
+
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  await page.getByRole("button", { name: "Share today's run" }).click();
+  await expect(page.getByText("Result copied. Paste it anywhere.")).toBeVisible();
+  const sent = await page.evaluate(() => (window as unknown as { sent: string }).sent);
+  expect(sent).toContain(
+    `Whereabout · Clue mix · ${today}\n🔀 1 clue in a row, out on the climate\n🛣️🌦️🌍\n🟩🟥\n`,
+  );
+  expect(sent).toMatch(/\/whereabout\/clue-mix\/daily\/?$/);
+  expect(await page.evaluate(() => localStorage.getItem("whereabout:clue-mix-best"))).toBe(null);
+
+  // Today lists it from its first day, finished.
+  const since = TODAY_GAMES.find((g) => g.id === "clue-mix")!.since!;
+  await page.goto("./today");
+  await expect(page.getByTestId("today-clue-mix")).toHaveCount(today >= since ? 1 : 0);
+  if (today >= since) {
+    await expect(page.getByTestId("today-clue-mix")).toHaveAttribute("data-status", "done");
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    width,
+  );
+  expect(errors).toEqual([]);
 });

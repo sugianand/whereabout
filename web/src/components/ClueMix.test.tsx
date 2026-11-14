@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { CLUE_DAILY_KEY, dailyClueOrder, rememberClueDay } from "@/lib/game/clueDaily";
 import { BEST_CLUE_MIX_KEY, clueAnswers, dealClueMix, type ClueMaps } from "@/lib/game/clueMix";
 import type { GameRecord } from "@/lib/game/deck";
 import type { CatalogPhoto } from "@/lib/game/types";
@@ -189,5 +190,87 @@ describe("ClueMix", () => {
     expect(
       await screen.findByRole("heading", { name: "No photos to play yet" }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("today's Clue mix", () => {
+  const DAY = "2026-11-15";
+  const now = () => new Date(`${DAY}T09:00:00Z`);
+  const TODAY = dailyClueOrder(MAPS, DAY);
+  const todayTruth = (n: number) => {
+    const { id, clue } = TODAY[n];
+    return clue === "road"
+      ? MAPS.sides[id]
+      : clue === "climate"
+        ? MAPS.climates[id]
+        : MAPS.continents[id];
+  };
+  const wrongFor = (n: number) =>
+    clueAnswers(TODAY[n].clue, MAPS).find((a) => a !== todayTruth(n))!;
+
+  function daily() {
+    const game = gameFor(RECORDS);
+    return render(
+      <ClueMix
+        deck={game.deck}
+        maps={MAPS}
+        loadRecords={game.loadRecords}
+        random={() => 0.5}
+        daily
+        now={now}
+      />,
+    );
+  }
+
+  it("deals the day's steps whatever the randomness, with no best and a way to free runs", async () => {
+    expect(TODAY.length).toBeGreaterThanOrEqual(2);
+    daily();
+    await waitFor(() => expect(photo()).toHaveAttribute("data-photo", TODAY[0].id));
+    expect(screen.getByText(`Clue mix, today's run (${DAY}).`)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Free runs" })).toHaveAttribute("href", "/clue-mix");
+    expect(screen.queryByText("Best")).toBeNull();
+  });
+
+  it("keeps the run after each call, so a reload goes on from the next step", async () => {
+    const first = daily();
+    await waitFor(() => expect(screen.getByTestId(`clue-${todayTruth(0)}`)).toBeEnabled());
+    fireEvent.click(screen.getByTestId(`clue-${todayTruth(0)}`));
+    await screen.findByRole("region");
+    expect(JSON.parse(localStorage.getItem(CLUE_DAILY_KEY)!)[DAY]).toMatchObject({
+      streak: 1,
+      ended: null,
+    });
+    first.unmount();
+
+    daily();
+    await waitFor(() => expect(photo()).toHaveAttribute("data-photo", TODAY[1].id));
+    expect(photo()).toHaveAttribute("data-clue", TODAY[1].clue);
+    expect(streak()).toHaveTextContent("1");
+    // The free runs' best is its own.
+    expect(localStorage.getItem(BEST_CLUE_MIX_KEY)).toBeNull();
+  });
+
+  it("ends the day on a miss with a share in place of a new run, then shows the day's result", async () => {
+    const first = daily();
+    await waitFor(() => expect(screen.getByTestId(`clue-${wrongFor(0)}`)).toBeEnabled());
+    fireEvent.click(screen.getByTestId(`clue-${wrongFor(0)}`));
+    const card = await screen.findByRole("region");
+    expect(card).toHaveTextContent("Today's run is over: 0 clues in a row, out on the road.");
+    expect(within(card).queryByRole("button", { name: "Start a new run" })).toBeNull();
+    expect(within(card).getByRole("button", { name: "Share today's run" })).toHaveFocus();
+    expect(JSON.parse(localStorage.getItem(CLUE_DAILY_KEY)!)[DAY].ended).toBe("miss");
+    first.unmount();
+
+    daily();
+    expect(await screen.findByRole("heading", { name: "0 clues in a row" })).toBeInTheDocument();
+    expect(screen.getByText(/out on the road\..*The next run is dealt in/)).toBeInTheDocument();
+    expect(screen.queryByTestId("clue-photo")).toBeNull();
+  });
+
+  it("shows a day kept as cleared without dealing it again", async () => {
+    rememberClueDay(DAY, { streak: 7, atlasRight: 3, atlasPlayed: 5, ended: "cleared" });
+    daily();
+    expect(await screen.findByRole("heading", { name: "You read every clue" })).toBeInTheDocument();
+    expect(screen.getByText(/Atlas got 3 of the 5 clues it called\./)).toBeInTheDocument();
   });
 });

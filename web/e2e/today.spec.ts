@@ -161,6 +161,7 @@ test("full days count up on a calendar that fits the screen", async ({ page }) =
       keep("whereabout:which-way-daily", run);
       keep("whereabout:name-country-daily", run);
       keep("whereabout:left-right-daily", run);
+      keep("whereabout:clue-mix-daily", run);
       keep("whereabout:how-far-daily", { results: Array(5).fill(pair) });
       keep("whereabout:hot-cold-daily", { results: Array(5).fill(hot), pins: [] });
       keep("whereabout:line-up-daily", { results: Array(5).fill(row) });

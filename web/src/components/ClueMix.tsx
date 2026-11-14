@@ -5,6 +5,14 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "r
 
 import { isShortcut } from "@/lib/controls";
 import {
+  clueDailyShare,
+  clueRunWords,
+  dailyClueOrder,
+  loadClueDay,
+  rememberClueDay,
+  type ClueDay,
+} from "@/lib/game/clueDaily";
+import {
   CLUE_CYCLE,
   CLUE_QUESTION,
   answerName,
@@ -22,10 +30,12 @@ import {
   type ClueKind,
   type ClueMaps,
 } from "@/lib/game/clueMix";
+import { runToday } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import { placeholderUrl, sources } from "@/lib/photoSources";
 
 import ControlsHelp from "./ControlsHelp";
+import { DailyRunResult, ShareDay } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
 
 type ClueMixProps = {
@@ -36,6 +46,13 @@ type ClueMixProps = {
   loadRecords?: (ids: string[]) => Promise<GameRecord[]>;
   /** For tests: the randomness that picks each run's seed. */
   random?: () => number;
+  /**
+   * Today's run (src/lib/game/clueDaily.ts): dealt from the UTC date, one try a day, picked up
+   * after a reload and shared as counts only. It never touches the free runs' best.
+   */
+  daily?: boolean;
+  /** For tests: the clock that picks today's run. */
+  now?: () => Date;
 };
 
 /** The clue's name on the cycle shown over the buttons. */
@@ -56,20 +73,51 @@ function clues(n: number): string {
  * Clue mix (src/lib/game/clueMix.ts): one photo at a time, each asking the next clue in turn,
  * the side of the road, the climate or the continent, until the first wrong call.
  */
-export default function ClueMix({ deck, maps, loadRecords, random }: ClueMixProps) {
+export default function ClueMix({
+  deck,
+  maps,
+  loadRecords,
+  random,
+  daily = false,
+  now,
+}: ClueMixProps) {
   const [state, dispatch] = useReducer(clueMixReducer, initialClueMix);
   const [best, setBest] = useState(0);
   const [bestBeforeRun, setBestBeforeRun] = useState(0);
   const [records, setRecords] = useState<ReadonlyMap<string, GameRecord>>(() => new Map());
   const [error, setError] = useState<string | null>(null);
+  // Today's run: the day it was dealt for (kept when the clock passes midnight mid-run) and,
+  // once it has ended, how it went, which shows instead of the game.
+  const [day, setDay] = useState<string | null>(null);
+  const [dayDone, setDayDone] = useState<ClueDay | null>(null);
 
   const start = useCallback(() => {
+    if (daily) {
+      const today = runToday(now?.());
+      const kept = loadClueDay(today);
+      setDay(today);
+      if (kept?.ended) {
+        setDayDone(kept);
+        return;
+      }
+      const { streak, atlasRight, atlasPlayed } = kept ?? {
+        streak: 0,
+        atlasRight: 0,
+        atlasPlayed: 0,
+      };
+      dispatch({
+        type: "start",
+        order: dailyClueOrder(maps, today),
+        from: { streak, atlasRight, atlasPlayed },
+      });
+      return;
+    }
     const stored = loadBestClueMix();
     setBest(stored);
     setBestBeforeRun(stored);
     const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
     dispatch({ type: "start", order: dealClueMix(maps, seed) });
-  }, [maps, random]);
+  }, [maps, random, daily, now]);
 
   // The run is dealt in the browser after hydration, never at build time.
   useEffect(() => {
@@ -134,13 +182,22 @@ export default function ClueMix({ deck, maps, loadRecords, random }: ClueMixProp
         atlas: atlasClueRead(step.clue, record.atlas),
       } as const;
       const after = clueMixReducer(state, action);
-      // Keep the run as the best after every right call, so leaving mid-run keeps it.
-      if (after.phase === "answered" && after.verdict.correct) {
+      if (after.phase === "answered" && day) {
+        // Today's run is kept after every call, so a reload resumes it and never deals it again.
+        const cleared = after.verdict.correct && after.index + 1 >= after.order.length;
+        rememberClueDay(day, {
+          streak: after.streak,
+          atlasRight: after.atlasRight,
+          atlasPlayed: after.atlasPlayed,
+          ended: !after.verdict.correct ? "miss" : cleared ? "cleared" : null,
+        });
+      } else if (after.phase === "answered" && after.verdict.correct) {
+        // Keep the run as the best after every right call, so leaving mid-run keeps it.
         setBest(rememberClueMix(after.streak));
       }
       dispatch(action);
     },
-    [state, record, step, maps],
+    [state, record, step, maps, day],
   );
 
   // ← and → call the road; 1 to 7 name a climate or a continent by its place in the row.
@@ -163,6 +220,23 @@ export default function ClueMix({ deck, maps, loadRecords, random }: ClueMixProp
   }, [ready, step, answers, choose]);
 
   const streak = state.phase === "idle" ? 0 : state.streak;
+
+  if (dayDone && day) return <ClueDayResult day={day} entry={dayDone} now={now} />;
+
+  if (state.phase === "cleared" && day && state.order.length > 0) {
+    return (
+      <ClueDayResult
+        day={day}
+        entry={{
+          streak: state.streak,
+          atlasRight: state.atlasRight,
+          atlasPlayed: state.atlasPlayed,
+          ended: "cleared",
+        }}
+        now={now}
+      />
+    );
+  }
 
   if (state.phase === "cleared") {
     const none = state.order.length === 0;
@@ -212,7 +286,15 @@ export default function ClueMix({ deck, maps, loadRecords, random }: ClueMixProp
           >
             Whereabout
           </Link>
-          <p className="mt-1 text-sm text-chalk-dim">Clue mix: a new clue each photo.</p>
+          <p className="mt-1 text-sm text-chalk-dim">
+            {day ? `Clue mix, today's run (${day}).` : "Clue mix: a new clue each photo."}
+          </p>
+          <Link
+            href={daily ? "/clue-mix" : "/clue-mix/daily"}
+            className="mt-0.5 inline-block text-sm text-gold underline underline-offset-2 hover:brightness-110"
+          >
+            {daily ? "Free runs" : "Today's run"}
+          </Link>
         </div>
         <div className="flex shrink-0 items-start gap-3">
           <GamesMenu screen="clue-mix" streakHref="/streak" />
@@ -222,10 +304,12 @@ export default function ClueMix({ deck, maps, loadRecords, random }: ClueMixProp
             <dd className="font-sign tabular text-3xl font-bold leading-none" aria-live="polite">
               {streak}
             </dd>
-            <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
-              <dt>Best</dt>
-              <dd className="tabular">{best}</dd>
-            </div>
+            {!daily && (
+              <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
+                <dt>Best</dt>
+                <dd className="tabular">{best}</dd>
+              </div>
+            )}
           </dl>
         </div>
       </header>
@@ -305,13 +389,30 @@ export default function ClueMix({ deck, maps, loadRecords, random }: ClueMixProp
             place={record.photo.place}
             atlas={`${clueAtlasLine(answered.verdict.clue, answered.atlas)} Atlas this run: ${answered.atlasRight} of ${answered.atlasPlayed}.`}
             end={
-              over
-                ? `Run over: ${clues(answered.streak)} in a row. ` +
-                  (answered.streak > bestBeforeRun
-                    ? "That's your new best!"
-                    : best > 0
-                      ? `Your best is ${clues(best)}.`
-                      : "")
+              over && day
+                ? `Today's run is over: ${clueRunWords({ ...answered, ended: "miss" })}.`
+                : over
+                  ? `Run over: ${clues(answered.streak)} in a row. ` +
+                    (answered.streak > bestBeforeRun
+                      ? "That's your new best!"
+                      : best > 0
+                        ? `Your best is ${clues(best)}.`
+                        : "")
+                  : null
+            }
+            share={
+              over && day
+                ? (href: string) =>
+                    clueDailyShare(
+                      day,
+                      {
+                        streak: answered.streak,
+                        atlasRight: answered.atlasRight,
+                        atlasPlayed: answered.atlasPlayed,
+                        ended: "miss",
+                      },
+                      href,
+                    )
                 : null
             }
             nextClue={over ? null : CLUE_CYCLE[(answered.index + 1) % CLUE_CYCLE.length]}
@@ -421,6 +522,7 @@ function ClueCard({
   nextClue,
   onNext,
   nextLabel,
+  share,
 }: {
   correct: boolean;
   truth: string;
@@ -431,6 +533,8 @@ function ClueCard({
   nextClue: ClueKind | null;
   onNext: () => void;
   nextLabel: string;
+  /** Today's run's share line, once it is over: shown in place of the next button. */
+  share: ((href: string) => string) | null;
 }) {
   const nextRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -451,17 +555,44 @@ function ClueCard({
       <p className="text-sm text-chalk-dim">{place}</p>
       <p className="mt-2 text-sm text-chalk-dim">{atlas}</p>
       {end && <p className="mt-2 text-chalk">{end}</p>}
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-        <button
-          ref={nextRef}
-          type="button"
-          onClick={onNext}
-          className="shrink-0 rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
-        >
-          {nextLabel}
-        </button>
-        {nextClue && <span className="text-sm text-chalk-dim">{`Next up: the ${nextClue}`}</span>}
-      </div>
+      {share ? (
+        <ShareDay shareText={share} freeHref="/clue-mix" focus />
+      ) : (
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+          <button
+            ref={nextRef}
+            type="button"
+            onClick={onNext}
+            className="shrink-0 rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
+          >
+            {nextLabel}
+          </button>
+          {nextClue && <span className="text-sm text-chalk-dim">{`Next up: the ${nextClue}`}</span>}
+        </div>
+      )}
     </section>
+  );
+}
+
+/** Today's Clue mix once it has ended. */
+function ClueDayResult({ day, entry, now }: { day: string; entry: ClueDay; now?: () => Date }) {
+  const cleared = entry.ended === "cleared";
+  return (
+    <DailyRunResult
+      game="Clue mix"
+      day={day}
+      headline={cleared ? "You read every clue" : clues(entry.streak) + " in a row"}
+      summary={
+        (cleared
+          ? `${clues(entry.streak)} in a row, every clue today's run could deal.`
+          : `That's today's run played: ${clueRunWords(entry)}.`) +
+        (entry.atlasPlayed > 0
+          ? ` Atlas got ${entry.atlasRight} of the ${clues(entry.atlasPlayed)} it called.`
+          : "")
+      }
+      shareText={(href) => clueDailyShare(day, entry, href)}
+      freeHref="/clue-mix"
+      now={now}
+    />
   );
 }

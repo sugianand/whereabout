@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { rememberClimateDay } from "./climateDaily";
+import { rememberClueDay } from "./clueDaily";
 import { rememberCloseDay } from "./closeDaily";
 import { type CloseResult } from "./closeUp";
 import { ARCHIVE_DAYS, DAILY_SCORES_KEY, daysBefore } from "./dailyArchive";
@@ -280,6 +281,8 @@ const finishJoined: Partial<Record<TodayGameId, (day: string) => void>> = {
   "left-right": (day) =>
     rememberSideDay(day, { streak: 4, atlasRight: 3, atlasPlayed: 5, ended: "miss" }),
   "which-climate": (day) => rememberClimateDay(day, CLIMATE_GAME),
+  "clue-mix": (day) =>
+    rememberClueDay(day, { streak: 5, atlasRight: 4, atlasPlayed: 6, ended: "miss" }),
 };
 
 /** Every daily game finished on `day` but `except`, each as it writes its own store. */
@@ -414,6 +417,30 @@ describe("today's Which climate? on Today", () => {
   it("makes no call against Atlas when it sat a photo out", () => {
     rememberClimateDay(DAY_IN, [{ ...CLIMATE_GAME[0], atlas: null }, ...CLIMATE_GAME.slice(1)]);
     expect(game()).toMatchObject({ status: "done", atlas: "1 of 4", versus: null });
+  });
+});
+
+describe("today's Clue mix on Today", () => {
+  const DAY_IN = "2026-11-15";
+  const AT = new Date(`${DAY_IN}T12:00:00Z`);
+  const game = () => todayGames(DAY_IN, IDS, AT).find((g) => g.id === "clue-mix")!;
+
+  it("reads the run as it is kept, and calls it against Atlas when Atlas read every step", () => {
+    expect(game()).toMatchObject({ status: "new", line: "Not started", href: "/clue-mix/daily" });
+    rememberClueDay(DAY_IN, { streak: 1, atlasRight: 0, atlasPlayed: 1, ended: null });
+    expect(game()).toMatchObject({ status: "going", line: "1 clue in a row so far" });
+    finishJoined["clue-mix"]!(DAY_IN);
+    expect(game()).toMatchObject({
+      status: "done",
+      line: "5 clues in a row",
+      atlas: "4 of 6",
+      versus: { you: 5, atlas: 4, unit: "right", call: "you" },
+    });
+  });
+
+  it("leaves the call out when Atlas sat a step out", () => {
+    rememberClueDay(DAY_IN, { streak: 5, atlasRight: 4, atlasPlayed: 5, ended: "miss" });
+    expect(game()).toMatchObject({ status: "done", atlas: "4 of 5", versus: null });
   });
 });
 

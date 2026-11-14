@@ -193,6 +193,17 @@ describe("clueMixReducer", () => {
   it("starts cleared when nothing could be dealt", () => {
     expect(clueMixReducer(initialClueMix, { type: "start", order: [] }).phase).toBe("cleared");
   });
+
+  it("picks a kept run up at the step after its streak, with Atlas's tally so far", () => {
+    const from = { streak: 1, atlasRight: 1, atlasPlayed: 1 };
+    const s = clueMixReducer(initialClueMix, { type: "start", order, from });
+    expect(s).toMatchObject({ phase: "picking", index: 1, streak: 1, atlasRight: 1 });
+    // A run kept past the last step dealt has nothing left to ask.
+    const done = { streak: 2, atlasRight: 0, atlasPlayed: 2 };
+    expect(clueMixReducer(initialClueMix, { type: "start", order, from: done }).phase).toBe(
+      "cleared",
+    );
+  });
 });
 
 describe("words", () => {

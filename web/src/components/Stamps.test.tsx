@@ -32,7 +32,7 @@ beforeEach(() => localStorage.clear());
 describe("Stamps", () => {
   it("shows every stamp uncollected on a first visit, with the next one up", async () => {
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
-    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^0 of 23 collected\.$/);
+    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^0 of 24 collected\.$/);
     expect(screen.getByRole("heading", { name: "Continents cleared" })).toBeInTheDocument();
     expect(screen.getByTestId("stamp-cleared-oceania")).toHaveAttribute("data-earned", "false");
     expect(screen.getByTestId("stamp-cleared-oceania-progress")).toHaveTextContent(
@@ -71,7 +71,7 @@ describe("Stamps", () => {
     );
     const { unmount } = render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
     const standing = await screen.findByTestId("stamps-standing");
-    expect(standing).toHaveTextContent("2 of 23 collected. 2 new stamps since you last looked.");
+    expect(standing).toHaveTextContent("2 of 24 collected. 2 new stamps since you last looked.");
     const oceania = screen.getByTestId("stamp-cleared-oceania");
     expect(oceania).toHaveAttribute("data-earned", "true");
     expect(within(oceania).getByText("New")).toBeInTheDocument();
@@ -92,7 +92,7 @@ describe("Stamps", () => {
     // The map forgotten, the stamp stays, no longer new.
     localStorage.removeItem(PLAYED_KEY);
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
-    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^2 of 23 collected\.$/);
+    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^2 of 24 collected\.$/);
     const kept = screen.getByTestId("stamp-cleared-oceania");
     expect(kept).toHaveAttribute("data-earned", "true");
     expect(within(kept).queryByText("New")).toBeNull();
@@ -105,7 +105,7 @@ describe("Stamps", () => {
     rememberOddDay("2026-11-10", { streak: 1, atlasRight: 2, atlasPlayed: 2, ended: "miss" });
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
     expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(
-      "1 of 23 collected. 1 new stamp since you last looked.",
+      "1 of 24 collected. 1 new stamp since you last looked.",
     );
     expect(screen.getByRole("heading", { name: "Beat Atlas" })).toBeInTheDocument();
     const won = screen.getByTestId("stamp-beat-atlas-name-country");
@@ -139,7 +139,7 @@ describe("Stamps", () => {
     localStorage.setItem(QUICK_RECORD_KEY, JSON.stringify({ "left-right": free }));
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
     expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(
-      "2 of 23 collected. 2 new stamps since you last looked.",
+      "2 of 24 collected. 2 new stamps since you last looked.",
     );
     expect(screen.getByRole("heading", { name: "Reading the clues" })).toBeInTheDocument();
     expect(screen.getByTestId("stamp-road-reader")).toHaveAttribute("data-earned", "true");

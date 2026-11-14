@@ -166,7 +166,12 @@ export type ClueMixState =
   | (Run & { phase: "cleared" });
 
 export type ClueMixAction =
-  | { type: "start"; order: readonly ClueStep[] }
+  | {
+      type: "start";
+      order: readonly ClueStep[];
+      /** A kept run to pick up from (today's run after a reload): it goes on at `order[streak]`. */
+      from?: { streak: number; atlasRight: number; atlasPlayed: number };
+    }
   | { type: "picked"; answer: string; truth: string; atlas: string | null }
   | { type: "next" };
 
@@ -175,8 +180,9 @@ export const initialClueMix: ClueMixState = { phase: "idle" };
 export function clueMixReducer(state: ClueMixState, action: ClueMixAction): ClueMixState {
   switch (action.type) {
     case "start": {
-      const run: Run = { order: action.order, index: 0, streak: 0, atlasRight: 0, atlasPlayed: 0 };
-      return action.order.length === 0
+      const from = action.from ?? { streak: 0, atlasRight: 0, atlasPlayed: 0 };
+      const run: Run = { order: action.order, index: from.streak, ...from };
+      return run.index >= action.order.length
         ? { phase: "cleared", ...run }
         : { phase: "picking", ...run };
     }

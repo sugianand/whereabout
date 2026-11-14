@@ -18,6 +18,7 @@
 import { MAX_POINTS, formatPoints } from "@/lib/geo";
 
 import { loadClimateDay } from "./climateDaily";
+import { loadClueDay } from "./clueDaily";
 import { loadCloseDay } from "./closeDaily";
 import { CLOSE_PHOTOS, CLOSE_POINTS, closeTotals } from "./closeUp";
 import { ARCHIVE_DAYS, archiveDays, loadDailyScores } from "./dailyArchive";
@@ -48,7 +49,8 @@ export type TodayGameId =
   | "line-up"
   | "close-up"
   | "left-right"
-  | "which-climate";
+  | "which-climate"
+  | "clue-mix";
 
 /** One daily game: where it lives, whatever the browser holds. */
 export interface TodayGameInfo {
@@ -148,6 +150,16 @@ export const TODAY_GAMES: readonly TodayGameInfo[] = [
     blurb: "Five photos: tropical, arid, temperate, continental or polar?",
     // From the next UTC day, so a day already played in full isn't left one game short.
     since: "2026-11-14",
+  },
+  {
+    id: "clue-mix",
+    name: "Clue mix",
+    href: "/clue-mix/daily",
+    icon: "🔀",
+    blurb:
+      "The road, the climate, then the continent: a new clue each photo, until your first miss.",
+    // From the next UTC day, so a day already played in full isn't left one game short.
+    since: "2026-11-15",
   },
 ];
 
@@ -357,6 +369,8 @@ export function todayGames(
         return { ...info, ...streakGame(loadSideDay(day), "photo") };
       case "which-climate":
         return { ...info, ...whichClimate(day) };
+      case "clue-mix":
+        return { ...info, ...streakGame(loadClueDay(day), "clue") };
     }
   });
 }

@@ -164,9 +164,13 @@ in the single-clue games, and a photo is dealt once a run, so always giving one 
 on every step. Atlas plays along with the same reads it is scored on elsewhere (its road and
 climate clues, and the continent of the country it gave most) and sits out a step it said nothing
 about. Your longest run is kept in your browser.
+**Today's run** (at `/clue-mix/daily`) deals everyone the same photos and clues on the same UTC
+day with the same even deal, one try a day, picked up after a reload at the next clue, and shared
+as counts only: the run's squares three to a row under the road, climate and continent marks, so
+a friend sees which clue ended it without seeing a photo.
 **Today** (at `/today`, in the Games menu and on the results screen) puts every daily game on one
 page: the Daily Five, Further North, Odd one out, Which way?, How far apart?, Name the country,
-Hot and cold, Line them up, Close-up, Left or right? and Which climate?, each with where it stands in your browser (not started, under way or its result), the time to the next deal, and one
+Hot and cold, Line them up, Close-up, Left or right?, Which climate? and Clue mix, each with where it stands in your browser (not started, under way or its result), the time to the next deal, and one
 share line gathering every finished game, as scores and counts only. **Atlas's day** sets you
 against Atlas on each finished game it played all the way through, game by game, and says who took
 the day, a line the share carries too. Below them, **Full days**
