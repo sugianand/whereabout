@@ -201,7 +201,11 @@ among its four names, the countries take turns so a big one never crowds out its
 run keeps its own best. Below them, **your clue reading**: how often you've read the road in
 Left or right? and the climate in Which climate?, in photos called right, beside Atlas's own read
 of the same photos (it sits out a photo it said nothing about), with today's Left or right? runs
-and Which climate? games counted in. Then **you and Atlas in the quick
+and Which climate? games counted in. Under it, **climates you misread**: the climates you've
+called wrong most in Which climate? (free games and today's, from your last few hundred calls),
+each with how often and what you called it instead, and *Practise these climates*
+(`/which-climate/mix-ups`), five photos dealt evenly from your top two misreads and the climates
+you took them for, with its own best. Then **you and Atlas in the quick
 games**: for Further North and Odd one out, the rounds you got right of those you answered beside
 the rounds Atlas got right of those it played, free runs and today's runs together, and who is
 ahead. Then **head to head with friends**: every friend's challenge you've answered from a link,
