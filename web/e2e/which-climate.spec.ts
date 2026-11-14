@@ -285,3 +285,61 @@ test("the end of a Which climate? game keeps its buttons on a 320px phone", asyn
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });
+
+test("the climates you misread are on Your map, with a practice game dealt from them", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+
+  // Every call wrong, each climate taken for temperate (and temperate for continental).
+  await page.goto("./which-climate");
+  const truths: string[] = [];
+  for (let n = 0; n < 5; n++) {
+    await expect(page.getByText(`Photo ${n + 1} of 5`, { exact: true })).toBeVisible();
+    const truth = await groupOnScreen(page);
+    truths.push(truth);
+    await climateButton(page, truth === "Temperate" ? "Continental" : "Temperate").click();
+    const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
+    await card.getByRole("button", { name: n === 4 ? "See the results" : "Next photo" }).click();
+  }
+  await expect(page.getByRole("heading", { level: 1, name: "0 of 5" })).toBeVisible();
+
+  await page.goto("./map/");
+  const mixUps = page.getByTestId("clue-reading").getByTestId("climate-mix-ups");
+  await expect(mixUps.getByRole("heading", { name: "Climates you misread" })).toBeVisible();
+  await expect(mixUps).toContainText("From your last 5 calls in Which climate?");
+  const rows = mixUps.getByTestId("climate-misread");
+  const listed = await rows.evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.group!));
+  expect(listed.length).toBeGreaterThan(0);
+  expect(listed.length).toBeLessThanOrEqual(3);
+  for (const group of listed) expect(truths).toContain(group);
+  await expect(rows.first()).toContainText(/You called \d of \d \w+ photos? wrong: /);
+  const { width } = page.viewportSize()!;
+  const box = (await mixUps.boundingBox())!;
+  expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
+
+  await mixUps.getByRole("link", { name: "Practise these climates" }).click();
+  await expect(page).toHaveURL(/\/which-climate\/mix-ups\/?$/);
+  const header = page.getByText(/^Which climate\?, your mix-ups: /);
+  await expect(header).toBeVisible();
+  const named = (await header.textContent())!.toLowerCase();
+  // The top misreads are dealt with what each was taken for; every photo is one of those.
+  for (const group of listed.slice(0, 2)) expect(named).toContain(group.toLowerCase());
+  for (let n = 0; n < 5; n++) {
+    const truth = await groupOnScreen(page);
+    expect(named).toContain(truth.toLowerCase());
+    await climateButton(page, truth).click();
+    const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
+    await expect(card.getByRole("heading")).toHaveText("Correct");
+    await card.getByRole("button", { name: n === 4 ? "See the results" : "Next photo" }).click();
+  }
+  await expect(page.getByRole("heading", { level: 1, name: "5 of 5" })).toBeVisible();
+  await expect(page.getByText("That's your new best at your mix-ups!")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Challenge a friend" })).toHaveCount(0);
+
+  // The free games' best is its own; the practice best shows on Your map.
+  await page.goto("./map/");
+  await expect(page.getByTestId("climate-mix-ups-note")).toContainText("Your best: 5 of 5.");
+  expect(errors).toEqual([]);
+});

@@ -21,6 +21,15 @@ import {
   loadClimateDay,
   rememberClimateDay,
 } from "@/lib/game/climateDaily";
+import {
+  BEST_CLIMATE_MIX_UPS_KEY,
+  climateMisreads,
+  groupsInWords,
+  keepClimateCall,
+  loadAllClimateCalls,
+  practiceDeal,
+  practiceGroups,
+} from "@/lib/game/climateMixUps";
 import { runToday } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import { recordFreeRound } from "@/lib/game/quickRecord";
@@ -64,6 +73,11 @@ type WhichClimateProps = {
   daily?: boolean;
   /** For tests: the clock that picks today's game. */
   now?: () => Date;
+  /**
+   * Practise your mix-ups (src/lib/game/climateMixUps.ts): five photos from the climates you
+   * misread most and the ones you took them for, with a best of its own. Never a challenge.
+   */
+  practice?: boolean;
 };
 
 /** 1 to 5 name the groups in the order the buttons show them. */
@@ -104,6 +118,7 @@ export default function WhichClimate({
   random,
   daily = false,
   now,
+  practice = false,
 }: WhichClimateProps) {
   const [state, dispatch] = useReducer(climateReducer, initialClimate);
   const [best, setBest] = useState(0);
@@ -116,6 +131,9 @@ export default function WhichClimate({
   // and their call on each, shown once you have made yours.
   const [challenge, setChallenge] = useState<ClimateChallenge | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // A practice game's climates, as it was dealt.
+  const [practising, setPractising] = useState<readonly ClimateGroup[]>([]);
+  const bestKey = practice ? BEST_CLIMATE_MIX_UPS_KEY : undefined;
 
   /** Deal a game; `fromLink` takes up a challenge the address carries, as the page opens. */
   const start = useCallback(
@@ -134,9 +152,17 @@ export default function WhichClimate({
         dispatch({ type: "start", order, from: kept });
         return;
       }
-      const stored = loadBestClimate();
+      const stored = loadBestClimate(bestKey);
       setBest(stored);
       setBestBeforeGame(stored);
+      const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
+      if (practice) {
+        // Dealt from what this browser keeps now, so a game after a practice one follows it.
+        const climates = practiceGroups(climateMisreads(loadAllClimateCalls()));
+        setPractising(climates);
+        dispatch({ type: "start", order: practiceDeal(groups, climates, seed) });
+        return;
+      }
       const value = fromLink
         ? new URLSearchParams(window.location.search).get(CLIMATE_CHALLENGE_PARAM)
         : null;
@@ -149,10 +175,9 @@ export default function WhichClimate({
       }
       setChallenge(null);
       dropChallengeParam();
-      const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
       dispatch({ type: "start", order: dealClimate(groups, seed) });
     },
-    [groups, random, daily, now],
+    [groups, random, daily, now, practice, bestKey],
   );
 
   // The game is dealt in the browser after hydration, never at build time.
@@ -225,6 +250,8 @@ export default function WhichClimate({
         // Count the call in your clue reading on Your map, as it is made, so leaving mid-game
         // still counts the photos called.
         const call = after.results[after.results.length - 1];
+        // Which climate was taken for which, for your climate mix-ups on Your map.
+        keepClimateCall(call.truth, call.picked);
         recordFreeRound("which-climate", {
           first: after.results.length === 1,
           correct: call.correct,
@@ -233,12 +260,12 @@ export default function WhichClimate({
         // Only a whole game counts as a best, and never a friend's challenge: its photos may
         // have been seen before, so it is played for the friend only.
         if (after.results.length === after.order.length && !challenge) {
-          setBest(rememberClimate(climateTotals(after.results).right));
+          setBest(rememberClimate(climateTotals(after.results).right, bestKey));
         }
       }
       dispatch(action);
     },
-    [state, record, groups, day, challenge],
+    [state, record, groups, day, challenge, bestKey],
   );
 
   // 1 to 5 make the call from the keyboard.
@@ -267,6 +294,7 @@ export default function WhichClimate({
         newBest={!challenge && climateTotals(state.results).right > bestBeforeGame}
         groups={groups}
         challenge={challenge}
+        practice={practice ? practising : null}
         onAgain={() => start()}
       />
     );
@@ -297,13 +325,15 @@ export default function WhichClimate({
               ? `Which climate?, today's game (${day}).`
               : challenge
                 ? `A friend's challenge: ${climateChallengeScore(challenge, groups)} of ${CLIMATE_PHOTOS} to beat.`
-                : "Which climate? Name the Köppen group."}
+                : practice
+                  ? `Which climate?, your mix-ups: ${groupsInWords(practising)}.`
+                  : "Which climate? Name the Köppen group."}
           </p>
           <Link
-            href={daily ? "/which-climate" : "/which-climate/daily"}
+            href={daily || practice ? "/which-climate" : "/which-climate/daily"}
             className="mt-0.5 inline-block text-sm text-gold underline underline-offset-2 hover:brightness-110"
           >
-            {daily ? "Free games" : "Today's game"}
+            {daily || practice ? "Free games" : "Today's game"}
           </Link>
           <p className="text-sm text-chalk-dim" aria-live="polite">
             {`Photo ${Math.min(index + 1, CLIMATE_PHOTOS)} of ${CLIMATE_PHOTOS}`}
@@ -565,6 +595,7 @@ function ClimateSummary({
   newBest,
   groups,
   challenge,
+  practice,
   onAgain,
 }: {
   results: readonly ClimateResult[];
@@ -574,6 +605,8 @@ function ClimateSummary({
   groups: ClimateMap;
   /** The friend's challenge this game answered, if it was one. */
   challenge: ClimateChallenge | null;
+  /** A practice game of your mix-ups: the climates it was dealt from. */
+  practice: readonly ClimateGroup[] | null;
   onAgain: () => void;
 }) {
   const none = results.length === 0;
@@ -584,13 +617,23 @@ function ClimateSummary({
   }, []);
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center px-6 py-16">
-      <p className="text-sm text-gold">Which climate?</p>
+      <p className="text-sm text-gold">
+        {practice ? "Which climate?, your mix-ups" : "Which climate?"}
+      </p>
       <h1 className="mt-2 font-sign text-5xl font-extrabold leading-none tracking-tight">
-        {none ? "No photos to play yet" : `${right} of ${results.length}`}
+        {none
+          ? practice
+            ? "No climate mix-ups to practise yet"
+            : "No photos to play yet"
+          : `${right} of ${results.length}`}
       </h1>
       {none ? (
         <p className="mt-4 text-lg text-chalk-dim">
-          Which climate? needs photos from at least two climates to deal a game.
+          {practice
+            ? practice.length > 0
+              ? `There aren't enough ${groupsInWords(practice)} photos to deal a game yet.`
+              : "Call a photo's climate wrong in Which climate? and it comes back here to practise."
+            : "Which climate? needs photos from at least two climates to deal a game."}
         </p>
       ) : (
         <>
@@ -603,7 +646,9 @@ function ClimateSummary({
             </p>
           ) : (
             <p className="mt-1 text-chalk-dim">
-              {newBest ? "That's your new best!" : `Your best is ${best} of ${CLIMATE_PHOTOS}.`}
+              {newBest
+                ? `That's your new best${practice ? " at your mix-ups" : ""}!`
+                : `Your best${practice ? " at your mix-ups" : ""} is ${best} of ${CLIMATE_PHOTOS}.`}
             </p>
           )}
           <ClimateRows results={results} records={records} friend={challenge} />
@@ -620,7 +665,15 @@ function ClimateSummary({
             {challenge ? "Play a fresh game" : "Play again"}
           </button>
         )}
-        {!none && results.length === CLIMATE_PHOTOS && (
+        {none && practice && (
+          <Link
+            href="/which-climate"
+            className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
+          >
+            Play Which climate?
+          </Link>
+        )}
+        {!none && !practice && results.length === CLIMATE_PHOTOS && (
           <ChallengeButton results={results} groups={groups} answering={challenge} />
         )}
         <Link href="/" className="text-chalk-dim underline underline-offset-2 hover:text-chalk">

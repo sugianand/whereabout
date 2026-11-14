@@ -4,6 +4,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GameRecord } from "@/lib/game/deck";
 import type { CatalogPhoto } from "@/lib/game/types";
 import { CLIMATE_DAILY_KEY, dailyClimateOrder } from "@/lib/game/climateDaily";
+import {
+  BEST_CLIMATE_MIX_UPS_KEY,
+  CLIMATE_CALLS_KEY,
+  loadClimateCalls,
+  practiceMap,
+} from "@/lib/game/climateMixUps";
 import { EMPTY_TALLY, loadFreeTallies, loadQuickRecord } from "@/lib/game/quickRecord";
 import { BEST_CLIMATE_KEY, dealClimate, type ClimateMap } from "@/lib/game/whichClimate";
 import { atlasClimateGroup, type ClimateGroup } from "@/lib/trueClues";
@@ -130,6 +136,13 @@ describe("WhichClimate", () => {
       atlasPlayed: reads.filter((g) => g !== null).length,
       atlasRight: reads.filter((g, n) => g !== null && g === truthOf(n)).length,
     });
+    // And which climate was called for which, for your climate mix-ups.
+    expect(loadClimateCalls()).toEqual(
+      ORDER.map((_, n) => ({
+        truth: truthOf(n),
+        picked: n < 3 ? truthOf(n) : wrongFor(truthOf(n)),
+      })),
+    );
   });
 
   it("says when Atlas read nothing about the climate", async () => {
@@ -230,6 +243,7 @@ describe("WhichClimate, today's game", () => {
     // from the day kept, so the free games' tally never counts it a second time.
     expect(localStorage.getItem(BEST_CLIMATE_KEY)).toBeNull();
     expect(loadFreeTallies()["which-climate"]).toEqual(EMPTY_TALLY);
+    expect(loadClimateCalls()).toEqual([]);
     expect(loadQuickRecord()["which-climate"].daily).toMatchObject({
       runs: 1,
       rounds: 5,
@@ -402,5 +416,85 @@ describe("a friend's Which climate? challenge", () => {
     expect(box.sent.split("\n")[2]).toBe(
       `http://localhost:3000/?challenge=${ORDER.join(".")}_${letters}`,
     );
+  });
+});
+
+describe("WhichClimate, practising your mix-ups", () => {
+  function play() {
+    const game = gameFor(RECORDS);
+    return render(
+      <WhichClimate
+        deck={game.deck}
+        groups={GROUPS}
+        loadRecords={game.loadRecords}
+        random={() => 0}
+        practice
+      />,
+    );
+  }
+
+  it("deals five photos of the climates misread and those they were taken for, with its own best", async () => {
+    // Tropical taken for arid, temperate for continental: four climates, seven photos.
+    localStorage.setItem(
+      CLIMATE_CALLS_KEY,
+      JSON.stringify([
+        { truth: "Tropical", picked: "Arid" },
+        { truth: "Temperate", picked: "Continental" },
+        { truth: "Polar", picked: "Polar" },
+      ]),
+    );
+    const order = dealClimate(
+      practiceMap(GROUPS, ["Tropical", "Arid", "Temperate", "Continental"]),
+      0,
+    );
+    expect(order).toHaveLength(5);
+    expect(order.some((id) => GROUPS[id] === "Polar")).toBe(false);
+    play();
+    expect(
+      await screen.findByText(
+        "Which climate?, your mix-ups: tropical, arid, temperate and continental.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Free games" })).toHaveAttribute(
+      "href",
+      "/which-climate",
+    );
+    for (let n = 0; n < 5; n++) {
+      await waitFor(() => expect(photo()).toHaveAttribute("data-photo", order[n]));
+      await waitFor(() => expect(button("Arid")).toBeEnabled());
+      fireEvent.click(button(n < 4 ? GROUPS[order[n]] : wrongFor(GROUPS[order[n]])));
+      const card = await screen.findByRole("region");
+      fireEvent.click(
+        within(card).getByRole("button", { name: n === 4 ? "See the results" : "Next photo" }),
+      );
+    }
+    expect(await screen.findByRole("heading", { level: 1, name: "4 of 5" })).toBeInTheDocument();
+    expect(screen.getByText("That's your new best at your mix-ups!")).toBeInTheDocument();
+    expect(localStorage.getItem(BEST_CLIMATE_MIX_UPS_KEY)).toBe("4");
+    expect(localStorage.getItem(BEST_CLIMATE_KEY)).toBeNull();
+    // Its calls are kept like any other, so a climate still misread keeps coming back.
+    expect(loadClimateCalls()).toHaveLength(8);
+    // The photos were picked for this player, so there's no challenge to send.
+    expect(screen.queryByRole("button", { name: "Challenge a friend" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Play again" })).toBeInTheDocument();
+  });
+
+  it("says there's nothing to practise before a climate has been called wrong", async () => {
+    localStorage.setItem(CLIMATE_CALLS_KEY, JSON.stringify([{ truth: "Arid", picked: "Arid" }]));
+    play();
+    expect(await screen.findByText("No climate mix-ups to practise yet")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Play Which climate?" })).toHaveAttribute(
+      "href",
+      "/which-climate",
+    );
+  });
+
+  it("says when the climates to practise have too few photos", async () => {
+    // Polar taken for arid: one polar and two arid photos can't fill a game.
+    localStorage.setItem(CLIMATE_CALLS_KEY, JSON.stringify([{ truth: "Polar", picked: "Arid" }]));
+    play();
+    expect(
+      await screen.findByText("There aren't enough arid and polar photos to deal a game yet."),
+    ).toBeInTheDocument();
   });
 });

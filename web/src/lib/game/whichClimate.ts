@@ -175,10 +175,13 @@ function storage(): Storage | null {
   }
 }
 
-/** The best game this browser has kept, or 0 when none is stored or it can't be read. */
-export function loadBestClimate(): number {
+/**
+ * The best game this browser has kept under `key` (free games, or practice games of your
+ * mix-ups, which keep their own), or 0 when none is stored or it can't be read.
+ */
+export function loadBestClimate(key = BEST_CLIMATE_KEY): number {
   try {
-    const raw = storage()?.getItem(BEST_CLIMATE_KEY);
+    const raw = storage()?.getItem(key);
     if (!raw) return 0;
     const value: unknown = JSON.parse(raw);
     return typeof value === "number" &&
@@ -192,12 +195,12 @@ export function loadBestClimate(): number {
   }
 }
 
-/** Keep `right` if it beats the stored best, and return the best after that. */
-export function rememberClimate(right: number): number {
-  const best = loadBestClimate();
+/** Keep `right` if it beats the best stored under `key`, and return the best after that. */
+export function rememberClimate(right: number, key = BEST_CLIMATE_KEY): number {
+  const best = loadBestClimate(key);
   if (right <= best) return best;
   try {
-    storage()?.setItem(BEST_CLIMATE_KEY, JSON.stringify(right));
+    storage()?.setItem(key, JSON.stringify(right));
   } catch {
     // Private mode or full storage: the game still counts for this visit.
   }

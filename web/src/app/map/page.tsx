@@ -6,7 +6,8 @@ import MixUps from "@/components/MixUps";
 import PlayedMap from "@/components/PlayedMap";
 import QuickRecord from "@/components/QuickRecord";
 import { CONTINENTS } from "@/lib/continents";
-import { bundledDeck, bundledPhotoCountries } from "@/lib/game/bundled";
+import { bundledClimateGroups, bundledDeck, bundledPhotoCountries } from "@/lib/game/bundled";
+import { photosByClimate } from "@/lib/game/climateMixUps";
 import { photosByCountry } from "@/lib/game/nameMixUps";
 import { streakRegions } from "@/lib/game/regions";
 
@@ -18,7 +19,7 @@ const streakable = ((r) => CONTINENTS.filter((c) => r[c]))(
 export const metadata: Metadata = {
   title: "Your map — Whereabout",
   description:
-    "Every photo you've played in Whereabout on one globe, coloured by how close your pin landed, with the countries you've seen and how you stand against Atlas in the quick games, how often you read the road and the climate right, the countries you mix up, and every friend's challenge you've answered. Kept only in your browser.",
+    "Every photo you've played in Whereabout on one globe, coloured by how close your pin landed, with the countries you've seen and how you stand against Atlas in the quick games, how often you read the road and the climate right, the climates you misread, the countries you mix up, and every friend's challenge you've answered. Kept only in your browser.",
 };
 
 export default function YourMapPage() {
@@ -40,7 +41,7 @@ export default function YourMapPage() {
         deck={{ version: bundledDeck.version, ids: bundledDeck.ids, regions: bundledDeck.regions }}
       />
       <MixUps streakable={streakable} photoCounts={photosByCountry(bundledPhotoCountries)} />
-      <QuickRecord />
+      <QuickRecord climateCounts={photosByClimate(bundledClimateGroups)} />
       <HeadToHeadLog />
     </main>
   );

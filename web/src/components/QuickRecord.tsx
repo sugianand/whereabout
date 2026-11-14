@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import {
   CLUE_GAMES,
@@ -14,6 +14,9 @@ import {
   type RecordGame,
   type Tally,
 } from "@/lib/game/quickRecord";
+import type { ClimateGroup } from "@/lib/trueClues";
+
+import ClimateMixUps from "./ClimateMixUps";
 
 interface GameInfo {
   name: string;
@@ -187,12 +190,15 @@ function RecordSection({
   blurb,
   games,
   record,
+  children,
 }: {
   id: string;
   title: string;
   blurb: string;
   games: readonly RecordGame[];
   record: QuickRecordData;
+  /** Shown under the cards, once the section is. */
+  children?: ReactNode;
 }) {
   const played = games.filter((g) => record[g].total.rounds > 0);
   if (played.length === 0) return null;
@@ -207,6 +213,7 @@ function RecordSection({
           <GameCard key={g} game={g} total={record[g].total} daily={record[g].daily} />
         ))}
       </ul>
+      {children}
     </section>
   );
 }
@@ -217,9 +224,15 @@ function RecordSection({
  * rounds you got right of those you answered and how many Atlas got right of those it played,
  * from the free runs and today's runs played in this browser (`lib/game/quickRecord.ts`). Read
  * after mount, so the static page never guesses at it; each section shows nothing until one of
- * its games has been played.
+ * its games has been played. Under the clue reading, the climates you misread most
+ * (`ClimateMixUps`).
  */
-export default function QuickRecord() {
+export default function QuickRecord({
+  climateCounts = {},
+}: {
+  /** Photos Which climate? can deal in each climate, for the climate mix-ups' practice game. */
+  climateCounts?: Readonly<Partial<Record<ClimateGroup, number>>>;
+}) {
   const [record, setRecord] = useState<QuickRecordData | null>(null);
 
   useEffect(() => {
@@ -238,7 +251,9 @@ export default function QuickRecord() {
         blurb="How often you've read the road in Left or right? and the climate in Which climate?, free runs and today's, against Atlas's own read of the same photos."
         games={CLUE_GAMES}
         record={record}
-      />
+      >
+        <ClimateMixUps counts={climateCounts} />
+      </RecordSection>
       <RecordSection
         id="quick-record"
         title="You and Atlas in the quick games"
