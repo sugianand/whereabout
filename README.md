@@ -167,7 +167,9 @@ counts your run of days with every daily game finished and shows the last four w
 **Stamps** (at `/stamps`, from Today and the results screen) collects what you've played in this
 browser: the record's badges, a continent cleared once you've pinned a photo from every country the
 game has there, a full day and a full week of daily games, and one for beating Atlas at each daily
-game (on a day it played every photo you did). Each says how it's earned and how close you are (for
+game (on a day it played every photo you did), and four for reading the clues: a Left or right? run
+of 10, five of five at Which climate?, and reading the road or the climate better than Atlas over
+at least 30 photos you've both read. Each says how it's earned and how close you are (for
 Atlas, your nearest miss on the days kept), the one nearest to done is named next, and a stamp once
 collected stays.
 

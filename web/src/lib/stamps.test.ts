@@ -1,13 +1,20 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
+import { rememberClimateDay } from "@/lib/game/climateDaily";
 import { archiveDays } from "@/lib/game/dailyArchive";
+import { rememberLeftRight } from "@/lib/game/leftRight";
+import { EMPTY_TALLY, recordFreeRound, type Tally } from "@/lib/game/quickRecord";
+import { rememberSideDay } from "@/lib/game/sideDaily";
+import { rememberClimate, type ClimateResult } from "@/lib/game/whichClimate";
 import { VERSUS_GAMES, type DayTally, type Versus } from "@/lib/game/today";
 
 import { BADGE_IDS } from "./badges";
 import { EMPTY_RECORD, type PlayerRecord } from "./playerRecord";
 import type { PlayedPhoto } from "./playedMap";
 import {
+  CLUE_PHOTOS,
   FULL_WEEK,
+  ROAD_READER_RUN,
   STAMPS_KEY,
   STAMP_IDS,
   atlasStampId,
@@ -15,6 +22,7 @@ import {
   collectStamps,
   countriesByContinent,
   keepStamps,
+  loadClueSources,
   loadKeptStamps,
   longestFullRun,
   nextStamp,
@@ -81,6 +89,10 @@ describe("readStamps", () => {
       "beat-atlas-close-up",
       "beat-atlas-left-right",
       "beat-atlas-which-climate",
+      "road-reader",
+      "climate-reader",
+      "road-ahead",
+      "climate-ahead",
     ]);
     expect(stamps.every((s) => !s.earned)).toBe(true);
     // Every id read is one the store accepts.
@@ -249,6 +261,129 @@ describe("beat Atlas stamps", () => {
     const later = collectStamps(readStamps(sources()), first.kept, "2026-11-11");
     expect(byId(later.stamps, "beat-atlas-hot-cold").earned).toBe(true);
     expect(parseKeptStamps(JSON.stringify(first.kept))).toEqual(first.kept);
+  });
+});
+
+const tally = (rounds: number, right: number, atlasPlayed: number, atlasRight: number): Tally => ({
+  runs: 1,
+  rounds,
+  right,
+  atlasPlayed,
+  atlasRight,
+});
+
+const clues = (over: Partial<NonNullable<StampSources["clues"]>> = {}) =>
+  sources({
+    clues: { bestRun: 0, bestClimate: 0, road: EMPTY_TALLY, climate: EMPTY_TALLY, ...over },
+  });
+
+describe("clue stamps", () => {
+  it("are all unearned with nothing played, counting toward a run and a whole game", () => {
+    const stamps = readStamps(sources()).filter((s) => s.group === "clues");
+    expect(stamps.map((s) => s.earned)).toEqual([false, false, false, false]);
+    expect(byId(stamps, "road-reader").progress).toEqual({
+      have: 0,
+      need: ROAD_READER_RUN,
+      unit: ["call in a row", "calls in a row"],
+    });
+    expect(byId(stamps, "climate-reader").progress?.need).toBe(5);
+    expect(byId(stamps, "road-ahead").progress?.need).toBe(CLUE_PHOTOS);
+    expect(stamps.every((s) => s.note === null)).toBe(true);
+  });
+
+  it("earns the road reader at a run of ten, not nine", () => {
+    const nine = byId(readStamps(clues({ bestRun: 9 })), "road-reader");
+    expect(nine.earned).toBe(false);
+    expect(toGo(nine.progress!)).toBe("1 call in a row to go");
+    expect(byId(readStamps(clues({ bestRun: 10 })), "road-reader").earned).toBe(true);
+  });
+
+  it("earns the climate reader for five of five, with the rate named until then", () => {
+    const four = byId(
+      readStamps(clues({ bestClimate: 4, climate: tally(20, 13, 18, 9) })),
+      "climate-reader",
+    );
+    expect(four.earned).toBe(false);
+    expect(four.progress?.have).toBe(4);
+    expect(four.note).toBe("Right on 65% of the climates you've named");
+    expect(byId(readStamps(clues({ bestClimate: 5 })), "climate-reader").earned).toBe(true);
+  });
+
+  it("earns a lead over Atlas only over thirty photos you both read", () => {
+    // Ahead, but Atlas has read only 29 of your 40: not yet.
+    const short = byId(readStamps(clues({ road: tally(40, 36, 29, 20) })), "road-ahead");
+    expect(short.earned).toBe(false);
+    expect(short.progress).toMatchObject({ have: 29, need: CLUE_PHOTOS });
+    expect(short.note).toBe("So far: you 90%, Atlas 69%");
+    expect(toGo(short.progress!)).toBe("1 photo read with Atlas to go");
+
+    const ahead = byId(readStamps(clues({ road: tally(30, 25, 30, 22) })), "road-ahead");
+    expect(ahead.earned).toBe(true);
+    expect(ahead.progress).toBeNull();
+  });
+
+  it("has no progress left past thirty photos, only the gap to close, level or behind", () => {
+    const behind = byId(readStamps(clues({ climate: tally(32, 20, 30, 24) })), "climate-ahead");
+    expect(behind.earned).toBe(false);
+    expect(behind.progress).toBeNull();
+    expect(behind.note).toBe("Atlas is ahead of you by 17 points. Read on to pull ahead.");
+    const level = byId(readStamps(clues({ climate: tally(30, 24, 30, 24) })), "climate-ahead");
+    expect(level.earned).toBe(false);
+    expect(level.note).toBe("You and Atlas are level. Read on to pull ahead.");
+    // With no progress, it is never the stamp named next.
+    expect(nextStamp([behind])).toBeNull();
+  });
+
+  it("are known ids that the store keeps", () => {
+    const kept = collectStamps(readStamps(clues({ bestRun: 12 })), {}, TODAY).kept;
+    expect(parseKeptStamps(JSON.stringify(kept))).toEqual({ "road-reader": TODAY });
+  });
+});
+
+describe("loadClueSources", () => {
+  beforeEach(() => localStorage.clear());
+
+  const call = (id: string, picked: ClimateResult["picked"], truth: ClimateResult["truth"]) => ({
+    id,
+    picked,
+    truth,
+    correct: picked === truth,
+    atlas: null,
+  });
+
+  it("is empty in a fresh browser", () => {
+    const c = loadClueSources();
+    expect(c).toEqual({ bestRun: 0, bestClimate: 0, road: EMPTY_TALLY, climate: EMPTY_TALLY });
+  });
+
+  it("takes the longer of the free best and a day's run, and only whole climate days", () => {
+    rememberLeftRight(4);
+    rememberSideDay("2026-11-09", { streak: 11, atlasRight: 8, atlasPlayed: 12, ended: "miss" });
+    rememberClimate(3);
+    // Today's game is four calls in, all right: not a whole game yet.
+    rememberClimateDay(
+      TODAY,
+      ["a", "b", "c", "d"].map((id) => call(id, "Arid", "Arid")),
+    );
+    rememberClimateDay("2026-11-09", [
+      call("a", "Arid", "Arid"),
+      call("b", "Polar", "Polar"),
+      call("c", "Tropical", "Tropical"),
+      call("d", "Temperate", "Continental"),
+      call("e", "Arid", "Arid"),
+    ]);
+    const c = loadClueSources();
+    expect(c.bestRun).toBe(11);
+    expect(c.bestClimate).toBe(4);
+    // The day's run is in the road's record too: 11 right and the miss, Atlas on 12.
+    expect(c.road).toMatchObject({ rounds: 12, right: 11, atlasPlayed: 12, atlasRight: 8 });
+    expect(c.climate).toMatchObject({ rounds: 9, right: 8 });
+  });
+
+  it("counts free calls in the record", () => {
+    recordFreeRound("left-right", { first: true, correct: true, atlas: false });
+    recordFreeRound("left-right", { first: false, correct: false, atlas: true });
+    expect(loadClueSources().road).toEqual(tally(2, 1, 2, 1));
   });
 });
 

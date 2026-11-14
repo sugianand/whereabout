@@ -67,9 +67,11 @@ test("stamps come from what the browser keeps, are marked new once, and fit a 32
   );
   await page.reload();
 
+  // Yesterday's Which climate? was five of five, which is a climate reader as well.
   await expect(page.getByTestId("stamps-standing")).toHaveText(
-    /^2 of \d+ collected\. 2 new stamps since you last looked\.$/,
+    /^3 of \d+ collected\. 3 new stamps since you last looked\.$/,
   );
+  await expect(page.getByTestId("stamp-climate-reader")).toHaveAttribute("data-earned", "true");
   const oceania = page.getByTestId("stamp-cleared-oceania");
   await expect(oceania).toHaveAttribute("data-earned", "true");
   await expect(oceania.getByText("New")).toBeVisible();
@@ -88,7 +90,7 @@ test("stamps come from what the browser keeps, are marked new once, and fit a 32
   // Kept: back again, the stamps are still there and no longer new, even with the map forgotten.
   await page.evaluate(() => localStorage.removeItem("whereabout:played"));
   await page.reload();
-  await expect(page.getByTestId("stamps-standing")).toHaveText(/^2 of \d+ collected\.$/);
+  await expect(page.getByTestId("stamps-standing")).toHaveText(/^3 of \d+ collected\.$/);
   await expect(oceania).toHaveAttribute("data-earned", "true");
   await expect(oceania.getByText("New")).toHaveCount(0);
   expect(errors).toEqual([]);
@@ -139,5 +141,46 @@ test("beating Atlas at a daily game earns its stamp, and a loss says how close i
   // The group leads to Atlas's day on Today.
   await page.getByRole("link", { name: "Atlas's day on Today" }).click();
   await expect(page.getByRole("heading", { name: "Today", level: 1 })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("the clue games earn the clue stamps, and the group leads to them", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("./stamps");
+  await expect(page.getByRole("heading", { name: "Reading the clues", level: 2 })).toBeVisible();
+  await expect(page.getByTestId("stamp-road-reader-progress")).toHaveText("0 of 10 calls in a row");
+
+  await page.evaluate(() => {
+    // A free Left or right? run of 10, and 35 climates named with Atlas on all of them.
+    localStorage.setItem("whereabout:left-right-best", "10");
+    localStorage.setItem("whereabout:which-climate-best", "4");
+    localStorage.setItem(
+      "whereabout:quick-record",
+      JSON.stringify({
+        "which-climate": { runs: 7, rounds: 35, right: 28, atlasPlayed: 35, atlasRight: 21 },
+        "left-right": { runs: 2, rounds: 12, right: 10, atlasPlayed: 12, atlasRight: 11 },
+      }),
+    );
+  });
+  await page.reload();
+
+  await expect(page.getByTestId("stamp-road-reader")).toHaveAttribute("data-earned", "true");
+  await expect(page.getByTestId("stamp-climate-ahead")).toHaveAttribute("data-earned", "true");
+  await expect(page.getByTestId("stamp-climate-reader-progress")).toHaveText("4 of 5 photos right");
+  await expect(page.getByTestId("stamp-road-ahead-progress")).toHaveText(
+    "12 of 30 photos read with Atlas",
+  );
+  await expect(page.getByTestId("stamp-road-ahead")).toContainText("So far: you 83%, Atlas 92%");
+
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.getByTestId("stamp-climate-ahead").scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+
+  await page
+    .getByTestId("stamps-clues-intro")
+    .getByRole("link", { name: "Left or right?" })
+    .click();
+  await expect(page).toHaveURL(/\/left-right\/?$/);
   expect(errors).toEqual([]);
 });

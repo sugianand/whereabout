@@ -11,6 +11,7 @@ import { loadRecord } from "@/lib/playerRecord";
 import {
   STAMP_GROUPS,
   keepStamps,
+  loadClueSources,
   nextStamp,
   readStamps,
   toGo,
@@ -117,6 +118,7 @@ export default function Stamps({
       countries,
       now: at,
       units,
+      clues: loadClueSources(),
     });
     const { stamps: collected, fresh } = keepStamps(stamps, today);
     // Units change only the closest pin's words, so a new stamp stays new across a switch.
@@ -171,6 +173,25 @@ export default function Stamps({
                   shows how today&apos;s games stand.
                 </p>
               )}
+              {group.id === "clues" && (
+                <p className="mt-1 text-sm text-chalk-dim" data-testid="stamps-clues-intro">
+                  From{" "}
+                  <Link
+                    href="/left-right"
+                    className="underline underline-offset-2 hover:text-chalk"
+                  >
+                    Left or right?
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    href="/which-climate"
+                    className="underline underline-offset-2 hover:text-chalk"
+                  >
+                    Which climate?
+                  </Link>
+                  , free games and today&apos;s, and your clue reading on Your map.
+                </p>
+              )}
               <ul className="mt-3 grid gap-3 sm:grid-cols-2">
                 {stamps.map((s) => (
                   <StampCard key={s.id} stamp={s} fresh={view.fresh.includes(s.id)} />
@@ -181,8 +202,8 @@ export default function Stamps({
         })}
 
       <p className="mt-10 text-sm text-chalk-dim">
-        Stamps come from what you&apos;ve played in this browser: your record, your map and the days
-        kept on{" "}
+        Stamps come from what you&apos;ve played in this browser: your record, your map, the clue
+        games and the days kept on{" "}
         <Link href="/today" className="underline underline-offset-2 hover:text-chalk">
           Today
         </Link>

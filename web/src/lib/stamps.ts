@@ -11,6 +11,11 @@
  * - Beat Atlas: one per daily game Atlas can be called on, earned on a day you outscored it there,
  *   by the same rule as Atlas's day on Today (`DayTally.versus`). Until then, the note gives the
  *   closest you came on the days kept.
+ * - Reading the clues: a road reader for a Left or right? run of `ROAD_READER_RUN`, a climate
+ *   reader for every photo right in a whole Which climate? game (free or today's; a practice game
+ *   of your mix-ups is dealt from fewer climates and doesn't count), and one per clue for reading
+ *   it better than Atlas over at least `CLUE_PHOTOS` photos, by Your map's clue reading
+ *   (`lib/game/quickRecord.ts`), with Atlas's rate over the photos it read.
  *
  * The days every game keeps are the last `ARCHIVE_DAYS`, and the map's history is capped, so a
  * stamp could otherwise fade once its proof is gone. Each stamp is therefore written down under
@@ -24,7 +29,18 @@ import { countryName } from "@/lib/countries";
 import { isDayKey } from "@/lib/game/dailyArchive";
 import { regionSlug } from "@/lib/game/regions";
 import { formatDistance, formatPoints } from "@/lib/geo";
+import { loadClimateDays } from "@/lib/game/climateDaily";
+import { loadBestLeftRight } from "@/lib/game/leftRight";
+import {
+  loadQuickRecord,
+  percent,
+  standing,
+  standingLine,
+  type Tally,
+} from "@/lib/game/quickRecord";
+import { loadSideDays } from "@/lib/game/sideDaily";
 import { VERSUS_GAMES, type DayTally, type TodayGameId, type Versus } from "@/lib/game/today";
+import { CLIMATE_PHOTOS, loadBestClimate } from "@/lib/game/whichClimate";
 import { currentStreak, type PlayerRecord } from "@/lib/playerRecord";
 import type { PlayedPhoto } from "@/lib/playedMap";
 import type { Units } from "@/lib/units";
@@ -39,15 +55,31 @@ export const NAME_LEFT = 3;
 
 export type ContinentStampId = `cleared-${string}`;
 export type AtlasStampId = `beat-atlas-${TodayGameId}`;
-export type StampId = BadgeId | ContinentStampId | "full-day" | "full-week" | AtlasStampId;
+/** A Left or right? run this long earns the road reader. */
+export const ROAD_READER_RUN = 10;
 
-export type StampGroup = "badges" | "continents" | "days" | "atlas";
+/** Photos of a clue read beside Atlas before a lead over it earns that clue's stamp. */
+export const CLUE_PHOTOS = 30;
+
+export const CLUE_STAMP_IDS = [
+  "road-reader",
+  "climate-reader",
+  "road-ahead",
+  "climate-ahead",
+] as const;
+export type ClueStampId = (typeof CLUE_STAMP_IDS)[number];
+
+export type StampId =
+  BadgeId | ContinentStampId | "full-day" | "full-week" | AtlasStampId | ClueStampId;
+
+export type StampGroup = "badges" | "continents" | "days" | "atlas" | "clues";
 
 export const STAMP_GROUPS: readonly { id: StampGroup; title: string }[] = [
   { id: "badges", title: "Badges" },
   { id: "continents", title: "Continents cleared" },
   { id: "days", title: "Full days" },
   { id: "atlas", title: "Beat Atlas" },
+  { id: "clues", title: "Reading the clues" },
 ];
 
 /** How far along an unearned stamp is: `have` of `need`, counted in `unit`. */
@@ -84,7 +116,27 @@ export interface StampSources {
   now: Date;
   /** For the closest pin; kilometres if not given. */
   units?: Units;
+  /** What the clue games keep (`loadClueSources`); none played if not given. */
+  clues?: ClueSources;
 }
+
+/** What the clue games keep, for the clue stamps. */
+export interface ClueSources {
+  /** The longest Left or right? run: the free runs' best or a day's run. */
+  bestRun: number;
+  /** Most photos right in one whole Which climate? game, free or today's. */
+  bestClimate: number;
+  /** Your clue reading against Atlas's, free and daily together (`loadQuickRecord`). */
+  road: Tally;
+  climate: Tally;
+}
+
+export const NO_CLUES: ClueSources = {
+  bestRun: 0,
+  bestClimate: 0,
+  road: { runs: 0, rounds: 0, right: 0, atlasPlayed: 0, atlasRight: 0 },
+  climate: { runs: 0, rounds: 0, right: 0, atlasPlayed: 0, atlasRight: 0 },
+};
 
 const BADGE_ICONS: Record<BadgeId, string> = {
   "first-win": "🏅",
@@ -118,6 +170,7 @@ export const STAMP_IDS: readonly StampId[] = [
   "full-day",
   "full-week",
   ...VERSUS_GAMES.map((g) => atlasStampId(g.id)),
+  ...CLUE_STAMP_IDS,
 ];
 
 const KNOWN: ReadonlySet<string> = new Set(STAMP_IDS);
@@ -315,6 +368,90 @@ function atlasStamps({ tallies }: StampSources): Stamp[] {
   });
 }
 
+/**
+ * A clue read better than Atlas: earned once both of you have read `CLUE_PHOTOS` photos of it
+ * and your rate is ahead of Atlas's, by the same whole percentages Your map shows. Short of the
+ * photos, the progress counts them; past them but not ahead, there is no progress left to make,
+ * only the gap to close.
+ */
+function aheadStamp(id: ClueStampId, tally: Tally, name: string, how: string, icon: string): Stamp {
+  const photos = Math.min(tally.rounds, tally.atlasPlayed);
+  const enough = photos >= CLUE_PHOTOS;
+  const s = standing(tally);
+  const earned = enough && s.lead === "you";
+  let note: string | null = null;
+  if (!earned && enough) note = `${standingLine(tally, "photo")} Read on to pull ahead.`;
+  else if (!earned && s.you !== null && s.atlas !== null)
+    note = `So far: you ${s.you}%, Atlas ${s.atlas}%`;
+  return {
+    id,
+    group: "clues",
+    name,
+    how,
+    icon,
+    earned,
+    progress: enough
+      ? null
+      : {
+          have: photos,
+          need: CLUE_PHOTOS,
+          unit: ["photo read with Atlas", "photos read with Atlas"],
+        },
+    note,
+  };
+}
+
+function clueStamps({ clues = NO_CLUES }: StampSources): Stamp[] {
+  const climateRate = percent(clues.climate.right, clues.climate.rounds);
+  return [
+    {
+      id: "road-reader",
+      group: "clues",
+      name: "Road reader",
+      how: `Call the side of the road right ${ROAD_READER_RUN} photos in a row at Left or right?`,
+      icon: "🛣️",
+      earned: clues.bestRun >= ROAD_READER_RUN,
+      progress: {
+        have: Math.min(clues.bestRun, ROAD_READER_RUN),
+        need: ROAD_READER_RUN,
+        unit: ["call in a row", "calls in a row"],
+      },
+      note: null,
+    },
+    {
+      id: "climate-reader",
+      group: "clues",
+      name: "Climate reader",
+      how: `Name the climate of all ${CLIMATE_PHOTOS} photos of a Which climate? game`,
+      icon: "🌦️",
+      earned: clues.bestClimate >= CLIMATE_PHOTOS,
+      progress: {
+        have: Math.min(clues.bestClimate, CLIMATE_PHOTOS),
+        need: CLIMATE_PHOTOS,
+        unit: ["photo right", "photos right"],
+      },
+      note:
+        clues.bestClimate < CLIMATE_PHOTOS && climateRate !== null
+          ? `Right on ${climateRate}% of the climates you've named`
+          : null,
+    },
+    aheadStamp(
+      "road-ahead",
+      clues.road,
+      "Road ahead of Atlas",
+      `Read the side of the road better than Atlas over at least ${CLUE_PHOTOS} photos`,
+      "🚗",
+    ),
+    aheadStamp(
+      "climate-ahead",
+      clues.climate,
+      "Climate ahead of Atlas",
+      `Read the climate better than Atlas over at least ${CLUE_PHOTOS} photos`,
+      "🌡️",
+    ),
+  ];
+}
+
 /** Every stamp as the browser's records stand, before what was kept is added in. */
 export function readStamps(sources: StampSources): Stamp[] {
   return [
@@ -322,7 +459,26 @@ export function readStamps(sources: StampSources): Stamp[] {
     ...continentStamps(sources),
     ...dayStamps(sources),
     ...atlasStamps(sources),
+    ...clueStamps(sources),
   ];
+}
+
+/**
+ * What the clue games keep in this browser, for `StampSources.clues`: the free bests and the
+ * days each daily keeps (only whole Which climate? days), and Your map's clue reading.
+ */
+export function loadClueSources(): ClueSources {
+  const runs = Object.values(loadSideDays()).map((d) => d.streak);
+  const games = Object.values(loadClimateDays())
+    .filter((d) => d.results.length >= CLIMATE_PHOTOS)
+    .map((d) => d.results.filter((r) => r.correct).length);
+  const record = loadQuickRecord();
+  return {
+    bestRun: Math.max(loadBestLeftRight(), ...runs),
+    bestClimate: Math.max(loadBestClimate(), ...games),
+    road: record["left-right"].total,
+    climate: record["which-climate"].total,
+  };
 }
 
 /** Stamp ids with the UTC day each was first seen earned. */
