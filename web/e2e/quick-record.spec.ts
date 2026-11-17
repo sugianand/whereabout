@@ -77,8 +77,13 @@ test("your map shows the Odd one out run you played against Atlas's picks", asyn
   expect(errors).toEqual([]);
 });
 
-const CATALOG: { id: string; country: string; drivingSide?: string; climateGroup?: string }[] =
-  JSON.parse(readFileSync(resolve(process.cwd(), "src/data/photos.json"), "utf8"));
+const CATALOG: {
+  id: string;
+  country: string;
+  drivingSide?: string;
+  climateGroup?: string;
+  landCover?: string;
+}[] = JSON.parse(readFileSync(resolve(process.cwd(), "src/data/photos.json"), "utf8"));
 const CLIMATE = new Map(CATALOG.map((p) => [p.id, p.climateGroup]));
 
 test("your clue reading shows a Which climate? game against Atlas's read of the same photos", async ({
@@ -140,18 +145,18 @@ test("your clue reading shows a Which climate? game against Atlas's read of the 
 
 const BY_ID = new Map(CATALOG.map((p) => [p.id, p]));
 
-test("Clue mix's calls count on Your map under each clue, the continent in a card of its own", async ({
+test("Clue mix's calls count on Your map under each clue, the continent and the ground in cards of their own", async ({
   page,
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
 
-  // The road and the climate right, then the continent missed.
+  // The road, the climate and the continent right, then the ground missed.
   await page.goto("./clue-mix");
   const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
-  const atlas = { road: [0, 0], climate: [0, 0], continent: [0, 0] };
+  const atlas = { road: [0, 0], climate: [0, 0], continent: [0, 0], ground: [0, 0] };
   let before = [0, 0];
-  for (const clue of ["road", "climate", "continent"] as const) {
+  for (const clue of ["road", "climate", "continent", "ground"] as const) {
     const photo = page.getByTestId("clue-photo");
     await expect(photo).toHaveAttribute("data-clue", clue);
     // The photo's id lands once its record has loaded.
@@ -162,9 +167,11 @@ test("Clue mix's calls count on Your map under each clue, the continent in a car
         ? p.drivingSide
         : clue === "climate"
           ? p.climateGroup
-          : continentOf(p.country);
+          : clue === "continent"
+            ? continentOf(p.country)
+            : p.landCover;
     let pick = truth!;
-    if (clue === "continent") {
+    if (clue === "ground") {
       const buttons = page.getByRole("group").getByRole("button");
       for (const b of await buttons.all()) {
         const id = (await b.getAttribute("data-testid"))!;
@@ -175,12 +182,12 @@ test("Clue mix's calls count on Your map under each clue, the continent in a car
       }
     }
     await page.getByTestId(`clue-${pick}`).click();
-    await expect(card.getByRole("heading")).toHaveText(clue === "continent" ? "Wrong" : "Correct");
+    await expect(card.getByRole("heading")).toHaveText(clue === "ground" ? "Wrong" : "Correct");
     // Atlas's running tally on the card says how it did on this step.
     const [, right, played] = /Atlas this run: (\d+) of (\d+)\./.exec((await card.textContent())!)!;
     atlas[clue] = [Number(right) - before[0], Number(played) - before[1]];
     before = [Number(right), Number(played)];
-    if (clue !== "continent") await card.getByRole("button", { name: "Next photo" }).click();
+    if (clue !== "ground") await card.getByRole("button", { name: "Next photo" }).click();
   }
 
   await page.goto("./map/");
@@ -190,7 +197,8 @@ test("Clue mix's calls count on Your map under each clue, the continent in a car
   for (const [clue, right] of [
     ["road", 1],
     ["climate", 1],
-    ["continent", 0],
+    ["continent", 1],
+    ["ground", 0],
   ] as const) {
     const record = section.getByTestId(`record-${clue}`);
     await expect(record).toBeVisible();
@@ -208,6 +216,7 @@ test("Clue mix's calls count on Your map under each clue, the continent in a car
     expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
   }
   await expect(section.getByTestId("record-continent")).toContainText("The continent");
+  await expect(section.getByTestId("record-ground")).toContainText("The ground");
   await section
     .getByTestId("record-continent")
     .getByRole("link", { name: "Play Clue mix" })

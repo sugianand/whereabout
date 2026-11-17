@@ -325,13 +325,18 @@ test.describe("on a keyboard", () => {
 
   test("? lists Clue mix's controls, and every one of its keys works", async ({ page }) => {
     test.setTimeout(120_000);
-    const catalog: { id: string; country: string; drivingSide?: string; climateGroup?: string }[] =
-      JSON.parse(readFileSync(resolve(process.cwd(), "src/data/photos.json"), "utf8"));
+    const catalog: {
+      id: string;
+      country: string;
+      drivingSide?: string;
+      climateGroup?: string;
+      landCover?: string;
+    }[] = JSON.parse(readFileSync(resolve(process.cwd(), "src/data/photos.json"), "utf8"));
     const byId = new Map(catalog.map((p) => [p.id, p]));
     const photo = page.getByTestId("clue-photo");
     const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
     /** Play right answers by click until the photo on screen asks `clue`. */
-    async function reach(clue: "road" | "climate" | "continent") {
+    async function reach(clue: "road" | "climate" | "continent" | "ground") {
       for (;;) {
         await expect(photo).toHaveAttribute("data-photo", /.+/);
         await expect(page.getByRole("group").getByRole("button").first()).toBeEnabled();
@@ -343,7 +348,9 @@ test.describe("on a keyboard", () => {
             ? p.drivingSide
             : asked === "climate"
               ? p.climateGroup
-              : continentOf(p.country);
+              : asked === "continent"
+                ? continentOf(p.country)
+                : p.landCover;
         await page.getByTestId(`clue-${truth}`).click();
         await card.getByRole("button", { name: "Next photo" }).click();
         await expect(card).toBeHidden();
@@ -374,6 +381,15 @@ test.describe("on a keyboard", () => {
     // 1 to 5 name a climate; 6 and 7 the continents past the fifth.
     for (const pick of keysOf("clue-mix", "pick")) {
       await reach(Number(pick) <= 5 ? "climate" : "continent");
+      await expect(page.locator(`[aria-keyshortcuts="${pick}"]`)).toBeEnabled();
+      await page.keyboard.press(pick);
+      await expect(card).toBeVisible();
+      await page.keyboard.press(keysOf("clue-mix", "next")[0]);
+      await expect(card).toBeHidden();
+    }
+    // 1 to 5 name the ground's covers, in the row's order.
+    for (const pick of keysOf("clue-mix", "pick-ground")) {
+      await reach("ground");
       await expect(page.locator(`[aria-keyshortcuts="${pick}"]`)).toBeEnabled();
       await page.keyboard.press(pick);
       await expect(card).toBeVisible();
