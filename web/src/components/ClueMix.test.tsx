@@ -2,8 +2,17 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CLUE_DAILY_KEY, dailyClueOrder, rememberClueDay } from "@/lib/game/clueDaily";
-import { BEST_CLUE_MIX_KEY, clueAnswers, dealClueMix, type ClueMaps } from "@/lib/game/clueMix";
+import {
+  BEST_CLUE_MIX_KEY,
+  atlasClueRead,
+  clueAnswers,
+  clueTruth,
+  dealClueMix,
+  type ClueMaps,
+  type ClueStep,
+} from "@/lib/game/clueMix";
 import type { GameRecord } from "@/lib/game/deck";
+import { EMPTY_TALLY, loadFreeTallies, loadQuickRecord } from "@/lib/game/quickRecord";
 import type { CatalogPhoto } from "@/lib/game/types";
 import type { ClimateGroup } from "@/lib/trueClues";
 import { stubCanvas } from "@/test/canvas";
@@ -79,6 +88,12 @@ const truthOf = (n: number) => {
       : MAPS.continents[id];
 };
 
+/** Atlas's call on a step as Your clue reading keeps it: right, wrong, or no read. */
+function atlasCall({ id, clue }: ClueStep): boolean | null {
+  const read = atlasClueRead(clue, RECORDS.find((r) => r.photo.id === id)!.atlas);
+  return read === null ? null : read === clueTruth(clue, id, MAPS);
+}
+
 beforeEach(() => localStorage.clear());
 afterEach(cleanup);
 
@@ -142,6 +157,33 @@ describe("ClueMix", () => {
       clueAnswers("continent", MAPS).length,
     );
     expect(localStorage.getItem(BEST_CLUE_MIX_KEY)).toBe("2");
+  });
+
+  it("counts each call in your clue reading under its clue, the first of each a new run", async () => {
+    await setup();
+    await callRight(0);
+    await callRight(1);
+    await callRight(2);
+    await waitFor(() => expect(photo()).toHaveAttribute("data-photo", ORDER[3].id));
+    const free = loadFreeTallies();
+    for (const n of [0, 1, 2]) {
+      const atlas = atlasCall(ORDER[n]);
+      expect(free[`clue-mix-${ORDER[n].clue}`]).toEqual({
+        runs: 1,
+        rounds: 1,
+        right: 1,
+        atlasPlayed: atlas === null ? 0 : 1,
+        atlasRight: atlas ? 1 : 0,
+      });
+    }
+    // The single-clue games' own tallies are left alone.
+    expect(free["left-right"]).toEqual(EMPTY_TALLY);
+    expect(free["which-climate"]).toEqual(EMPTY_TALLY);
+
+    // The fourth step asks the road again, in the same run.
+    fireEvent.click(screen.getByTestId(`clue-${truthOf(3)}`));
+    await screen.findByRole("region");
+    expect(loadFreeTallies()["clue-mix-road"]).toMatchObject({ runs: 1, rounds: 2, right: 2 });
   });
 
   it("takes the arrows for the road and numbers for the rest", async () => {
@@ -249,6 +291,37 @@ describe("today's Clue mix", () => {
     expect(streak()).toHaveTextContent("1");
     // The free runs' best is its own.
     expect(localStorage.getItem(BEST_CLUE_MIX_KEY)).toBeNull();
+  });
+
+  it("keeps Atlas's call on each step with the day, for Your clue reading, and no free tally", async () => {
+    const first = daily();
+    await waitFor(() => expect(screen.getByTestId(`clue-${todayTruth(0)}`)).toBeEnabled());
+    fireEvent.click(screen.getByTestId(`clue-${todayTruth(0)}`));
+    fireEvent.click(
+      within(await screen.findByRole("region")).getByRole("button", { name: "Next photo" }),
+    );
+    first.unmount();
+
+    // After a reload, the next call adds to the reads kept.
+    daily();
+    await waitFor(() => expect(screen.getByTestId(`clue-${wrongFor(1)}`)).toBeEnabled());
+    fireEvent.click(screen.getByTestId(`clue-${wrongFor(1)}`));
+    await screen.findByRole("region");
+    const mark = (n: number) => {
+      const call = atlasCall(TODAY[n]);
+      return call === null ? "-" : call ? "r" : "w";
+    };
+    expect(JSON.parse(localStorage.getItem(CLUE_DAILY_KEY)!)[DAY]).toMatchObject({
+      streak: 1,
+      ended: "miss",
+      reads: mark(0) + mark(1),
+    });
+    expect(Object.values(loadFreeTallies())).toEqual(
+      Object.values(loadFreeTallies()).map(() => EMPTY_TALLY),
+    );
+    const record = loadQuickRecord();
+    expect(record[`clue-mix-${TODAY[0].clue}`].daily).toMatchObject({ rounds: 1, right: 1 });
+    expect(record[`clue-mix-${TODAY[1].clue}`].daily).toMatchObject({ rounds: 1, right: 0 });
   });
 
   it("ends the day on a miss with a share in place of a new run, then shows the day's result", async () => {

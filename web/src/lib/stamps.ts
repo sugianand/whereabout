@@ -32,6 +32,7 @@ import { formatDistance, formatPoints } from "@/lib/geo";
 import { loadClimateDays } from "@/lib/game/climateDaily";
 import { loadBestLeftRight } from "@/lib/game/leftRight";
 import {
+  clueReading,
   loadQuickRecord,
   percent,
   standing,
@@ -126,7 +127,7 @@ export interface ClueSources {
   bestRun: number;
   /** Most photos right in one whole Which climate? game, free or today's. */
   bestClimate: number;
-  /** Your clue reading against Atlas's, free and daily together (`loadQuickRecord`). */
+  /** Your clue reading against Atlas's, free and daily, Clue mix included (`clueReading`). */
   road: Tally;
   climate: Tally;
 }
@@ -472,12 +473,13 @@ export function loadClueSources(): ClueSources {
   const games = Object.values(loadClimateDays())
     .filter((d) => d.results.length >= CLIMATE_PHOTOS)
     .map((d) => d.results.filter((r) => r.correct).length);
-  const record = loadQuickRecord();
+  // The same figures as Your map's clue reading: Clue mix's calls count with each clue's game.
+  const reading = clueReading(loadQuickRecord());
   return {
     bestRun: Math.max(loadBestLeftRight(), ...runs),
     bestClimate: Math.max(loadBestClimate(), ...games),
-    road: record["left-right"].total,
-    climate: record["which-climate"].total,
+    road: reading.road.total,
+    climate: reading.climate.total,
   };
 }
 

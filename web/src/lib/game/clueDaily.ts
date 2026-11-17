@@ -14,16 +14,57 @@ import { CLUE_CYCLE, dealClueMix, type ClueKind, type ClueMaps, type ClueStep } 
 import { hashSeed } from "./daily";
 import {
   dailyRunUrl,
-  loadDailyRun,
-  loadDailyRuns,
-  rememberDailyRun,
+  loadKeptDays,
+  parseDailyRun,
+  rememberKeptDay,
   type DailyRun,
 } from "./dailyRuns";
 
 export const CLUE_DAILY_KEY = "whereabout:clue-mix-daily";
 
 /** How one day's run stands. In a run still going, the next step is `order[streak]`. */
-export type ClueDay = DailyRun;
+export interface ClueDay extends DailyRun {
+  /**
+   * Atlas's call on each step answered, in order: "r" right, "w" wrong, "-" when it said
+   * nothing about that step's clue. With each step's clue fixed by the cycle, this splits
+   * Atlas's tally by clue for Your clue reading. Days played before it was kept have none.
+   */
+  reads?: string;
+}
+
+/** Steps a run has answered: its right calls, and the miss that ended it. */
+export function answeredSteps(run: DailyRun): number {
+  return run.streak + (run.ended === "miss" ? 1 : 0);
+}
+
+/** Whether `reads` agrees with the run: a call per step answered, adding up to Atlas's tally. */
+function readsFit(reads: string, run: DailyRun): boolean {
+  if (!/^[rw-]*$/.test(reads) || reads.length !== answeredSteps(run)) return false;
+  const right = reads.split("r").length - 1;
+  const wrong = reads.split("w").length - 1;
+  return right === run.atlasRight && right + wrong === run.atlasPlayed;
+}
+
+/**
+ * A stored day read back only in the shape `rememberClueDay` writes, else null. Reads that don't
+ * agree with the run are dropped, leaving the run itself.
+ */
+export function parseClueDay(value: unknown): ClueDay | null {
+  const run = parseDailyRun(value);
+  if (!run) return null;
+  const { reads } = value as Record<string, unknown>;
+  return typeof reads === "string" && readsFit(reads, run) ? { ...run, reads } : run;
+}
+
+/**
+ * The reads after one more step: Atlas's call on it added (true right, false wrong, null when it
+ * said nothing). A day already kept without reads stays without, so they never fall out of step.
+ */
+export function addClueRead(kept: ClueDay | null, atlas: boolean | null): string | undefined {
+  const before = kept?.reads ?? (kept === null || answeredSteps(kept) === 0 ? "" : undefined);
+  if (before === undefined) return undefined;
+  return before + (atlas === null ? "-" : atlas ? "r" : "w");
+}
 
 /** The day's seed, apart from the Daily Five's and the other quick games'. */
 export function clueDaySeed(day: string): number {
@@ -37,17 +78,17 @@ export function dailyClueOrder(maps: ClueMaps, day: string): ClueStep[] {
 
 /** Every day kept in this browser, by day; anything malformed is skipped. */
 export function loadClueDays(): Record<string, ClueDay> {
-  return loadDailyRuns(CLUE_DAILY_KEY);
+  return loadKeptDays(CLUE_DAILY_KEY, parseClueDay);
 }
 
 /** The run kept for `day`, or null when it hasn't been started in this browser. */
 export function loadClueDay(day: string): ClueDay | null {
-  return loadDailyRun(CLUE_DAILY_KEY, day);
+  return loadClueDays()[day] ?? null;
 }
 
 /** Keep `entry` as the run for `day`, with only the latest days kept. */
 export function rememberClueDay(day: string, entry: ClueDay): void {
-  rememberDailyRun(CLUE_DAILY_KEY, day, entry);
+  rememberKeptDay(CLUE_DAILY_KEY, day, entry, parseClueDay);
 }
 
 /** A mark per clue, so the squares show which clue each call read. */

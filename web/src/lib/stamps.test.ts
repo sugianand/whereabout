@@ -386,6 +386,17 @@ describe("loadClueSources", () => {
     recordFreeRound("left-right", { first: false, correct: false, atlas: true });
     expect(loadClueSources().road).toEqual(tally(2, 1, 2, 1));
   });
+
+  it("counts Clue mix's road and climate calls with Left or right?'s and Which climate?'s", () => {
+    recordFreeRound("left-right", { first: true, correct: true, atlas: false });
+    recordFreeRound("clue-mix-road", { first: true, correct: false, atlas: true });
+    recordFreeRound("clue-mix-climate", { first: true, correct: true, atlas: null });
+    // The continent has no stamp, so its calls count toward neither.
+    recordFreeRound("clue-mix-continent", { first: true, correct: true, atlas: true });
+    const c = loadClueSources();
+    expect(c.road).toMatchObject({ rounds: 2, right: 1, atlasPlayed: 2, atlasRight: 1 });
+    expect(c.climate).toMatchObject({ rounds: 1, right: 1, atlasPlayed: 0, atlasRight: 0 });
+  });
 });
 
 describe("longestFullRun", () => {

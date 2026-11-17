@@ -1,14 +1,17 @@
 /**
  * Atlas's quick-game record: how your picks in Further North and Odd one out, and your clue
- * reading in Left or right? (the road) and Which climate? (the climate), compare with Atlas's
- * on the same photos, from the games played in this browser.
+ * reading in Left or right? (the road), Which climate? (the climate) and Clue mix (all three
+ * and the continent), compare with Atlas's on the same photos, from the games played in this
+ * browser. Clue mix is kept a clue at a time (`clue-mix-road` and so on), and `clueReading`
+ * adds each clue up across the games that ask it.
  *
  * Two sources are added up per game:
  * - free runs, tallied here round by round as they are answered (`recordFreeRound`), under
  *   `QUICK_RECORD_KEY`, so leaving mid-run still counts the rounds played;
  * - today's runs, read back from the days each game already keeps (src/lib/game/dailyRuns.ts),
  *   so nothing is counted twice: the daily screens never call `recordFreeRound`. Today's Which
- *   climate? keeps every call (./climateDaily.ts), and is read back call by call.
+ *   climate? keeps every call (./climateDaily.ts), and is read back call by call; today's Clue
+ *   mix is split by clue from each step's place in the cycle (`clueDayTallies`).
  *
  * You are judged on every round you answered, Atlas on the rounds it played (it sits out a
  * round where it never guessed one of the photos), so each side's rate is over its own rounds
@@ -16,6 +19,8 @@
  */
 
 import { loadClimateDays, type ClimateDay } from "./climateDaily";
+import { answeredSteps, loadClueDays, type ClueDay } from "./clueDaily";
+import { CLUE_CYCLE, type ClueKind } from "./clueMix";
 import { loadDailyRuns, type DailyRun } from "./dailyRuns";
 import { NORTH_DAILY_KEY } from "./northDaily";
 import { ODD_DAILY_KEY } from "./oddDaily";
@@ -29,11 +34,23 @@ export const RECORD_GAMES = [
   "odd-one-out",
   "left-right",
   "which-climate",
+  "clue-mix-road",
+  "clue-mix-climate",
+  "clue-mix-continent",
 ] as const;
 export type RecordGame = (typeof RECORD_GAMES)[number];
 
-/** The clue games, each drilling one clue the reveal teaches: the road and the climate. */
-export const CLUE_GAMES = ["left-right", "which-climate"] as const satisfies readonly RecordGame[];
+/** Clue mix's tally for one clue: the steps that asked it. */
+export function clueMixGame(clue: ClueKind): RecordGame {
+  return `clue-mix-${clue}`;
+}
+
+/** The games that ask each clue, the single-clue game first: your clue reading adds them up. */
+export const CLUE_SOURCES: Readonly<Record<ClueKind, readonly RecordGame[]>> = {
+  road: ["left-right", "clue-mix-road"],
+  climate: ["which-climate", "clue-mix-climate"],
+  continent: ["clue-mix-continent"],
+};
 /** The rest: picking between photos. */
 export const PICK_GAMES = ["further-north", "odd-one-out"] as const satisfies readonly RecordGame[];
 
@@ -43,6 +60,9 @@ const DAILY_TALLIES: Record<RecordGame, () => Tally> = {
   "odd-one-out": () => dailyTally(loadDailyRuns(ODD_DAILY_KEY)),
   "left-right": () => dailyTally(loadDailyRuns(SIDE_DAILY_KEY)),
   "which-climate": () => climateDayTally(loadClimateDays()),
+  "clue-mix-road": () => clueDayTallies(loadClueDays()).road,
+  "clue-mix-climate": () => clueDayTallies(loadClueDays()).climate,
+  "clue-mix-continent": () => clueDayTallies(loadClueDays()).continent,
 };
 
 /** Rounds played and got right, by you and by Atlas. */
@@ -140,6 +160,33 @@ export function climateDayTally(days: Readonly<Record<string, ClimateDay>>): Tal
   return tally;
 }
 
+/**
+ * Today's Clue mix runs as a tally per clue. A step's clue is fixed by its place in the cycle,
+ * so the streak says which clues were read right and which one ended the run; Atlas's call on
+ * each step is read from the day's `reads`, and a day kept without them (played before they
+ * were kept) has Atlas sit its steps out. A day is a run for each clue it answered a step of.
+ */
+export function clueDayTallies(days: Readonly<Record<string, ClueDay>>): Record<ClueKind, Tally> {
+  const tallies = Object.fromEntries(CLUE_CYCLE.map((c) => [c, EMPTY_TALLY])) as Record<
+    ClueKind,
+    Tally
+  >;
+  for (const day of Object.values(days)) {
+    const asked = new Set<ClueKind>();
+    for (let i = 0; i < answeredSteps(day); i++) {
+      const clue = CLUE_CYCLE[i % CLUE_CYCLE.length];
+      const read = day.reads?.[i];
+      tallies[clue] = addRound(tallies[clue], {
+        first: !asked.has(clue),
+        correct: i < day.streak,
+        atlas: read === "r" ? true : read === "w" ? false : null,
+      });
+      asked.add(clue);
+    }
+  }
+  return tallies;
+}
+
 function storage(): Storage | null {
   try {
     return typeof window === "undefined" ? null : window.localStorage;
@@ -210,6 +257,31 @@ export function loadQuickRecord(): QuickRecord {
     record[game] = { free: free[game], daily, total: addTallies(free[game], daily) };
   }
   return record;
+}
+
+/** One clue's reading: every game that asks it added up, and each of those games' own record. */
+export interface ClueReading {
+  total: Tally;
+  daily: Tally;
+  /** The games that ask the clue, in `CLUE_SOURCES` order, with their own records. */
+  sources: { game: RecordGame; record: GameRecord }[];
+}
+
+/** Your reading of each clue across the games that ask it, from the record. */
+export function clueReading(record: QuickRecord): Record<ClueKind, ClueReading> {
+  return Object.fromEntries(
+    CLUE_CYCLE.map((clue) => {
+      const sources = CLUE_SOURCES[clue].map((game) => ({ game, record: record[game] }));
+      return [
+        clue,
+        {
+          total: sources.reduce((t, s) => addTallies(t, s.record.total), EMPTY_TALLY),
+          daily: sources.reduce((t, s) => addTallies(t, s.record.daily), EMPTY_TALLY),
+          sources,
+        },
+      ];
+    }),
+  ) as Record<ClueKind, ClueReading>;
 }
 
 /** A whole-number percentage of `part` in `whole`, or null with no rounds. */

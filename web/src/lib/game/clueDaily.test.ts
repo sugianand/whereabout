@@ -3,6 +3,9 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { bundledClimateGroups, bundledContinents, bundledDrivingSides } from "./bundled";
 import {
   CLUE_DAILY_KEY,
+  addClueRead,
+  answeredSteps,
+  parseClueDay,
   clueDailyShare,
   clueDaySeed,
   clueEndedOn,
@@ -72,6 +75,49 @@ describe("the kept days", () => {
       }),
     );
     expect(loadClueDays()).toEqual({ "2026-11-15": going });
+  });
+});
+
+describe("Atlas's reads on each step", () => {
+  const run = (over: Partial<ClueDay>): ClueDay => ({
+    streak: 0,
+    atlasRight: 0,
+    atlasPlayed: 0,
+    ended: null,
+    ...over,
+  });
+
+  it("count the steps answered: the right calls and the miss", () => {
+    expect(answeredSteps(run({ streak: 2 }))).toBe(2);
+    expect(answeredSteps(run({ streak: 2, ended: "miss" }))).toBe(3);
+    expect(answeredSteps(run({ streak: 3, ended: "cleared" }))).toBe(3);
+  });
+
+  it("are kept with the day and read back when they add up to Atlas's tally", () => {
+    const kept = run({ streak: 2, atlasRight: 1, atlasPlayed: 2, ended: "miss", reads: "r-w" });
+    rememberClueDay("2026-11-16", kept);
+    // Keeping another day re-reads the first, and its reads survive that.
+    rememberClueDay("2026-11-17", run({ streak: 1, atlasRight: 1, atlasPlayed: 1, reads: "r" }));
+    expect(loadClueDay("2026-11-16")).toEqual(kept);
+    expect(loadClueDays()["2026-11-17"].reads).toBe("r");
+  });
+
+  it("are dropped, leaving the run, when they don't fit it", () => {
+    const base = { streak: 2, atlasRight: 1, atlasPlayed: 2, ended: "miss" };
+    for (const reads of ["r-", "rw-r", "rr-", "r--", "rxw", 3]) {
+      expect(parseClueDay({ ...base, reads })).toEqual(base);
+    }
+    expect(parseClueDay({ ...base, reads: "w-r" })).toEqual({ ...base, reads: "w-r" });
+    expect(parseClueDay({ ...base, streak: -1, reads: "w-r" })).toBeNull();
+  });
+
+  it("grow by a step, from nothing on a fresh day, and stay away from a day kept without", () => {
+    expect(addClueRead(null, true)).toBe("r");
+    expect(addClueRead(run({}), null)).toBe("-");
+    expect(addClueRead(run({ streak: 1, atlasRight: 1, atlasPlayed: 1, reads: "r" }), false)).toBe(
+      "rw",
+    );
+    expect(addClueRead(run({ streak: 2, atlasRight: 1, atlasPlayed: 1 }), true)).toBeUndefined();
   });
 });
 

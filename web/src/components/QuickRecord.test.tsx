@@ -1,6 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { CLUE_DAILY_KEY } from "@/lib/game/clueDaily";
 import { NORTH_DAILY_KEY } from "@/lib/game/northDaily";
 import { recordFreeRound } from "@/lib/game/quickRecord";
 import { SIDE_DAILY_KEY } from "@/lib/game/sideDaily";
@@ -75,10 +76,9 @@ describe("QuickRecord", () => {
     // No picking game has been played, so only the clue reading shows.
     expect(screen.queryByTestId("quick-record")).not.toBeInTheDocument();
 
-    const road = within(section).getByTestId("record-left-right");
-    expect(within(road).getByRole("heading", { name: "Left or right?" })).toBeVisible();
-    expect(within(road).getByText("The road")).toBeVisible();
-    expect(within(road).getByText("2 runs, 1 of them today's")).toBeInTheDocument();
+    const road = within(section).getByTestId("record-road");
+    expect(within(road).getByRole("heading", { name: "The road" })).toBeVisible();
+    expect(within(road).getByText("2 Left or right? runs, 1 of them today's")).toBeInTheDocument();
     // You: 2 of 4 photos (50%); Atlas: 1 of the 2 it read (50%).
     expect(within(road).getByText("You and Atlas are level.")).toBeInTheDocument();
     expect(within(road).getByRole("meter", { name: "You: photos right" })).toHaveAttribute(
@@ -90,22 +90,68 @@ describe("QuickRecord", () => {
         /said nothing about the road or the country, so it has played 2 photos fewer/,
       ),
     ).toBeInTheDocument();
-    expect(within(road).getByRole("link", { name: "Today's run" })).toHaveAttribute(
+    expect(within(road).getByRole("link", { name: "Today's Left or right?" })).toHaveAttribute(
       "href",
       "/left-right/daily",
     );
+    expect(within(road).getByRole("link", { name: "Play Clue mix" })).toHaveAttribute(
+      "href",
+      "/clue-mix",
+    );
 
-    const climate = within(section).getByTestId("record-which-climate");
-    expect(within(climate).getByRole("heading", { name: "Which climate?" })).toBeVisible();
-    expect(within(climate).getByText("The climate")).toBeVisible();
-    expect(within(climate).getByText("1 game")).toBeInTheDocument();
+    const climate = within(section).getByTestId("record-climate");
+    expect(within(climate).getByRole("heading", { name: "The climate" })).toBeVisible();
+    expect(within(climate).getByText("1 Which climate? game")).toBeInTheDocument();
     expect(within(climate).getByText("Atlas is ahead of you by 100 points.")).toBeInTheDocument();
     expect(within(climate).getByRole("link", { name: "Play Which climate?" })).toHaveAttribute(
       "href",
       "/which-climate",
     );
-    // Which climate? has no daily to link to.
-    expect(within(climate).queryByRole("link", { name: "Today's run" })).toBeNull();
+    // Clue mix hasn't been played, so nothing reads the continent yet.
+    expect(within(section).queryByTestId("record-continent")).not.toBeInTheDocument();
+  });
+
+  it("counts Clue mix's calls under each clue, the continent in a card of its own", async () => {
+    recordFreeRound("left-right", { first: true, correct: true, atlas: true });
+    recordFreeRound("clue-mix-road", { first: true, correct: true, atlas: null });
+    recordFreeRound("clue-mix-climate", { first: true, correct: true, atlas: true });
+    recordFreeRound("clue-mix-continent", { first: true, correct: false, atlas: true });
+    // Today's run: the road right, the climate missed; Atlas read only the climate, wrongly.
+    window.localStorage.setItem(
+      CLUE_DAILY_KEY,
+      JSON.stringify({
+        "2026-11-16": { streak: 1, atlasRight: 0, atlasPlayed: 1, ended: "miss", reads: "-w" },
+      }),
+    );
+    render(<QuickRecord />);
+    const section = await screen.findByTestId("clue-reading");
+
+    const road = within(section).getByTestId("record-road");
+    expect(within(road).getByTestId("record-road-left-right")).toHaveTextContent(
+      "1 Left or right? run",
+    );
+    expect(within(road).getByTestId("record-road-clue-mix-road")).toHaveTextContent(
+      "2 Clue mix runs, 1 of them today's",
+    );
+    // You: 3 of 3 (Left or right?, a free Clue mix call and today's); Atlas read only the first.
+    expect(within(road).getByTestId("record-road-you")).toHaveAttribute("data-played", "3");
+    expect(within(road).getByTestId("record-road-atlas")).toHaveAttribute("data-played", "1");
+
+    const climate = within(section).getByTestId("record-climate");
+    // No Which climate? game was played, so only Clue mix is listed for the climate.
+    expect(within(climate).queryByTestId("record-climate-which-climate")).toBeNull();
+    expect(within(climate).getByTestId("record-climate-you")).toHaveAttribute("data-right", "1");
+    expect(within(climate).getByTestId("record-climate-you")).toHaveAttribute("data-played", "2");
+    expect(within(climate).getByTestId("record-climate-atlas")).toHaveAttribute("data-right", "1");
+
+    const continent = within(section).getByTestId("record-continent");
+    expect(within(continent).getByRole("heading", { name: "The continent" })).toBeVisible();
+    expect(within(continent).getByText("Atlas is ahead of you by 100 points.")).toBeInTheDocument();
+    expect(within(continent).getByRole("link", { name: "Today's Clue mix" })).toHaveAttribute(
+      "href",
+      "/clue-mix/daily",
+    );
+    expect(within(continent).queryByRole("link", { name: /Left or right/ })).toBeNull();
   });
 
   it("shows both sections when both kinds of game have been played", async () => {
@@ -114,6 +160,6 @@ describe("QuickRecord", () => {
     render(<QuickRecord />);
     expect(await screen.findByTestId("clue-reading")).toBeInTheDocument();
     expect(screen.getByTestId("quick-record")).toBeInTheDocument();
-    expect(screen.queryByTestId("record-left-right")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("record-road")).not.toBeInTheDocument();
   });
 });

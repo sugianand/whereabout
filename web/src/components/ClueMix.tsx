@@ -16,6 +16,7 @@ import {
   type ClueRun,
 } from "@/lib/game/clueChallenge";
 import {
+  addClueRead,
   clueDailyShare,
   clueRunWords,
   dailyClueOrder,
@@ -43,6 +44,7 @@ import {
 } from "@/lib/game/clueMix";
 import { runToday } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
+import { clueMixGame, recordFreeRound } from "@/lib/game/quickRecord";
 import { placeholderUrl, sources } from "@/lib/photoSources";
 import { sendShare, type ShareOutcome } from "@/lib/share";
 
@@ -243,16 +245,27 @@ export default function ClueMix({
       if (after.phase === "answered" && day) {
         // Today's run is kept after every call, so a reload resumes it and never deals it again.
         const cleared = after.verdict.correct && after.index + 1 >= after.order.length;
+        // Atlas's call on each step is kept too, so Your clue reading can split it by clue.
+        const reads = addClueRead(loadClueDay(day), after.atlas ? after.atlas.correct : null);
         rememberClueDay(day, {
           streak: after.streak,
           atlasRight: after.atlasRight,
           atlasPlayed: after.atlasPlayed,
           ended: !after.verdict.correct ? "miss" : cleared ? "cleared" : null,
+          ...(reads === undefined ? {} : { reads }),
         });
-      } else if (after.phase === "answered" && after.verdict.correct && !challenge) {
+      } else if (after.phase === "answered") {
+        // Count the call in your clue reading on Your map under its clue, as it is made: the
+        // first step of each clue starts a run in that clue's tally. Today's run is counted
+        // from the day kept above instead, so it is never counted twice.
+        recordFreeRound(clueMixGame(step.clue), {
+          first: state.index < CLUE_CYCLE.length,
+          correct: after.verdict.correct,
+          atlas: after.atlas ? after.atlas.correct : null,
+        });
         // Keep the run as the best after every right call, so leaving mid-run keeps it. A
         // challenge's photos may have been seen before, so it is played for the friend only.
-        setBest(rememberClueMix(after.streak));
+        if (after.verdict.correct && !challenge) setBest(rememberClueMix(after.streak));
       }
       dispatch(action);
     },

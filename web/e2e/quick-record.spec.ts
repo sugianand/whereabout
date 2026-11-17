@@ -3,6 +3,8 @@ import { resolve } from "node:path";
 
 import { expect, test } from "@playwright/test";
 
+import { continentOf } from "../src/lib/continents";
+
 const PHOTO = readFileSync(resolve(process.cwd(), "e2e/fixtures/photo.png"));
 
 test.beforeEach(async ({ page }) => {
@@ -75,9 +77,8 @@ test("your map shows the Odd one out run you played against Atlas's picks", asyn
   expect(errors).toEqual([]);
 });
 
-const CATALOG: { id: string; climateGroup?: string }[] = JSON.parse(
-  readFileSync(resolve(process.cwd(), "src/data/photos.json"), "utf8"),
-);
+const CATALOG: { id: string; country: string; drivingSide?: string; climateGroup?: string }[] =
+  JSON.parse(readFileSync(resolve(process.cwd(), "src/data/photos.json"), "utf8"));
 const CLIMATE = new Map(CATALOG.map((p) => [p.id, p.climateGroup]));
 
 test("your clue reading shows a Which climate? game against Atlas's read of the same photos", async ({
@@ -115,17 +116,17 @@ test("your clue reading shows a Which climate? game against Atlas's read of the 
   await expect(section.getByRole("heading", { name: "Your clue reading" })).toBeVisible();
   // No picking game was played, so the quick games' section stays away.
   await expect(page.getByTestId("quick-record")).toHaveCount(0);
-  const record = section.getByTestId("record-which-climate");
-  await expect(record).toContainText("The climate");
-  await expect(record).toContainText("1 game");
-  const you = record.getByTestId("record-which-climate-you");
+  const record = section.getByTestId("record-climate");
+  await expect(record.getByRole("heading", { name: "The climate" })).toBeVisible();
+  await expect(record).toContainText("1 Which climate? game");
+  const you = record.getByTestId("record-climate-you");
   await expect(you).toHaveAttribute("data-right", "2");
   await expect(you).toHaveAttribute("data-played", "5");
   await expect(you).toContainText("2 of 5 photos right");
-  const atlas = record.getByTestId("record-which-climate-atlas");
+  const atlas = record.getByTestId("record-climate-atlas");
   await expect(atlas).toHaveAttribute("data-right", String(atlasRight));
   await expect(atlas).toHaveAttribute("data-played", String(read));
-  await expect(section.getByTestId("record-left-right")).toHaveCount(0);
+  await expect(section.getByTestId("record-road")).toHaveCount(0);
 
   // The card fits the screen's width, phone or desktop, and plays another game.
   const { width } = page.viewportSize()!;
@@ -134,5 +135,83 @@ test("your clue reading shows a Which climate? game against Atlas's read of the 
   expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
   await record.getByRole("link", { name: "Play Which climate?" }).click();
   await expect(page).toHaveURL(/\/which-climate\/?$/);
+  expect(errors).toEqual([]);
+});
+
+const BY_ID = new Map(CATALOG.map((p) => [p.id, p]));
+
+test("Clue mix's calls count on Your map under each clue, the continent in a card of its own", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+
+  // The road and the climate right, then the continent missed.
+  await page.goto("./clue-mix");
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
+  const atlas = { road: [0, 0], climate: [0, 0], continent: [0, 0] };
+  let before = [0, 0];
+  for (const clue of ["road", "climate", "continent"] as const) {
+    const photo = page.getByTestId("clue-photo");
+    await expect(photo).toHaveAttribute("data-clue", clue);
+    // The photo's id lands once its record has loaded.
+    await expect(photo).toHaveAttribute("data-photo", /.+/);
+    const p = BY_ID.get((await photo.getAttribute("data-photo"))!)!;
+    const truth =
+      clue === "road"
+        ? p.drivingSide
+        : clue === "climate"
+          ? p.climateGroup
+          : continentOf(p.country);
+    let pick = truth!;
+    if (clue === "continent") {
+      const buttons = page.getByRole("group").getByRole("button");
+      for (const b of await buttons.all()) {
+        const id = (await b.getAttribute("data-testid"))!;
+        if (id !== `clue-${truth}`) {
+          pick = id.slice("clue-".length);
+          break;
+        }
+      }
+    }
+    await page.getByTestId(`clue-${pick}`).click();
+    await expect(card.getByRole("heading")).toHaveText(clue === "continent" ? "Wrong" : "Correct");
+    // Atlas's running tally on the card says how it did on this step.
+    const [, right, played] = /Atlas this run: (\d+) of (\d+)\./.exec((await card.textContent())!)!;
+    atlas[clue] = [Number(right) - before[0], Number(played) - before[1]];
+    before = [Number(right), Number(played)];
+    if (clue !== "continent") await card.getByRole("button", { name: "Next photo" }).click();
+  }
+
+  await page.goto("./map/");
+  const section = page.getByTestId("clue-reading");
+  await expect(section.getByRole("heading", { name: "Your clue reading" })).toBeVisible();
+  const { width } = page.viewportSize()!;
+  for (const [clue, right] of [
+    ["road", 1],
+    ["climate", 1],
+    ["continent", 0],
+  ] as const) {
+    const record = section.getByTestId(`record-${clue}`);
+    await expect(record).toBeVisible();
+    await expect(record.getByTestId(`record-${clue}-clue-mix-${clue}`)).toHaveText(
+      "1 Clue mix run",
+    );
+    const you = record.getByTestId(`record-${clue}-you`);
+    await expect(you).toHaveAttribute("data-right", String(right));
+    await expect(you).toHaveAttribute("data-played", "1");
+    const them = record.getByTestId(`record-${clue}-atlas`);
+    await expect(them).toHaveAttribute("data-right", String(atlas[clue][0]));
+    await expect(them).toHaveAttribute("data-played", String(atlas[clue][1]));
+    const box = (await record.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
+  }
+  await expect(section.getByTestId("record-continent")).toContainText("The continent");
+  await section
+    .getByTestId("record-continent")
+    .getByRole("link", { name: "Play Clue mix" })
+    .click();
+  await expect(page).toHaveURL(/\/clue-mix\/?$/);
   expect(errors).toEqual([]);
 });

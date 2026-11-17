@@ -1,16 +1,20 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { rememberClimateDay } from "./climateDaily";
+import { CLUE_DAILY_KEY, rememberClueDay } from "./clueDaily";
 import type { DailyRun } from "./dailyRuns";
 import { NORTH_DAILY_KEY } from "./northDaily";
 import { ODD_DAILY_KEY } from "./oddDaily";
 import {
-  CLUE_GAMES,
+  CLUE_SOURCES,
   PICK_GAMES,
   RECORD_GAMES,
   EMPTY_TALLY,
   QUICK_RECORD_KEY,
   addRound,
+  clueDayTallies,
+  clueMixGame,
+  clueReading,
   dailyTally,
   loadFreeTallies,
   loadQuickRecord,
@@ -57,6 +61,9 @@ describe("recordFreeRound", () => {
       "odd-one-out": { runs: 1, rounds: 1, right: 0, atlasPlayed: 0, atlasRight: 0 },
       "left-right": EMPTY_TALLY,
       "which-climate": { runs: 1, rounds: 1, right: 1, atlasPlayed: 1, atlasRight: 0 },
+      "clue-mix-road": EMPTY_TALLY,
+      "clue-mix-climate": EMPTY_TALLY,
+      "clue-mix-continent": EMPTY_TALLY,
     });
   });
 
@@ -189,9 +196,125 @@ describe("loadQuickRecord", () => {
     for (const game of RECORD_GAMES) expect(record[game].total).toEqual(EMPTY_TALLY);
   });
 
-  it("splits the games into the clue games and the picking games, each listed once", () => {
-    expect([...PICK_GAMES, ...CLUE_GAMES].sort()).toEqual([...RECORD_GAMES].sort());
-    expect(CLUE_GAMES).toEqual(["left-right", "which-climate"]);
+  it("splits the games into the picking games and each clue's games, each listed once", () => {
+    const clueGames = Object.values(CLUE_SOURCES).flat();
+    expect([...PICK_GAMES, ...clueGames].sort()).toEqual([...RECORD_GAMES].sort());
+    expect(CLUE_SOURCES).toEqual({
+      road: ["left-right", "clue-mix-road"],
+      climate: ["which-climate", "clue-mix-climate"],
+      continent: ["clue-mix-continent"],
+    });
+    expect(clueMixGame("continent")).toBe("clue-mix-continent");
+  });
+});
+
+describe("clueDayTallies", () => {
+  it("splits a day's run by each step's clue, with Atlas's call on each from its reads", () => {
+    // Road right, climate right, continent right, road right, climate missed.
+    const tallies = clueDayTallies({
+      "2026-11-16": {
+        ...day({ streak: 4, atlasRight: 2, atlasPlayed: 4, ended: "miss" }),
+        reads: "rw-rw",
+      },
+    });
+    expect(tallies.road).toEqual({ runs: 1, rounds: 2, right: 2, atlasPlayed: 2, atlasRight: 2 });
+    expect(tallies.climate).toEqual({
+      runs: 1,
+      rounds: 2,
+      right: 1,
+      atlasPlayed: 2,
+      atlasRight: 0,
+    });
+    expect(tallies.continent).toEqual({
+      runs: 1,
+      rounds: 1,
+      right: 1,
+      atlasPlayed: 0,
+      atlasRight: 0,
+    });
+  });
+
+  it("has Atlas sit out a day kept without reads, and counts a clue's run only where asked", () => {
+    const tallies = clueDayTallies({
+      "2026-11-15": day({ streak: 1, atlasRight: 1, atlasPlayed: 2, ended: "miss" }),
+      "2026-11-16": day({ streak: 0, ended: null }),
+    });
+    expect(tallies.road).toEqual({ runs: 1, rounds: 1, right: 1, atlasPlayed: 0, atlasRight: 0 });
+    expect(tallies.climate).toEqual({
+      runs: 1,
+      rounds: 1,
+      right: 0,
+      atlasPlayed: 0,
+      atlasRight: 0,
+    });
+    expect(tallies.continent).toEqual(EMPTY_TALLY);
+  });
+
+  it("counts a cleared run's every step as right", () => {
+    const tallies = clueDayTallies({
+      "2026-11-16": {
+        ...day({ streak: 3, atlasRight: 3, atlasPlayed: 3, ended: "cleared" }),
+        reads: "rrr",
+      },
+    });
+    for (const clue of ["road", "climate", "continent"] as const) {
+      expect(tallies[clue]).toEqual({
+        runs: 1,
+        rounds: 1,
+        right: 1,
+        atlasPlayed: 1,
+        atlasRight: 1,
+      });
+    }
+  });
+});
+
+describe("clueReading", () => {
+  it("adds Clue mix's calls of each clue to the clue's own game, free and today's", () => {
+    recordFreeRound("left-right", { first: true, correct: true, atlas: true });
+    recordFreeRound("clue-mix-road", { first: true, correct: true, atlas: false });
+    recordFreeRound("clue-mix-continent", { first: true, correct: false, atlas: true });
+    rememberClueDay("2026-11-16", {
+      ...day({ streak: 1, atlasRight: 0, atlasPlayed: 1, ended: "miss" }),
+      reads: "-w",
+    });
+    const reading = clueReading(loadQuickRecord());
+    // Road: Left or right?'s call, Clue mix's free call and today's first step.
+    expect(reading.road.total).toEqual({
+      runs: 3,
+      rounds: 3,
+      right: 3,
+      atlasPlayed: 2,
+      atlasRight: 1,
+    });
+    expect(reading.road.daily).toEqual({
+      runs: 1,
+      rounds: 1,
+      right: 1,
+      atlasPlayed: 0,
+      atlasRight: 0,
+    });
+    expect(reading.road.sources.map((s) => [s.game, s.record.total.rounds])).toEqual([
+      ["left-right", 1],
+      ["clue-mix-road", 2],
+    ]);
+    // Climate: only today's miss, which Atlas also got wrong.
+    expect(reading.climate.total).toEqual({
+      runs: 1,
+      rounds: 1,
+      right: 0,
+      atlasPlayed: 1,
+      atlasRight: 0,
+    });
+    // Continent: Clue mix's free call alone.
+    expect(reading.continent.total).toEqual({
+      runs: 1,
+      rounds: 1,
+      right: 0,
+      atlasPlayed: 1,
+      atlasRight: 1,
+    });
+    expect(localStorage.getItem(CLUE_DAILY_KEY)).toContain('"reads":"-w"');
   });
 });
 
