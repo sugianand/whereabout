@@ -79,6 +79,7 @@ const GAMES: Record<RecordGame, GameInfo> = {
   "clue-mix-road": CLUE_MIX,
   "clue-mix-climate": CLUE_MIX,
   "clue-mix-continent": CLUE_MIX,
+  "clue-mix-ground": CLUE_MIX,
 };
 
 /** Each clue's card: its name, and why Atlas has read fewer photos of it than you. */
@@ -94,6 +95,10 @@ const CLUES: Record<ClueKind, { name: string; sitsOut: string }> = {
   continent: {
     name: "The continent",
     sitsOut: "Atlas sits out a photo when it named no country",
+  },
+  ground: {
+    name: "The ground",
+    sitsOut: "Atlas sits out a photo when none of its clues named a city, a skyline or a coast",
   },
 };
 

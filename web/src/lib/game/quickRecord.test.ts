@@ -64,6 +64,7 @@ describe("recordFreeRound", () => {
       "clue-mix-road": EMPTY_TALLY,
       "clue-mix-climate": EMPTY_TALLY,
       "clue-mix-continent": EMPTY_TALLY,
+      "clue-mix-ground": EMPTY_TALLY,
     });
   });
 
@@ -203,8 +204,10 @@ describe("loadQuickRecord", () => {
       road: ["left-right", "clue-mix-road"],
       climate: ["which-climate", "clue-mix-climate"],
       continent: ["clue-mix-continent"],
+      ground: ["clue-mix-ground"],
     });
     expect(clueMixGame("continent")).toBe("clue-mix-continent");
+    expect(clueMixGame("ground")).toBe("clue-mix-ground");
   });
 });
 
@@ -232,6 +235,20 @@ describe("clueDayTallies", () => {
       atlasPlayed: 0,
       atlasRight: 0,
     });
+  });
+
+  it("reads a day from the ground's first day over four clues, the fifth step the road", () => {
+    // Road right, climate right, continent right, ground right, road missed.
+    const tallies = clueDayTallies({
+      "2026-11-18": {
+        ...day({ streak: 4, atlasRight: 2, atlasPlayed: 3, ended: "miss" }),
+        reads: "rw-r-",
+      },
+    });
+    expect(tallies.ground).toEqual({ runs: 1, rounds: 1, right: 1, atlasPlayed: 1, atlasRight: 1 });
+    expect(tallies.road).toEqual({ runs: 1, rounds: 2, right: 1, atlasPlayed: 1, atlasRight: 1 });
+    expect(tallies.climate).toMatchObject({ rounds: 1, right: 1, atlasPlayed: 1, atlasRight: 0 });
+    expect(tallies.continent).toMatchObject({ rounds: 1, right: 1, atlasPlayed: 0 });
   });
 
   it("has Atlas sit out a day kept without reads, and counts a clue's run only where asked", () => {

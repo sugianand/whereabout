@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { bundledClimateGroups, bundledContinents, bundledDrivingSides } from "./bundled";
+import {
+  bundledClimateGroups,
+  bundledContinents,
+  bundledDrivingSides,
+  bundledGroundCovers,
+} from "./bundled";
 import {
   CLUE_DAILY_KEY,
   addClueRead,
@@ -17,13 +22,14 @@ import {
   rememberClueDay,
   type ClueDay,
 } from "./clueDaily";
-import { CLUE_CYCLE, dealClueMix, type ClueMaps } from "./clueMix";
+import { CLUE_CYCLE, THREE_CLUE_CYCLE, dealClueMix, type ClueMaps } from "./clueMix";
 import { hashSeed } from "./daily";
 
 const BUNDLED: ClueMaps = {
   sides: bundledDrivingSides,
   climates: bundledClimateGroups,
   continents: bundledContinents,
+  grounds: bundledGroundCovers,
 };
 
 beforeEach(() => localStorage.clear());
@@ -35,19 +41,29 @@ describe("dailyClueOrder", () => {
     expect(dailyClueOrder(BUNDLED, "2026-11-16")).not.toEqual(today);
   });
 
-  it("is the free runs' even deal on the day's own seed", () => {
+  it("is the free runs' even deal on the day's own seed, over the day's own cycle", () => {
+    expect(dailyClueOrder(BUNDLED, "2026-11-18")).toEqual(
+      dealClueMix(BUNDLED, hashSeed("whereabout:clue-mix:2026-11-18")),
+    );
+    // A day before the ground joined is dealt over three clues, as it was played then.
     expect(dailyClueOrder(BUNDLED, "2026-11-15")).toEqual(
-      dealClueMix(BUNDLED, hashSeed("whereabout:clue-mix:2026-11-15")),
+      dealClueMix(BUNDLED, hashSeed("whereabout:clue-mix:2026-11-15"), [], THREE_CLUE_CYCLE),
     );
     expect(clueDaySeed("2026-11-15")).not.toBe(hashSeed("whereabout:2026-11-15"));
     expect(clueDaySeed("2026-11-15")).not.toBe(hashSeed("whereabout:left-right:2026-11-15"));
   });
 
-  it("asks the clues in turn of the bundled photos, never repeating one", () => {
-    const order = dailyClueOrder(BUNDLED, "2026-11-15");
+  it("asks the four clues in turn of the bundled photos, never repeating one", () => {
+    const order = dailyClueOrder(BUNDLED, "2026-11-18");
     expect(order.length).toBeGreaterThan(10);
     expect(new Set(order.map((s) => s.id)).size).toBe(order.length);
     order.forEach((s, i) => expect(s.clue).toBe(CLUE_CYCLE[i % CLUE_CYCLE.length]));
+    expect(order[3].clue).toBe("ground");
+  });
+
+  it("never asks the ground on a day before it joined", () => {
+    const order = dailyClueOrder(BUNDLED, "2026-11-17");
+    order.forEach((s, i) => expect(s.clue).toBe(THREE_CLUE_CYCLE[i % 3]));
   });
 });
 
@@ -129,25 +145,34 @@ describe("the run in words and squares", () => {
     ended,
   });
 
-  it("names the clue a miss came on, from its place in the cycle", () => {
-    expect(clueEndedOn(run(0, "miss"))).toBe("road");
-    expect(clueEndedOn(run(4, "miss"))).toBe("climate");
-    expect(clueEndedOn(run(5, "miss"))).toBe("continent");
-    expect(clueEndedOn(run(5, "cleared"))).toBeNull();
-    expect(clueRunWords(run(4, "miss"))).toBe("4 clues in a row, out on the climate");
-    expect(clueRunWords(run(1, "miss"))).toBe("1 clue in a row, out on the climate");
-    expect(clueRunWords(run(9, "cleared"))).toBe("9 clues in a row, every clue");
-    expect(clueRunWords(run(2, null))).toBe("2 clues in a row");
+  it("names the clue a miss came on, from its place in the run's cycle", () => {
+    expect(clueEndedOn(run(0, "miss"), CLUE_CYCLE)).toBe("road");
+    expect(clueEndedOn(run(3, "miss"), CLUE_CYCLE)).toBe("ground");
+    expect(clueEndedOn(run(4, "miss"), CLUE_CYCLE)).toBe("road");
+    expect(clueEndedOn(run(5, "miss"), CLUE_CYCLE)).toBe("climate");
+    expect(clueEndedOn(run(5, "cleared"), CLUE_CYCLE)).toBeNull();
+    // Over three clues, as a day before the ground joined was played.
+    expect(clueEndedOn(run(4, "miss"), THREE_CLUE_CYCLE)).toBe("climate");
+    expect(clueEndedOn(run(5, "miss"), THREE_CLUE_CYCLE)).toBe("continent");
+    expect(clueRunWords(run(7, "miss"), CLUE_CYCLE)).toBe("7 clues in a row, out on the ground");
+    expect(clueRunWords(run(4, "miss"), THREE_CLUE_CYCLE)).toBe(
+      "4 clues in a row, out on the climate",
+    );
+    expect(clueRunWords(run(1, "miss"), CLUE_CYCLE)).toBe("1 clue in a row, out on the climate");
+    expect(clueRunWords(run(9, "cleared"), CLUE_CYCLE)).toBe("9 clues in a row, every clue");
+    expect(clueRunWords(run(2, null), CLUE_CYCLE)).toBe("2 clues in a row");
   });
 
-  it("puts the calls three to a row, under each clue's mark", () => {
-    expect(clueRunLine(run(4, "miss"))).toBe("🛣️🌦️🌍\n🟩🟩🟩\n🟩🟥");
-    expect(clueRunLine(run(0, "miss"))).toBe("🛣️🌦️🌍\n🟥");
-    expect(clueRunLine(run(3, "cleared"))).toBe("🛣️🌦️🌍\n🟩🟩🟩\n🏁");
+  it("puts the calls a row per turn of the cycle, under each clue's mark", () => {
+    expect(clueRunLine(run(4, "miss"), CLUE_CYCLE)).toBe("🛣️🌦️🌍🌱\n🟩🟩🟩🟩\n🟥");
+    expect(clueRunLine(run(3, "miss"), CLUE_CYCLE)).toBe("🛣️🌦️🌍🌱\n🟩🟩🟩🟥");
+    expect(clueRunLine(run(0, "miss"), CLUE_CYCLE)).toBe("🛣️🌦️🌍🌱\n🟥");
+    expect(clueRunLine(run(4, "miss"), THREE_CLUE_CYCLE)).toBe("🛣️🌦️🌍\n🟩🟩🟩\n🟩🟥");
+    expect(clueRunLine(run(3, "cleared"), THREE_CLUE_CYCLE)).toBe("🛣️🌦️🌍\n🟩🟩🟩\n🏁");
   });
 
   it("caps a long run at 30 squares", () => {
-    const line = clueRunLine(run(40, "miss"));
+    const line = clueRunLine(run(40, "miss"), CLUE_CYCLE);
     expect(line.match(/🟩/gu)).toHaveLength(30);
     expect(line).not.toContain("🟥");
     expect(line.endsWith("\n…")).toBe(true);
@@ -170,6 +195,24 @@ describe("clueDailyShare", () => {
         "🛣️🌦️🌍",
         "🟩🟩🟥",
         "Atlas: 1 of 3",
+        "https://example.org/whereabout/clue-mix/daily/",
+      ].join("\n"),
+    );
+  });
+
+  it("shares a day from the ground's first day four to a row, under its mark", () => {
+    const text = clueDailyShare(
+      "2026-11-18",
+      { streak: 3, atlasRight: 2, atlasPlayed: 4, ended: "miss" },
+      href,
+    );
+    expect(text).toBe(
+      [
+        "Whereabout · Clue mix · 2026-11-18",
+        "🔀 3 clues in a row, out on the ground",
+        "🛣️🌦️🌍🌱",
+        "🟩🟩🟩🟥",
+        "Atlas: 2 of 4",
         "https://example.org/whereabout/clue-mix/daily/",
       ].join("\n"),
     );

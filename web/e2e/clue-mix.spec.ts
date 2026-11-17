@@ -7,8 +7,13 @@ import { continentOf } from "../src/lib/continents";
 import { TODAY_GAMES } from "../src/lib/game/today";
 
 const PHOTO = readFileSync(resolve(process.cwd(), "e2e/fixtures/photo.png"));
-const CATALOG: { id: string; country: string; drivingSide?: string; climateGroup?: string }[] =
-  JSON.parse(readFileSync(resolve(process.cwd(), "src/data/photos.json"), "utf8"));
+const CATALOG: {
+  id: string;
+  country: string;
+  drivingSide?: string;
+  climateGroup?: string;
+  landCover?: string;
+}[] = JSON.parse(readFileSync(resolve(process.cwd(), "src/data/photos.json"), "utf8"));
 const BY_ID = new Map(CATALOG.map((p) => [p.id, p]));
 const GUESSED: Record<string, unknown> = JSON.parse(
   readFileSync(resolve(process.cwd(), "src/data/atlas.json"), "utf8"),
@@ -31,12 +36,25 @@ async function stepOnScreen(page: Page) {
   const clue = (await photo.getAttribute("data-clue"))!;
   const p = BY_ID.get((await photo.getAttribute("data-photo"))!)!;
   const truth =
-    clue === "road" ? p.drivingSide : clue === "climate" ? p.climateGroup : continentOf(p.country);
+    clue === "road"
+      ? p.drivingSide
+      : clue === "climate"
+        ? p.climateGroup
+        : clue === "continent"
+          ? continentOf(p.country)
+          : p.landCover;
   expect(truth, `photo ${p.id} answers ${clue}`).toBeTruthy();
   return { clue, truth: truth! };
 }
 
-test("Clue mix asks the road, the climate and the continent in turn until the first miss", async ({
+const CHIP: Record<string, string> = {
+  road: "Road",
+  climate: "Climate",
+  continent: "Continent",
+  ground: "Ground",
+};
+
+test("Clue mix asks the road, the climate, the continent and the ground in turn until the first miss", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -47,17 +65,25 @@ test("Clue mix asks the road, the climate and the continent in turn until the fi
   const question = page.getByTestId("clue-question");
 
   const asked: string[] = [];
-  for (const [n, expected] of (["road", "climate", "continent", "road"] as const).entries()) {
+  await expect(page.getByRole("list", { name: "Clues in turn" }).getByRole("listitem")).toHaveText([
+    "Road",
+    "Climate",
+    "Continent",
+    "Ground",
+  ]);
+  for (const [n, expected] of (
+    ["road", "climate", "continent", "ground", "road"] as const
+  ).entries()) {
     const { clue, truth } = await stepOnScreen(page);
     expect(clue).toBe(expected);
     asked.push(await question.innerText());
     await expect(page.getByRole("listitem").and(page.locator('[aria-current="step"]'))).toHaveText(
-      clue === "road" ? "Road" : clue === "climate" ? "Climate" : "Continent",
+      CHIP[clue],
     );
     // Every answer button is on screen, none off the edge or below the fold.
     const buttons = page.getByRole("group").getByRole("button");
     expect(await buttons.count()).toBe(
-      clue === "road" ? 2 : clue === "climate" ? 5 : CONTINENT_BUTTONS,
+      clue === "road" ? 2 : clue === "continent" ? CONTINENT_BUTTONS : 5,
     );
     for (const b of await buttons.all()) {
       await expect(b).toBeEnabled();
@@ -69,6 +95,7 @@ test("Clue mix asks the road, the climate and the continent in turn until the fi
     await page.getByTestId(`clue-${truth}`).click();
     await expect(card.getByRole("heading")).toHaveText("Correct");
     await expect(card).toContainText(/Atlas/);
+    if (clue === "ground") await expect(card).toContainText(/Mostly .+ around it, in /);
     await expect(
       page.getByText("Streak", { exact: true }).locator("xpath=following-sibling::dd[1]"),
     ).toHaveText(String(n + 1));
@@ -81,6 +108,7 @@ test("Clue mix asks the road, the climate and the continent in turn until the fi
     "Which side of the road do they drive on?",
     "Which climate is it?",
     "Which continent is it on?",
+    "What covers the ground around it?",
     "Which side of the road do they drive on?",
   ]);
 
@@ -93,28 +121,28 @@ test("Clue mix asks the road, the climate and the continent in turn until the fi
     .first();
   await wrong.click();
   await expect(card.getByRole("heading")).toHaveText("Wrong");
-  await expect(card).toContainText("Run over: 4 clues in a row. That's your new best!");
+  await expect(card).toContainText("Run over: 5 clues in a row. That's your new best!");
   await card.getByRole("button", { name: "Start a new run" }).click();
   await expect(card).toBeHidden();
-  expect(await page.evaluate(() => localStorage.getItem("whereabout:clue-mix-best"))).toBe("4");
+  expect(await page.evaluate(() => localStorage.getItem("whereabout:clue-mix-best"))).toBe("5");
 
   await page.reload();
   await expect(
     page.getByText("Best", { exact: true }).locator("xpath=following-sibling::dd[1]"),
-  ).toHaveText("4");
+  ).toHaveText("5");
   await page.getByRole("button", { name: "Games" }).click();
-  await expect(page.getByTestId("best-clue-mix")).toHaveText("Best: 4 in a row");
+  await expect(page.getByTestId("best-clue-mix")).toHaveText("Best: 5 in a row");
   expect(errors).toEqual([]);
 });
 
-test("a 320px phone fits every continent and the answer without scrolling sideways", async ({
+test("a 320px phone fits every continent, every cover and the answer without scrolling sideways", async ({
   page,
 }) => {
   test.skip((page.viewportSize()?.width ?? 1000) >= 768, "a phone layout check");
   await page.setViewportSize({ width: 320, height: 640 });
   await page.goto("./clue-mix");
   const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
-  for (let n = 0; n < 3; n++) {
+  for (let n = 0; n < 4; n++) {
     const { truth } = await stepOnScreen(page);
     for (const b of await page.getByRole("group").getByRole("button").all()) {
       const box = (await b.boundingBox())!;
@@ -140,7 +168,9 @@ test("today's Clue mix deals the day's steps once, resumes after a reload, and s
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  const today = new Date().toISOString().slice(0, 10);
+  // The ground's first day, so the run asks four clues and shares them four to a row.
+  const today = "2026-11-18";
+  await page.clock.setFixedTime(new Date(`${today}T10:00:00Z`));
   const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
   const streak = page
     .getByText("Streak", { exact: true })
@@ -205,7 +235,7 @@ test("today's Clue mix deals the day's steps once, resumes after a reload, and s
   await expect(page.getByText("Result copied. Paste it anywhere.")).toBeVisible();
   const sent = await page.evaluate(() => (window as unknown as { sent: string }).sent);
   expect(sent).toContain(
-    `Whereabout · Clue mix · ${today}\n🔀 1 clue in a row, out on the climate\n🛣️🌦️🌍\n🟩🟥\n`,
+    `Whereabout · Clue mix · ${today}\n🔀 1 clue in a row, out on the climate\n🛣️🌦️🌍🌱\n🟩🟥\n`,
   );
   expect(sent).toMatch(/\/whereabout\/clue-mix\/daily\/?$/);
   expect(await page.evaluate(() => localStorage.getItem("whereabout:clue-mix-best"))).toBe(null);
@@ -273,7 +303,7 @@ test("a challenge link deals a friend the same steps, with the run to beat and t
   expect(message).not.toContain(said);
   const link = message.split("\n").at(-1)!;
   expect(link).toMatch(
-    new RegExp(`/whereabout/clue-mix/?\\?challenge=${run.join("\\.")}_[0-9a-z]+_2_[a-z]{2}$`),
+    new RegExp(`/whereabout/clue-mix/?\\?challenge=4_${run.join("\\.")}_[0-9a-z]+_2_[a-z]{2}$`),
   );
 
   // The friend, with nothing kept, gets the same steps and reads them all right.
@@ -296,12 +326,17 @@ test("a challenge link deals a friend the same steps, with the run to beat and t
     await card.getByRole("button", { name: "Next photo" }).click();
   }
 
-  // Past the friend's steps, the road again on a new photo; miss it.
+  // Past the friend's steps, the ground on a new photo; miss it.
   const { clue, truth } = await stepOnScreen(page);
-  expect(clue).toBe("road");
+  expect(clue).toBe("ground");
   expect(run).not.toContain(await shownId());
   await expect(page.getByTestId(`clue-${truth}`)).toBeEnabled();
-  await page.getByTestId(`clue-${truth === "left" ? "right" : "left"}`).click();
+  await page
+    .getByRole("group")
+    .getByRole("button")
+    .and(page.locator(`:not([data-testid="clue-${truth}"])`))
+    .first()
+    .click();
   await expect(card).toContainText(
     "Run over: 3 clues in a row. You beat your friend's 2 in a row by 1.",
   );
@@ -317,7 +352,7 @@ test("a challenge link deals a friend the same steps, with the run to beat and t
   await expect(page.getByText(/^Challenge (sent|link copied)/)).toBeVisible();
   const reply = await sent();
   expect(reply).toContain("That beats your 2. Your turn to read the clues.");
-  expect(reply).toMatch(/_3_[lr]$/);
+  expect(reply).toMatch(/\?challenge=4_[^_]+_[0-9a-z]+_3_[btgws]$/);
 
   // Head to head: both runs drawn as a 1080px picture, saved, with the reply link copied.
   await page.evaluate(() => ((window as unknown as { sent: string }).sent = ""));

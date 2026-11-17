@@ -158,20 +158,24 @@ call marked *Friend* on the band only once they've made theirs, and can send the
 head-to-head picture. The score to beat is worked out from your calls against each photo's own
 label, never carried in the link, and a challenge never counts as a best.
 **Clue mix** (at `/clue-mix`, in the Games menu) asks each photo a different clue in turn: the side
-of the road (← and → or a tap), then the climate (1 to 5), then the continent (1 to 7), round and
-round until your first miss. Each step's answer is drawn by a fair die over that clue's answers, as
+of the road (← and → or a tap), then the climate (1 to 5), then the continent (1 to 7), then the
+ground (1 to 5: built-up, trees, grassland, water or bare ground), round and round until your
+first miss. Each step's answer is drawn by a fair die over that clue's answers, as
 in the single-clue games, and a photo is dealt once a run, so always giving one answer is a guess
 on every step. Atlas plays along with the same reads it is scored on elsewhere (its road and
-climate clues, and the continent of the country it gave most) and sits out a step it said nothing
-about. Your longest run is kept in your browser.
+climate clues, the continent of the country it gave most, and the cover its scene clues name as
+in What's on the ground?) and sits out a step it said nothing about. Your longest run is kept in
+your browser.
 **Today's run** (at `/clue-mix/daily`) deals everyone the same photos and clues on the same UTC
 day with the same even deal, one try a day, picked up after a reload at the next clue, and shared
-as counts only: the run's squares three to a row under the road, climate and continent marks, so
-a friend sees which clue ended it without seeing a photo.
+as counts only: the run's squares four to a row under the road, climate, continent and ground
+marks, so a friend sees which clue ended it without seeing a photo. (Days before 2026-11-18, when
+the ground joined, were dealt over three clues and read back that way.)
 **Challenge a friend** from the end of a free run: the link deals them the same photos asking the
 same clues in the same order, with your run to beat. When your run ended on a miss, the link
-carries the answer you gave there as one short code (`l`/`r`, a Köppen letter, or two letters for
-a continent), and the friend sees it only once they have called that step. A friend who gets past
+carries the answer you gave there as one short code (`l`/`r`, a Köppen letter, two letters for
+a continent, or one for a land cover), and the friend sees it only once they have called that
+step. A link sent before the ground joined is still played over the three clues it was dealt. A friend who gets past
 it plays on through the photos left, dealt from the same seed with the cycle picking up where your
 steps stopped, and can send theirs back with the head-to-head picture.
 **What's on the ground?** (at `/on-the-ground`, in the Games menu) shows one photo and five land
@@ -226,8 +230,8 @@ them. Once those countries have three photos to deal, *Practise your mix-ups* op
 country on just them (`/name-country/mix-ups`): every photo offers the country you took it for
 among its four names, the countries take turns so a big one never crowds out its partner, and the
 run keeps its own best. Below them, **your clue reading**: a card per clue, how often you've read
-the road (Left or right? and Clue mix), the climate (Which climate? and Clue mix) and the continent
-(Clue mix), in photos called right, beside Atlas's own read of the same photos (it sits out a photo
+the road (Left or right? and Clue mix), the climate (Which climate? and Clue mix), the continent
+and the ground (Clue mix), in photos called right, beside Atlas's own read of the same photos (it sits out a photo
 it said nothing about), each game's runs listed apart with today's runs counted in. Under it, **climates you misread**: the climates you've
 called wrong most in Which climate? (free games and today's, from your last few hundred calls),
 each with how often and what you called it instead, and *Practise these climates*

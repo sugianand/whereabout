@@ -417,6 +417,13 @@ export const CONTROLS: Record<HelpScreen, readonly ControlGroup[]> = {
           touch: "Tap a climate or a continent",
         },
         {
+          id: "pick-ground",
+          does: "Name the ground: built-up, trees, grassland, water or bare ground, when a photo asks it",
+          keys: [k("1"), k("2"), k("3"), k("4"), k("5")],
+          mouse: "Click a land cover",
+          touch: "Tap a land cover",
+        },
+        {
           id: "next",
           does: "Next photo, from the answer",
           keys: [k("Enter")],

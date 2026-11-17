@@ -8,6 +8,7 @@ import {
   clueAnswers,
   clueTruth,
   dealClueMix,
+  type ClueKind,
   type ClueMaps,
   type ClueStep,
 } from "@/lib/game/clueMix";
@@ -52,7 +53,7 @@ const guess = (clues: string[], top: string): GameRecord["atlas"] => ({
 const RECORDS = [
   record("j1", "JP", "left", "Temperate", guess(["Drives on the left", "Arid climate"], "JP")),
   record("j2", "JP", "left", "Continental", guess([], "KR")),
-  record("g1", "GB", "left", "Temperate", guess(["Temperate climate"], "GB")),
+  record("g1", "GB", "left", "Temperate", guess(["Temperate climate", "City"], "GB")),
   record("f1", "FR", "right", "Temperate", guess([], "FR")),
   record("f2", "FR", "right", "Arid", null),
   record("e1", "EG", "right", "Arid", guess(["Arid climate"], "MA")),
@@ -76,17 +77,21 @@ const MAPS: ClueMaps = {
     a1: "Oceania",
     n1: "Europe",
   },
+  grounds: {
+    j1: "Built-up",
+    j2: "Tree cover",
+    g1: "Grassland",
+    f1: "Built-up",
+    f2: "Permanent water bodies",
+    e1: "Bare / sparse vegetation",
+    b1: "Tree cover",
+    a1: "Bare / sparse vegetation",
+    n1: "Grassland",
+  },
 };
 // random() = 0 deals from seed 0.
 const ORDER = dealClueMix(MAPS, 0);
-const truthOf = (n: number) => {
-  const { id, clue } = ORDER[n];
-  return clue === "road"
-    ? MAPS.sides[id]
-    : clue === "climate"
-      ? MAPS.climates[id]
-      : MAPS.continents[id];
-};
+const truthOf = (n: number) => clueTruth(ORDER[n].clue, ORDER[n].id, MAPS)!;
 
 /** Atlas's call on a step as Your clue reading keeps it: right, wrong, or no read. */
 function atlasCall({ id, clue }: ClueStep): boolean | null {
@@ -159,14 +164,65 @@ describe("ClueMix", () => {
     expect(localStorage.getItem(BEST_CLUE_MIX_KEY)).toBe("2");
   });
 
+  it("asks the ground fourth, with five covers, Atlas's read and the road next", async () => {
+    expect(ORDER.length).toBeGreaterThanOrEqual(5);
+    await setup();
+    expect(screen.getAllByRole("listitem").map((li) => li.textContent)).toEqual([
+      "Road",
+      "Climate",
+      "Continent",
+      "Ground",
+    ]);
+    await callRight(0);
+    await callRight(1);
+    await waitFor(() => expect(photo()).toHaveAttribute("data-clue", "continent"));
+    await waitFor(() => expect(screen.getByTestId(`clue-${truthOf(2)}`)).toBeEnabled());
+    fireEvent.click(screen.getByTestId(`clue-${truthOf(2)}`));
+    let card = await screen.findByRole("region");
+    expect(card).toHaveTextContent("Next up: the ground");
+    fireEvent.click(within(card).getByRole("button", { name: "Next photo" }));
+
+    await waitFor(() => expect(photo()).toHaveAttribute("data-clue", "ground"));
+    expect(screen.getByRole("listitem", { current: "step" })).toHaveTextContent("Ground");
+    expect(screen.getByTestId("clue-question")).toHaveTextContent(
+      "What covers the ground around it?",
+    );
+    const buttons = screen.getByRole("group").querySelectorAll("button");
+    expect([...buttons].map((b) => b.textContent)).toEqual([
+      "Built-up",
+      "Trees",
+      "Grassland",
+      "Water",
+      "Bare ground",
+    ]);
+    // 1 to 5 name a cover by its place in the row.
+    await waitFor(() => expect(screen.getByTestId(`clue-${truthOf(3)}`)).toBeEnabled());
+    const n =
+      [
+        "Built-up",
+        "Tree cover",
+        "Grassland",
+        "Permanent water bodies",
+        "Bare / sparse vegetation",
+      ].indexOf(truthOf(3)) + 1;
+    fireEvent.keyDown(window, { key: String(n) });
+    card = await screen.findByRole("region");
+    expect(within(card).getByRole("heading")).toHaveTextContent("Correct");
+    expect(card).toHaveTextContent(/Mostly .+ around it, in /);
+    expect(card).toHaveTextContent(/Atlas (read the ground as|said nothing about the ground)/);
+    expect(card).toHaveTextContent("Next up: the road");
+    expect(streak()).toHaveTextContent("4");
+  });
+
   it("counts each call in your clue reading under its clue, the first of each a new run", async () => {
     await setup();
     await callRight(0);
     await callRight(1);
     await callRight(2);
-    await waitFor(() => expect(photo()).toHaveAttribute("data-photo", ORDER[3].id));
+    await callRight(3);
+    await waitFor(() => expect(photo()).toHaveAttribute("data-photo", ORDER[4].id));
     const free = loadFreeTallies();
-    for (const n of [0, 1, 2]) {
+    for (const n of [0, 1, 2, 3]) {
       const atlas = atlasCall(ORDER[n]);
       expect(free[`clue-mix-${ORDER[n].clue}`]).toEqual({
         runs: 1,
@@ -180,8 +236,9 @@ describe("ClueMix", () => {
     expect(free["left-right"]).toEqual(EMPTY_TALLY);
     expect(free["which-climate"]).toEqual(EMPTY_TALLY);
 
-    // The fourth step asks the road again, in the same run.
-    fireEvent.click(screen.getByTestId(`clue-${truthOf(3)}`));
+    // The fifth step asks the road again, in the same run.
+    await waitFor(() => expect(screen.getByTestId(`clue-${truthOf(4)}`)).toBeEnabled());
+    fireEvent.click(screen.getByTestId(`clue-${truthOf(4)}`));
     await screen.findByRole("region");
     expect(loadFreeTallies()["clue-mix-road"]).toMatchObject({ runs: 1, rounds: 2, right: 2 });
   });
@@ -225,7 +282,7 @@ describe("ClueMix", () => {
     render(
       <ClueMix
         deck={game.deck}
-        maps={{ sides: { j1: "left" }, climates: {}, continents: {} }}
+        maps={{ sides: { j1: "left" }, climates: {}, continents: {}, grounds: {} }}
         loadRecords={game.loadRecords}
         random={() => 0}
       />,
@@ -240,14 +297,7 @@ describe("today's Clue mix", () => {
   const DAY = "2026-11-15";
   const now = () => new Date(`${DAY}T09:00:00Z`);
   const TODAY = dailyClueOrder(MAPS, DAY);
-  const todayTruth = (n: number) => {
-    const { id, clue } = TODAY[n];
-    return clue === "road"
-      ? MAPS.sides[id]
-      : clue === "climate"
-        ? MAPS.climates[id]
-        : MAPS.continents[id];
-  };
+  const todayTruth = (n: number) => clueTruth(TODAY[n].clue, TODAY[n].id, MAPS)!;
   const wrongFor = (n: number) =>
     clueAnswers(TODAY[n].clue, MAPS).find((a) => a !== todayTruth(n))!;
 
@@ -341,6 +391,38 @@ describe("today's Clue mix", () => {
     expect(screen.queryByTestId("clue-photo")).toBeNull();
   });
 
+  it("asks three clues on a day before the ground joined, four from the day it did", async () => {
+    const first = daily();
+    await waitFor(() => expect(photo()).toHaveAttribute("data-photo", TODAY[0].id));
+    expect(screen.getAllByRole("listitem").map((li) => li.textContent)).toEqual([
+      "Road",
+      "Climate",
+      "Continent",
+    ]);
+    first.unmount();
+
+    const game = gameFor(RECORDS);
+    const later = "2026-11-18";
+    render(
+      <ClueMix
+        deck={game.deck}
+        maps={MAPS}
+        loadRecords={game.loadRecords}
+        daily
+        now={() => new Date(`${later}T09:00:00Z`)}
+      />,
+    );
+    await waitFor(() =>
+      expect(photo()).toHaveAttribute("data-photo", dailyClueOrder(MAPS, later)[0].id),
+    );
+    expect(screen.getAllByRole("listitem").map((li) => li.textContent)).toEqual([
+      "Road",
+      "Climate",
+      "Continent",
+      "Ground",
+    ]);
+  });
+
   it("shows a day kept as cleared without dealing it again", async () => {
     rememberClueDay(DAY, { streak: 7, atlasRight: 3, atlasPlayed: 5, ended: "cleared" });
     daily();
@@ -351,18 +433,11 @@ describe("today's Clue mix", () => {
 
 describe("a friend's Clue mix challenge", () => {
   // The friend read f1's road (right) and e1's climate (arid), then put j1 in Europe: it's Asia.
+  // Sent before the ground joined, so it is played over the three clues it was dealt.
   const FRIEND = "f1.e1.j1_5_2_eu";
   const shown = () => photo().getAttribute("data-photo")!;
   const clueShown = () => photo().getAttribute("data-clue")!;
-  const truth = () => {
-    const id = shown();
-    const clue = clueShown();
-    return clue === "road"
-      ? MAPS.sides[id]
-      : clue === "climate"
-        ? MAPS.climates[id]
-        : MAPS.continents[id];
-  };
+  const truth = () => clueTruth(clueShown() as ClueKind, shown(), MAPS)!;
 
   afterEach(() => window.history.replaceState(null, "", "/"));
 
@@ -400,6 +475,7 @@ describe("a friend's Clue mix challenge", () => {
   it("deals the friend's steps, shows the answer that ended their run, plays on, and answers", async () => {
     await linked(FRIEND);
     expect(screen.getByText("A friend's challenge: 2 clues in a row to beat")).toBeVisible();
+    expect(screen.getAllByRole("listitem")).toHaveLength(3);
     const run = [shown()];
     expect([run[0], clueShown()]).toEqual(["f1", "road"]);
     let card = await callRight();
@@ -471,6 +547,14 @@ describe("a friend's Clue mix challenge", () => {
     expect(window.location.search).toBe("?x=1");
   });
 
+  it("plays a four-clue link on to the ground past the friend's miss", async () => {
+    await linked(`4_${FRIEND}`);
+    expect(screen.getAllByRole("listitem")).toHaveLength(4);
+    for (let i = 0; i < 3; i++) await next(await callRight());
+    expect(clueShown()).toBe("ground");
+    expect(["f1", "e1", "j1"]).not.toContain(shown());
+  });
+
   it("says when a link is cut short or its photos have gone, and deals a fresh run", async () => {
     // The friend's "miss" on j1 named its own continent: no miss at all.
     await linked("f1.e1.j1_5_2_as");
@@ -494,8 +578,8 @@ describe("a friend's Clue mix challenge", () => {
     await waitFor(() => expect(box.sent).not.toBe(""));
     expect(box.sent.split("\n")).toEqual([
       "Whereabout · Clue mix: I read 0 clues in a row.",
-      "Same photos, same clues: the road, the climate, the continent, in turn.",
-      `http://localhost:3000/?challenge=${ORDER[0].id}_0_0_${wrong[0]}`,
+      "Same photos, same clues: the road, the climate, the continent, the ground, in turn.",
+      `http://localhost:3000/?challenge=4_${ORDER[0].id}_0_0_${wrong[0]}`,
     ]);
   });
 

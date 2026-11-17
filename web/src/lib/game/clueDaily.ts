@@ -8,9 +8,20 @@
  * same step and a finished run shows the day's result instead of dealing it again. A step's clue
  * is fixed by its place in the cycle, so the streak alone says where a run stands. It never
  * touches the free runs' best, and the share line is counts only, so it spoils no photo.
+ *
+ * Days from `GROUND_CLUE_FROM` ask four clues, the ground after the continent; a day before it
+ * was dealt and kept over three, and `clueCycleFor` reads it back over three.
  */
 
-import { CLUE_CYCLE, dealClueMix, type ClueKind, type ClueMaps, type ClueStep } from "./clueMix";
+import {
+  clueAt,
+  clueCycleFor,
+  dealClueMix,
+  type ClueCycle,
+  type ClueKind,
+  type ClueMaps,
+  type ClueStep,
+} from "./clueMix";
 import { hashSeed } from "./daily";
 import {
   dailyRunUrl,
@@ -73,7 +84,7 @@ export function clueDaySeed(day: string): number {
 
 /** The day's steps: the same photos and clues for everyone on `day` with the same labels. */
 export function dailyClueOrder(maps: ClueMaps, day: string): ClueStep[] {
-  return dealClueMix(maps, clueDaySeed(day));
+  return dealClueMix(maps, clueDaySeed(day), [], clueCycleFor(day));
 }
 
 /** Every day kept in this browser, by day; anything malformed is skipped. */
@@ -92,30 +103,36 @@ export function rememberClueDay(day: string, entry: ClueDay): void {
 }
 
 /** A mark per clue, so the squares show which clue each call read. */
-const CLUE_MARK: Record<ClueKind, string> = { road: "🛣️", climate: "🌦️", continent: "🌍" };
+const CLUE_MARK: Record<ClueKind, string> = {
+  road: "🛣️",
+  climate: "🌦️",
+  continent: "🌍",
+  ground: "🌱",
+};
 
 /**
- * The run's squares in clue order: a green one for each right call, under the clue it read, a
- * red one for the miss (on the clue that ended it) or a flag when every step was called. Each
- * clue's mark heads its column, so a friend sees which clue ended the run without the photo.
+ * The run's squares in clue order, a row per turn of `cycle`: a green one for each right call,
+ * under the clue it read, a red one for the miss (on the clue that ended it) or a flag when every
+ * step was called. Each clue's mark heads its column, so a friend sees which clue ended the run
+ * without the photo.
  */
-export function clueRunLine(entry: ClueDay): string {
+export function clueRunLine(entry: ClueDay, cycle: ClueCycle): string {
   // Long runs are capped like every streak's squares: past 30 the line reads "…".
   const shown = Math.min(entry.streak, 30);
   const calls = Array.from({ length: shown }, () => "🟩");
   if (entry.streak <= 30 && entry.ended === "miss") calls.push("🟥");
   const rows: string[] = [];
-  for (let i = 0; i < calls.length; i += CLUE_CYCLE.length) {
-    rows.push(calls.slice(i, i + CLUE_CYCLE.length).join(""));
+  for (let i = 0; i < calls.length; i += cycle.length) {
+    rows.push(calls.slice(i, i + cycle.length).join(""));
   }
   const tail = entry.streak > 30 ? "…" : entry.ended === "cleared" ? "🏁" : "";
   if (tail) rows.push(tail);
-  return [CLUE_CYCLE.map((c) => CLUE_MARK[c]).join(""), ...rows].join("\n");
+  return [cycle.map((c) => CLUE_MARK[c]).join(""), ...rows].join("\n");
 }
 
-/** The clue a run ended on: the clue of the step after its last right call. */
-export function clueEndedOn(entry: ClueDay): ClueKind | null {
-  return entry.ended === "miss" ? CLUE_CYCLE[entry.streak % CLUE_CYCLE.length] : null;
+/** The clue a run over `cycle` ended on: the clue of the step after its last right call. */
+export function clueEndedOn(entry: ClueDay, cycle: ClueCycle): ClueKind | null {
+  return entry.ended === "miss" ? clueAt(entry.streak, cycle) : null;
 }
 
 /** "the road", "the climate", "the continent". */
@@ -123,22 +140,29 @@ const CLUE_WORDS: Record<ClueKind, string> = {
   road: "the road",
   climate: "the climate",
   continent: "the continent",
+  ground: "the ground",
 };
 
 /** "4 clues in a row", with the clue that ended it: "4 clues in a row, out on the climate". */
-export function clueRunWords(entry: ClueDay): string {
+export function clueRunWords(entry: ClueDay, cycle: ClueCycle): string {
   const run = `${entry.streak} clue${entry.streak === 1 ? "" : "s"} in a row`;
   if (entry.ended === "cleared") return `${run}, every clue`;
-  const out = clueEndedOn(entry);
+  const out = clueEndedOn(entry, cycle);
   return out ? `${run}, out on ${CLUE_WORDS[out]}` : run;
 }
 
 /**
- * The share line: the day, the run in words, its squares three to a row under each clue's mark,
- * and Atlas's tally on the same steps.
+ * The share line: the day, the run in words, its squares a row per turn of the day's cycle
+ * under each clue's mark (four to a row from `GROUND_CLUE_FROM`), and Atlas's tally on the
+ * same steps.
  */
 export function clueDailyShare(day: string, entry: ClueDay, href: string): string {
-  const lines = [`Whereabout · Clue mix · ${day}`, `🔀 ${clueRunWords(entry)}`, clueRunLine(entry)];
+  const cycle = clueCycleFor(day);
+  const lines = [
+    `Whereabout · Clue mix · ${day}`,
+    `🔀 ${clueRunWords(entry, cycle)}`,
+    clueRunLine(entry, cycle),
+  ];
   if (entry.atlasPlayed > 0) lines.push(`Atlas: ${entry.atlasRight} of ${entry.atlasPlayed}`);
   lines.push(dailyRunUrl(href));
   return lines.join("\n");

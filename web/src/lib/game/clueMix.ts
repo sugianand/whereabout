@@ -1,11 +1,17 @@
 /**
- * Clue mix: one endless quick game over all three clues the clue games teach. Each photo asks a
- * different clue in turn, the side of the road, then the climate, then the continent, round and
- * round, until the first wrong call, like Left or right?.
+ * Clue mix: one endless quick game over all four clues the clue games teach. Each photo asks a
+ * different clue in turn, the side of the road, then the climate, then the continent, then the
+ * ground, round and round, until the first wrong call, like Left or right?.
  *
- * The truths are the photo's own labels: its driving side and Köppen group
- * (data/labels/concept_labels.csv, as in Left or right? and Which climate?) and the continent of
- * its catalog country (`continentOf`, the table continent games use).
+ * The truths are the photo's own labels: its driving side, Köppen group and land cover
+ * (data/labels/concept_labels.csv, as in Left or right?, Which climate? and What's on the
+ * ground?) and the continent of its catalog country (`continentOf`, the table continent games
+ * use).
+ *
+ * The ground joined as the fourth clue on `GROUND_CLUE_FROM`. Runs dealt before it (a day kept
+ * from then, a friend's link sent then) were dealt over `THREE_CLUE_CYCLE`, so every function
+ * that walks a run by its place in the cycle takes the run's own cycle; a three-clue deal for a
+ * seed is exactly what it was before the ground joined.
  *
  * The catalog is lopsided on every clue (about three in four photos drive on the right, few are
  * polar, Europe has the most photos), so `dealClueMix` deals each step evenly the way the single
@@ -16,8 +22,9 @@
  * no question. Always giving one answer is a guess on every step.
  *
  * Atlas plays along with the reads the other games already score it on: `atlasDrivingSide`,
- * `atlasClimateGroup`, and for the continent, the continent of the country it gave most (as Odd
- * one out reads it). It sits out a step where it said nothing about that clue.
+ * `atlasClimateGroup`, for the continent, the continent of the country it gave most (as Odd
+ * one out reads it), and `atlasGroundCover` for the ground. It sits out a step where it said
+ * nothing about that clue.
  *
  * The rules are a pure reducer, tested without photos. The best run is kept in this browser
  * only, best effort.
@@ -28,26 +35,54 @@ import type { DrivingSide } from "@/lib/drivingSides";
 import { countryInSentence } from "@/lib/missLesson";
 import {
   CLIMATE_GROUPS,
+  GROUND_COVERS,
   atlasClimateGroup,
   atlasDrivingSide,
+  atlasGroundCover,
   type AtlasRead,
   type ClimateGroup,
+  type GroundCover,
 } from "@/lib/trueClues";
 
 import { mulberry32, seededShuffle } from "./daily";
+import { GROUND_GIST, GROUND_NAME } from "./onTheGround";
 
 export const BEST_CLUE_MIX_KEY = "whereabout:clue-mix-best";
 
-export type ClueKind = "road" | "climate" | "continent";
+export type ClueKind = "road" | "climate" | "continent" | "ground";
 
-/** The clue each photo asks, in turn: photo 1 the road, 2 the climate, 3 the continent, 4 the road… */
-export const CLUE_CYCLE: readonly ClueKind[] = ["road", "climate", "continent"];
+/** The clues a run asks in turn, round and round. */
+export type ClueCycle = readonly ClueKind[];
+
+/**
+ * The clue each photo asks, in turn: photo 1 the road, 2 the climate, 3 the continent, 4 the
+ * ground, 5 the road…
+ */
+export const CLUE_CYCLE: ClueCycle = ["road", "climate", "continent", "ground"];
+
+/** The cycle before the ground joined: runs dealt then keep it, so they read back as played. */
+export const THREE_CLUE_CYCLE: ClueCycle = ["road", "climate", "continent"];
+
+/** The first UTC day whose daily Clue mix asks the ground: days before it kept three clues. */
+export const GROUND_CLUE_FROM = "2026-11-18";
+
+/** The cycle today's run for `day` was dealt over. */
+export function clueCycleFor(day: string): ClueCycle {
+  return day < GROUND_CLUE_FROM ? THREE_CLUE_CYCLE : CLUE_CYCLE;
+}
+
+/** The clue the step at `index` of a run over `cycle` asks. */
+export function clueAt(index: number, cycle: ClueCycle = CLUE_CYCLE): ClueKind {
+  return cycle[index % cycle.length];
+}
 
 /** Each dealable photo's answer to each clue, by photo id; a photo may lack any of them. */
 export interface ClueMaps {
   sides: Readonly<Record<string, DrivingSide>>;
   climates: Readonly<Record<string, ClimateGroup>>;
   continents: Readonly<Record<string, Continent>>;
+  /** Each photo's land cover, among What's on the ground?'s five (`groundMap`). */
+  grounds: Readonly<Record<string, GroundCover>>;
 }
 
 /** One dealt step: the photo and the clue it asks. */
@@ -68,11 +103,22 @@ export function clueAnswers(clue: ClueKind, maps: ClueMaps): readonly string[] {
       const held = new Set(Object.values(maps.continents));
       return CONTINENTS.filter((c) => held.has(c));
     }
+    case "ground":
+      return GROUND_COVERS;
   }
 }
 
 function mapOf(clue: ClueKind, maps: ClueMaps): Readonly<Record<string, string>> {
-  return clue === "road" ? maps.sides : clue === "climate" ? maps.climates : maps.continents;
+  switch (clue) {
+    case "road":
+      return maps.sides;
+    case "climate":
+      return maps.climates;
+    case "continent":
+      return maps.continents;
+    case "ground":
+      return maps.grounds;
+  }
 }
 
 /** The photo's answer to `clue`, or null when its labels don't say. */
@@ -82,23 +128,25 @@ export function clueTruth(clue: ClueKind, id: string, maps: ClueMaps): string | 
 }
 
 /**
- * The run for `seed`: a step per photo, the clue fixed by `CLUE_CYCLE`, the answer by a fair die
+ * The run for `seed`: a step per photo, the clue fixed by its place in `cycle`, the answer by a fair die
  * over the answers with unused photos, then the next unused photo from that answer's shuffled
  * pile. Ends before the first step whose clue has fewer than two answers left. Pure in the seed.
  *
  * `after` deals the rest of a run that has already shown some photos (a friend's challenge): its
  * `ids` are never dealt again and the cycle picks up at the step after them, so the first step
  * dealt asks the clue the run's next place in the cycle asks. Without it, the deal is the same as
- * it always was for a seed.
+ * it always was for a seed. Each clue's piles are shuffled by the clue's place in the cycle, so a
+ * three-clue deal is the one the game made before the ground joined.
  */
 export function dealClueMix(
   maps: ClueMaps,
   seed: number,
   after: readonly string[] = [],
+  cycle: ClueCycle = CLUE_CYCLE,
 ): ClueStep[] {
   // Each clue's piles, one per answer in button order, each with a read head into it.
   const piles = new Map<ClueKind, { ids: string[]; head: number }[]>();
-  CLUE_CYCLE.forEach((clue, c) => {
+  cycle.forEach((clue, c) => {
     const map = mapOf(clue, maps);
     piles.set(
       clue,
@@ -115,7 +163,7 @@ export function dealClueMix(
   const die = mulberry32((seed ^ 0x27d4eb2f) >>> 0);
   const out: ClueStep[] = [];
   for (;;) {
-    const clue = CLUE_CYCLE[(after.length + out.length) % CLUE_CYCLE.length];
+    const clue = clueAt(after.length + out.length, cycle);
     // Skip photos another clue has already dealt, so each pile's head is a fresh photo.
     const open = piles.get(clue)!.filter((pile) => {
       while (pile.head < pile.ids.length && used.has(pile.ids[pile.head])) pile.head++;
@@ -141,6 +189,8 @@ export function atlasClueRead(clue: ClueKind, atlas: AtlasRead | null | undefine
       const top = [...atlas.topCountries].sort((a, b) => b.p - a.p)[0]?.country;
       return continentOf(top);
     }
+    case "ground":
+      return atlasGroundCover(atlas);
   }
 }
 
@@ -234,11 +284,13 @@ export const CLUE_QUESTION: Record<ClueKind, string> = {
   road: "Which side of the road do they drive on?",
   climate: "Which climate is it?",
   continent: "Which continent is it on?",
+  ground: "What covers the ground around it?",
 };
 
 /** An answer as its button and the answer card name it. */
 export function answerName(clue: ClueKind, answer: string): string {
   if (clue === "road") return answer === "left" ? "Left" : "Right";
+  if (clue === "ground") return GROUND_NAME[answer as GroundCover] ?? answer;
   return answer;
 }
 
@@ -252,6 +304,10 @@ export function clueTruthLine(clue: ClueKind, truth: string, country: string): s
       return `${truth === "Arid" ? "An" : "A"} ${truth.toLowerCase()} climate, in ${where}.`;
     case "continent":
       return `Taken in ${where}, in ${truth}.`;
+    case "ground": {
+      const cover = truth as GroundCover;
+      return `Mostly ${GROUND_NAME[cover].toLowerCase()} around it, in ${where}: ${GROUND_GIST[cover]}.`;
+    }
   }
 }
 
@@ -259,7 +315,12 @@ export function clueTruthLine(clue: ClueKind, truth: string, country: string): s
 export function clueAtlasLine(clue: ClueKind, atlas: { picked: string; correct: boolean } | null) {
   const outcome = atlas?.correct ? ", and got it." : ": wrong.";
   if (!atlas) {
-    const what = { road: "the road", climate: "the climate", continent: "the place" }[clue];
+    const what = {
+      road: "the road",
+      climate: "the climate",
+      continent: "the place",
+      ground: "the ground",
+    }[clue];
     return `Atlas said nothing about ${what} here: no call for it.`;
   }
   switch (clue) {
@@ -269,6 +330,8 @@ export function clueAtlasLine(clue: ClueKind, atlas: { picked: string; correct: 
       return `Atlas read it as ${atlas.picked.toLowerCase()}${outcome}`;
     case "continent":
       return `Atlas placed it in ${atlas.picked}${outcome}`;
+    case "ground":
+      return `Atlas read the ground as ${answerName("ground", atlas.picked).toLowerCase()}${outcome}`;
   }
 }
 

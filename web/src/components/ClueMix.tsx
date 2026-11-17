@@ -27,6 +27,7 @@ import {
 import {
   CLUE_CYCLE,
   CLUE_QUESTION,
+  clueCycleFor,
   answerName,
   atlasClueRead,
   clueAnswers,
@@ -39,6 +40,7 @@ import {
   initialClueMix,
   loadBestClueMix,
   rememberClueMix,
+  type ClueCycle,
   type ClueKind,
   type ClueMaps,
 } from "@/lib/game/clueMix";
@@ -55,7 +57,7 @@ import { HeadToHeadButton } from "./HeadToHeadButton";
 
 type ClueMixProps = {
   deck: Deck;
-  /** Each dealable photo's driving side, climate group and continent (bundled.ts). */
+  /** Each dealable photo's driving side, climate group, continent and land cover (bundled.ts). */
   maps: ClueMaps;
   /** For tests: load records without the network. Defaults to fetching the static files. */
   loadRecords?: (ids: string[]) => Promise<GameRecord[]>;
@@ -75,6 +77,15 @@ const CLUE_NAME: Record<ClueKind, string> = {
   road: "Road",
   climate: "Climate",
   continent: "Continent",
+  ground: "Ground",
+};
+
+/** Each clue's answer buttons: two for the road, a row of five, or up to seven continents. */
+const GRID: Record<ClueKind, string> = {
+  road: "grid-cols-2",
+  climate: "grid-cols-3 md:grid-cols-5",
+  continent: "grid-cols-3 md:grid-cols-7",
+  ground: "grid-cols-3 md:grid-cols-5",
 };
 
 const ROAD_KEYS: Record<string, string> = { ArrowLeft: "left", ArrowRight: "right" };
@@ -107,7 +118,7 @@ const CHALLENGE_NOTE: Record<ShareOutcome, string> = {
 
 /**
  * Clue mix (src/lib/game/clueMix.ts): one photo at a time, each asking the next clue in turn,
- * the side of the road, the climate or the continent, until the first wrong call.
+ * the side of the road, the climate, the continent or the ground, until the first wrong call.
  */
 export default function ClueMix({
   deck,
@@ -215,6 +226,10 @@ export default function ClueMix({
     };
   }, [missing, load]);
 
+  // The clues this run asks in turn: four, or three for a day or a friend's link from before the
+  // ground joined, so the chips and Your clue reading follow the run as it was dealt.
+  const cycle: ClueCycle = day ? clueCycleFor(day) : (challenge?.cycle ?? CLUE_CYCLE);
+
   const playing = state.phase === "picking" || state.phase === "answered" ? state : null;
   const step = playing ? playing.order[playing.index] : undefined;
   const record = step ? records.get(step.id) : undefined;
@@ -259,7 +274,7 @@ export default function ClueMix({
         // first step of each clue starts a run in that clue's tally. Today's run is counted
         // from the day kept above instead, so it is never counted twice.
         recordFreeRound(clueMixGame(step.clue), {
-          first: state.index < CLUE_CYCLE.length,
+          first: state.index < cycle.length,
           correct: after.verdict.correct,
           atlas: after.atlas ? after.atlas.correct : null,
         });
@@ -269,10 +284,10 @@ export default function ClueMix({
       }
       dispatch(action);
     },
-    [state, record, step, maps, day, challenge],
+    [state, record, step, maps, day, challenge, cycle],
   );
 
-  // ← and → call the road; 1 to 7 name a climate or a continent by its place in the row.
+  // ← and → call the road; 1 to 7 name a climate, a continent or a ground cover by its place.
   useEffect(() => {
     if (!ready || !step) return;
     const onKey = (e: KeyboardEvent) => {
@@ -344,6 +359,7 @@ export default function ClueMix({
                 seed,
                 streak: state.streak,
                 miss: null,
+                cycle,
               }}
               answering={challenge}
             />
@@ -409,7 +425,7 @@ export default function ClueMix({
         aria-label="Clues in turn"
         className="flex justify-center gap-1.5 px-2 pb-2 text-xs md:text-sm"
       >
-        {CLUE_CYCLE.map((kind) => (
+        {cycle.map((kind) => (
           <li
             key={kind}
             aria-current={kind === clue ? "step" : undefined}
@@ -439,7 +455,7 @@ export default function ClueMix({
           <div
             role="group"
             aria-labelledby="clue-question"
-            className={`grid gap-2 md:gap-3 ${step.clue === "road" ? "grid-cols-2" : step.clue === "climate" ? "grid-cols-3 md:grid-cols-5" : "grid-cols-3 md:grid-cols-7"}`}
+            className={`grid gap-2 md:gap-3 ${GRID[step.clue]}`}
           >
             {answers.map((answer, i) => (
               <AnswerButton
@@ -495,7 +511,7 @@ export default function ClueMix({
             }
             end={
               over && day
-                ? `Today's run is over: ${clueRunWords({ ...answered, ended: "miss" })}.`
+                ? `Today's run is over: ${clueRunWords({ ...answered, ended: "miss" }, cycle)}.`
                 : over
                   ? `Run over: ${clues(answered.streak)} in a row. ` +
                     (challenge
@@ -516,6 +532,7 @@ export default function ClueMix({
                       seed,
                       streak: answered.streak,
                       miss: answered.verdict.correct ? null : answered.verdict.picked,
+                      cycle,
                     },
                     answering: challenge,
                   }
@@ -536,7 +553,7 @@ export default function ClueMix({
                     )
                 : null
             }
-            nextClue={over ? null : CLUE_CYCLE[(answered.index + 1) % CLUE_CYCLE.length]}
+            nextClue={over ? null : (answered.order[answered.index + 1]?.clue ?? null)}
             onNext={over ? () => start() : () => dispatch({ type: "next" })}
             nextLabel={over ? (challenge ? "Play a fresh run" : "Start a new run") : "Next photo"}
           />
@@ -764,7 +781,7 @@ function ClueDayResult({ day, entry, now }: { day: string; entry: ClueDay; now?:
       summary={
         (cleared
           ? `${clues(entry.streak)} in a row, every clue today's run could deal.`
-          : `That's today's run played: ${clueRunWords(entry)}.`) +
+          : `That's today's run played: ${clueRunWords(entry, clueCycleFor(day))}.`) +
         (entry.atlasPlayed > 0
           ? ` Atlas got ${entry.atlasRight} of the ${clues(entry.atlasPlayed)} it called.`
           : "")

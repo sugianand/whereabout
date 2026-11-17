@@ -5,14 +5,17 @@
  *
  * The link names the photos the sender was shown, up to and including the one that ended the
  * run, with the run's seed and its streak, and, when the run ended on a miss, the sender's wrong
- * answer on that last step: `/clue-mix?challenge=wm077.wm003.wm104_1z141z3_2_eu`. Each photo's
- * clue is its place in `CLUE_CYCLE` (the road, the climate, the continent, round again), so the
- * link needn't say it. A friend who gets past the sender's miss plays on through the photos left,
+ * answer on that last step: `/clue-mix?challenge=4_wm077.wm003.wm104_1z141z3_2_eu`. Each
+ * photo's clue is its place in the cycle (the road, the climate, the continent, the ground, round
+ * again), so the link needn't say it. The leading `4` says the run asked four clues; a link sent
+ * before the ground joined has no such part and is played over `THREE_CLUE_CYCLE`, as it was
+ * dealt. A friend who gets past the sender's miss plays on through the photos left,
  * dealt by `dealClueMix` from the same seed with the cycle picking up where the named steps stop,
  * so a run is never cut short at the number to beat and always giving one answer is still a guess.
  *
  * The miss is one short code for that step's clue: `l` or `r` for the road, Köppen's letter for
- * the climate (A tropical to E polar), two letters for a continent (`eu`, `na`…). It must be an
+ * the climate (A tropical to E polar), two letters for a continent (`eu`, `na`…), one letter
+ * for the ground (`b` built-up, `t` trees, `g` grassland, `w` water, `s` bare ground). It must be an
  * answer the step's clue can take and not the photo's own, or it was no miss. With more than two
  * answers the friend couldn't work it out from the photo, so it rides in the link; it is shown
  * only once the friend has called that step themselves. The link names no place and no truth,
@@ -24,15 +27,18 @@
 
 import type { Continent } from "@/lib/continents";
 import { runHeadToHead, type HeadToHead } from "@/lib/headToHead";
-import { CLIMATE_GROUPS, type ClimateGroup } from "@/lib/trueClues";
+import { CLIMATE_GROUPS, type ClimateGroup, type GroundCover } from "@/lib/trueClues";
 
 import { challengeOutcome, type ChallengeOutcome } from "./challenge";
 import { KOPPEN_LETTER } from "./climateChallenge";
 import {
   CLUE_CYCLE,
+  THREE_CLUE_CYCLE,
   answerName,
+  clueAt,
   clueTruth,
   dealClueMix,
+  type ClueCycle,
   type ClueKind,
   type ClueMaps,
   type ClueStep,
@@ -52,17 +58,14 @@ export interface ClueChallenge {
   streak: number;
   /** The sender's wrong answer on the last photo, when the link ends on their miss. */
   miss: string | null;
+  /** The clues the run asked in turn: four, or three for a link sent before the ground joined. */
+  cycle: ClueCycle;
 }
 
 export type ClueChallengeParse =
   | { ok: true; challenge: ClueChallenge }
   /** "malformed": not a challenge link at all; "missing": some photos aren't dealt any more. */
   | { ok: false; reason: "malformed" | "missing" };
-
-/** The clue the photo at `index` of a run asks. */
-export function clueAt(index: number): ClueKind {
-  return CLUE_CYCLE[index % CLUE_CYCLE.length];
-}
 
 const CONTINENT_CODE: Record<Continent, string> = {
   Africa: "af",
@@ -79,7 +82,17 @@ const CODES: Record<ClueKind, Record<string, string>> = {
   road: { left: "l", right: "r" },
   climate: Object.fromEntries(CLIMATE_GROUPS.map((g: ClimateGroup) => [g, KOPPEN_LETTER[g]])),
   continent: CONTINENT_CODE,
+  ground: {
+    "Built-up": "b",
+    "Tree cover": "t",
+    Grassland: "g",
+    "Permanent water bodies": "w",
+    "Bare / sparse vegetation": "s",
+  } satisfies Record<GroundCover, string>,
 };
+
+/** The part that leads a four-clue link; a link without it was sent over three clues. */
+const FOUR_CLUES = "4";
 
 /** An answer to `clue` as the link writes it. */
 export function answerCode(clue: ClueKind, answer: string): string {
@@ -99,8 +112,11 @@ const SEED = /^[0-9a-z]{1,7}$/;
 const COUNT = /^\d{1,4}$/;
 
 export function encodeClueChallenge(c: ClueChallenge): string {
-  const base = `${c.ids.join(".")}_${c.seed.toString(36)}_${c.streak}`;
-  return c.miss === null ? base : `${base}_${answerCode(clueAt(c.ids.length - 1), c.miss)}`;
+  const lead = c.cycle.length === CLUE_CYCLE.length ? `${FOUR_CLUES}_` : "";
+  const base = `${lead}${c.ids.join(".")}_${c.seed.toString(36)}_${c.streak}`;
+  return c.miss === null
+    ? base
+    : `${base}_${answerCode(clueAt(c.ids.length - 1, c.cycle), c.miss)}`;
 }
 
 /** True when the link shows the photo that ended the sender's run: its last. */
@@ -112,11 +128,15 @@ export function endsOnMiss(c: ClueChallenge): boolean {
  * Read a `?challenge=` value: one to `CLUE_CHALLENGE_PHOTOS` different photos, each one Clue mix
  * can ask its step's clue of, a seed that fits in 32 bits, a streak those photos could give (one
  * short of them with the sender's wrong answer after it, or all of them, or more from a full
- * link), and a miss that is an answer to the last step's clue other than the photo's own.
+ * link), and a miss that is an answer to the last step's clue other than the photo's own. A
+ * leading `4` part plays it over four clues; without one it is an older link, over three.
  */
 export function parseClueChallenge(value: string, maps: ClueMaps): ClueChallengeParse {
   const malformed = { ok: false, reason: "malformed" } as const;
-  const parts = value.split("_");
+  const all = value.split("_");
+  const four = all[0] === FOUR_CLUES;
+  const cycle = four ? CLUE_CYCLE : THREE_CLUE_CYCLE;
+  const parts = four ? all.slice(1) : all;
   if (parts.length !== 3 && parts.length !== 4) return malformed;
   const [idPart, seedPart, streakPart, missPart] = parts;
   const ids = idPart.split(".");
@@ -140,15 +160,15 @@ export function parseClueChallenge(value: string, maps: ClueMaps): ClueChallenge
     (ids.length === CLUE_CHALLENGE_PHOTOS && streak >= ids.length);
   // A run that ended on a miss says what was answered there; one that didn't has nothing to say.
   if (!fits || onMiss !== (missPart !== undefined)) return malformed;
-  const last = clueAt(ids.length - 1);
+  const last = clueAt(ids.length - 1, cycle);
   const miss = missPart === undefined ? null : codeAnswer(last, missPart);
   if (missPart !== undefined && miss === null) return malformed;
-  if (!ids.every((id, i) => clueTruth(clueAt(i), id, maps) !== null)) {
+  if (!ids.every((id, i) => clueTruth(clueAt(i, cycle), id, maps) !== null)) {
     return { ok: false, reason: "missing" };
   }
   // The answer that ended the run can't be the photo's own: that would have been right.
   if (miss !== null && miss === clueTruth(last, ids[ids.length - 1], maps)) return malformed;
-  return { ok: true, challenge: { ids, seed, streak, miss } };
+  return { ok: true, challenge: { ids, seed, streak, miss, cycle } };
 }
 
 /**
@@ -156,8 +176,8 @@ export function parseClueChallenge(value: string, maps: ClueMaps): ClueChallenge
  * the challenge's seed with the cycle going on from there, for a friend who gets further.
  */
 export function clueChallengeOrder(c: ClueChallenge, maps: ClueMaps): ClueStep[] {
-  const named = c.ids.map((id, i) => ({ id, clue: clueAt(i) }));
-  return [...named, ...dealClueMix(maps, c.seed, c.ids)];
+  const named = c.ids.map((id, i) => ({ id, clue: clueAt(i, c.cycle) }));
+  return [...named, ...dealClueMix(maps, c.seed, c.ids, c.cycle)];
 }
 
 /** A finished run, as the link needs it. */
@@ -169,19 +189,39 @@ export interface ClueRun {
   streak: number;
   /** Your wrong answer on the step at `index`, when the run ended on a miss. */
   miss: string | null;
+  /** The clues the run asked in turn. */
+  cycle: ClueCycle;
 }
 
 /** The challenge a finished run makes: its steps up to `index`, seed, streak and miss. */
 export function clueChallengeFrom(run: ClueRun): ClueChallenge {
   const ids = run.order.slice(0, Math.min(run.index + 1, CLUE_CHALLENGE_PHOTOS)).map((s) => s.id);
   const shown = run.miss !== null && run.streak === ids.length - 1;
-  return { ids, seed: run.seed, streak: run.streak, miss: shown ? run.miss : null };
+  return {
+    ids,
+    seed: run.seed,
+    streak: run.streak,
+    miss: shown ? run.miss : null,
+    cycle: run.cycle,
+  };
 }
 
 /** The page's address with only the challenge in its query. */
 export function clueChallengeUrl(href: string, c: ClueChallenge): string {
   const url = new URL(href);
   return `${url.origin}${url.pathname}?${CLUE_CHALLENGE_PARAM}=${encodeClueChallenge(c)}`;
+}
+
+const CLUE_WORDS: Record<ClueKind, string> = {
+  road: "the road",
+  climate: "the climate",
+  continent: "the continent",
+  ground: "the ground",
+};
+
+/** "the road, the climate, the continent, the ground". */
+function cycleWords(cycle: ClueCycle): string {
+  return cycle.map((c) => CLUE_WORDS[c]).join(", ");
 }
 
 /** "1 clue", "4 clues". */
@@ -210,7 +250,7 @@ export function clueChallengeText(run: ClueRun, href: string, answering?: ClueCh
           : "We tied. Play them again to break it?",
     );
   } else {
-    lines.push("Same photos, same clues: the road, the climate, the continent, in turn.");
+    lines.push(`Same photos, same clues: ${cycleWords(run.cycle)}, in turn.`);
   }
   lines.push(clueChallengeUrl(href, clueChallengeFrom(run)));
   return lines.join("\n");
@@ -231,7 +271,7 @@ export function clueChallengeLine(streak: number, c: ClueChallenge): string {
  */
 export function friendMissAnswer(index: number, c: ClueChallenge): string | null {
   if (c.miss === null || !endsOnMiss(c) || index !== c.ids.length - 1) return null;
-  return answerName(clueAt(index), c.miss);
+  return answerName(clueAt(index, c.cycle), c.miss);
 }
 
 /**
