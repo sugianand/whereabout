@@ -100,6 +100,7 @@ test("on a 360px phone the Games button fits every quick game's header", async (
     "./left-right",
     "./which-climate",
     "./clue-mix",
+    "./on-the-ground",
   ]) {
     await page.goto(address);
     const games = page.getByRole("button", { name: "Games" });

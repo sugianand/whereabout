@@ -267,6 +267,34 @@ test.describe("on a keyboard", () => {
     await expect(page.getByRole("button", { name: "Play again" })).toBeFocused();
   });
 
+  test("? lists What's on the ground?'s controls, and every one of its keys works", async ({
+    page,
+  }) => {
+    await page.goto("./on-the-ground");
+    await expect(page.locator('[aria-keyshortcuts="5"]')).toBeEnabled();
+    const sheet = await openWithKey(page, "Controls for What's on the ground?");
+    await expectSheetLists(sheet, "on-the-ground", false);
+    // A pick key pressed in the sheet doesn't make a call behind it.
+    await page.keyboard.press("1");
+    await page.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+    await expect(page.getByText("Photo 1 of 5", { exact: true })).toBeVisible();
+
+    // Each of 1 to 5 names a cover; Enter moves on from the answer.
+    const picks = keysOf("on-the-ground", "pick");
+    for (const [n, pick] of picks.entries()) {
+      await expect(page.getByText(`Photo ${n + 1} of 5`, { exact: true })).toBeVisible();
+      await expect(page.locator(`[aria-keyshortcuts="${pick}"]`)).toBeEnabled();
+      await page.keyboard.press(pick);
+      const next = page.getByRole("button", {
+        name: n === picks.length - 1 ? "See the results" : "Next photo",
+      });
+      await expect(next).toBeFocused();
+      await page.keyboard.press(keysOf("on-the-ground", "next")[0]);
+    }
+    await expect(page.getByRole("button", { name: "Play again" })).toBeFocused();
+  });
+
   test("? lists Left or right?'s controls, and every one of its keys works", async ({ page }) => {
     await page.goto("./left-right");
     await expect(page.getByRole("button", { name: "Left: they drive on the left" })).toBeEnabled();
@@ -483,6 +511,7 @@ test.describe("on a touch screen", () => {
     ["which-way", "./which-way", "Controls for Which way?"],
     ["which-climate", "./which-climate", "Controls for Which climate?"],
     ["clue-mix", "./clue-mix", "Controls for Clue mix"],
+    ["on-the-ground", "./on-the-ground", "Controls for What's on the ground?"],
   ] as const) {
     test(`the help button lists ${screen}'s gestures on screen`, async ({ page }) => {
       await page.goto(path);

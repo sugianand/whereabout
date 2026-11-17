@@ -10,6 +10,7 @@ import catalog from "@/data/photos.json";
 import { continentMap } from "./clueMix";
 import { buildDeck, gameRecords } from "./deck";
 import { nameIds } from "./nameCountry";
+import { groundMap } from "./onTheGround";
 import type { AtlasData, CatalogPhoto } from "./types";
 import { climateMap } from "./whichClimate";
 
@@ -47,3 +48,9 @@ export const bundledClimateGroups = climateMap(bundledRecords.map((r) => r.photo
  * groups above, what Clue mix needs to deal every clue evenly in the browser (`clueMix.ts`).
  */
 export const bundledContinents = continentMap(bundledRecords.map((r) => r.photo));
+
+/**
+ * Each photo What's on the ground? can deal, by its WorldCover class: what the browser needs to
+ * deal an even game across the five covers without fetching every record (`onTheGround.ts`).
+ */
+export const bundledGroundCovers = groundMap(bundledRecords.map((r) => r.photo));

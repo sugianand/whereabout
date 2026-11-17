@@ -14,6 +14,7 @@ import { NO_BESTS, QUICK_MODES, bestLine, bestStreak, loadQuickBests } from "./q
 import { BEST_STREAK_KEY, bestStreakKey } from "./streak";
 import { BEST_SURVIVAL_KEY } from "./survival";
 import { BEST_CLIMATE_KEY } from "./whichClimate";
+import { BEST_GROUND_KEY } from "./onTheGround";
 import { BEST_WAY_KEY } from "./whichWay";
 
 afterEach(() => localStorage.clear());
@@ -39,6 +40,7 @@ describe("loadQuickBests", () => {
     localStorage.setItem(BEST_LEFT_RIGHT_KEY, "12");
     localStorage.setItem(BEST_CLIMATE_KEY, "4");
     localStorage.setItem(BEST_CLUE_MIX_KEY, "9");
+    localStorage.setItem(BEST_GROUND_KEY, "2");
     expect(loadQuickBests()).toEqual({
       blitz: 18250,
       streak: { streak: 6, region: null },
@@ -54,6 +56,7 @@ describe("loadQuickBests", () => {
       "left-right": 12,
       "which-climate": 4,
       "clue-mix": 9,
+      "on-the-ground": 2,
     });
   });
 
@@ -64,8 +67,10 @@ describe("loadQuickBests", () => {
     localStorage.setItem(BEST_HOW_FAR_KEY, "9000");
     localStorage.setItem(BEST_WAY_KEY, "-1");
     localStorage.setItem(BEST_CLIMATE_KEY, "6");
+    localStorage.setItem(BEST_GROUND_KEY, "0");
     const bests = loadQuickBests();
     expect(bests["which-climate"]).toBeNull();
+    expect(bests["on-the-ground"]).toBeNull();
     expect(bests["how-far"]).toBeNull();
     expect(bests["which-way"]).toBeNull();
     expect(bests["further-north"]).toBeNull();
@@ -109,6 +114,7 @@ describe("bestLine", () => {
     "left-right": 12,
     "which-climate": 3,
     "clue-mix": 11,
+    "on-the-ground": 5,
   };
 
   it("reads each best the way its card shows it", () => {
@@ -126,6 +132,7 @@ describe("bestLine", () => {
     expect(bestLine("left-right", bests)).toBe("Best: 12 in a row");
     expect(bestLine("which-climate", bests)).toBe("Best: 3 of 5 right");
     expect(bestLine("clue-mix", bests)).toBe("Best: 11 in a row");
+    expect(bestLine("on-the-ground", bests)).toBe("Best: 5 of 5 right");
   });
 
   it("names no continent for an all-world streak, and counts photos in the plural", () => {

@@ -103,6 +103,11 @@ const BLURBS: Record<QuickMode, { name: string; blurb: string }> = {
     blurb:
       "Each photo asks a different clue in turn: the side of the road, the climate, then the continent. Read them right until your first miss, against Atlas's reads.",
   },
+  "on-the-ground": {
+    name: "What's on the ground?",
+    blurb:
+      "One photo and five land covers: built-up, trees, grassland, water or bare ground? Five photos against Atlas's read of the scene.",
+  },
 };
 
 const CARD =
@@ -230,6 +235,7 @@ export default function QuickGames({
           "left-right",
           "which-climate",
           "clue-mix",
+          "on-the-ground",
         ] as const
       ).map((mode) => (
         <li key={mode}>{card(mode, `/${mode}`)}</li>

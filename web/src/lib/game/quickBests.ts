@@ -5,7 +5,7 @@
  * Nothing new is stored here. Each mode keeps its own best under its own key (blitz.ts,
  * streak.ts, survival.ts, furtherNorth.ts, oddOneOut.ts, howFar.ts, whichWay.ts, hotCold.ts,
  * nameCountry.ts, lineUp.ts, closeUp.ts, leftRight.ts,
- * whichClimate.ts, clueMix.ts); this only reads them back through the
+ * whichClimate.ts, clueMix.ts, onTheGround.ts); this only reads them back through the
  * same loaders, so a value a mode would refuse (a negative streak, junk JSON) is refused here too.
  */
 
@@ -22,6 +22,7 @@ import { CLOSE_MAX, loadBestClose } from "./closeUp";
 import { loadBestClueMix } from "./clueMix";
 import { loadBestName } from "./nameCountry";
 import { loadBestOdd } from "./oddOneOut";
+import { GROUND_PHOTOS, loadBestGround } from "./onTheGround";
 import { regionSlug } from "./regions";
 import { loadBestStreak } from "./streak";
 import { loadBestSurvival, type SurvivalBest } from "./survival";
@@ -44,6 +45,7 @@ export const QUICK_MODES = [
   "left-right",
   "which-climate",
   "clue-mix",
+  "on-the-ground",
 ] as const;
 
 export type QuickMode = (typeof QUICK_MODES)[number];
@@ -83,6 +85,8 @@ export interface QuickBests {
   "which-climate": number | null;
   /** The longest run of clues read right. */
   "clue-mix": number | null;
+  /** The most photos whose ground was named right in a whole game. */
+  "on-the-ground": number | null;
 }
 
 export const NO_BESTS: QuickBests = {
@@ -100,6 +104,7 @@ export const NO_BESTS: QuickBests = {
   "left-right": null,
   "which-climate": null,
   "clue-mix": null,
+  "on-the-ground": null,
 };
 
 /**
@@ -137,6 +142,7 @@ export function loadQuickBests(): QuickBests {
     "left-right": positive(loadBestLeftRight()),
     "which-climate": positive(loadBestClimate()),
     "clue-mix": positive(loadBestClueMix()),
+    "on-the-ground": positive(loadBestGround()),
   };
 }
 
@@ -173,6 +179,10 @@ export function bestLine(mode: QuickMode, bests: QuickBests): string | null {
     case "which-climate": {
       const n = bests[mode];
       return n === null ? null : `Best: ${n} of ${CLIMATE_PHOTOS} right`;
+    }
+    case "on-the-ground": {
+      const n = bests[mode];
+      return n === null ? null : `Best: ${n} of ${GROUND_PHOTOS} right`;
     }
     case "further-north":
     case "odd-one-out":

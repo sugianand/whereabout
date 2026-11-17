@@ -160,6 +160,45 @@ function climateClue(truth: string, atlas: AtlasRead | null): TrueClue {
   return { ...clue, atlas: `${group.toLowerCase()} climate`, right: group === truth };
 }
 
+/**
+ * The five WorldCover classes What's on the ground? deals, most of the catalog's photos. The
+ * catalog's handful of shrubland, farmland, snow, wetland, mangrove and moss photos sit out, too
+ * few to deal fairly.
+ */
+export const GROUND_COVERS = [
+  "Built-up",
+  "Tree cover",
+  "Grassland",
+  "Permanent water bodies",
+  "Bare / sparse vegetation",
+] as const;
+
+export type GroundCover = (typeof GROUND_COVERS)[number];
+
+/** True for one of the five land covers What's on the ground? names. */
+export function isGroundCover(value: unknown): value is GroundCover {
+  return (GROUND_COVERS as readonly unknown[]).includes(value);
+}
+
+/** Atlas's scene clue that names water around the spot. */
+const WATER_CLUES = new Set(["Coast"]);
+
+/**
+ * Which of the five land covers Atlas reads a photo as, for What's on the ground?: its first scene
+ * clue that names one, a city, skyline or old town for built-up and a coast for water. Null when
+ * no clue names a cover: "No buildings", "Village" and "Countryside" could each be several, and
+ * Atlas has no clue for trees, grass or bare ground, so it sits those photos out.
+ */
+export function atlasGroundCover(
+  atlas: Pick<AtlasRead, "clues"> | null | undefined,
+): GroundCover | null {
+  for (const c of atlas?.clues ?? []) {
+    if (BUILT_CLUES.has(c.label)) return "Built-up";
+    if (WATER_CLUES.has(c.label)) return "Permanent water bodies";
+  }
+  return null;
+}
+
 function landClue(truth: string, atlas: AtlasRead | null): TrueClue {
   const clue = {
     kind: "land_cover" as const,

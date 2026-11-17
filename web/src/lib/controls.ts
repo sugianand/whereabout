@@ -40,7 +40,8 @@ export type HelpScreen =
   | "close-up"
   | "left-right"
   | "which-climate"
-  | "clue-mix";
+  | "clue-mix"
+  | "on-the-ground";
 
 const k = (label: string, press = label): Key => ({ label, press });
 
@@ -426,6 +427,28 @@ export const CONTROLS: Record<HelpScreen, readonly ControlGroup[]> = {
       ],
     },
   ],
+  "on-the-ground": [
+    {
+      title: "The ground",
+      controls: [
+        {
+          id: "pick",
+          does: "Name the ground: built-up, trees, grassland, water or bare ground",
+          keys: [k("1"), k("2"), k("3"), k("4"), k("5")],
+          mouse: "Click a land cover",
+          touch: "Tap a land cover",
+        },
+        {
+          id: "next",
+          does: "Next photo, from the answer",
+          keys: [k("Enter")],
+          mouse: "Next photo",
+          touch: "Next photo",
+        },
+        HELP,
+      ],
+    },
+  ],
 };
 
 /** The sheet's title for each screen. */
@@ -442,6 +465,7 @@ export const SCREEN_TITLES: Record<HelpScreen, string> = {
   "left-right": "Controls for Left or right?",
   "which-climate": "Controls for Which climate?",
   "clue-mix": "Controls for Clue mix",
+  "on-the-ground": "Controls for What's on the ground?",
 };
 
 /**

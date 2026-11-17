@@ -174,6 +174,14 @@ carries the answer you gave there as one short code (`l`/`r`, a Köppen letter, 
 a continent), and the friend sees it only once they have called that step. A friend who gets past
 it plays on through the photos left, dealt from the same seed with the cycle picking up where your
 steps stopped, and can send theirs back with the head-to-head picture.
+**What's on the ground?** (at `/on-the-ground`, in the Games menu) shows one photo and five land
+covers: built-up, trees, grassland, water and bare ground. Tap one or press 1 to 5. The answer is
+the ESA WorldCover 2021 class around the spot, lit on a band of all five with your call and Atlas's
+marked on it. Atlas has no land-cover clue, so it plays only where one of its scene clues names a
+cover (a city, skyline or old town for built-up, a coast for water) and scores nothing on the rest.
+Each photo's cover is drawn by a fair die over the five, not in the catalog's mostly built-up
+proportions; the catalog's few photos of other covers (shrubland, farmland, snow, wetland) sit out.
+Five photos a game; your best game is kept in your browser.
 **Today** (at `/today`, in the Games menu and on the results screen) puts every daily game on one
 page: the Daily Five, Further North, Odd one out, Which way?, How far apart?, Name the country,
 Hot and cold, Line them up, Close-up, Left or right?, Which climate? and Clue mix, each with where it stands in your browser (not started, under way or its result), the time to the next deal, and one

@@ -70,6 +70,10 @@ describe("QuickGames", () => {
       "/which-climate",
     );
     expect(screen.getByRole("link", { name: /^Clue mix/ })).toHaveAttribute("href", "/clue-mix");
+    expect(screen.getByRole("link", { name: /^What's on the ground\?/ })).toHaveAttribute(
+      "href",
+      "/on-the-ground",
+    );
     fireEvent.click(screen.getByRole("button", { name: /^Blitz/ }));
     expect(onPlayBlitz).toHaveBeenCalledOnce();
   });
