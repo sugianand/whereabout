@@ -23,7 +23,7 @@ function played(id: string, km: number | null = 120): PlayedPhoto {
   };
 }
 
-function record(id: string): GameRecord {
+function record(id: string, atlas: { lng: number; lat: number } | null = null): GameRecord {
   return {
     photo: {
       id,
@@ -37,8 +37,12 @@ function record(id: string): GameRecord {
         license: "CC BY-SA 4.0",
         sourceUrl: `https://commons.wikimedia.org/wiki/File:${id}.jpg`,
       },
+      postcard: {
+        description: `About ${id}.`,
+        article: { title: `Article ${id}`, url: `https://en.wikipedia.org/wiki/${id}` },
+      },
     },
-    atlas: null,
+    atlas: atlas && { ...atlas, confidence: 0.5, topCountries: [], clues: [] },
   };
 }
 
@@ -128,7 +132,7 @@ describe("Album", () => {
 
     fireEvent.click(within(europe).getByRole("button", { name: "Show all 12 from Europe" }));
     expect(within(europe).getAllByTestId("album-photo")).toHaveLength(12);
-    expect(within(europe).queryByRole("button")).toBeNull();
+    expect(within(europe).queryByRole("button", { name: /^Show all/ })).toBeNull();
     await waitFor(() => expect(loadRecord).toHaveBeenCalledTimes(12));
   });
 
@@ -143,5 +147,91 @@ describe("Album", () => {
     );
     await waitFor(() => expect(within(section("Asia")).getByText("Place a0")).toBeInTheDocument());
     expect(within(section("Asia")).queryByRole("img")).toBeNull();
+  });
+
+  describe("a photo opened from the album", () => {
+    // Three found in Europe, newest first: e2, e1, e0. Atlas guessed each spot exactly.
+    const history = [played("e0", 900), played("e1", 15), played("e2", null)];
+    const exact = (id: string) => record(id, { lng: 2.35, lat: 48.86 });
+
+    function openFirst() {
+      render(
+        <Album
+          deck={deck}
+          continents={continents}
+          history={history}
+          loadRecord={vi.fn(async (id: string) => exact(id))}
+        />,
+      );
+      const opener = screen.getByRole("button", { name: "Open your photo from Place e2" });
+      opener.focus();
+      fireEvent.click(opener);
+      return { dialog: screen.getByRole("dialog", { name: "Place e2" }), opener };
+    }
+
+    it("shows the photo large with the day found, both distances, the verdict and its postcard", async () => {
+      const { dialog } = openFirst();
+      expect(within(dialog).getByText("Europe · 1 of 3")).toBeInTheDocument();
+      expect(within(dialog).getByText("Found 2026-11-18")).toBeInTheDocument();
+      expect(within(dialog).getByText("No pin")).toBeInTheDocument();
+      expect(await within(dialog).findByText("Atlas")).toBeInTheDocument();
+      expect(within(dialog).getByText("About e2.", { exact: false })).toBeInTheDocument();
+      expect(
+        within(dialog).getByRole("link", { name: "Read about Article e2 on Wikipedia" }),
+      ).toHaveAttribute("href", "https://en.wikipedia.org/wiki/e2");
+      const img = within(dialog).getByRole("img", { name: "Your photo from Place e2" });
+      expect(img.getAttribute("srcset")).toContain("1280px-Some_place.jpg");
+      // Focus starts on Close, inside the dialog.
+      expect(within(dialog).getByRole("button", { name: "Close" })).toHaveFocus();
+    });
+
+    it("turns through the continent with the arrow keys and the buttons, held at both ends", async () => {
+      const { dialog } = openFirst();
+      expect(within(dialog).getByRole("button", { name: "Previous photo" })).toHaveAttribute(
+        "aria-disabled",
+        "true",
+      );
+      fireEvent.keyDown(dialog, { key: "ArrowLeft" });
+      expect(within(dialog).getByText("Europe · 1 of 3")).toBeInTheDocument();
+
+      fireEvent.keyDown(dialog, { key: "ArrowRight" });
+      expect(screen.getByRole("dialog", { name: "Place e1" })).toBeInTheDocument();
+      expect(within(dialog).getByText("Europe · 2 of 3")).toBeInTheDocument();
+      fireEvent.click(within(dialog).getByRole("button", { name: "Next photo" }));
+      expect(screen.getByRole("dialog", { name: "Place e0" })).toBeInTheDocument();
+      expect(within(dialog).getByRole("button", { name: "Next photo" })).toHaveAttribute(
+        "aria-disabled",
+        "true",
+      );
+      fireEvent.click(within(dialog).getByRole("button", { name: "Next photo" }));
+      expect(screen.getByRole("dialog", { name: "Place e0" })).toBeInTheDocument();
+      // Atlas guessed the spot itself, 900 km closer than the pin.
+      expect(await within(dialog).findByText("Atlas got closer")).toBeInTheDocument();
+    });
+
+    it("turns the page on a sideways swipe across the photo, not on a tap", () => {
+      const { dialog } = openFirst();
+      const frame = within(dialog).getByTestId("album-viewer-photo");
+      fireEvent.pointerDown(frame, { clientX: 300, clientY: 100 });
+      fireEvent.pointerUp(frame, { clientX: 302, clientY: 101 });
+      expect(within(dialog).getByText("Europe · 1 of 3")).toBeInTheDocument();
+      fireEvent.pointerDown(frame, { clientX: 300, clientY: 100 });
+      fireEvent.pointerUp(frame, { clientX: 180, clientY: 110 });
+      expect(within(dialog).getByText("Europe · 2 of 3")).toBeInTheDocument();
+      fireEvent.pointerDown(frame, { clientX: 100, clientY: 100 });
+      fireEvent.pointerUp(frame, { clientX: 220, clientY: 100 });
+      expect(within(dialog).getByText("Europe · 1 of 3")).toBeInTheDocument();
+    });
+
+    it("closes on Esc or Close and gives focus back to the card it came from", () => {
+      const { dialog, opener } = openFirst();
+      fireEvent.keyDown(dialog, { key: "Escape" });
+      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(opener).toHaveFocus();
+
+      fireEvent.click(opener);
+      fireEvent.click(screen.getByRole("button", { name: "Close" }));
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
   });
 });

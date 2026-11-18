@@ -130,6 +130,14 @@ for (const colorScheme of ["dark", "light"] as const) {
         await page.goto(path);
         await page.waitForLoadState("networkidle");
         await expectAccessible(page, `${path} after a game`);
+        if (path === "./album") {
+          await page
+            .getByRole("button", { name: /^Open your photo from / })
+            .first()
+            .click();
+          await expect(page.getByRole("dialog")).toBeVisible();
+          await expectAccessible(page, "a photo opened from the album");
+        }
       }
     });
 

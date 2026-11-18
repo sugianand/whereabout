@@ -71,7 +71,7 @@ test("the photos of a game land in the album under their continents, with their 
     const card = photos.filter({ hasText: place });
     await expect(card).toHaveCount(1);
     await expect(card).toContainText(/off|No pin/);
-    const img = card.getByRole("img");
+    const img = card.locator("img");
     await expect(img).toHaveJSProperty("complete", true);
     expect(await img.evaluate((i: HTMLImageElement) => i.naturalWidth)).toBeGreaterThan(0);
   }
@@ -101,4 +101,50 @@ test("a continent's blank card leads to a game on that continent", async ({ page
   await expect(play).toHaveAttribute("href", /\?region=[a-z-]+$/);
   await play.click();
   await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
+});
+
+test("a found photo opens large with the day found and both distances, and turns through its continent", async ({
+  page,
+}) => {
+  await page.goto("./?daily");
+  for (let round = 1; round <= 3; round++) {
+    const card = await playRound(page);
+    if (round < 3) await card.getByRole("button", { name: "Next photo" }).click();
+  }
+  const kept = JSON.parse(
+    (await page.evaluate(() => localStorage.getItem("whereabout:played"))) ?? "[]",
+  ) as { id: string; place: string; day: string }[];
+
+  await page.goto("./album/");
+  const newest = kept[kept.length - 1];
+  const opener = page.getByRole("button", { name: `Open your photo from ${newest.place}` });
+  await opener.click();
+  const dialog = page.getByRole("dialog", { name: newest.place });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText(`Found ${newest.day}`);
+  await expect(dialog.getByText("You", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Atlas", { exact: true })).toBeVisible();
+  const img = dialog.locator("img");
+  await expect(img).toHaveJSProperty("complete", true);
+  expect(await img.evaluate((i: HTMLImageElement) => i.naturalWidth)).toBeGreaterThan(0);
+  // The whole sheet fits the screen's width, phone included.
+  const box = (await dialog.boundingBox())!;
+  expect(box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+
+  // The arrow keys turn through the continent the photo was found on, held at its ends.
+  const counter = dialog.getByText(/ · \d+ of \d+$/);
+  const total = Number((await counter.textContent())!.match(/of (\d+)$/)![1]);
+  await expect(counter).toHaveText(/ · 1 of \d+$/);
+  if (total > 1) {
+    await page.keyboard.press("ArrowRight");
+    await expect(counter).toHaveText(/ · 2 of \d+$/);
+    await expect(dialog.getByRole("heading")).not.toHaveText(newest.place);
+    await page.keyboard.press("ArrowLeft");
+  }
+  await page.keyboard.press("ArrowLeft");
+  await expect(counter).toHaveText(/ · 1 of \d+$/);
+
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toBeHidden();
+  await expect(opener).toBeFocused();
 });

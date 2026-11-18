@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Continent } from "@/lib/continents";
 import type { PlayedPhoto } from "@/lib/playedMap";
 
-import { buildAlbum, eachLimited, percentFound } from "./album";
+import { SWIPE_PX, buildAlbum, eachLimited, percentFound, stepIn, swipeStep } from "./album";
 
 function played(id: string, over: Partial<PlayedPhoto> = {}): PlayedPhoto {
   return {
@@ -101,5 +101,28 @@ describe("eachLimited", () => {
       () => cancelled,
     );
     expect(done).toEqual([1, 2]);
+  });
+});
+
+describe("stepIn", () => {
+  it("turns the page either way and holds at both ends", () => {
+    expect(stepIn(5, 2, 1)).toBe(3);
+    expect(stepIn(5, 2, -1)).toBe(1);
+    expect(stepIn(5, 4, 1)).toBe(4);
+    expect(stepIn(5, 0, -1)).toBe(0);
+    expect(stepIn(0, 0, 1)).toBe(0);
+  });
+});
+
+describe("swipeStep", () => {
+  it("reads a long sideways swipe left as next and right as previous", () => {
+    expect(swipeStep(-SWIPE_PX, 0)).toBe(1);
+    expect(swipeStep(SWIPE_PX + 20, 10)).toBe(-1);
+  });
+
+  it("ignores a short move, a tap and a scroll", () => {
+    expect(swipeStep(-(SWIPE_PX - 1), 0)).toBe(0);
+    expect(swipeStep(0, 0)).toBe(0);
+    expect(swipeStep(-80, 120)).toBe(0);
   });
 });

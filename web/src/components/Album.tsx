@@ -13,6 +13,7 @@ import { BANDS, loadPlayed, type PlayedPhoto } from "@/lib/playedMap";
 import { useColorScheme } from "@/lib/useTheme";
 import { useUnits } from "@/lib/useUnits";
 
+import AlbumViewer from "./AlbumViewer";
 import { cardImage } from "./ClosestCalls";
 import ClosenessMark from "./ClosenessMark";
 import { BAND_SCHEMES } from "./PlayedMap";
@@ -47,6 +48,8 @@ export default function Album({ deck, continents, history, loadRecord }: AlbumPr
   const [played, setPlayed] = useState<readonly PlayedPhoto[] | null>(history ?? null);
   const [expanded, setExpanded] = useState<ReadonlySet<Continent>>(new Set());
   const [loaded, setLoaded] = useState<Loaded>({});
+  // The photo open in the viewer: its continent and place on that continent's page.
+  const [open, setOpen] = useState<{ continent: Continent; index: number } | null>(null);
 
   useEffect(() => {
     if (history) return;
@@ -57,16 +60,22 @@ export default function Album({ deck, continents, history, loadRecord }: AlbumPr
 
   const album = useMemo(() => buildAlbum(continents, played ?? []), [continents, played]);
 
-  // The photos on screen, in page order: each continent's first few, or all once expanded.
-  const shown = useMemo(
-    () =>
-      album.continents.flatMap((row) =>
-        (expanded.has(row.continent) ? row.found : row.found.slice(0, ALBUM_FIRST)).map(
-          (p) => p.id,
-        ),
-      ),
-    [album, expanded],
-  );
+  const openRow = open ? album.continents.find((r) => r.continent === open.continent) : undefined;
+
+  // The photos on screen, in page order: each continent's first few, or all once expanded,
+  // then the open photo and its neighbours, so turning the page finds them ready.
+  const shown = useMemo(() => {
+    const ids = album.continents.flatMap((row) =>
+      (expanded.has(row.continent) ? row.found : row.found.slice(0, ALBUM_FIRST)).map((p) => p.id),
+    );
+    if (open && openRow) {
+      for (const i of [open.index, open.index + 1, open.index - 1]) {
+        const id = openRow.found[i]?.id;
+        if (id && !ids.includes(id)) ids.push(id);
+      }
+    }
+    return ids;
+  }, [album, expanded, open, openRow]);
   const shownKey = shown.join(",");
 
   useEffect(() => {
@@ -129,8 +138,20 @@ export default function Album({ deck, continents, history, loadRecord }: AlbumPr
           expanded={expanded.has(row.continent)}
           onShowAll={() => setExpanded((prev) => new Set(prev).add(row.continent))}
           loaded={loaded}
+          onOpen={(index) => setOpen({ continent: row.continent, index })}
         />
       ))}
+
+      {open && openRow && (
+        <AlbumViewer
+          continent={open.continent}
+          photos={openRow.found}
+          index={open.index}
+          loaded={loaded}
+          onIndex={(index) => setOpen({ continent: open.continent, index })}
+          onClose={() => setOpen(null)}
+        />
+      )}
     </>
   );
 }
@@ -141,12 +162,14 @@ function ContinentPage({
   expanded,
   onShowAll,
   loaded,
+  onOpen,
 }: {
   row: AlbumContinent;
   regions: Regions;
   expanded: boolean;
   onShowAll: () => void;
   loaded: Loaded;
+  onOpen: (index: number) => void;
 }) {
   const units = useUnits();
   const bands = BAND_SCHEMES[useColorScheme() === "light" ? "day" : "night"];
@@ -169,7 +192,7 @@ function ContinentPage({
         className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"
         aria-label={`${row.continent}: photos found`}
       >
-        {listed.map((p) => {
+        {listed.map((p, i) => {
           const got = loaded[p.id];
           const photo = got && got !== "failed" && got.photo.id === p.id ? got.photo : null;
           const band = closenessOf(p.km);
@@ -179,7 +202,12 @@ function ContinentPage({
               className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-graticule bg-ocean-deep"
               data-testid="album-photo"
             >
-              <div className="aspect-[4/3] bg-graticule/40">
+              <button
+                type="button"
+                onClick={() => onOpen(i)}
+                aria-label={`Open your photo from ${p.place}`}
+                className="block aspect-[4/3] w-full bg-graticule/40 transition hover:opacity-90"
+              >
                 {photo && (
                   // Wikimedia thumbnails, already sized; next/image can't optimise a static export.
                   // eslint-disable-next-line @next/next/no-img-element
@@ -191,7 +219,7 @@ function ContinentPage({
                     className="h-full w-full object-cover"
                   />
                 )}
-              </div>
+              </button>
               <div className="flex flex-1 flex-col gap-1 p-3 text-sm">
                 <p className="line-clamp-2 font-semibold leading-snug" title={p.place}>
                   {p.place}

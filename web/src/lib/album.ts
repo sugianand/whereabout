@@ -89,3 +89,21 @@ export async function eachLimited<T>(
   };
   await Promise.all(Array.from({ length: Math.max(1, Math.min(limit, items.length)) }, worker));
 }
+
+/** The photo `delta` places along a continent's page from `index`, held at either end. */
+export function stepIn(length: number, index: number, delta: number): number {
+  if (length <= 0) return 0;
+  return Math.min(length - 1, Math.max(0, index + delta));
+}
+
+/** How far a finger must travel sideways for a swipe to turn the page, in CSS pixels. */
+export const SWIPE_PX = 50;
+
+/**
+ * Which way a swipe turns the page: a finger moved left shows the next photo (+1), right the
+ * one before (-1); a short or mostly vertical move (a scroll) turns nothing.
+ */
+export function swipeStep(dx: number, dy: number): -1 | 0 | 1 {
+  if (Math.abs(dx) < SWIPE_PX || Math.abs(dx) <= Math.abs(dy)) return 0;
+  return dx < 0 ? 1 : -1;
+}
