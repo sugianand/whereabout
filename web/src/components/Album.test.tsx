@@ -256,4 +256,36 @@ describe("Album", () => {
       expect(screen.queryByRole("dialog")).toBeNull();
     });
   });
+
+  it("offers to share the album only once a photo is found, and shares its counts as text", async () => {
+    const { unmount } = render(
+      <Album deck={deck} continents={continents} history={[]} loadRecord={vi.fn()} />,
+    );
+    expect(screen.queryByRole("button", { name: "Share your album" })).toBeNull();
+    unmount();
+
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("navigator", { ...navigator, share: undefined, clipboard: { writeText } });
+    render(
+      <Album
+        deck={deck}
+        continents={continents}
+        history={[played("e0", 3.2), played("a1", null)]}
+        loadRecord={() => new Promise(() => {})}
+      />,
+    );
+    const picture = screen.getByRole("button", { name: "Share your album" });
+    expect(picture).toHaveAccessibleDescription("Your album: 2 of 15 photos found.");
+    fireEvent.click(screen.getByRole("button", { name: "Share as text" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    const text = writeText.mock.calls[0][0] as string;
+    expect(text.split("\n").slice(0, 2)).toEqual([
+      "Whereabout album: 2 of 15 photos found",
+      "Asia 1/2 · Europe 1/12 · Antarctica 0/1",
+    ]);
+    // Counts only: never the places found.
+    expect(text).not.toContain("Place");
+    expect(screen.getByRole("status")).toHaveTextContent("Album copied. Paste it anywhere.");
+    vi.unstubAllGlobals();
+  });
 });

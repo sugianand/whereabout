@@ -250,7 +250,17 @@ export async function renderShareImage(
   units: Units = "km",
   doc: Document = document,
 ): Promise<Blob | null> {
-  const layout = shareImageLayout(card, units);
+  return renderLayout(shareImageLayout(card, units), doc);
+}
+
+/**
+ * Paint any picture's layout (the share card, a head to head, the album) into a PNG, its fonts
+ * loaded first. Null where the browser has no 2D canvas or won't encode one.
+ */
+export async function renderLayout(
+  layout: ShareImageLayout,
+  doc: Document = document,
+): Promise<Blob | null> {
   try {
     await Promise.all([...new Set(layout.texts.map((t) => t.font))].map((f) => doc.fonts?.load(f)));
   } catch {

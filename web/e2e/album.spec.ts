@@ -31,7 +31,7 @@ test("an empty album counts every photo still to find and points to a first game
   await expect(page.getByTestId("album-found")).toHaveText("0");
   await expect(page.getByRole("link", { name: "Play a game →" })).toBeVisible();
   const total = Number(
-    (await page.getByText(/of [\d,]+ photos found/).textContent())!
+    (await page.getByText(/^[\d,]+ of [\d,]+ photos found$/).textContent())!
       .match(/of ([\d,]+)/)![1]
       .replace(/,/g, ""),
   );
@@ -126,7 +126,7 @@ test("find the rest deals photos the album is missing, and the album fills from 
   await page.goto("./album/");
   await expect(page.getByTestId("album-found")).toHaveText("1");
   const total = Number(
-    (await page.getByText(/of [\d,]+ photos found/).textContent())!
+    (await page.getByText(/^[\d,]+ of [\d,]+ photos found$/).textContent())!
       .match(/of ([\d,]+)/)![1]
       .replace(/,/g, ""),
   );
@@ -195,4 +195,55 @@ test("a found photo opens large with the day found and both distances, and turns
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toBeHidden();
   await expect(opener).toBeFocused();
+});
+
+test("the album shares as a picture of its pages and as a line of counts, never a place", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  await page.goto("./album/");
+  await expect(page.getByTestId("album-found")).toHaveText("0");
+  await expect(page.getByRole("button", { name: "Share your album" })).toHaveCount(0);
+
+  await page.goto("./?daily");
+  await playRound(page);
+  const kept = JSON.parse(
+    (await page.evaluate(() => localStorage.getItem("whereabout:played"))) ?? "[]",
+  ) as { place: string }[];
+  expect(kept).toHaveLength(1);
+
+  await page.goto("./album/");
+  await expect(page.getByTestId("album-found")).toHaveText("1");
+  const picture = page.getByRole("button", { name: "Share your album" });
+  await expect(picture).toBeInViewport({ ratio: 1 });
+  const [download] = await Promise.all([page.waitForEvent("download"), picture.click()]);
+  expect(download.suggestedFilename()).toMatch(/^whereabout-album-1-of-\d+\.png$/);
+  const png = readFileSync((await download.path())!);
+  expect(png.subarray(1, 4).toString()).toBe("PNG");
+  expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1080, 1080]);
+  await expect(page.getByText("Album saved as a picture.", { exact: false })).toBeVisible();
+
+  const sent = () => page.evaluate(() => (window as unknown as { sent: string }).sent);
+  const withPicture = await sent();
+  expect(withPicture).toMatch(/^Whereabout album: 1 of [\d,]+ photos found\n/);
+  expect(withPicture).toMatch(/\/whereabout\/$/);
+  expect(withPicture).not.toContain(kept[0].place);
+
+  await page.evaluate(() => ((window as unknown as { sent: string }).sent = ""));
+  await page.getByRole("button", { name: "Share as text" }).click();
+  await expect(page.getByText("Album copied. Paste it anywhere.")).toBeVisible();
+  expect(await sent()).toBe(withPicture);
+
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
 });

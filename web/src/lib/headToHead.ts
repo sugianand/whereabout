@@ -22,7 +22,7 @@ import {
   INK,
   SANS,
   SIGN,
-  drawShareImage,
+  renderLayout,
   sendShareImage,
   type ImageOutcome,
   type ImageRect,
@@ -163,19 +163,7 @@ export async function renderHeadToHead(
   h: HeadToHead,
   doc: Document = document,
 ): Promise<Blob | null> {
-  const layout = headToHeadLayout(h);
-  try {
-    await Promise.all([...new Set(layout.texts.map((t) => t.font))].map((f) => doc.fonts?.load(f)));
-  } catch {
-    // A font that won't load draws in its fallback; the picture still says the same thing.
-  }
-  const canvas = doc.createElement("canvas");
-  canvas.width = layout.width;
-  canvas.height = layout.height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return null;
-  drawShareImage(ctx, layout);
-  return new Promise((done) => canvas.toBlob((blob) => done(blob), "image/png"));
+  return renderLayout(headToHeadLayout(h), doc);
 }
 
 /** What the note under the button says as the picture is drawn and sent. */

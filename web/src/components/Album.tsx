@@ -13,6 +13,7 @@ import { BANDS, loadPlayed, type PlayedPhoto } from "@/lib/playedMap";
 import { useColorScheme } from "@/lib/useTheme";
 import { useUnits } from "@/lib/useUnits";
 
+import AlbumShare from "./AlbumShare";
 import AlbumViewer from "./AlbumViewer";
 import { cardImage } from "./ClosestCalls";
 import ClosenessMark from "./ClosenessMark";
@@ -144,6 +145,7 @@ export default function Album({ deck, continents, history, loadRecord }: AlbumPr
             Your album is full: you&apos;ve found every photo the game deals.
           </p>
         )}
+        {album.found > 0 && <AlbumShare album={album} />}
       </section>
 
       {album.continents.map((row) => (
