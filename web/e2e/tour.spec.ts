@@ -121,3 +121,39 @@ test("after a cleared leg the results lead to the next stop, and the tour fits a
   });
   await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
 });
+
+test("the route is drawn on a globe that flies to the next stop, with cleared legs lit", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.addInitScript(() => {
+    const won = (cleared: string) => ({ tries: 1, best: { you: 20000, atlas: 15000 }, cleared });
+    localStorage.setItem(
+      "whereabout:tour",
+      JSON.stringify({ Europe: won("2026-11-16"), Africa: won("2026-11-17") }),
+    );
+  });
+  await page.goto("./tour/");
+  const globe = page.getByTestId("tour-globe");
+  const stops = page.getByTestId("tour-stop");
+  const legs = await stops.count();
+  const next = (await stops.nth(2).getAttribute("data-continent"))!;
+  // Software WebGL is slow to load the chart.
+  await expect(globe).toHaveAttribute("data-ready", "true", { timeout: 30_000 });
+  await expect(globe).toHaveAttribute("data-stops", String(legs));
+  await expect(globe).toHaveAttribute("data-lit", "1");
+  await expect(globe).toHaveAttribute("data-flown-to", next);
+  await expect(globe).toHaveAccessibleName(
+    new RegExp(
+      `^Globe of the World Tour's route: Europe, then Africa, .*1 of ${legs - 1} legs between them flown; next stop ${next}\\.$`,
+    ),
+  );
+  await expect(globe.locator("canvas")).toBeVisible();
+  // The list stays below the globe for keyboards and screen readers.
+  const globeBox = (await globe.boundingBox())!;
+  const listBox = (await page.getByRole("list", { name: "The route" }).boundingBox())!;
+  expect(listBox.y).toBeGreaterThanOrEqual(globeBox.y + globeBox.height);
+  await noSidewaysScroll(page);
+  expect(errors).toEqual([]);
+});

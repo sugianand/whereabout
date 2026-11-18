@@ -8,6 +8,8 @@ import { regionSlug } from "@/lib/game/regions";
 import { formatPoints } from "@/lib/geo";
 import { clearedCount, loadTour, nextStop, type TourLeg, type TourRecord } from "@/lib/tour";
 
+import TourGlobe from "./TourGlobe";
+
 export interface TourProps {
   /** The legs in route order (`tourRoute`), each with the photos its continent game deals from. */
   legs: { continent: Continent; photos: number }[];
@@ -83,6 +85,8 @@ export default function Tour({ legs, record: given }: TourProps) {
           style={{ width: route.length ? `${(cleared / route.length) * 100}%` : 0 }}
         />
       </div>
+
+      <TourGlobe route={route} record={given ?? stored} />
 
       <ol className="mt-8 grid gap-4 sm:grid-cols-2" aria-label="The route">
         {legs.map(({ continent, photos }, i) => {

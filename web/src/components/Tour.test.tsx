@@ -1,11 +1,18 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { RoundResult } from "@/lib/game/state";
+import { setTheme } from "@/lib/theme";
 import type { LegResult, TourRecord } from "@/lib/tour";
+import { FakeMap, resetFakes } from "@/test/maplibre-mock";
 
 import Summary, { tourLegLine } from "./Summary";
 import Tour, { legStatus } from "./Tour";
+import { ROUTE_COLORS } from "./TourGlobe";
+
+vi.mock("maplibre-gl", async () => (await import("@/test/maplibre-mock")).maplibreMock);
+
+beforeEach(() => resetFakes());
 
 const LEGS = [
   { continent: "Europe" as const, photos: 120 },
@@ -75,6 +82,105 @@ describe("the World Tour page", () => {
     expect(legStatus({ tries: 1, best: { you: 5000, atlas: 5000 }, cleared: null })).toBe(
       "Your best tied Atlas at 5,000, over 1 game.",
     );
+  });
+});
+
+type Features = { features: { properties: Record<string, unknown> }[] };
+
+describe("the route on a globe", () => {
+  const record: TourRecord = {
+    Europe: { tries: 1, best: { you: 9, atlas: 8 }, cleared: "2026-11-17" },
+    Africa: { tries: 2, best: { you: 9, atlas: 8 }, cleared: "2026-11-18" },
+  };
+
+  async function loadedMap() {
+    await waitFor(() => expect(FakeMap.instances).toHaveLength(1));
+    const map = FakeMap.instances[0];
+    act(() => map.emit("load"));
+    return map;
+  }
+
+  it("draws each stop and arc with its state, and flies to the next stop", async () => {
+    render(<Tour legs={LEGS} record={record} />);
+    const map = await loadedMap();
+    const stops = map.sources["tour-stops"].data as Features;
+    expect(stops.features.map((f) => [f.properties.continent, f.properties.state])).toEqual([
+      ["Europe", "cleared"],
+      ["Africa", "cleared"],
+      ["Asia", "next"],
+    ]);
+    const arcs = map.sources["tour-arcs"].data as Features;
+    expect(arcs.features.map((f) => f.properties.state)).toEqual(["flown", "next"]);
+    expect(map.flyToCalls).toHaveLength(1);
+    expect(map.flyToCalls[0].center).toEqual([95, 35]);
+    const globe = screen.getByTestId("tour-globe");
+    expect(globe).toHaveAttribute("data-lit", "1");
+    expect(globe).toHaveAttribute("data-flown-to", "Asia");
+    expect(globe).toHaveAccessibleName(
+      "Globe of the World Tour's route: Europe, then Africa, then Asia. 1 of 2 legs between them flown; next stop Asia.",
+    );
+  });
+
+  it("jumps instead of flying when the player asks for less motion", async () => {
+    vi.stubGlobal("matchMedia", (q: string) => ({
+      matches: q.includes("reduce"),
+      media: q,
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+    try {
+      render(<Tour legs={LEGS} record={{}} />);
+      const map = await loadedMap();
+      expect(map.flyToCalls).toHaveLength(0);
+      expect(map.jumpToCalls.map((c) => c.center)).toEqual([[15, 50]]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("repaints the route by day when the site turns light, keeping the camera", async () => {
+    render(<Tour legs={LEGS} record={record} />);
+    const map = await loadedMap();
+    expect(screen.getByTestId("tour-globe")).toHaveAttribute("data-light", "night");
+    try {
+      act(() => setTheme("light"));
+      expect(screen.getByTestId("tour-globe")).toHaveAttribute("data-light", "day");
+      expect(JSON.stringify(map.paint["tour-arcs-flown"]["line-color"])).toContain(
+        ROUTE_COLORS.day.cleared,
+      );
+      expect(JSON.stringify(map.paint["tour-stops"]["circle-color"])).toContain(
+        ROUTE_COLORS.day.next,
+      );
+      expect(map.flyToCalls).toHaveLength(1);
+    } finally {
+      act(() => setTheme("system"));
+    }
+  });
+
+  it("stays on the whole route once the tour is complete", async () => {
+    const won = { tries: 1, best: { you: 2, atlas: 1 }, cleared: "2026-11-18" };
+    render(<Tour legs={LEGS} record={{ Europe: won, Africa: won, Asia: won }} />);
+    const map = await loadedMap();
+    expect(map.flyToCalls).toHaveLength(0);
+    expect(map.jumpToCalls).toHaveLength(0);
+    expect(screen.getByTestId("tour-globe")).toHaveAttribute("data-lit", "2");
+  });
+
+  it("says so when the browser can't draw the globe, with the list still there", async () => {
+    resetFakes();
+    vi.doMock("maplibre-gl", () => {
+      throw new Error("no WebGL");
+    });
+    try {
+      vi.resetModules();
+      const { default: FreshTour } = await import("./Tour");
+      render(<FreshTour legs={LEGS} record={{}} />);
+      expect(await screen.findByText(/can't draw the globe/)).toBeInTheDocument();
+      expect(screen.getAllByTestId("tour-stop")).toHaveLength(3);
+    } finally {
+      vi.doUnmock("maplibre-gl");
+      vi.resetModules();
+    }
   });
 });
 
