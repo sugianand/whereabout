@@ -153,6 +153,17 @@ describe("groundReducer", () => {
       results: [],
     });
   });
+
+  it("picks up after the calls already made, and is done when they cover the game", () => {
+    const kept = [
+      { id: "p1", picked: "Grassland", truth: "Grassland", correct: true, atlas: null },
+    ] as const;
+    const s = groundReducer(initialGround, { type: "start", order: ["p1", "p2"], from: kept });
+    expect(s).toMatchObject({ phase: "picking", results: kept });
+    expect(
+      groundReducer(initialGround, { type: "start", order: ["p1"], from: kept }),
+    ).toMatchObject({ phase: "done", results: kept });
+  });
 });
 
 describe("words and totals", () => {

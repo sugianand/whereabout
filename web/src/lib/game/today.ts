@@ -2,8 +2,9 @@
  * Today: every daily game on one page. Each game already keeps its own day in this browser, so
  * this reads those records back and adds none of its own: the Daily Five's first score and the
  * game in progress (./dailyArchive.ts, ./saved.ts), the streak games' runs (./dailyRuns.ts)
- * and the photos and rows of How far apart?, Hot and cold, Line them up, Close-up and Which climate?
- * (./farDaily.ts, ./hotDaily.ts, ./lineDaily.ts, ./closeDaily.ts, ./climateDaily.ts). What a game can't read back counts as not started.
+ * and the photos and rows of How far apart?, Hot and cold, Line them up, Close-up, Which climate?
+ * and What's on the ground? (./farDaily.ts, ./hotDaily.ts, ./lineDaily.ts, ./closeDaily.ts,
+ * ./climateDaily.ts, ./groundDaily.ts). What a game can't read back counts as not started.
  *
  * Like every share in the game, the combined line is scores and counts only, so it spoils no
  * photo. Only finished games go in it: a run still going has no result yet.
@@ -24,6 +25,7 @@ import { CLOSE_PHOTOS, CLOSE_POINTS, closeTotals } from "./closeUp";
 import { ARCHIVE_DAYS, archiveDays, loadDailyScores } from "./dailyArchive";
 import { dailyRunUrl, type DailyRun } from "./dailyRuns";
 import { loadFarDay } from "./farDaily";
+import { loadGroundDay } from "./groundDaily";
 import { HOT_PHOTOS, PHOTO_POINTS, atlasTotal as hotAtlasTotal, hotTotal } from "./hotCold";
 import { loadHotDay } from "./hotDaily";
 import { PAIRS, PAIR_POINTS, atlasTotal, totalPoints } from "./howFar";
@@ -32,6 +34,7 @@ import { ROW, ROWS, atlasLinePoints, linePoints } from "./lineUp";
 import { loadNameDay } from "./nameDaily";
 import { loadNorthDay } from "./northDaily";
 import { loadOddDay } from "./oddDaily";
+import { GROUND_PHOTOS, groundTotals } from "./onTheGround";
 import { loadSaved } from "./saved";
 import { loadSideDay } from "./sideDaily";
 import { ROUNDS_PER_GAME } from "./state";
@@ -50,7 +53,8 @@ export type TodayGameId =
   | "close-up"
   | "left-right"
   | "which-climate"
-  | "clue-mix";
+  | "clue-mix"
+  | "on-the-ground";
 
 /** One daily game: where it lives, whatever the browser holds. */
 export interface TodayGameInfo {
@@ -157,9 +161,18 @@ export const TODAY_GAMES: readonly TodayGameInfo[] = [
     href: "/clue-mix/daily",
     icon: "🔀",
     blurb:
-      "The road, the climate, then the continent: a new clue each photo, until your first miss.",
+      "The road, the climate, the continent, then the ground: a new clue each photo, until your first miss.",
     // From the next UTC day, so a day already played in full isn't left one game short.
     since: "2026-11-15",
+  },
+  {
+    id: "on-the-ground",
+    name: "What's on the ground?",
+    href: "/on-the-ground/daily",
+    icon: "🌱",
+    blurb: "Five photos: built-up, trees, grassland, water or bare ground?",
+    // From the next UTC day, so a day already played in full isn't left one game short.
+    since: "2026-11-19",
   },
 ];
 
@@ -318,24 +331,32 @@ function closeUp(day: string) {
   return { status: "done" as const, line, atlas: rival, versus: called };
 }
 
-function whichClimate(day: string) {
-  const results = loadClimateDay(day)?.results ?? [];
+/** A game of a set number of photos, each called right or wrong, with Atlas's read on some. */
+function photoCalls(
+  results: readonly { correct: boolean }[],
+  photos: number,
+  { right, atlasRight, atlasRead }: { right: number; atlasRight: number; atlasRead: number },
+) {
   if (results.length === 0)
     return { status: "new" as const, line: NOT_STARTED, atlas: null, versus: null };
-  const { right, atlasRight, atlasRead } = climateTotals(results);
   const atlas = atlasRead > 0 ? `${atlasRight} of ${atlasRead}` : null;
-  if (results.length < CLIMATE_PHOTOS) {
-    const line = `${results.length} of ${CLIMATE_PHOTOS} photos, ${right} right`;
+  if (results.length < photos) {
+    const line = `${results.length} of ${photos} photos, ${right} right`;
     return { status: "going" as const, line, atlas, versus: null };
   }
   // Atlas's tally is only a score against yours when it read every photo.
-  const called = atlasRead === CLIMATE_PHOTOS ? versus(right, atlasRight, "right") : null;
-  return {
-    status: "done" as const,
-    line: `${right} of ${CLIMATE_PHOTOS} right`,
-    atlas,
-    versus: called,
-  };
+  const called = atlasRead === photos ? versus(right, atlasRight, "right") : null;
+  return { status: "done" as const, line: `${right} of ${photos} right`, atlas, versus: called };
+}
+
+function whichClimate(day: string) {
+  const results = loadClimateDay(day)?.results ?? [];
+  return photoCalls(results, CLIMATE_PHOTOS, climateTotals(results));
+}
+
+function onTheGround(day: string) {
+  const results = loadGroundDay(day)?.results ?? [];
+  return photoCalls(results, GROUND_PHOTOS, groundTotals(results));
 }
 
 /** Every daily game dealt on `day`, with its standing in this browser. */
@@ -371,6 +392,8 @@ export function todayGames(
         return { ...info, ...whichClimate(day) };
       case "clue-mix":
         return { ...info, ...streakGame(loadClueDay(day), "clue") };
+      case "on-the-ground":
+        return { ...info, ...onTheGround(day) };
     }
   });
 }

@@ -90,6 +90,7 @@ describe("readStamps", () => {
       "beat-atlas-left-right",
       "beat-atlas-which-climate",
       "beat-atlas-clue-mix",
+      "beat-atlas-on-the-ground",
       "road-reader",
       "climate-reader",
       "road-ahead",

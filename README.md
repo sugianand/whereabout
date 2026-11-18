@@ -186,9 +186,13 @@ cover (a city, skyline or old town for built-up, a coast for water) and scores n
 Each photo's cover is drawn by a fair die over the five, not in the catalog's mostly built-up
 proportions; the catalog's few photos of other covers (shrubland, farmland, snow, wetland) sit out.
 Five photos a game; your best game is kept in your browser.
+**Today's game** (at `/on-the-ground/daily`, on Today from 2026-11-19) deals everyone the same
+five photos on the same UTC day with the same even deal: one try a day, each call kept as it is
+made so a reload picks up at the next photo, and shared as a score and a square a photo, naming no
+place or cover.
 **Today** (at `/today`, in the Games menu and on the results screen) puts every daily game on one
 page: the Daily Five, Further North, Odd one out, Which way?, How far apart?, Name the country,
-Hot and cold, Line them up, Close-up, Left or right?, Which climate? and Clue mix, each with where it stands in your browser (not started, under way or its result), the time to the next deal, and one
+Hot and cold, Line them up, Close-up, Left or right?, Which climate?, Clue mix and What's on the ground?, each with where it stands in your browser (not started, under way or its result), the time to the next deal, and one
 share line gathering every finished game, as scores and counts only. **Atlas's day** sets you
 against Atlas on each finished game it played all the way through, game by game, and says who took
 the day, a line the share carries too. Below them, **Full days**

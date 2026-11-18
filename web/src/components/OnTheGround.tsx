@@ -4,7 +4,14 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
 import { isShortcut } from "@/lib/controls";
+import { runToday } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
+import {
+  dailyGroundOrder,
+  groundDailyShare,
+  loadGroundDay,
+  rememberGroundDay,
+} from "@/lib/game/groundDaily";
 import {
   GROUND_GIST,
   GROUND_NAME,
@@ -25,6 +32,7 @@ import { placeholderUrl, sources } from "@/lib/photoSources";
 import { GROUND_COVERS, atlasGroundCover, type GroundCover } from "@/lib/trueClues";
 
 import ControlsHelp from "./ControlsHelp";
+import { DailyRunResult } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
 
 type OnTheGroundProps = {
@@ -35,6 +43,13 @@ type OnTheGroundProps = {
   loadRecords?: (ids: string[]) => Promise<GameRecord[]>;
   /** For tests: the randomness that picks each game's seed. */
   random?: () => number;
+  /**
+   * Today's game (src/lib/game/groundDaily.ts): dealt from the UTC date, one try a day, picked
+   * up after a reload and shared as a score only. It never touches the free games' best.
+   */
+  daily?: boolean;
+  /** For tests: the clock that picks today's game. */
+  now?: () => Date;
 };
 
 /** 1 to 5 name the covers in the order the buttons show them. */
@@ -47,20 +62,43 @@ const KEY_COVER: Record<string, GroundCover> = Object.fromEntries(
  * covers the ground around the spot by tapping a cover or pressing 1 to 5; the answer lights the
  * spot's own cover on a band of all five, with your call and Atlas's on it. Five photos a game.
  */
-export default function OnTheGround({ deck, covers, loadRecords, random }: OnTheGroundProps) {
+export default function OnTheGround({
+  deck,
+  covers,
+  loadRecords,
+  random,
+  daily = false,
+  now,
+}: OnTheGroundProps) {
   const [state, dispatch] = useReducer(groundReducer, initialGround);
   const [best, setBest] = useState(0);
   const [bestBeforeGame, setBestBeforeGame] = useState(0);
   const [records, setRecords] = useState<ReadonlyMap<string, GameRecord>>(() => new Map());
   const [error, setError] = useState<string | null>(null);
+  // Today's game: the day it was dealt for, kept when the clock passes midnight mid-game.
+  const [day, setDay] = useState<string | null>(null);
 
   const start = useCallback(() => {
+    if (daily) {
+      const today = runToday(now?.());
+      const kept = loadGroundDay(today)?.results ?? [];
+      setDay(today);
+      // The calls kept come first. With the same photos they are the day's deal anyway; a day
+      // kept from an earlier deal (the catalog changed since) still reads back as it was played.
+      const played = kept.map((r) => r.id);
+      const order = [
+        ...played,
+        ...dailyGroundOrder(covers, today).filter((id) => !played.includes(id)),
+      ].slice(0, Math.max(GROUND_PHOTOS, played.length));
+      dispatch({ type: "start", order, from: kept });
+      return;
+    }
     const stored = loadBestGround();
     setBest(stored);
     setBestBeforeGame(stored);
     const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
     dispatch({ type: "start", order: dealGround(covers, seed) });
-  }, [covers, random]);
+  }, [covers, random, daily, now]);
 
   // The game is dealt in the browser after hydration, never at build time.
   useEffect(() => {
@@ -76,9 +114,12 @@ export default function OnTheGround({ deck, covers, loadRecords, random }: OnThe
   // The photo being called (or just answered) and the one after it.
   const playing = state.phase === "picking" || state.phase === "answered" ? state : null;
   const index = playing ? playing.results.length - (playing.phase === "answered" ? 1 : 0) : 0;
+  // Today's finished game lists every photo it called, so it needs them all.
+  const dayOver = state.phase === "done" && day !== null ? state.results : null;
   const wanted = useMemo(
-    () => (playing ? playing.order.slice(index, index + 2) : []),
-    [playing, index],
+    () =>
+      playing ? playing.order.slice(index, index + 2) : dayOver ? dayOver.map((r) => r.id) : [],
+    [playing, index, dayOver],
   );
   const missing = wanted.filter((id) => !records.has(id)).join(",");
 
@@ -122,13 +163,16 @@ export default function OnTheGround({ deck, covers, loadRecords, random }: OnThe
         atlas: atlasGroundCover(record.atlas),
       } as const;
       const after = groundReducer(state, action);
-      // Only a whole game counts as a best.
-      if (after.phase === "answered" && after.results.length === after.order.length) {
+      if (after.phase === "answered" && day) {
+        // Today's game is kept after every call, so a reload resumes it and never deals it again.
+        rememberGroundDay(day, after.results);
+      } else if (after.phase === "answered" && after.results.length === after.order.length) {
+        // Only a whole free game counts as a best.
         setBest(rememberGround(groundTotals(after.results).right));
       }
       dispatch(action);
     },
-    [state, record, covers],
+    [state, record, covers, day],
   );
 
   // 1 to 5 make the call from the keyboard.
@@ -143,6 +187,10 @@ export default function OnTheGround({ deck, covers, loadRecords, random }: OnThe
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [ready, choose]);
+
+  if (state.phase === "done" && day && state.results.length > 0) {
+    return <GroundDayResult day={day} results={state.results} records={records} now={now} />;
+  }
 
   if (state.phase === "done") {
     return (
@@ -176,7 +224,17 @@ export default function OnTheGround({ deck, covers, loadRecords, random }: OnThe
           >
             Whereabout
           </Link>
-          <p className="mt-1 text-sm text-chalk-dim">What&apos;s on the ground? Name the cover.</p>
+          <p className="mt-1 text-sm text-chalk-dim">
+            {day
+              ? `What's on the ground?, today's game (${day}).`
+              : "What's on the ground? Name the cover."}
+          </p>
+          <Link
+            href={daily ? "/on-the-ground" : "/on-the-ground/daily"}
+            className="mt-0.5 inline-block text-sm text-gold underline underline-offset-2 hover:brightness-110"
+          >
+            {daily ? "Free games" : "Today's game"}
+          </Link>
           <p className="text-sm text-chalk-dim" aria-live="polite">
             {`Photo ${Math.min(index + 1, GROUND_PHOTOS)} of ${GROUND_PHOTOS}`}
           </p>
@@ -187,10 +245,12 @@ export default function OnTheGround({ deck, covers, loadRecords, random }: OnThe
           <dl className="text-right">
             <dt className="text-sm text-chalk-dim">Score</dt>
             <dd className="font-sign tabular text-3xl font-bold leading-none">{totals.right}</dd>
-            <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
-              <dt>Best</dt>
-              <dd className="tabular">{best}</dd>
-            </div>
+            {!daily && (
+              <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
+                <dt>Best</dt>
+                <dd className="tabular">{best}</dd>
+              </div>
+            )}
           </dl>
         </div>
       </header>
@@ -240,7 +300,7 @@ export default function OnTheGround({ deck, covers, loadRecords, random }: OnThe
             place={record.photo.place}
             atlasTally={[totals.atlasRight, results.length]}
             onNext={() => dispatch({ type: "next" })}
-            nextLabel={last ? "See the results" : "Next photo"}
+            nextLabel={last ? (day ? "See today's result" : "See the results") : "Next photo"}
           />
         </div>
       )}
@@ -433,22 +493,7 @@ function GroundSummary({
           <p className="mt-1 text-chalk-dim">
             {newBest ? "That's your new best!" : `Your best is ${best} of ${GROUND_PHOTOS}.`}
           </p>
-          <ol className="mt-6 space-y-2" aria-label="Your calls">
-            {results.map((r, i) => (
-              <li
-                key={r.id}
-                className="rounded-xl border border-graticule/70 px-3 py-2 text-sm"
-                data-testid="ground-row"
-              >
-                <span className="block text-chalk">
-                  {records.get(r.id)?.photo.place ?? `Photo ${i + 1}`}
-                </span>
-                <span className="block text-chalk-dim">
-                  {`${GROUND_NAME[r.truth]}. You: ${GROUND_NAME[r.picked]} ${r.correct ? "✓" : "✗"}. Atlas: ${r.atlas === null ? "no read" : `${GROUND_NAME[r.atlas]} ${r.atlas === r.truth ? "✓" : "✗"}`}`}
-                </span>
-              </li>
-            ))}
-          </ol>
+          <GroundRows results={results} records={records} />
         </>
       )}
       <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -467,5 +512,68 @@ function GroundSummary({
         </Link>
       </div>
     </main>
+  );
+}
+
+/** Each photo of a game as it was called: the place, its cover, your call and Atlas's. */
+function GroundRows({
+  results,
+  records,
+}: {
+  results: readonly GroundResult[];
+  records: ReadonlyMap<string, GameRecord>;
+}) {
+  return (
+    <ol className="mt-6 space-y-2" aria-label="Your calls">
+      {results.map((r, i) => (
+        <li
+          key={r.id}
+          className="rounded-xl border border-graticule/70 px-3 py-2 text-sm"
+          data-testid="ground-row"
+        >
+          <span className="block text-chalk">
+            {records.get(r.id)?.photo.place ?? `Photo ${i + 1}`}
+          </span>
+          <span className="block text-chalk-dim">
+            {`${GROUND_NAME[r.truth]}. You: ${GROUND_NAME[r.picked]} ${r.correct ? "✓" : "✗"}. Atlas: ${r.atlas === null ? "no read" : `${GROUND_NAME[r.atlas]} ${r.atlas === r.truth ? "✓" : "✗"}`}`}
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** Today's What's on the ground? once every photo is called: the score, the share and each call. */
+function GroundDayResult({
+  day,
+  results,
+  records,
+  now,
+}: {
+  day: string;
+  results: readonly GroundResult[];
+  records: ReadonlyMap<string, GameRecord>;
+  now?: () => Date;
+}) {
+  const { right, atlasRight, atlasRead } = groundTotals(results);
+  const atlas =
+    atlasRead === results.length
+      ? groundVerdict(right, atlasRight)
+      : atlasRead > 0
+        ? `Atlas got ${atlasRight} of the ${atlasRead} it read.`
+        : "Atlas's clues named the ground on none of today's photos.";
+  return (
+    <DailyRunResult
+      game="What's on the ground?"
+      day={day}
+      headline={`${right} of ${results.length}`}
+      summary={`That's today's game played. ${atlas}`}
+      shareText={(href) => groundDailyShare(day, results, href)}
+      freeHref="/on-the-ground"
+      now={now}
+      unit="game"
+    >
+      <GroundRows results={results} records={records} />
+    </DailyRunResult>
   );
 }

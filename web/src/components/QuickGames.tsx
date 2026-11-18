@@ -101,7 +101,7 @@ const BLURBS: Record<QuickMode, { name: string; blurb: string }> = {
   "clue-mix": {
     name: "Clue mix",
     blurb:
-      "Each photo asks a different clue in turn: the side of the road, the climate, then the continent. Read them right until your first miss, against Atlas's reads.",
+      "Each photo asks a different clue in turn: the side of the road, the climate, the continent, then the ground. Read them right until your first miss, against Atlas's reads.",
   },
   "on-the-ground": {
     name: "What's on the ground?",

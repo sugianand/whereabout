@@ -91,6 +91,91 @@ test("What's on the ground? plays five photos against Atlas, lights each on the 
   expect(errors).toEqual([]);
 });
 
+test("today's What's on the ground? deals the day's five once, resumes after a reload, and shares the score", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const today = new Date().toISOString().slice(0, 10);
+
+  // The free games link to today's game.
+  await page.goto("./on-the-ground");
+  await page.getByRole("link", { name: "Today's game" }).click();
+  await expect(page.getByText(`today's game (${today})`)).toBeVisible();
+  await expect(page.getByText("Best", { exact: true })).toHaveCount(0);
+  const { width, height } = page.viewportSize()!;
+  // The day's header still leaves the photo room and every cover in reach.
+  expect((await page.getByTestId("ground-photo").boundingBox())!.height).toBeGreaterThan(200);
+  for (const cover of COVERS) {
+    const box = (await coverButton(page, cover).boundingBox())!;
+    expect(box.y + box.height).toBeLessThanOrEqual(height + 1);
+  }
+
+  // Everyone on one day gets the same photos: a fresh player (nothing kept) is dealt the same.
+  await coverOnScreen(page);
+  const first = await page.getByTestId("ground-photo").getAttribute("data-photo");
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await expect(page.getByTestId("ground-photo")).toHaveAttribute("data-photo", first!);
+
+  // A right call on the first photo, then a reload picks up at the second with the score so far.
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
+  const truth = await coverOnScreen(page);
+  await expect(coverButton(page, truth)).toBeEnabled();
+  await coverButton(page, truth).click();
+  await expect(card.getByRole("heading")).toHaveText("Correct");
+  await page.reload();
+  await expect(page.getByText("Photo 2 of 5", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("ground-photo")).not.toHaveAttribute("data-photo", first!);
+  await expect(page.getByText("Score", { exact: true }).locator("+ dd")).toHaveText("1");
+
+  // Two more right, then two wrong.
+  for (let n = 1; n < 5; n++) {
+    await expect(page.getByText(`Photo ${n + 1} of 5`, { exact: true })).toBeVisible();
+    const cover = await coverOnScreen(page);
+    const pick = n < 3 ? cover : wrongFor(cover);
+    await expect(coverButton(page, pick)).toBeEnabled();
+    await coverButton(page, pick).click();
+    await expect(card.getByRole("heading")).toHaveText(n < 3 ? "Correct" : "Wrong");
+    await card.getByRole("button", { name: n === 4 ? "See today's result" : "Next photo" }).click();
+  }
+  await expect(page.getByRole("heading", { level: 1, name: "3 of 5" })).toBeVisible();
+  await expect(page.getByTestId("ground-row")).toHaveCount(5);
+  await expect(page.getByTestId("ground-row").first()).not.toContainText("Photo 1");
+
+  // A reload shows the day's result, never the photos again.
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 1, name: "3 of 5" })).toBeVisible();
+  await expect(page.getByText(/The next game is dealt in \d+/)).toBeVisible();
+  await expect(page.getByTestId("ground-photo")).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    width,
+  );
+
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  await page.getByRole("button", { name: "Share today's game" }).click();
+  await expect(page.getByText("Result copied. Paste it anywhere.")).toBeVisible();
+  const sent = await page.evaluate(() => (window as unknown as { sent: string }).sent);
+  expect(sent).toContain(`Whereabout · What's on the ground? · ${today}\n🌱 3 of 5\n🟩🟩🟩🟥🟥\n`);
+  expect(sent).toMatch(/\/whereabout\/on-the-ground\/daily\/?$/);
+  for (const cover of COVERS) expect(sent).not.toContain(cover);
+
+  // The free games' best is its own.
+  expect(await page.evaluate(() => localStorage.getItem("whereabout:on-the-ground-best"))).toBe(
+    null,
+  );
+  expect(errors).toEqual([]);
+});
+
 test("a 320px phone fits every cover, the answer and the end of a game", async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 1000) >= 768, "a phone layout check");
   await page.setViewportSize({ width: 320, height: 568 });

@@ -6,6 +6,7 @@ import { rememberCloseDay } from "./closeDaily";
 import { type CloseResult } from "./closeUp";
 import { ARCHIVE_DAYS, DAILY_SCORES_KEY, daysBefore } from "./dailyArchive";
 import { rememberFarDay } from "./farDaily";
+import { rememberGroundDay } from "./groundDaily";
 import { hotAtlas, hotPin, hotRound } from "./hotCold";
 import { rememberHotDay } from "./hotDaily";
 import { type PairResult } from "./howFar";
@@ -14,6 +15,7 @@ import { type RowResult } from "./lineUp";
 import { rememberNameDay } from "./nameDaily";
 import { rememberNorthDay } from "./northDaily";
 import { rememberOddDay } from "./oddDaily";
+import { type GroundResult } from "./onTheGround";
 import { SAVED_GAME_KEY } from "./saved";
 import { rememberSideDay } from "./sideDaily";
 import {
@@ -270,6 +272,21 @@ const CLIMATE_GAME: ClimateResult[] = [
   { id: "e", picked: "Polar", truth: "Continental", correct: false, atlas: "Temperate" },
 ];
 
+/** A whole What's on the ground? game: 2 right, Atlas 3 right of the 5 it read. */
+const GROUND_GAME: GroundResult[] = [
+  { id: "a", picked: "Built-up", truth: "Built-up", correct: true, atlas: "Built-up" },
+  { id: "b", picked: "Grassland", truth: "Tree cover", correct: false, atlas: "Built-up" },
+  { id: "c", picked: "Grassland", truth: "Grassland", correct: true, atlas: "Grassland" },
+  {
+    id: "d",
+    picked: "Built-up",
+    truth: "Permanent water bodies",
+    correct: false,
+    atlas: "Permanent water bodies",
+  },
+  { id: "e", picked: "Tree cover", truth: "Grassland", correct: false, atlas: "Built-up" },
+];
+
 /** Finish one game joined later on `day`, as it writes its own store. */
 const finishJoined: Partial<Record<TodayGameId, (day: string) => void>> = {
   "line-up": (day) => rememberLineDay(day, { results: Array<RowResult>(5).fill(ROW) }),
@@ -283,6 +300,7 @@ const finishJoined: Partial<Record<TodayGameId, (day: string) => void>> = {
   "which-climate": (day) => rememberClimateDay(day, CLIMATE_GAME),
   "clue-mix": (day) =>
     rememberClueDay(day, { streak: 5, atlasRight: 4, atlasPlayed: 6, ended: "miss" }),
+  "on-the-ground": (day) => rememberGroundDay(day, GROUND_GAME),
 };
 
 /** Every daily game finished on `day` but `except`, each as it writes its own store. */
@@ -441,6 +459,39 @@ describe("today's Clue mix on Today", () => {
   it("leaves the call out when Atlas sat a step out", () => {
     rememberClueDay(DAY_IN, { streak: 5, atlasRight: 4, atlasPlayed: 5, ended: "miss" });
     expect(game()).toMatchObject({ status: "done", atlas: "4 of 5", versus: null });
+  });
+});
+
+describe("today's What's on the ground? on Today", () => {
+  const DAY_IN = "2026-11-19";
+  const AT = new Date(`${DAY_IN}T12:00:00Z`);
+  const game = () => todayGames(DAY_IN, IDS, AT).find((g) => g.id === "on-the-ground")!;
+
+  it("reads the calls as they are kept, and calls the game against Atlas when it read every photo", () => {
+    expect(todayGames("2026-11-18", IDS, AT).some((g) => g.id === "on-the-ground")).toBe(false);
+    expect(game()).toMatchObject({
+      status: "new",
+      line: "Not started",
+      href: "/on-the-ground/daily",
+    });
+    rememberGroundDay(DAY_IN, GROUND_GAME.slice(0, 2));
+    expect(game()).toMatchObject({
+      status: "going",
+      line: "2 of 5 photos, 1 right",
+      atlas: "1 of 2",
+    });
+    finishJoined["on-the-ground"]!(DAY_IN);
+    expect(game()).toMatchObject({
+      status: "done",
+      line: "2 of 5 right",
+      atlas: "3 of 5",
+      versus: { you: 2, atlas: 3, unit: "right", call: "atlas" },
+    });
+  });
+
+  it("makes no call against Atlas when its clues named no cover on a photo", () => {
+    rememberGroundDay(DAY_IN, [...GROUND_GAME.slice(0, 4), { ...GROUND_GAME[4], atlas: null }]);
+    expect(game()).toMatchObject({ status: "done", atlas: "3 of 4", versus: null });
   });
 });
 

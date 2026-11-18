@@ -172,6 +172,8 @@ test("full days count up on a calendar that fits the screen", async ({ page }) =
       });
       const call = (id: string) => ({ id, picked: "Arid", truth: "Arid", atlas: null });
       keep("whereabout:which-climate-daily", { results: ["a", "b", "c", "d", "e"].map(call) });
+      const ground = (id: string) => ({ id, picked: "Grassland", truth: "Grassland", atlas: null });
+      keep("whereabout:on-the-ground-daily", { results: ["a", "b", "c", "d", "e"].map(ground) });
     },
     { full: [before(1), before(2)], partly: before(3) },
   );

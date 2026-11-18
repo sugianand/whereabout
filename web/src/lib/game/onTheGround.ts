@@ -95,7 +95,12 @@ export type GroundState =
   | (Game & { phase: "done" });
 
 export type GroundAction =
-  | { type: "start"; order: readonly string[] }
+  | {
+      type: "start";
+      order: readonly string[];
+      /** Calls already made to pick up from (today's game after a reload): play goes on after them. */
+      from?: readonly GroundResult[];
+    }
   | { type: "picked"; cover: GroundCover; truth: GroundCover; atlas: GroundCover | null }
   | { type: "next" };
 
@@ -103,10 +108,12 @@ export const initialGround: GroundState = { phase: "idle" };
 
 export function groundReducer(state: GroundState, action: GroundAction): GroundState {
   switch (action.type) {
-    case "start":
-      return action.order.length === 0
-        ? { phase: "done", order: [], results: [] }
-        : { phase: "picking", order: action.order, results: [] };
+    case "start": {
+      const results = action.from ?? [];
+      return results.length >= action.order.length
+        ? { phase: "done", order: action.order, results }
+        : { phase: "picking", order: action.order, results };
+    }
     case "picked": {
       if (state.phase !== "picking") return state;
       const result: GroundResult = {

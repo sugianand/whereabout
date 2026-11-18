@@ -66,6 +66,7 @@ const FIRST_SCREENS = [
   "./clue-mix",
   "./clue-mix/daily",
   "./on-the-ground",
+  "./on-the-ground/daily",
   "./pass-and-play",
   "./today",
   "./map",
