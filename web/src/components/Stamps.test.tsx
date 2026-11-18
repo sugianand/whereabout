@@ -191,4 +191,34 @@ describe("Stamps", () => {
       "/on-the-ground",
     );
   });
+
+  it("shows the album's stamps with how close you are, and collects a full page", async () => {
+    const album = { p1: "Oceania", p2: "Oceania", p4: "Europe", e2: "Europe" } as const;
+    localStorage.setItem(PLAYED_KEY, JSON.stringify([pin("p1", "AU", 40), pin("p2", "NZ", 900)]));
+    render(<Stamps countries={COUNTRIES} deckIds={IDS} album={album} now={now} />);
+    expect(await screen.findByRole("heading", { name: "Your album" })).toBeInTheDocument();
+    const intro = screen.getByTestId("stamps-album-intro");
+    expect(within(intro).getByRole("link", { name: "your album" })).toHaveAttribute(
+      "href",
+      "/album",
+    );
+    expect(within(intro).getByRole("link", { name: "Find the rest" })).toHaveAttribute(
+      "href",
+      "/?find",
+    );
+    // Two of four found: the quarter and half, and Oceania's page.
+    expect(screen.getByTestId("stamp-album-quarter")).toHaveAttribute("data-earned", "true");
+    expect(screen.getByTestId("stamp-album-half")).toHaveAttribute("data-earned", "true");
+    expect(screen.getByTestId("stamp-album-oceania-page")).toHaveAttribute("data-earned", "true");
+    expect(screen.getByTestId("stamp-album-whole-progress")).toHaveTextContent(
+      "2 of 4 photos found",
+    );
+    expect(screen.getByTestId("stamp-album-europe-page-progress")).toHaveTextContent(
+      "0 of 2 photos found",
+    );
+    expect(JSON.parse(localStorage.getItem(STAMPS_KEY)!)).toMatchObject({
+      "album-quarter": "2026-11-10",
+      "album-oceania-page": "2026-11-10",
+    });
+  });
 });

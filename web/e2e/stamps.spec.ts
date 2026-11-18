@@ -1,4 +1,9 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import { expect, test } from "@playwright/test";
+
+const PHOTO = readFileSync(resolve(process.cwd(), "e2e/fixtures/photo.png"));
 
 const pin = (id: string, country: string, km: number) => ({
   id,
@@ -208,5 +213,45 @@ test("the clue games earn the clue stamps, and the group leads to them", async (
     .getByRole("link", { name: "What's on the ground?" })
     .click();
   await expect(page).toHaveURL(/\/on-the-ground\/?$/);
+  expect(errors).toEqual([]);
+});
+
+test("the album's stamps count the photos found, and a find game fills them", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.route(/wikimedia\.org/, (route) =>
+    route.fulfill({ body: PHOTO, contentType: "image/png" }),
+  );
+  await page.goto("./stamps");
+  await expect(page.getByRole("heading", { name: "Your album", level: 2 })).toBeVisible();
+  const whole = page.getByTestId("stamp-album-whole-progress");
+  await expect(whole).toHaveText(/^0 of [\d,]+ photos found$/);
+  const total = (await whole.textContent())!.match(/of ([\d,]+)/)![1];
+  await expect(page.getByTestId("stamp-album-quarter")).toHaveAttribute("data-earned", "false");
+  const pages = page.locator('[data-testid^="stamp-album-"][data-testid$="-page"]');
+  expect(await pages.count()).toBeGreaterThan(1);
+
+  // The group's Find the rest deals a game of photos missing from the album; play one round.
+  await page.getByTestId("stamps-album-intro").getByRole("link", { name: "Find the rest" }).click();
+  const globe = page.getByRole("application", { name: /Globe/ });
+  await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
+  await globe.focus();
+  await page.keyboard.press("Enter");
+  await page.getByRole("button", { name: "Guess here" }).click();
+  await expect(page.getByRole("region").filter({ hasText: "It was taken in" })).toBeVisible();
+
+  // Back on Stamps, one photo is found, on one continent's page.
+  await page.goto("./stamps");
+  await expect(whole).toHaveText(`1 of ${total} photos found`);
+  await expect(pages.filter({ has: page.getByText(/^1 of \d+ photos? found$/) })).toHaveCount(1);
+
+  await page.setViewportSize({ width: 320, height: 700 });
+  await whole.scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+
+  // The group leads to the album, which counts the same.
+  await page.getByTestId("stamps-album-intro").getByRole("link", { name: "your album" }).click();
+  await expect(page.getByRole("heading", { name: "Your album", level: 1 })).toBeVisible();
+  await expect(page.getByTestId("album-found")).toHaveText("1");
   expect(errors).toEqual([]);
 });

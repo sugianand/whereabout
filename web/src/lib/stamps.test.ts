@@ -19,6 +19,8 @@ import {
   ROAD_READER_RUN,
   STAMPS_KEY,
   STAMP_IDS,
+  albumPageStampId,
+  albumShareNeed,
   atlasStampId,
   closestWords,
   collectStamps,
@@ -389,6 +391,97 @@ describe("clue stamps", () => {
   it("are known ids that the store keeps", () => {
     const kept = collectStamps(readStamps(clues({ bestRun: 12 })), {}, TODAY).kept;
     expect(parseKeptStamps(JSON.stringify(kept))).toEqual({ "road-reader": TODAY });
+  });
+});
+
+describe("album stamps", () => {
+  // Nine photos: four in Europe, three in Asia, two in Oceania.
+  const ALBUM = {
+    e1: "Europe",
+    e2: "Europe",
+    e3: "Europe",
+    e4: "Europe",
+    a1: "Asia",
+    a2: "Asia",
+    a3: "Asia",
+    o1: "Oceania",
+    o2: "Oceania",
+  } as const;
+  const found = (...ids: string[]) => ids.map((id) => played("FR", 500, id));
+  const albumOf = (stamps: Stamp[]) => stamps.filter((s) => s.group === "album");
+
+  it("needs at least one photo for every share, rounding a share up", () => {
+    expect(albumShareNeed(9, 1 / 4)).toBe(3);
+    expect(albumShareNeed(9, 1 / 2)).toBe(5);
+    expect(albumShareNeed(9, 1)).toBe(9);
+    expect(albumShareNeed(8, 1 / 4)).toBe(2);
+    expect(albumShareNeed(1, 1 / 4)).toBe(1);
+  });
+
+  it("lists the shares, then a page per continent the album has, none earned at first", () => {
+    const stamps = albumOf(readStamps(sources({ album: ALBUM })));
+    expect(stamps.map((s) => s.id)).toEqual([
+      "album-quarter",
+      "album-half",
+      "album-whole",
+      "album-asia-page",
+      "album-europe-page",
+      "album-oceania-page",
+    ]);
+    expect(stamps.every((s) => !s.earned)).toBe(true);
+    expect(byId(stamps, "album-quarter").how).toBe("Find 3 of the 9 photos the game deals");
+    expect(byId(stamps, "album-whole").how).toBe(
+      "Find all 9 photos the game deals, on every continent",
+    );
+    expect(byId(stamps, "album-europe-page").how).toBe(
+      "Find all 4 photos the game deals in Europe",
+    );
+    expect(byId(stamps, "album-europe-page").progress).toEqual({
+      have: 0,
+      need: 4,
+      unit: ["photo found", "photos found"],
+    });
+    for (const s of stamps) expect(STAMP_IDS).toContain(s.id);
+  });
+
+  it("counts finds as the album does: once per photo, and only photos it still deals", () => {
+    // o1 twice, a photo the album no longer holds and a pin with no id in the album.
+    const stamps = albumOf(
+      readStamps(sources({ album: ALBUM, played: found("o1", "o1", "gone", "e1", "o2") })),
+    );
+    expect(byId(stamps, "album-quarter").earned).toBe(true);
+    expect(byId(stamps, "album-half").progress).toMatchObject({ have: 3, need: 5 });
+    expect(byId(stamps, "album-whole").progress).toMatchObject({ have: 3, need: 9 });
+    expect(byId(stamps, "album-oceania-page").earned).toBe(true);
+    expect(byId(stamps, "album-europe-page").progress).toMatchObject({ have: 1, need: 4 });
+    expect(byId(stamps, "album-asia-page").earned).toBe(false);
+  });
+
+  it("earns every album stamp once every photo is found", () => {
+    const stamps = albumOf(
+      readStamps(sources({ album: ALBUM, played: found(...Object.keys(ALBUM)) })),
+    );
+    expect(stamps).toHaveLength(6);
+    expect(stamps.every((s) => s.earned)).toBe(true);
+    // The quarter's progress never runs past what it asks.
+    expect(byId(stamps, "album-quarter").progress).toMatchObject({ have: 3, need: 3 });
+  });
+
+  it("has no album stamps without an album, and a page id for every continent", () => {
+    expect(albumOf(readStamps(sources()))).toEqual([]);
+    expect(albumOf(readStamps(sources({ album: {} })))).toEqual([]);
+    expect(albumPageStampId("North America")).toBe("album-north-america-page");
+    expect(STAMP_IDS).toContain("album-antarctica-page");
+  });
+
+  it("keeps an album stamp once earned, after its photos leave the history", () => {
+    const earned = readStamps(sources({ album: ALBUM, played: found("o1", "o2") }));
+    const first = collectStamps(earned, {}, TODAY);
+    expect(first.fresh).toContain("album-oceania-page");
+    const later = collectStamps(readStamps(sources({ album: ALBUM })), first.kept, "2026-12-01");
+    expect(byId(later.stamps, "album-oceania-page").earned).toBe(true);
+    expect(later.fresh).toEqual([]);
+    expect(parseKeptStamps(JSON.stringify(first.kept))["album-oceania-page"]).toBe(TODAY);
   });
 });
 

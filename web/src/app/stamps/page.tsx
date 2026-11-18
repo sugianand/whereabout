@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 
 import Stamps from "@/components/Stamps";
-import { bundledById, bundledDeck } from "@/lib/game/bundled";
+import { bundledById, bundledContinents, bundledDeck } from "@/lib/game/bundled";
 import { countriesByContinent } from "@/lib/stamps";
 
 export const metadata: Metadata = {
   title: "Stamps — Whereabout",
   description:
-    "Stamps to collect in Whereabout: badges, every country of a continent pinned, full days of daily games. Each says how it is earned and how close you are. Kept only in your browser.",
+    "Stamps to collect in Whereabout: badges, every country of a continent pinned, full days of daily games, your album filled. Each says how it is earned and how close you are. Kept only in your browser.",
 };
 
 // Which countries a continent's stamp asks for is settled at build time from the photos dealt;
@@ -17,5 +17,5 @@ const countries = countriesByContinent(
 );
 
 export default function StampsPage() {
-  return <Stamps countries={countries} deckIds={bundledDeck.ids} />;
+  return <Stamps countries={countries} deckIds={bundledDeck.ids} album={bundledContinents} />;
 }

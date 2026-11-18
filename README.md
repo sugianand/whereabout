@@ -208,7 +208,9 @@ browser: the record's badges, a continent cleared once you've pinned a photo fro
 game has there, a full day and a full week of daily games, and one for beating Atlas at each daily
 game (on a day it played every photo you did), and six for reading the clues: a Left or right? run
 of 10, five of five at Which climate? and at What's on the ground?, and reading the road, the
-climate or the ground better than Atlas over at least 30 photos you've both read. Each says how it's earned and how close you are (for
+climate or the ground better than Atlas over at least 30 photos you've both read, and for your
+album: a quarter, half and all of it found, and each continent's page complete, counted from the
+same history the album reads. Each says how it's earned and how close you are (for
 Atlas, your nearest miss on the days kept), the one nearest to done is named next, and a stamp once
 collected stays.
 

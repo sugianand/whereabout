@@ -97,11 +97,14 @@ function StampCard({ stamp, fresh }: { stamp: Stamp; fresh: boolean }) {
 export default function Stamps({
   countries,
   deckIds,
+  album,
   now = systemNow,
 }: {
   /** The countries the game deals photos from, by continent. */
   countries: Partial<Record<Continent, readonly string[]>>;
   deckIds: readonly string[];
+  /** Each photo the album holds, with its continent; no album stamps without it. */
+  album?: Readonly<Record<string, Continent>>;
   now?: () => Date;
 }) {
   const units = useUnits();
@@ -119,12 +122,13 @@ export default function Stamps({
       now: at,
       units,
       clues: loadClueSources(),
+      album,
     });
     const { stamps: collected, fresh } = keepStamps(stamps, today);
     // Units change only the closest pin's words, so a new stamp stays new across a switch.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setView((was) => ({ stamps: collected, fresh: was ? was.fresh : fresh }));
-  }, [countries, deckIds, now, units]);
+  }, [countries, deckIds, album, now, units]);
 
   const earned = view?.stamps.filter((s) => s.earned).length ?? 0;
   const next = view ? nextStamp(view.stamps) : null;
@@ -199,6 +203,19 @@ export default function Stamps({
                   , free games and today&apos;s, and your clue reading on Your map.
                 </p>
               )}
+              {group.id === "album" && (
+                <p className="mt-1 text-sm text-chalk-dim" data-testid="stamps-album-intro">
+                  From the photos in{" "}
+                  <Link href="/album" className="underline underline-offset-2 hover:text-chalk">
+                    your album
+                  </Link>
+                  .{" "}
+                  <Link href="/?find" className="underline underline-offset-2 hover:text-chalk">
+                    Find the rest
+                  </Link>{" "}
+                  deals only photos you haven&apos;t found.
+                </p>
+              )}
               <ul className="mt-3 grid gap-3 sm:grid-cols-2">
                 {stamps.map((s) => (
                   <StampCard key={s.id} stamp={s} fresh={view.fresh.includes(s.id)} />
@@ -209,8 +226,8 @@ export default function Stamps({
         })}
 
       <p className="mt-10 text-sm text-chalk-dim">
-        Stamps come from what you&apos;ve played in this browser: your record, your map, the clue
-        games and the days kept on{" "}
+        Stamps come from what you&apos;ve played in this browser: your record, your map and album,
+        the clue games and the days kept on{" "}
         <Link href="/today" className="underline underline-offset-2 hover:text-chalk">
           Today
         </Link>

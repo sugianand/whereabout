@@ -18,6 +18,9 @@
  *   road, the climate, the ground) for reading it better than Atlas over at least `CLUE_PHOTOS`
  *   photos, by Your map's clue reading (`lib/game/quickRecord.ts`), with Atlas's rate over the
  *   photos it read.
+ * - Your album (`lib/album.ts`): a quarter, half and all of the album found, and one per
+ *   continent for its page complete, read from the same history the album is, so the counts on
+ *   a stamp and on the album always agree.
  *
  * The days every game keeps are the last `ARCHIVE_DAYS`, and the map's history is capped, so a
  * stamp could otherwise fade once its proof is gone. Each stamp is therefore written down under
@@ -25,8 +28,9 @@
  * What comes back from storage is checked: unknown ids and malformed days are dropped.
  */
 
+import { buildAlbum } from "@/lib/album";
 import { BADGES, GLOBETROTTER_CONTINENTS, STREAK_DAYS, type BadgeId } from "@/lib/badges";
-import { CONTINENT_OF, type Continent } from "@/lib/continents";
+import { CONTINENT_OF, CONTINENTS, type Continent } from "@/lib/continents";
 import { countryName } from "@/lib/countries";
 import { isDayKey } from "@/lib/game/dailyArchive";
 import { regionSlug } from "@/lib/game/regions";
@@ -76,10 +80,26 @@ export const CLUE_STAMP_IDS = [
 ] as const;
 export type ClueStampId = (typeof CLUE_STAMP_IDS)[number];
 
-export type StampId =
-  BadgeId | ContinentStampId | "full-day" | "full-week" | AtlasStampId | ClueStampId;
+/** The album's share stamps: a quarter, half and all of it found. */
+export const ALBUM_SHARES = [
+  { id: "album-quarter", name: "A quarter of the album", share: 1 / 4, icon: "🔖" },
+  { id: "album-half", name: "Half the album", share: 1 / 2, icon: "📒" },
+  { id: "album-whole", name: "The whole album", share: 1, icon: "📚" },
+] as const;
+export type AlbumShareStampId = (typeof ALBUM_SHARES)[number]["id"];
+export type AlbumPageStampId = `album-${string}-page`;
 
-export type StampGroup = "badges" | "continents" | "days" | "atlas" | "clues";
+export type StampId =
+  | BadgeId
+  | ContinentStampId
+  | "full-day"
+  | "full-week"
+  | AtlasStampId
+  | ClueStampId
+  | AlbumShareStampId
+  | AlbumPageStampId;
+
+export type StampGroup = "badges" | "continents" | "days" | "atlas" | "clues" | "album";
 
 export const STAMP_GROUPS: readonly { id: StampGroup; title: string }[] = [
   { id: "badges", title: "Badges" },
@@ -87,6 +107,7 @@ export const STAMP_GROUPS: readonly { id: StampGroup; title: string }[] = [
   { id: "days", title: "Full days" },
   { id: "atlas", title: "Beat Atlas" },
   { id: "clues", title: "Reading the clues" },
+  { id: "album", title: "Your album" },
 ];
 
 /** How far along an unearned stamp is: `have` of `need`, counted in `unit`. */
@@ -125,6 +146,11 @@ export interface StampSources {
   units?: Units;
   /** What the clue games keep (`loadClueSources`); none played if not given. */
   clues?: ClueSources;
+  /**
+   * Each photo the album holds, by id, with its continent (`bundledContinents`); the album is
+   * read from it and `played`, as on the album page. No album stamps if not given or empty.
+   */
+  album?: Readonly<Record<string, Continent>>;
 }
 
 /** What the clue games keep, for the clue stamps. */
@@ -175,6 +201,10 @@ export function atlasStampId(game: TodayGameId): AtlasStampId {
   return `beat-atlas-${game}`;
 }
 
+export function albumPageStampId(c: Continent): AlbumPageStampId {
+  return `album-${regionSlug(c)}-page`;
+}
+
 /** Every stamp id there can be, in the order the page lists them. */
 export const STAMP_IDS: readonly StampId[] = [
   ...BADGES.map((b) => b.id),
@@ -183,6 +213,8 @@ export const STAMP_IDS: readonly StampId[] = [
   "full-week",
   ...VERSUS_GAMES.map((g) => atlasStampId(g.id)),
   ...CLUE_STAMP_IDS,
+  ...ALBUM_SHARES.map((a) => a.id),
+  ...CONTINENTS.map(albumPageStampId),
 ];
 
 const KNOWN: ReadonlySet<string> = new Set(STAMP_IDS);
@@ -500,6 +532,53 @@ function clueStamps({ clues = NO_CLUES }: StampSources): Stamp[] {
   ];
 }
 
+/** Photos found before a share of the album is reached: never zero, so no stamp comes free. */
+export function albumShareNeed(total: number, share: number): number {
+  return Math.max(1, Math.ceil(total * share));
+}
+
+/**
+ * The album's stamps, from the album as its page builds it (`buildAlbum`): a quarter, half and
+ * all of it found, then one per continent the album has a page for, in the album's order. They
+ * count photos only, never which ones, so a stamp gives nothing away the album doesn't.
+ */
+function albumStamps({ album: continents, played }: StampSources): Stamp[] {
+  if (!continents) return [];
+  const album = buildAlbum(continents, played);
+  if (album.total === 0) return [];
+  const unit = ["photo found", "photos found"] as const;
+  const shares = ALBUM_SHARES.map((a): Stamp => {
+    const need = albumShareNeed(album.total, a.share);
+    return {
+      id: a.id,
+      group: "album",
+      name: a.name,
+      how:
+        a.share === 1
+          ? `Find all ${album.total} photos the game deals, on every continent`
+          : `Find ${need} of the ${album.total} photos the game deals`,
+      icon: a.icon,
+      earned: album.found >= need,
+      progress: { have: Math.min(album.found, need), need, unit },
+      note: null,
+    };
+  });
+  const pages = album.continents.map((row): Stamp => {
+    const have = row.found.length;
+    return {
+      id: albumPageStampId(row.continent),
+      group: "album",
+      name: `${row.continent}'s page`,
+      how: `Find all ${row.total} ${row.total === 1 ? "photo" : "photos"} the game deals in ${row.continent}`,
+      icon: "📖",
+      earned: have >= row.total,
+      progress: { have, need: row.total, unit },
+      note: null,
+    };
+  });
+  return [...shares, ...pages];
+}
+
 /** Every stamp as the browser's records stand, before what was kept is added in. */
 export function readStamps(sources: StampSources): Stamp[] {
   return [
@@ -508,6 +587,7 @@ export function readStamps(sources: StampSources): Stamp[] {
     ...dayStamps(sources),
     ...atlasStamps(sources),
     ...clueStamps(sources),
+    ...albumStamps(sources),
   ];
 }
 
