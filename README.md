@@ -231,7 +231,10 @@ rest** deals a five-photo game only from photos missing from your album, anywher
 one continent (`?find=europe`), from the album and the results screen; once fewer than five are
 left, the last ones come first and photos you've found fill the game, until the album is full. Tap a found photo to open it large, with the day you found it,
 how far off your pin and Atlas's landed, its points and its postcard, and turn through the
-continent with ← and →, a swipe or the buttons.
+continent with ← and →, a swipe or the buttons. **Share your album** draws a picture of how full
+each continent's page is, with your three closest finds as a distance and a continent, and sends
+it with a line of counts and the link to play (*Share as text* sends the line alone); neither
+ever names a photo or a place.
 **Your map** (at `/map`) puts every photo you've played on one globe, each mark shaped and
 coloured by how close your pin landed (a circle, diamond, triangle or cross, so it reads without
 colour vision too), with the countries and continents you've seen counted and your rounds
