@@ -179,10 +179,13 @@ function storage(): Storage | null {
   }
 }
 
-/** The best game this browser has kept, or 0 when none is stored or it can't be read. */
-export function loadBestGround(): number {
+/**
+ * The best game this browser has kept under `key` (the free games', or a practice game's), or 0
+ * when none is stored or it can't be read.
+ */
+export function loadBestGround(key = BEST_GROUND_KEY): number {
   try {
-    const raw = storage()?.getItem(BEST_GROUND_KEY);
+    const raw = storage()?.getItem(key);
     if (!raw) return 0;
     const value: unknown = JSON.parse(raw);
     return typeof value === "number" &&
@@ -196,12 +199,12 @@ export function loadBestGround(): number {
   }
 }
 
-/** Keep `right` if it beats the best stored, and return the best after that. */
-export function rememberGround(right: number): number {
-  const best = loadBestGround();
+/** Keep `right` if it beats the best stored under `key`, and return the best after that. */
+export function rememberGround(right: number, key = BEST_GROUND_KEY): number {
+  const best = loadBestGround(key);
   if (right <= best) return best;
   try {
-    storage()?.setItem(BEST_GROUND_KEY, JSON.stringify(right));
+    storage()?.setItem(key, JSON.stringify(right));
   } catch {
     // Private mode or full storage: the game still counts for this visit.
   }

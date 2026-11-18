@@ -24,6 +24,15 @@ import {
   rememberGroundDay,
 } from "@/lib/game/groundDaily";
 import {
+  BEST_GROUND_MIX_UPS_KEY,
+  coversInWords,
+  groundMisreads,
+  keepGroundCall,
+  loadAllGroundCalls,
+  practiceCovers,
+  practiceGroundDeal,
+} from "@/lib/game/groundMixUps";
+import {
   GROUND_GIST,
   GROUND_NAME,
   GROUND_PHOTOS,
@@ -64,6 +73,11 @@ type OnTheGroundProps = {
   daily?: boolean;
   /** For tests: the clock that picks today's game. */
   now?: () => Date;
+  /**
+   * Practise your mix-ups (src/lib/game/groundMixUps.ts): five photos from the covers you
+   * misread most and the ones you took them for, with a best of its own. Never a challenge.
+   */
+  practice?: boolean;
 };
 
 /** 1 to 5 name the covers in the order the buttons show them. */
@@ -104,6 +118,7 @@ export default function OnTheGround({
   random,
   daily = false,
   now,
+  practice = false,
 }: OnTheGroundProps) {
   const [state, dispatch] = useReducer(groundReducer, initialGround);
   const [best, setBest] = useState(0);
@@ -116,6 +131,9 @@ export default function OnTheGround({
   // and their call on each, shown once you have made yours.
   const [challenge, setChallenge] = useState<GroundChallenge | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // A practice game's covers, as it was dealt.
+  const [practising, setPractising] = useState<readonly GroundCover[]>([]);
+  const bestKey = practice ? BEST_GROUND_MIX_UPS_KEY : undefined;
 
   /** Deal a game; `fromLink` takes up a challenge the address carries, as the page opens. */
   const start = useCallback(
@@ -134,10 +152,17 @@ export default function OnTheGround({
         dispatch({ type: "start", order, from: kept });
         return;
       }
-      const stored = loadBestGround();
+      const stored = loadBestGround(bestKey);
       setBest(stored);
       setBestBeforeGame(stored);
       const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
+      if (practice) {
+        // Dealt from what this browser keeps now, so a game after a practice one follows it.
+        const picked = practiceCovers(groundMisreads(loadAllGroundCalls()));
+        setPractising(picked);
+        dispatch({ type: "start", order: practiceGroundDeal(covers, picked, seed) });
+        return;
+      }
       const value = fromLink
         ? new URLSearchParams(window.location.search).get(GROUND_CHALLENGE_PARAM)
         : null;
@@ -152,7 +177,7 @@ export default function OnTheGround({
       dropChallengeParam();
       dispatch({ type: "start", order: dealGround(covers, seed) });
     },
-    [covers, random, daily, now],
+    [covers, random, daily, now, practice, bestKey],
   );
 
   // The game is dealt in the browser after hydration, never at build time.
@@ -225,6 +250,8 @@ export default function OnTheGround({
         // Count the call in your clue reading on Your map as it is made, so leaving mid-game
         // still counts the photos called. Today's game is read back from its kept day instead.
         const call = after.results[after.results.length - 1];
+        // Which cover was taken for which, for your ground mix-ups on Your map.
+        keepGroundCall(call.truth, call.picked);
         recordFreeRound("on-the-ground", {
           first: after.results.length === 1,
           correct: call.correct,
@@ -233,12 +260,12 @@ export default function OnTheGround({
         // Only a whole free game counts as a best, and never a friend's challenge: its photos
         // may have been seen before, so it is played for the friend only.
         if (after.results.length === after.order.length && !challenge) {
-          setBest(rememberGround(groundTotals(after.results).right));
+          setBest(rememberGround(groundTotals(after.results).right, bestKey));
         }
       }
       dispatch(action);
     },
-    [state, record, covers, day, challenge],
+    [state, record, covers, day, challenge, bestKey],
   );
 
   // 1 to 5 make the call from the keyboard.
@@ -267,6 +294,7 @@ export default function OnTheGround({
         newBest={!challenge && groundTotals(state.results).right > bestBeforeGame}
         covers={covers}
         challenge={challenge}
+        practice={practice ? practising : null}
         onAgain={() => start()}
       />
     );
@@ -297,13 +325,15 @@ export default function OnTheGround({
               ? `What's on the ground?, today's game (${day}).`
               : challenge
                 ? `A friend's challenge: ${groundChallengeScore(challenge, covers)} of ${GROUND_PHOTOS} to beat.`
-                : "What's on the ground? Name the cover."}
+                : practice
+                  ? `What's on the ground?, your mix-ups: ${coversInWords(practising)}.`
+                  : "What's on the ground? Name the cover."}
           </p>
           <Link
-            href={daily ? "/on-the-ground" : "/on-the-ground/daily"}
+            href={daily || practice ? "/on-the-ground" : "/on-the-ground/daily"}
             className="mt-0.5 inline-block text-sm text-gold underline underline-offset-2 hover:brightness-110"
           >
-            {daily ? "Free games" : "Today's game"}
+            {daily || practice ? "Free games" : "Today's game"}
           </Link>
           <p className="text-sm text-chalk-dim" aria-live="polite">
             {`Photo ${Math.min(index + 1, GROUND_PHOTOS)} of ${GROUND_PHOTOS}`}
@@ -563,6 +593,7 @@ function GroundSummary({
   newBest,
   covers,
   challenge,
+  practice,
   onAgain,
 }: {
   results: readonly GroundResult[];
@@ -572,6 +603,8 @@ function GroundSummary({
   covers: GroundMap;
   /** The friend's challenge this game answered, if it was one. */
   challenge: GroundChallenge | null;
+  /** A practice game of your mix-ups: the covers it was dealt from. */
+  practice: readonly GroundCover[] | null;
   onAgain: () => void;
 }) {
   const none = results.length === 0;
@@ -582,13 +615,23 @@ function GroundSummary({
   }, []);
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center px-6 py-16">
-      <p className="text-sm text-gold">What&apos;s on the ground?</p>
+      <p className="text-sm text-gold">
+        {practice ? "What's on the ground?, your mix-ups" : "What's on the ground?"}
+      </p>
       <h1 className="mt-2 font-sign text-5xl font-extrabold leading-none tracking-tight">
-        {none ? "No photos to play yet" : `${right} of ${results.length}`}
+        {none
+          ? practice
+            ? "No ground mix-ups to practise yet"
+            : "No photos to play yet"
+          : `${right} of ${results.length}`}
       </h1>
       {none ? (
         <p className="mt-4 text-lg text-chalk-dim">
-          What&apos;s on the ground? needs photos of at least two land covers to deal a game.
+          {practice
+            ? practice.length > 0
+              ? `There aren't enough ${coversInWords(practice)} photos to deal a game yet.`
+              : "Call a photo's ground wrong in What's on the ground? and it comes back here to practise."
+            : "What's on the ground? needs photos of at least two land covers to deal a game."}
         </p>
       ) : (
         <>
@@ -601,7 +644,9 @@ function GroundSummary({
             </p>
           ) : (
             <p className="mt-1 text-chalk-dim">
-              {newBest ? "That's your new best!" : `Your best is ${best} of ${GROUND_PHOTOS}.`}
+              {newBest
+                ? `That's your new best${practice ? " at your mix-ups" : ""}!`
+                : `Your best${practice ? " at your mix-ups" : ""} is ${best} of ${GROUND_PHOTOS}.`}
             </p>
           )}
           <GroundRows results={results} records={records} friend={challenge} />
@@ -618,7 +663,15 @@ function GroundSummary({
             {challenge ? "Play a fresh game" : "Play again"}
           </button>
         )}
-        {results.length === GROUND_PHOTOS && (
+        {none && practice && (
+          <Link
+            href="/on-the-ground"
+            className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
+          >
+            Play What&apos;s on the ground?
+          </Link>
+        )}
+        {!practice && results.length === GROUND_PHOTOS && (
           <ChallengeButton results={results} covers={covers} answering={challenge} />
         )}
         <Link href="/" className="text-chalk-dim underline underline-offset-2 hover:text-chalk">

@@ -359,3 +359,70 @@ test("a challenge's answer card, with the friend's call on it, fits a 320px phon
     expect(box.x + box.width).toBeLessThanOrEqual(321);
   }
 });
+
+const NAME: Record<string, string> = {
+  "Built-up": "built-up",
+  "Tree cover": "trees",
+  Grassland: "grassland",
+  "Permanent water bodies": "water",
+  "Bare / sparse vegetation": "bare ground",
+};
+
+test("the ground you misread is on Your map, with a practice game dealt from it", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+
+  // Every call wrong: each cover taken for grassland (and grassland for built-up).
+  await page.goto("./on-the-ground");
+  const truths: string[] = [];
+  for (let n = 0; n < 5; n++) {
+    await expect(page.getByText(`Photo ${n + 1} of 5`, { exact: true })).toBeVisible();
+    const truth = await coverOnScreen(page);
+    truths.push(truth);
+    await coverButton(page, wrongFor(truth)).click();
+    const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
+    await card.getByRole("button", { name: n === 4 ? "See the results" : "Next photo" }).click();
+  }
+  await expect(page.getByRole("heading", { level: 1, name: "0 of 5" })).toBeVisible();
+
+  await page.goto("./map/");
+  const mixUps = page.getByTestId("clue-reading").getByTestId("ground-mix-ups");
+  await expect(mixUps.getByRole("heading", { name: "Ground you misread" })).toBeVisible();
+  await expect(mixUps).toContainText("From your last 5 calls in What's on the ground?");
+  const rows = mixUps.getByTestId("ground-misread");
+  const listed = await rows.evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.cover!));
+  expect(listed.length).toBeGreaterThan(0);
+  expect(listed.length).toBeLessThanOrEqual(3);
+  for (const cover of listed) expect(truths).toContain(cover);
+  await expect(rows.first()).toContainText(/You called \d of \d [\w-]+ photos? wrong: /);
+  const { width } = page.viewportSize()!;
+  const box = (await mixUps.boundingBox())!;
+  expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
+
+  await mixUps.getByRole("link", { name: "Practise these covers" }).click();
+  await expect(page).toHaveURL(/\/on-the-ground\/mix-ups\/?$/);
+  const header = page.getByText(/^What's on the ground\?, your mix-ups: /);
+  await expect(header).toBeVisible();
+  const named = (await header.textContent())!;
+  // The top misreads are dealt with what each was taken for; every photo is one of those.
+  for (const cover of listed.slice(0, 2)) expect(named).toContain(NAME[cover]);
+  for (let n = 0; n < 5; n++) {
+    await expect(page.getByText(`Photo ${n + 1} of 5`, { exact: true })).toBeVisible();
+    const truth = await coverOnScreen(page);
+    expect(named).toContain(NAME[truth]);
+    await coverButton(page, truth).click();
+    const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
+    await expect(card.getByRole("heading")).toHaveText("Correct");
+    await card.getByRole("button", { name: n === 4 ? "See the results" : "Next photo" }).click();
+  }
+  await expect(page.getByRole("heading", { level: 1, name: "5 of 5" })).toBeVisible();
+  await expect(page.getByText("That's your new best at your mix-ups!")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Challenge a friend" })).toHaveCount(0);
+
+  // The free games' best is its own; the practice best shows on Your map.
+  await page.goto("./map/");
+  await expect(page.getByTestId("ground-mix-ups-note")).toContainText("Your best: 5 of 5.");
+  expect(errors).toEqual([]);
+});

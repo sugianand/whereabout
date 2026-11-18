@@ -3,6 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GameRecord } from "@/lib/game/deck";
 import { GROUND_DAILY_KEY, dailyGroundOrder } from "@/lib/game/groundDaily";
+import {
+  BEST_GROUND_MIX_UPS_KEY,
+  GROUND_CALLS_KEY,
+  loadGroundCalls,
+  practiceGroundMap,
+} from "@/lib/game/groundMixUps";
 import { BEST_GROUND_KEY, dealGround, type GroundMap } from "@/lib/game/onTheGround";
 import { loadQuickRecord } from "@/lib/game/quickRecord";
 import type { CatalogPhoto } from "@/lib/game/types";
@@ -141,6 +147,13 @@ describe("OnTheGround", () => {
       atlasPlayed: read,
       atlasRight,
     });
+    // And which cover was called for which, for your ground mix-ups.
+    expect(loadGroundCalls()).toEqual(
+      ORDER.map((_, n) => ({
+        truth: truthOf(n),
+        picked: n < 3 ? truthOf(n) : wrongFor(truthOf(n)),
+      })),
+    );
 
     // A worse game keeps the best.
     fireEvent.click(screen.getByRole("button", { name: "Play again" }));
@@ -246,6 +259,8 @@ describe("OnTheGround, today's game", () => {
     // clue reading from the day kept, never counted again as a free game.
     expect(localStorage.getItem(BEST_GROUND_KEY)).toBeNull();
     expect(loadQuickRecord()["on-the-ground"].free.rounds).toBe(0);
+    // Today's calls are read back from the kept day, so the mix-ups log never holds them twice.
+    expect(loadGroundCalls()).toEqual([]);
     expect(loadQuickRecord()["on-the-ground"].daily).toMatchObject({
       runs: 1,
       rounds: 5,
@@ -425,5 +440,93 @@ describe("a friend's What's on the ground? challenge", () => {
     expect(box.sent.split("\n")[2]).toBe(
       `http://localhost:3000/?challenge=${ORDER.join(".")}_${ORDER.map((id) => LETTER(COVERS[id])).join("")}`,
     );
+  });
+});
+
+describe("OnTheGround, practising your mix-ups", () => {
+  function play() {
+    const game = gameFor(RECORDS);
+    return render(
+      <OnTheGround
+        deck={game.deck}
+        covers={COVERS}
+        loadRecords={game.loadRecords}
+        random={() => 0}
+        practice
+      />,
+    );
+  }
+
+  it("deals five photos of the covers misread and those they were taken for, with its own best", async () => {
+    // Trees taken for grassland, built-up for water: four covers, seven photos.
+    localStorage.setItem(
+      GROUND_CALLS_KEY,
+      JSON.stringify([
+        { truth: "Tree cover", picked: "Grassland" },
+        { truth: "Built-up", picked: "Permanent water bodies" },
+        { truth: "Bare / sparse vegetation", picked: "Bare / sparse vegetation" },
+      ]),
+    );
+    const order = dealGround(
+      practiceGroundMap(COVERS, ["Built-up", "Tree cover", "Grassland", "Permanent water bodies"]),
+      0,
+    );
+    expect(order).toHaveLength(5);
+    expect(order.some((id) => COVERS[id] === "Bare / sparse vegetation")).toBe(false);
+    play();
+    expect(
+      await screen.findByText(
+        "What's on the ground?, your mix-ups: built-up, trees, grassland and water.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Free games" })).toHaveAttribute(
+      "href",
+      "/on-the-ground",
+    );
+    for (let n = 0; n < 5; n++) {
+      await waitFor(() => expect(photo()).toHaveAttribute("data-photo", order[n]));
+      await waitFor(() => expect(button("Grassland")).toBeEnabled());
+      fireEvent.click(button(n < 4 ? COVERS[order[n]] : wrongFor(COVERS[order[n]])));
+      const card = await screen.findByRole("region");
+      fireEvent.click(
+        within(card).getByRole("button", { name: n === 4 ? "See the results" : "Next photo" }),
+      );
+    }
+    expect(await screen.findByRole("heading", { level: 1, name: "4 of 5" })).toBeInTheDocument();
+    expect(screen.getByText("That's your new best at your mix-ups!")).toBeInTheDocument();
+    expect(localStorage.getItem(BEST_GROUND_MIX_UPS_KEY)).toBe("4");
+    expect(localStorage.getItem(BEST_GROUND_KEY)).toBeNull();
+    // Its calls are kept like any other, so a cover still misread keeps coming back.
+    expect(loadGroundCalls()).toHaveLength(8);
+    // The photos were picked for this player, so there's no challenge to send.
+    expect(screen.queryByRole("button", { name: "Challenge a friend" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Play again" })).toBeInTheDocument();
+  });
+
+  it("says there's nothing to practise before a cover has been called wrong", async () => {
+    localStorage.setItem(
+      GROUND_CALLS_KEY,
+      JSON.stringify([{ truth: "Grassland", picked: "Grassland" }]),
+    );
+    play();
+    expect(await screen.findByText("No ground mix-ups to practise yet")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Play What's on the ground?" })).toHaveAttribute(
+      "href",
+      "/on-the-ground",
+    );
+  });
+
+  it("says when the covers to practise have too few photos", async () => {
+    // Bare ground taken for grassland: one photo of each can't fill a game.
+    localStorage.setItem(
+      GROUND_CALLS_KEY,
+      JSON.stringify([{ truth: "Bare / sparse vegetation", picked: "Grassland" }]),
+    );
+    play();
+    expect(
+      await screen.findByText(
+        "There aren't enough grassland and bare ground photos to deal a game yet.",
+      ),
+    ).toBeInTheDocument();
   });
 });

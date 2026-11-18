@@ -246,7 +246,9 @@ it said nothing about), each game's runs listed apart with today's runs counted 
 called wrong most in Which climate? (free games and today's, from your last few hundred calls),
 each with how often and what you called it instead, and *Practise these climates*
 (`/which-climate/mix-ups`), five photos dealt evenly from your top two misreads and the climates
-you took them for, with its own best. Then **you and Atlas in the quick
+you took them for, with its own best. Then **ground you misread**: the same for the land covers
+you've called wrong most in What's on the ground?, with *Practise these covers*
+(`/on-the-ground/mix-ups`). Then **you and Atlas in the quick
 games**: for Further North and Odd one out, the rounds you got right of those you answered beside
 the rounds Atlas got right of those it played, free runs and today's runs together, and who is
 ahead. Then **head to head with friends**: every friend's challenge you've answered from a link,

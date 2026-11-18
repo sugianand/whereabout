@@ -16,9 +16,10 @@ import {
   type ClueReading,
   type Tally,
 } from "@/lib/game/quickRecord";
-import type { ClimateGroup } from "@/lib/trueClues";
+import type { ClimateGroup, GroundCover } from "@/lib/trueClues";
 
 import ClimateMixUps from "./ClimateMixUps";
+import GroundMixUps from "./GroundMixUps";
 
 interface GameInfo {
   name: string;
@@ -333,13 +334,16 @@ const GRID = "mt-4 grid gap-4 md:grid-cols-2";
  * Which climate?'s and its ground calls with What's on the ground?'s. From the free runs and today's runs played in this browser
  * (`lib/game/quickRecord.ts`). Read after mount, so the static page never guesses at it; each
  * section, and each clue, shows nothing until it has been played. Under the clue reading, the
- * climates you misread most (`ClimateMixUps`).
+ * climates you misread most (`ClimateMixUps`) and the land covers (`GroundMixUps`).
  */
 export default function QuickRecord({
   climateCounts = {},
+  groundCounts = {},
 }: {
   /** Photos Which climate? can deal in each climate, for the climate mix-ups' practice game. */
   climateCounts?: Readonly<Partial<Record<ClimateGroup, number>>>;
+  /** Photos What's on the ground? can deal in each cover, for the ground mix-ups' practice game. */
+  groundCounts?: Readonly<Partial<Record<GroundCover, number>>>;
 }) {
   const [record, setRecord] = useState<QuickRecordData | null>(null);
 
@@ -369,6 +373,7 @@ export default function QuickRecord({
             ))}
           </ul>
           <ClimateMixUps counts={climateCounts} />
+          <GroundMixUps counts={groundCounts} />
         </RecordSection>
       )}
       {picks.length > 0 && (
