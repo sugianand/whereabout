@@ -190,6 +190,16 @@ export default function GamesMenu({
 
               <TodayLink compact current={screen === "today"} />
 
+              <Link
+                href="/tour"
+                className="mt-4 block rounded-xl border border-gold/40 px-4 py-3 transition hover:border-gold hover:bg-gold/5"
+              >
+                <span className="block font-sign text-xl font-bold text-gold">World Tour</span>
+                <span className="mt-1 block text-sm text-chalk-dim">
+                  Beat Atlas on its home ground, one continent at a time.
+                </span>
+              </Link>
+
               <h3 className="mt-4 text-sm font-semibold text-gold">Quick games</h3>
               <div className="mt-2">
                 <QuickGames

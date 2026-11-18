@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 
 import { BADGES, type BadgeId } from "@/lib/badges";
 import type { BlitzBest } from "@/lib/game/blitz";
@@ -22,7 +22,8 @@ import { useUnits } from "@/lib/useUnits";
 import { SQUARE_SETS, inSquares, type SquareSet } from "@/lib/squares";
 import { useSquares } from "@/lib/useSquares";
 import type { Units } from "@/lib/units";
-import { CONTINENTS } from "@/lib/continents";
+import { CONTINENTS, type Continent } from "@/lib/continents";
+import type { LegResult } from "@/lib/tour";
 import {
   MIN_RANKED_ROUNDS,
   continentStandings,
@@ -109,6 +110,10 @@ type SummaryProps = {
   onRematch?: () => void;
   /** Start a Blitz game from the quick games; omitted, Blitz isn't offered there. */
   onPlayBlitz?: () => void;
+  /** Set after a continent game: what it did to the World Tour (`lib/tour.ts`). */
+  tour?: LegResult;
+  /** Deal a continent game, the tour's next stop. */
+  onPlayLeg?: (region: Continent) => void;
   /** Photos still missing from your album, counted as the game ended. */
   albumLeft?: number;
   /** Deal five of the photos still missing from your album; unset when none are. */
@@ -116,6 +121,61 @@ type SummaryProps = {
   /** Where the quick games' Country Streak opens; omitted, it isn't offered there. */
   streakHref?: string;
 };
+
+/** The World Tour's line for a finished continent game: who holds the leg, and by how much. */
+export function tourLegLine(leg: LegResult): string {
+  const by = formatPoints(Math.abs(leg.game.you - leg.game.atlas));
+  const where = leg.continent;
+  if (leg.firstClear) return `${where} cleared: you beat Atlas on its home ground by ${by} points.`;
+  if (leg.won) return `You beat Atlas in ${where} again, by ${by} points.`;
+  if (leg.held) return `Atlas won this one in ${where} by ${by} points, but the leg stays yours.`;
+  if (leg.game.you === leg.game.atlas)
+    return `A tie with Atlas in ${where}: beat it to clear this leg.`;
+  return `Atlas holds ${where} by ${by} points: beat it here to clear this leg.`;
+}
+
+/**
+ * A continent game's place on the World Tour: the leg's outcome, how many of the route's legs
+ * are cleared, and a button straight to the next stop (or another try at this one).
+ */
+function TourLegCard({
+  leg,
+  onPlayLeg,
+}: {
+  leg: LegResult;
+  onPlayLeg?: (region: Continent) => void;
+}) {
+  const next = leg.next;
+  return (
+    <section
+      aria-label="World Tour"
+      data-testid="tour-leg"
+      className={`mt-6 rounded-2xl border p-5 ${leg.won ? "border-gold/60 bg-gold/5" : "border-graticule"}`}
+    >
+      <p className="font-sign text-2xl font-bold text-gold">World Tour</p>
+      <p className="mt-1 text-lg">{tourLegLine(leg)}</p>
+      <p className="mt-1 text-chalk-dim">
+        {next === null
+          ? `You've beaten Atlas on all ${leg.total} continents.`
+          : `${leg.cleared} of ${leg.total} continents cleared.`}
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+        {next !== null && next !== leg.continent && onPlayLeg && (
+          <button
+            type="button"
+            onClick={() => onPlayLeg(next)}
+            className="rounded-full bg-gold px-5 py-2 font-semibold text-ocean-deep transition hover:brightness-110"
+          >
+            Next stop: {next}
+          </button>
+        )}
+        <Link href="/tour" className="font-semibold text-sonar underline-offset-2 hover:underline">
+          See the tour →
+        </Link>
+      </div>
+    </section>
+  );
+}
 
 /** "You beat your first tries by 2,300 points.", from this game's and the first tries' totals. */
 export function rematchResultLine(player: number, first: number): string {
@@ -458,13 +518,17 @@ function ShareCardPreview({
         ))}
       </div>
       <p className="mt-3 text-xs text-chalk-dim">
+        {/* The separators sit outside the unbreakable bands, so the legend wraps between them
+            on a 320px phone instead of scrolling sideways. */}
         {[`within ${near}`, mid, far, "further"].map((words, i) => (
-          <span key={i} className="whitespace-nowrap">
+          <Fragment key={i}>
             {i > 0 && " · "}
-            {square[i]}
-            <ClosenessMark band={i} color={BAND_COLORS[i]} size={11} className="mx-0.5" />
-            {words}
-          </span>
+            <span className="whitespace-nowrap">
+              {square[i]}
+              <ClosenessMark band={i} color={BAND_COLORS[i]} size={11} className="mx-0.5" />
+              {words}
+            </span>
+          </Fragment>
         ))}
         {card.atlasRounds > 0 && " · ✅ beat Atlas · ❌ Atlas closer · 🤝 tie · ▫️ Atlas sat out"}
       </p>
@@ -497,6 +561,8 @@ export default function Summary({
   rematch,
   onRematch,
   onPlayBlitz,
+  tour,
+  onPlayLeg,
   albumLeft,
   onFindRest,
   streakHref,
@@ -632,6 +698,8 @@ export default function Summary({
           <strong className="text-gold">{rematchResultLine(t.player, firstTotal)}</strong>
         </p>
       )}
+
+      {tour && <TourLegCard leg={tour} onPlayLeg={onPlayLeg} />}
 
       {/* Back from looking at a round, the tour doesn't fly again: it opens on the whole game. */}
       <GameTour results={results} autoplay={returnedFrom === null} />

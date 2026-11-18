@@ -235,6 +235,11 @@ continent with ← and →, a swipe or the buttons. **Share your album** draws a
 each continent's page is, with your three closest finds as a distance and a continent, and sends
 it with a line of counts and the link to play (*Share as text* sends the line alone); neither
 ever names a photo or a place.
+**World Tour** (at `/tour`, in the Games menu) is a route around the continents: Europe, Africa,
+Asia, Oceania, South America, North America, then Antarctica when the game deals there. Each leg
+is a five-photo continent game, cleared the first time you outscore Atlas over the five (judged
+on the photos Atlas also guessed). Any continent game counts, and its results screen says who
+holds the leg, how many are cleared and offers the next stop. Kept only in this browser.
 **Your map** (at `/map`) puts every photo you've played on one globe, each mark shaped and
 coloured by how close your pin landed (a circle, diamond, triangle or cross, so it reads without
 colour vision too), with the countries and continents you've seen counted and your rounds

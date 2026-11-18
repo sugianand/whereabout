@@ -72,6 +72,7 @@ const FIRST_SCREENS = [
   "./today",
   "./map",
   "./album",
+  "./tour",
   "./stamps",
   "./atlas",
   "./you",

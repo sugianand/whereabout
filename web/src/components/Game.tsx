@@ -76,6 +76,7 @@ import {
 } from "@/lib/playerRecord";
 import { keepOnMap, loadPlayed } from "@/lib/playedMap";
 import type { RevealView } from "@/lib/reveal";
+import { rememberLeg, tourRoute, type LegResult } from "@/lib/tour";
 
 import BlitzRing from "./BlitzRing";
 import ControlsHelp from "./ControlsHelp";
@@ -340,6 +341,8 @@ export default function Game({
   const [rematchOffer, setRematchOffer] = useState<Challenge | null>(null);
   // Photos still missing from the album when the game ended, for the summary's "find the rest".
   const [albumLeft, setAlbumLeft] = useState(0);
+  // What the continent game just finished did to the World Tour, for the results screen.
+  const [tourLeg, setTourLeg] = useState<LegResult | null>(null);
   // How many were missing when a find game was dealt, for its header.
   const [findCount, setFindCount] = useState<number | null>(null);
 
@@ -755,6 +758,20 @@ export default function Game({
       setBlitzBest(mode.kind === "blitz" ? rememberBlitz(t.player) : null);
       // Rematches are dealt by the browser, like challenges.
       setRematchOffer(apiUrl ? null : pickRematch(loadRematch(), deck.ids));
+      // A continent game is a leg of the World Tour, judged on the photos Atlas also guessed.
+      setTourLeg(
+        mode.kind === "region" && !apiUrl && t.atlasRounds > 0
+          ? rememberLeg(
+              tourRoute(regionList),
+              mode.region,
+              {
+                you: state.results.reduce((sum, r) => sum + (r.atlas ? r.reveal.score : 0), 0),
+                atlas: t.atlas,
+              },
+              dayKey(today ?? new Date()),
+            )
+          : null,
+      );
       // The round just revealed is already on your map, so this counts it as found.
       setAlbumLeft(findLeft(null).left);
       const todayKey = dayKey(today ?? new Date());
@@ -772,6 +789,7 @@ export default function Game({
     if (!apiUrl) storeSaved(null);
     setChallengeNotice(null);
     setBlitzBest(null);
+    setTourLeg(null);
     setReplay(null);
     setLookedAt(null);
     dispatch({ type: "restart" });
@@ -944,6 +962,8 @@ export default function Game({
         rematch={mode?.kind === "rematch" ? mode.rematch : undefined}
         onRematch={rematchOffer ? playRematch : undefined}
         onPlayBlitz={apiUrl ? undefined : playBlitz}
+        tour={tourLeg ?? undefined}
+        onPlayLeg={(region) => playFrom({ region })}
         albumLeft={album ? albumLeft : undefined}
         onFindRest={
           album && albumLeft > 0 && !(mode?.kind === "find" && mode.region === null)
