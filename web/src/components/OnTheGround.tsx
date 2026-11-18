@@ -7,6 +7,17 @@ import { isShortcut } from "@/lib/controls";
 import { runToday } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import {
+  GROUND_CHALLENGE_PARAM,
+  groundChallengeLine,
+  groundChallengeScore,
+  groundChallengeText,
+  groundFriendCall,
+  groundFriendRight,
+  groundHeadToHead,
+  parseGroundChallenge,
+  type GroundChallenge,
+} from "@/lib/game/groundChallenge";
+import {
   dailyGroundOrder,
   groundDailyShare,
   loadGroundDay,
@@ -30,11 +41,13 @@ import {
 } from "@/lib/game/onTheGround";
 import { recordFreeRound } from "@/lib/game/quickRecord";
 import { placeholderUrl, sources } from "@/lib/photoSources";
+import { sendShare, type ShareOutcome } from "@/lib/share";
 import { GROUND_COVERS, atlasGroundCover, type GroundCover } from "@/lib/trueClues";
 
 import ControlsHelp from "./ControlsHelp";
 import { DailyRunResult } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
+import { HeadToHeadButton } from "./HeadToHeadButton";
 
 type OnTheGroundProps = {
   deck: Deck;
@@ -58,6 +71,27 @@ const KEY_COVER: Record<string, GroundCover> = Object.fromEntries(
   GROUND_COVERS.map((cover, i) => [String(i + 1), cover]),
 );
 
+/** Why a challenge link was set aside for a fresh game. */
+export const GROUND_CHALLENGE_NOTICE = {
+  malformed: "That challenge link was cut short, so here's a fresh game instead.",
+  missing: "That challenge's photos aren't in the game any more, so here's a fresh game instead.",
+} as const;
+
+/** Take the challenge out of the address, so a reload deals a fresh game, not the old link. */
+function dropChallengeParam() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has(GROUND_CHALLENGE_PARAM)) return;
+  url.searchParams.delete(GROUND_CHALLENGE_PARAM);
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+const CHALLENGE_NOTE: Record<ShareOutcome, string> = {
+  shared: "Challenge sent.",
+  copied: "Challenge link copied. Whoever opens it plays these five photos, in the same order.",
+  cancelled: "",
+  failed: "Couldn't copy the link. Your browser blocked the clipboard.",
+};
+
 /**
  * What's on the ground? (src/lib/game/onTheGround.ts): one photo and five land covers. Name what
  * covers the ground around the spot by tapping a cover or pressing 1 to 5; the answer lights the
@@ -78,32 +112,52 @@ export default function OnTheGround({
   const [error, setError] = useState<string | null>(null);
   // Today's game: the day it was dealt for, kept when the clock passes midnight mid-game.
   const [day, setDay] = useState<string | null>(null);
+  // A friend's challenge this game answers (src/lib/game/groundChallenge.ts): their five photos
+  // and their call on each, shown once you have made yours.
+  const [challenge, setChallenge] = useState<GroundChallenge | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  const start = useCallback(() => {
-    if (daily) {
-      const today = runToday(now?.());
-      const kept = loadGroundDay(today)?.results ?? [];
-      setDay(today);
-      // The calls kept come first. With the same photos they are the day's deal anyway; a day
-      // kept from an earlier deal (the catalog changed since) still reads back as it was played.
-      const played = kept.map((r) => r.id);
-      const order = [
-        ...played,
-        ...dailyGroundOrder(covers, today).filter((id) => !played.includes(id)),
-      ].slice(0, Math.max(GROUND_PHOTOS, played.length));
-      dispatch({ type: "start", order, from: kept });
-      return;
-    }
-    const stored = loadBestGround();
-    setBest(stored);
-    setBestBeforeGame(stored);
-    const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
-    dispatch({ type: "start", order: dealGround(covers, seed) });
-  }, [covers, random, daily, now]);
+  /** Deal a game; `fromLink` takes up a challenge the address carries, as the page opens. */
+  const start = useCallback(
+    (fromLink = false) => {
+      if (daily) {
+        const today = runToday(now?.());
+        const kept = loadGroundDay(today)?.results ?? [];
+        setDay(today);
+        // The calls kept come first. With the same photos they are the day's deal anyway; a day
+        // kept from an earlier deal (the catalog changed since) still reads back as it was played.
+        const played = kept.map((r) => r.id);
+        const order = [
+          ...played,
+          ...dailyGroundOrder(covers, today).filter((id) => !played.includes(id)),
+        ].slice(0, Math.max(GROUND_PHOTOS, played.length));
+        dispatch({ type: "start", order, from: kept });
+        return;
+      }
+      const stored = loadBestGround();
+      setBest(stored);
+      setBestBeforeGame(stored);
+      const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
+      const value = fromLink
+        ? new URLSearchParams(window.location.search).get(GROUND_CHALLENGE_PARAM)
+        : null;
+      const linked = value === null ? null : parseGroundChallenge(value, covers);
+      setNotice(linked && !linked.ok ? GROUND_CHALLENGE_NOTICE[linked.reason] : null);
+      if (linked?.ok) {
+        setChallenge(linked.challenge);
+        dispatch({ type: "start", order: linked.challenge.ids });
+        return;
+      }
+      setChallenge(null);
+      dropChallengeParam();
+      dispatch({ type: "start", order: dealGround(covers, seed) });
+    },
+    [covers, random, daily, now],
+  );
 
   // The game is dealt in the browser after hydration, never at build time.
   useEffect(() => {
-    const id = requestAnimationFrame(start);
+    const id = requestAnimationFrame(() => start(true));
     return () => cancelAnimationFrame(id);
   }, [start]);
 
@@ -176,14 +230,15 @@ export default function OnTheGround({
           correct: call.correct,
           atlas: call.atlas === null ? null : call.atlas === call.truth,
         });
-        // Only a whole free game counts as a best.
-        if (after.results.length === after.order.length) {
+        // Only a whole free game counts as a best, and never a friend's challenge: its photos
+        // may have been seen before, so it is played for the friend only.
+        if (after.results.length === after.order.length && !challenge) {
           setBest(rememberGround(groundTotals(after.results).right));
         }
       }
       dispatch(action);
     },
-    [state, record, covers, day],
+    [state, record, covers, day, challenge],
   );
 
   // 1 to 5 make the call from the keyboard.
@@ -209,8 +264,10 @@ export default function OnTheGround({
         results={state.results}
         records={records}
         best={best}
-        newBest={groundTotals(state.results).right > bestBeforeGame}
-        onAgain={start}
+        newBest={!challenge && groundTotals(state.results).right > bestBeforeGame}
+        covers={covers}
+        challenge={challenge}
+        onAgain={() => start()}
       />
     );
   }
@@ -238,7 +295,9 @@ export default function OnTheGround({
           <p className="mt-1 text-sm text-chalk-dim">
             {day
               ? `What's on the ground?, today's game (${day}).`
-              : "What's on the ground? Name the cover."}
+              : challenge
+                ? `A friend's challenge: ${groundChallengeScore(challenge, covers)} of ${GROUND_PHOTOS} to beat.`
+                : "What's on the ground? Name the cover."}
           </p>
           <Link
             href={daily ? "/on-the-ground" : "/on-the-ground/daily"}
@@ -297,6 +356,12 @@ export default function OnTheGround({
         </div>
       )}
 
+      {notice && state.phase === "picking" && results.length === 0 && (
+        <p role="status" className="px-4 pb-2 text-center text-sm text-chalk-dim">
+          {notice}
+        </p>
+      )}
+
       {error && (
         <p role="alert" className="absolute inset-x-4 bottom-4 text-center text-sm text-flare">
           {error}
@@ -310,6 +375,14 @@ export default function OnTheGround({
             result={answered}
             place={record.photo.place}
             atlasTally={[totals.atlasRight, results.length]}
+            friend={
+              challenge
+                ? {
+                    call: groundFriendCall(challenge, results.length - 1),
+                    right: results.filter((_, i) => groundFriendRight(challenge, i, covers)).length,
+                  }
+                : null
+            }
             onNext={() => dispatch({ type: "next" })}
             nextLabel={last ? (day ? "See today's result" : "See the results") : "Next photo"}
           />
@@ -380,7 +453,14 @@ const BAND_WORD: Record<GroundCover, string> = {
  * The five covers in a row, the spot's own lit, with the player's call and Atlas's marked under
  * theirs in words, so it reads without colour.
  */
-export function GroundBand({ result }: { result: GroundResult }) {
+export function GroundBand({
+  result,
+  friend = null,
+}: {
+  result: GroundResult;
+  /** On a friend's challenge: the call they made on this photo. */
+  friend?: GroundCover | null;
+}) {
   return (
     <ol
       aria-label="The five land covers"
@@ -392,6 +472,7 @@ export function GroundBand({ result }: { result: GroundResult }) {
         const marks = [
           result.picked === cover ? "You" : null,
           result.atlas === cover ? "Atlas" : null,
+          friend === cover ? "Friend" : null,
         ].filter((m): m is string => m !== null);
         return (
           <li
@@ -424,12 +505,15 @@ function GroundCard({
   result,
   place,
   atlasTally,
+  friend,
   onNext,
   nextLabel,
 }: {
   result: GroundResult;
   place: string;
   atlasTally: readonly [number, number];
+  /** On a friend's challenge: their call on this photo and their score so far. */
+  friend: { call: GroundCover | null; right: number } | null;
   onNext: () => void;
   nextLabel: string;
 }) {
@@ -451,10 +535,15 @@ function GroundCard({
       </h2>
       <p className="mt-1 text-chalk">{groundTruthLine(result.truth)}</p>
       <p className="text-sm text-chalk-dim">{`${place} · from the ESA WorldCover map`}</p>
-      <GroundBand result={result} />
+      <GroundBand result={result} friend={friend?.call ?? null} />
       <p className="mt-2 text-sm text-chalk-dim">
         {`${groundAtlasLine(result.atlas, result.truth)} Atlas this game: ${atlasRight} of ${played}.`}
       </p>
+      {friend?.call && (
+        <p className="text-sm text-chalk-dim" data-testid="ground-friend">
+          {`Your friend called it ${GROUND_NAME[friend.call].toLowerCase()}${friend.call === result.truth ? ", and got it." : ": wrong."} Your friend so far: ${friend.right} of ${played}.`}
+        </p>
+      )}
       <button
         ref={nextRef}
         type="button"
@@ -472,12 +561,17 @@ function GroundSummary({
   records,
   best,
   newBest,
+  covers,
+  challenge,
   onAgain,
 }: {
   results: readonly GroundResult[];
   records: ReadonlyMap<string, GameRecord>;
   best: number;
   newBest: boolean;
+  covers: GroundMap;
+  /** The friend's challenge this game answered, if it was one. */
+  challenge: GroundChallenge | null;
   onAgain: () => void;
 }) {
   const none = results.length === 0;
@@ -501,10 +595,16 @@ function GroundSummary({
           <p className="mt-4 text-lg text-chalk">
             {`${groundVerdict(right, atlasRight)} Atlas's clues named the ground on ${atlasRead} of the ${results.length} photos.`}
           </p>
-          <p className="mt-1 text-chalk-dim">
-            {newBest ? "That's your new best!" : `Your best is ${best} of ${GROUND_PHOTOS}.`}
-          </p>
-          <GroundRows results={results} records={records} />
+          {challenge ? (
+            <p className="mt-1 text-chalk" data-testid="ground-challenge-line">
+              {groundChallengeLine(right, challenge, covers)}
+            </p>
+          ) : (
+            <p className="mt-1 text-chalk-dim">
+              {newBest ? "That's your new best!" : `Your best is ${best} of ${GROUND_PHOTOS}.`}
+            </p>
+          )}
+          <GroundRows results={results} records={records} friend={challenge} />
         </>
       )}
       <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -515,8 +615,11 @@ function GroundSummary({
             onClick={onAgain}
             className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
           >
-            Play again
+            {challenge ? "Play a fresh game" : "Play again"}
           </button>
+        )}
+        {results.length === GROUND_PHOTOS && (
+          <ChallengeButton results={results} covers={covers} answering={challenge} />
         )}
         <Link href="/" className="text-chalk-dim underline underline-offset-2 hover:text-chalk">
           Back to the main game
@@ -530,9 +633,12 @@ function GroundSummary({
 function GroundRows({
   results,
   records,
+  friend = null,
 }: {
   results: readonly GroundResult[];
   records: ReadonlyMap<string, GameRecord>;
+  /** On a friend's challenge: their calls, listed beside yours. */
+  friend?: GroundChallenge | null;
 }) {
   return (
     <ol className="mt-6 space-y-2" aria-label="Your calls">
@@ -547,10 +653,57 @@ function GroundRows({
           </span>
           <span className="block text-chalk-dim">
             {`${GROUND_NAME[r.truth]}. You: ${GROUND_NAME[r.picked]} ${r.correct ? "✓" : "✗"}. Atlas: ${r.atlas === null ? "no read" : `${GROUND_NAME[r.atlas]} ${r.atlas === r.truth ? "✓" : "✗"}`}`}
+            {friend?.calls[i] &&
+              `. Friend: ${GROUND_NAME[friend.calls[i]]} ${friend.calls[i] === r.truth ? "✓" : "✗"}`}
           </span>
         </li>
       ))}
     </ol>
+  );
+}
+
+/**
+ * Challenge a friend from a whole free game (src/lib/game/groundChallenge.ts): a link to the same
+ * five photos with your call on each. Answering a challenge, it sends one back, with the
+ * head-to-head picture beside it.
+ */
+function ChallengeButton({
+  results,
+  covers,
+  answering,
+}: {
+  results: readonly GroundResult[];
+  covers: GroundMap;
+  answering: GroundChallenge | null;
+}) {
+  const [sent, setSent] = useState("");
+  const text = () =>
+    groundChallengeText(results, window.location.href, covers, answering ?? undefined);
+  async function send() {
+    setSent(CHALLENGE_NOTE[await sendShare(text(), navigator)]);
+  }
+  return (
+    <span className="flex min-w-0 flex-col">
+      <span className="flex flex-wrap gap-x-3 gap-y-2">
+        <button
+          type="button"
+          onClick={send}
+          className="rounded-full border-2 border-gold px-5 py-2.5 font-semibold text-gold transition hover:bg-gold/10"
+        >
+          {answering ? "Send yours back" : "Challenge a friend"}
+        </button>
+        {answering && (
+          <HeadToHeadButton
+            headToHead={groundHeadToHead(results, answering, covers, window.location.href)}
+            replyText={text}
+            onNote={setSent}
+          />
+        )}
+      </span>
+      <span role="status" className={sent ? "mt-1 text-xs text-chalk-dim" : "sr-only"}>
+        {sent}
+      </span>
+    </span>
   );
 }
 

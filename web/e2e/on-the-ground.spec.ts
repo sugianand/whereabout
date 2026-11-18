@@ -199,9 +199,163 @@ test("a 320px phone fits every cover, the answer and the end of a game", async (
     await card.getByRole("button", { name: n === 4 ? "See the results" : "Next photo" }).click();
   }
   await expect(page.getByRole("heading", { level: 1, name: "5 of 5" })).toBeVisible();
-  const again = page.getByRole("button", { name: "Play again" });
-  await again.scrollIntoViewIfNeeded();
-  const box = (await again.boundingBox())!;
-  expect(box.x + box.width).toBeLessThanOrEqual(321);
+  for (const name of ["Play again", "Challenge a friend"]) {
+    const button = page.getByRole("button", { name });
+    await button.scrollIntoViewIfNeeded();
+    const box = (await button.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(321);
+  }
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+});
+
+const LETTER: Record<string, string> = {
+  "Built-up": "b",
+  "Tree cover": "t",
+  Grassland: "g",
+  "Permanent water bodies": "w",
+  "Bare / sparse vegetation": "s",
+};
+
+test("a challenge link deals a friend the same five photos, with the sender's call shown after theirs", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
+  const sent = () => page.evaluate(() => (window as unknown as { sent: string }).sent);
+
+  // The sender names the first two right and the other three wrong: 2 of 5.
+  await page.goto("./on-the-ground");
+  const game: string[] = [];
+  const senderCalls: string[] = [];
+  for (let n = 0; n < 5; n++) {
+    const truth = await coverOnScreen(page);
+    game.push((await page.getByTestId("ground-photo").getAttribute("data-photo"))!);
+    const pick = n < 2 ? truth : wrongFor(truth);
+    senderCalls.push(pick);
+    await coverButton(page, pick).click();
+    await card.getByRole("button", { name: n === 4 ? "See the results" : "Next photo" }).click();
+  }
+  await expect(page.getByRole("heading", { level: 1, name: "2 of 5" })).toBeVisible();
+  await page.getByRole("button", { name: "Challenge a friend" }).click();
+  await expect(page.getByText(/^Challenge (sent|link copied)/)).toBeVisible();
+  const message = await sent();
+  expect(message).toContain("I named 2 of 5 covers right.");
+  const link = message.split("\n").at(-1)!;
+  expect(link).toMatch(
+    new RegExp(
+      `/whereabout/on-the-ground/?\\?challenge=${game.join("\\.")}_${senderCalls.map((c) => LETTER[c]).join("")}$`,
+    ),
+  );
+
+  // The friend, with nothing kept, gets the same five and names them all right.
+  await page.evaluate(() => localStorage.clear());
+  await page.goto(link);
+  await expect(page.getByText("A friend's challenge: 2 of 5 to beat.")).toBeVisible();
+  const { width, height } = page.viewportSize()!;
+  for (let n = 0; n < 5; n++) {
+    await expect(page.getByTestId("ground-photo")).toHaveAttribute("data-photo", game[n]);
+    const truth = await coverOnScreen(page);
+    await expect(page.getByTestId("ground-friend")).toHaveCount(0);
+    await coverButton(page, truth).click();
+    await expect(card.getByTestId("ground-friend")).toContainText(
+      n < 2 ? ", and got it." : ": wrong.",
+    );
+    await expect(
+      card.getByTestId("ground-band").locator(`[data-cover='${senderCalls[n]}']`),
+    ).toContainText("Friend");
+    // The card, with the friend's line on it, still fits the screen.
+    const box = (await card.boundingBox())!;
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height).toBeLessThanOrEqual(height + 1);
+    await card.getByRole("button", { name: n === 4 ? "See the results" : "Next photo" }).click();
+  }
+  await expect(page.getByRole("heading", { level: 1, name: "5 of 5" })).toBeVisible();
+  await expect(page.getByText("You beat your friend's 2 of 5 by 3.")).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("whereabout:on-the-ground-best"))).toBe(
+    null,
+  );
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    width,
+  );
+
+  await page.getByRole("button", { name: "Send yours back" }).click();
+  await expect(page.getByText(/^Challenge (sent|link copied)/)).toBeVisible();
+  const reply = await sent();
+  expect(reply).toContain("That beats your 2. Your turn to read the ground.");
+
+  // Head to head: both games drawn as a 1080px picture, saved, with the reply link copied.
+  await page.evaluate(() => ((window as unknown as { sent: string }).sent = ""));
+  const picture = page.getByRole("button", { name: "Share head to head" });
+  const [download] = await Promise.all([page.waitForEvent("download"), picture.click()]);
+  expect(download.suggestedFilename()).toBe("whereabout-whats-on-the-ground-head-to-head.png");
+  const png = readFileSync((await download.path())!);
+  expect(png.subarray(1, 4).toString()).toBe("PNG");
+  expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1080, 1080]);
+  expect(await sent()).toBe(reply);
+  const kept = await page.evaluate(() => localStorage.getItem("whereabout:head-to-head"));
+  expect(JSON.parse(kept!)).toEqual([
+    expect.objectContaining({ game: "What's on the ground?", outcome: "won", you: "5 of 5" }),
+  ]);
+
+  // A fresh game drops the link.
+  await page.getByRole("button", { name: "Play a fresh game" }).click();
+  await expect(page.getByText("What's on the ground? Name the cover.")).toBeVisible();
+  expect(new URL(page.url()).search).toBe("");
+  expect(errors).toEqual([]);
+});
+
+test("a broken What's on the ground? challenge says so and deals a fresh game", async ({
+  page,
+}) => {
+  await page.goto("./on-the-ground?challenge=wm001_btg");
+  await expect(page.getByText(/That challenge link was cut short/)).toBeVisible();
+  await expect(page.getByText("What's on the ground? Name the cover.")).toBeVisible();
+  await expect(coverButton(page, "Grassland")).toBeEnabled();
+});
+
+test("a challenge's answer card, with the friend's call on it, fits a 320px phone", async ({
+  page,
+}) => {
+  test.skip((page.viewportSize()?.width ?? 1000) >= 768, "a phone layout check");
+  await page.setViewportSize({ width: 320, height: 568 });
+  // Five photos, one of each cover where the catalog has it, with the friend's call on each the
+  // truth, so the band's busiest mark ("You · Friend", or with Atlas too) is on every card.
+  const ids = COVERS.map((cover) => CATALOG.find((p) => p.landCover === cover)!.id);
+  await page.goto(
+    `./on-the-ground?challenge=${ids.join(".")}_${ids.map((id) => LETTER[COVER.get(id)!]).join("")}`,
+  );
+  await expect(page.getByText("A friend's challenge: 5 of 5 to beat.")).toBeVisible();
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
+  for (let n = 0; n < 5; n++) {
+    const truth = await coverOnScreen(page);
+    await coverButton(page, truth).click();
+    await expect(card.getByTestId("ground-friend")).toContainText(", and got it.");
+    const box = (await card.boundingBox())!;
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height).toBeLessThanOrEqual(569);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      320,
+    );
+    await card.getByRole("button", { name: n === 4 ? "See the results" : "Next photo" }).click();
+  }
+  await expect(page.getByText("A dead heat: you both named 5 of 5.")).toBeVisible();
+  for (const name of ["Play a fresh game", "Send yours back", "Share head to head"]) {
+    const button = page.getByRole("button", { name });
+    await button.scrollIntoViewIfNeeded();
+    const box = (await button.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(321);
+  }
 });

@@ -31,6 +31,7 @@ import { CLIMATE_GROUPS, type ClimateGroup, type GroundCover } from "@/lib/trueC
 
 import { challengeOutcome, type ChallengeOutcome } from "./challenge";
 import { KOPPEN_LETTER } from "./climateChallenge";
+import { GROUND_LETTER } from "./groundChallenge";
 import {
   CLUE_CYCLE,
   THREE_CLUE_CYCLE,
@@ -82,13 +83,7 @@ const CODES: Record<ClueKind, Record<string, string>> = {
   road: { left: "l", right: "r" },
   climate: Object.fromEntries(CLIMATE_GROUPS.map((g: ClimateGroup) => [g, KOPPEN_LETTER[g]])),
   continent: CONTINENT_CODE,
-  ground: {
-    "Built-up": "b",
-    "Tree cover": "t",
-    Grassland: "g",
-    "Permanent water bodies": "w",
-    "Bare / sparse vegetation": "s",
-  } satisfies Record<GroundCover, string>,
+  ground: GROUND_LETTER satisfies Record<GroundCover, string>,
 };
 
 /** The part that leads a four-clue link; a link without it was sent over three clues. */

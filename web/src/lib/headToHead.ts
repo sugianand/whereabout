@@ -208,11 +208,12 @@ export async function sendHeadToHead(
   }
 }
 
-/** "whereabout-blitz-head-to-head.png". */
+/** "whereabout-blitz-head-to-head.png"; an apostrophe joins its word ("whats-on-the-ground"). */
 export function headToHeadName(h: HeadToHead): string {
   const slug = `${h.game} head to head`
     .toLowerCase()
     .normalize("NFKD")
+    .replace(/['’]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
   return `whereabout-${slug}.png`;

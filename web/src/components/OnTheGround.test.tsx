@@ -7,6 +7,7 @@ import { BEST_GROUND_KEY, dealGround, type GroundMap } from "@/lib/game/onTheGro
 import { loadQuickRecord } from "@/lib/game/quickRecord";
 import type { CatalogPhoto } from "@/lib/game/types";
 import { GROUND_COVERS, atlasGroundCover, type GroundCover } from "@/lib/trueClues";
+import { stubCanvas } from "@/test/canvas";
 import { gameFor } from "@/test/deck";
 
 import OnTheGround from "./OnTheGround";
@@ -295,6 +296,134 @@ describe("OnTheGround, today's game", () => {
     expect(screen.getByRole("link", { name: "Today's game" })).toHaveAttribute(
       "href",
       "/on-the-ground/daily",
+    );
+  });
+});
+
+describe("a friend's What's on the ground? challenge", () => {
+  // The friend's five, in their order, with b1, t1 and s1 named right and g1 and w1 wrong: 3 of 5.
+  const IDS = ["b1", "g1", "t1", "w1", "s1"];
+  const FRIEND = "b1.g1.t1.w1.s1_bttgs";
+  const FRIEND_CALLS: GroundCover[] = [
+    "Built-up",
+    "Tree cover",
+    "Tree cover",
+    "Grassland",
+    "Bare / sparse vegetation",
+  ];
+  const LETTER = (c: GroundCover) => "btgws"[GROUND_COVERS.indexOf(c)];
+
+  afterEach(() => window.history.replaceState(null, "", "/"));
+
+  function clipboard() {
+    const box = { sent: "" };
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: async (t: string) => void (box.sent = t) },
+      configurable: true,
+    });
+    return box;
+  }
+
+  async function linked(value: string) {
+    window.history.replaceState(null, "", `/on-the-ground?challenge=${value}&x=1`);
+    return setup();
+  }
+
+  it("deals the friend's five, shows their call once yours is in, and answers", async () => {
+    await linked(FRIEND);
+    expect(screen.getByText("A friend's challenge: 3 of 5 to beat.")).toBeVisible();
+    for (let n = 0; n < 5; n++) {
+      await waitFor(() => expect(photo()).toHaveAttribute("data-photo", IDS[n]));
+      await waitFor(() => expect(button("Grassland")).toBeEnabled());
+      // Nothing of the friend's call shows before yours.
+      expect(screen.queryByTestId("ground-friend")).toBeNull();
+      const truth = COVERS[IDS[n]];
+      // Right on all but the last.
+      fireEvent.click(button(n < 4 ? truth : wrongFor(truth)));
+      const card = await screen.findByRole("region");
+      const theirs = FRIEND_CALLS[n];
+      expect(within(card).getByTestId("ground-friend")).toHaveTextContent(
+        `Your friend called it ${theirs === "Tree cover" ? "trees" : theirs === "Bare / sparse vegetation" ? "bare ground" : theirs.toLowerCase()}${theirs === truth ? ", and got it." : ": wrong."}`,
+      );
+      expect(
+        within(card).getByTestId("ground-band").querySelector(`[data-cover='${theirs}']`),
+      ).toHaveTextContent("Friend");
+      fireEvent.click(
+        within(card).getByRole("button", { name: n === 4 ? "See the results" : "Next photo" }),
+      );
+    }
+    expect(await screen.findByRole("heading", { level: 1, name: "4 of 5" })).toBeInTheDocument();
+    expect(screen.getByTestId("ground-challenge-line")).toHaveTextContent(
+      "You beat your friend's 3 of 5 by 1.",
+    );
+    expect(screen.getAllByTestId("ground-row")[1]).toHaveTextContent("Friend: Trees ✗");
+    // A challenge's photos may have been seen, so it is played for the friend only.
+    expect(localStorage.getItem(BEST_GROUND_KEY)).toBeNull();
+    // Its calls still count in your clue reading, as Which climate?'s challenges do.
+    expect(loadQuickRecord()["on-the-ground"].free).toMatchObject({ rounds: 5, right: 4 });
+
+    const box = clipboard();
+    fireEvent.click(screen.getByRole("button", { name: "Send yours back" }));
+    await waitFor(() => expect(screen.getByText(/Challenge link copied/)).toBeInTheDocument());
+    const mine = IDS.map((id, i) => LETTER(i < 4 ? COVERS[id] : wrongFor(COVERS[id]))).join("");
+    expect(box.sent.split("\n")).toEqual([
+      "Whereabout · What's on the ground?: I named 4 of 5 covers right.",
+      "That beats your 3. Your turn to read the ground.",
+      `http://localhost:3000/on-the-ground?challenge=${IDS.join(".")}_${mine}`,
+    ]);
+
+    // The head to head is drawn photo by photo, with no photo in it.
+    const drawn = stubCanvas();
+    fireEvent.click(screen.getByRole("button", { name: "Share head to head" }));
+    expect(
+      await screen.findByText("Head to head saved. Post it with the link, which is copied too."),
+    ).toBeInTheDocument();
+    expect(drawn.saved).toEqual(["whereabout-whats-on-the-ground-head-to-head.png"]);
+    expect(drawn.words).toEqual(
+      expect.arrayContaining(["You won", "4 of 5", "3 of 5", "Photo 1", "Right", "Wrong"]),
+    );
+    const all = drawn.words.join("\n");
+    for (const id of IDS) expect(all).not.toContain(id);
+    drawn.restore();
+
+    // A fresh game leaves the link behind.
+    fireEvent.click(screen.getByRole("button", { name: "Play a fresh game" }));
+    await waitFor(() =>
+      expect(screen.getByText("What's on the ground? Name the cover.")).toBeVisible(),
+    );
+    expect(window.location.search).toBe("?x=1");
+  });
+
+  it("says when a link is cut short or its photos have gone, and deals a fresh game", async () => {
+    await linked("b1.g1.t1_btt");
+    expect(screen.getByText(/That challenge link was cut short/)).toBeVisible();
+    expect(screen.getByText("What's on the ground? Name the cover.")).toBeVisible();
+    expect(photo()).toHaveAttribute("data-photo", ORDER[0]);
+    expect(window.location.search).toBe("?x=1");
+    cleanup();
+    await linked("b1.g1.t1.w1.gone_bttgs");
+    expect(screen.getByText(/That challenge's photos aren't in the game any more/)).toBeVisible();
+  });
+
+  it("offers a challenge from the end of a whole free game", async () => {
+    await setup();
+    for (let n = 0; n < 5; n++) {
+      await waitFor(() => expect(photo()).toHaveAttribute("data-photo", ORDER[n]));
+      await waitFor(() => expect(button("Grassland")).toBeEnabled());
+      fireEvent.click(button(truthOf(n)));
+      const card = await screen.findByRole("region");
+      fireEvent.click(
+        within(card).getByRole("button", { name: n === 4 ? "See the results" : "Next photo" }),
+      );
+    }
+    await screen.findByRole("heading", { level: 1, name: "5 of 5" });
+    expect(screen.queryByRole("button", { name: "Share head to head" })).toBeNull();
+    const box = clipboard();
+    fireEvent.click(screen.getByRole("button", { name: "Challenge a friend" }));
+    await waitFor(() => expect(box.sent).not.toBe(""));
+    expect(box.sent.split("\n")[2]).toBe(
+      `http://localhost:3000/?challenge=${ORDER.join(".")}_${ORDER.map((id) => LETTER(COVERS[id])).join("")}`,
     );
   });
 });
