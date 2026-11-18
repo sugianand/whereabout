@@ -35,6 +35,7 @@ async function noSidewaysScroll(page: Page) {
 test("the tour starts in Europe, a leg's game lands on the tour, and the results say who holds it", async ({
   page,
 }) => {
+  test.setTimeout(120_000);
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
 
@@ -74,7 +75,8 @@ test("the tour starts in Europe, a leg's game lands on the tour, and the results
   expect(Boolean(kept.Europe.cleared)).toBe(kept.Europe.best.you > kept.Europe.best.atlas);
 
   await card.getByRole("link", { name: "See the tour →" }).click();
-  await expect(page).toHaveURL(/\/tour\/?$/);
+  // The summary's globe is still working on a software renderer, so the page can take a while.
+  await expect(page).toHaveURL(/\/tour\/?$/, { timeout: 30_000 });
   const europe = page.getByTestId("tour-stop").first();
   await expect(europe).not.toContainText("Not visited yet.");
   await expect(europe).toContainText(kept.Europe.cleared ? /^.*Cleared/ : /over 1 game/);
@@ -84,6 +86,7 @@ test("the tour starts in Europe, a leg's game lands on the tour, and the results
 test("after a cleared leg the results lead to the next stop, and the tour fits a 320px phone", async ({
   page,
 }) => {
+  test.setTimeout(120_000);
   await page.addInitScript(() => {
     if (sessionStorage.getItem("seeded")) return;
     sessionStorage.setItem("seeded", "1");
@@ -113,6 +116,8 @@ test("after a cleared leg the results lead to the next stop, and the tour fits a
   await expect(card).toContainText(/^.*1 of \d continents cleared\./);
   await noSidewaysScroll(page);
   await card.getByRole("button", { name: `Next stop: ${nextStop}` }).click();
-  await expect(page.getByText(`${nextStop} game`, { exact: true })).toBeVisible();
+  await expect(page.getByText(`${nextStop} game`, { exact: true })).toBeVisible({
+    timeout: 30_000,
+  });
   await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
 });
