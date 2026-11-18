@@ -2,6 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { CLUE_DAILY_KEY } from "@/lib/game/clueDaily";
+import { GROUND_DAILY_KEY } from "@/lib/game/groundDaily";
 import { NORTH_DAILY_KEY } from "@/lib/game/northDaily";
 import { recordFreeRound } from "@/lib/game/quickRecord";
 import { SIDE_DAILY_KEY } from "@/lib/game/sideDaily";
@@ -152,6 +153,52 @@ describe("QuickRecord", () => {
       "/clue-mix/daily",
     );
     expect(within(continent).queryByRole("link", { name: /Left or right/ })).toBeNull();
+  });
+
+  it("counts What's on the ground? with Clue mix's ground steps, with a way into today's game", async () => {
+    recordFreeRound("on-the-ground", { first: true, correct: true, atlas: true });
+    recordFreeRound("on-the-ground", { first: false, correct: true, atlas: null });
+    recordFreeRound("clue-mix-ground", { first: true, correct: false, atlas: false });
+    window.localStorage.setItem(
+      GROUND_DAILY_KEY,
+      JSON.stringify({
+        "2026-11-19": {
+          results: [
+            { id: "a", picked: "Built-up", truth: "Built-up", correct: true, atlas: "Built-up" },
+            { id: "b", picked: "Grassland", truth: "Tree cover", correct: false, atlas: null },
+          ],
+        },
+      }),
+    );
+    render(<QuickRecord />);
+    const section = await screen.findByTestId("clue-reading");
+    const ground = within(section).getByTestId("record-ground");
+    expect(within(ground).getByRole("heading", { name: "The ground" })).toBeVisible();
+    expect(within(ground).getByTestId("record-ground-on-the-ground")).toHaveTextContent(
+      "2 What's on the ground? games, 1 of them today's",
+    );
+    expect(within(ground).getByTestId("record-ground-clue-mix-ground")).toHaveTextContent(
+      "1 Clue mix run",
+    );
+    // You: 3 of 5 photos (60%); Atlas: 2 of the 3 it read (67%).
+    expect(within(ground).getByTestId("record-ground-you")).toHaveAttribute("data-right", "3");
+    expect(within(ground).getByTestId("record-ground-you")).toHaveAttribute("data-played", "5");
+    expect(within(ground).getByTestId("record-ground-atlas")).toHaveAttribute("data-right", "2");
+    expect(within(ground).getByTestId("record-ground-atlas")).toHaveAttribute("data-played", "3");
+    expect(within(ground).getByText("Atlas is ahead of you by 7 points.")).toBeInTheDocument();
+    expect(
+      within(ground).getByText(
+        /named a city, a skyline or a coast, so it has played 2 photos fewer/,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(ground).getByRole("link", { name: "Today's What's on the ground?" }),
+    ).toHaveAttribute("href", "/on-the-ground/daily");
+    expect(
+      within(ground).getByRole("link", { name: "Play What's on the ground?" }),
+    ).toHaveAttribute("href", "/on-the-ground");
+    // Neither game reads the climate, so it has no card.
+    expect(within(section).queryByTestId("record-climate")).not.toBeInTheDocument();
   });
 
   it("shows both sections when both kinds of game have been played", async () => {

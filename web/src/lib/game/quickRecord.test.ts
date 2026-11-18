@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { rememberClimateDay } from "./climateDaily";
 import { CLUE_DAILY_KEY, rememberClueDay } from "./clueDaily";
 import type { DailyRun } from "./dailyRuns";
+import { rememberGroundDay } from "./groundDaily";
 import { NORTH_DAILY_KEY } from "./northDaily";
 import { ODD_DAILY_KEY } from "./oddDaily";
 import {
@@ -16,6 +17,7 @@ import {
   clueMixGame,
   clueReading,
   dailyTally,
+  groundDayTally,
   loadFreeTallies,
   loadQuickRecord,
   parseTally,
@@ -61,6 +63,7 @@ describe("recordFreeRound", () => {
       "odd-one-out": { runs: 1, rounds: 1, right: 0, atlasPlayed: 0, atlasRight: 0 },
       "left-right": EMPTY_TALLY,
       "which-climate": { runs: 1, rounds: 1, right: 1, atlasPlayed: 1, atlasRight: 0 },
+      "on-the-ground": EMPTY_TALLY,
       "clue-mix-road": EMPTY_TALLY,
       "clue-mix-climate": EMPTY_TALLY,
       "clue-mix-continent": EMPTY_TALLY,
@@ -192,6 +195,40 @@ describe("loadQuickRecord", () => {
     expect(record["which-climate"].total).toMatchObject({ runs: 2, rounds: 4, right: 3 });
   });
 
+  it("counts today's What's on the ground? games call by call, Atlas only on photos it read", () => {
+    recordFreeRound("on-the-ground", { first: true, correct: false, atlas: null });
+    rememberGroundDay("2026-11-19", [
+      { id: "a", picked: "Built-up", truth: "Built-up", correct: true, atlas: "Built-up" },
+      { id: "b", picked: "Grassland", truth: "Tree cover", correct: false, atlas: null },
+      {
+        id: "c",
+        picked: "Permanent water bodies",
+        truth: "Permanent water bodies",
+        correct: true,
+        atlas: "Built-up",
+      },
+    ]);
+    rememberGroundDay("2026-11-20", []);
+    const record = loadQuickRecord();
+    expect(record["on-the-ground"].daily).toEqual({
+      runs: 1,
+      rounds: 3,
+      right: 2,
+      atlasPlayed: 2,
+      atlasRight: 1,
+    });
+    expect(record["on-the-ground"].free).toEqual({
+      runs: 1,
+      rounds: 1,
+      right: 0,
+      atlasPlayed: 0,
+      atlasRight: 0,
+    });
+    expect(record["on-the-ground"].total).toMatchObject({ runs: 2, rounds: 4, right: 2 });
+    // The day's tally is the same read straight from its days.
+    expect(groundDayTally({})).toEqual(EMPTY_TALLY);
+  });
+
   it("is empty in a fresh browser", () => {
     const record = loadQuickRecord();
     for (const game of RECORD_GAMES) expect(record[game].total).toEqual(EMPTY_TALLY);
@@ -204,7 +241,7 @@ describe("loadQuickRecord", () => {
       road: ["left-right", "clue-mix-road"],
       climate: ["which-climate", "clue-mix-climate"],
       continent: ["clue-mix-continent"],
-      ground: ["clue-mix-ground"],
+      ground: ["on-the-ground", "clue-mix-ground"],
     });
     expect(clueMixGame("continent")).toBe("clue-mix-continent");
     expect(clueMixGame("ground")).toBe("clue-mix-ground");
@@ -332,6 +369,36 @@ describe("clueReading", () => {
       atlasRight: 1,
     });
     expect(localStorage.getItem(CLUE_DAILY_KEY)).toContain('"reads":"-w"');
+  });
+
+  it("adds What's on the ground?'s calls, free and today's, to Clue mix's ground steps", () => {
+    recordFreeRound("on-the-ground", { first: true, correct: true, atlas: true });
+    recordFreeRound("on-the-ground", { first: false, correct: false, atlas: null });
+    recordFreeRound("clue-mix-ground", { first: true, correct: true, atlas: false });
+    rememberGroundDay("2026-11-19", [
+      { id: "a", picked: "Grassland", truth: "Grassland", correct: true, atlas: null },
+    ]);
+    const reading = clueReading(loadQuickRecord());
+    expect(reading.ground.total).toEqual({
+      runs: 3,
+      rounds: 4,
+      right: 3,
+      atlasPlayed: 2,
+      atlasRight: 1,
+    });
+    expect(reading.ground.daily).toEqual({
+      runs: 1,
+      rounds: 1,
+      right: 1,
+      atlasPlayed: 0,
+      atlasRight: 0,
+    });
+    expect(reading.ground.sources.map((s) => [s.game, s.record.total.rounds])).toEqual([
+      ["on-the-ground", 3],
+      ["clue-mix-ground", 1],
+    ]);
+    // The other clues are untouched by the ground's games.
+    expect(reading.climate.total).toEqual(EMPTY_TALLY);
   });
 });
 

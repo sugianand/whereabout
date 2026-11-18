@@ -28,6 +28,7 @@ import {
   type GroundMap,
   type GroundResult,
 } from "@/lib/game/onTheGround";
+import { recordFreeRound } from "@/lib/game/quickRecord";
 import { placeholderUrl, sources } from "@/lib/photoSources";
 import { GROUND_COVERS, atlasGroundCover, type GroundCover } from "@/lib/trueClues";
 
@@ -166,9 +167,19 @@ export default function OnTheGround({
       if (after.phase === "answered" && day) {
         // Today's game is kept after every call, so a reload resumes it and never deals it again.
         rememberGroundDay(day, after.results);
-      } else if (after.phase === "answered" && after.results.length === after.order.length) {
+      } else if (after.phase === "answered") {
+        // Count the call in your clue reading on Your map as it is made, so leaving mid-game
+        // still counts the photos called. Today's game is read back from its kept day instead.
+        const call = after.results[after.results.length - 1];
+        recordFreeRound("on-the-ground", {
+          first: after.results.length === 1,
+          correct: call.correct,
+          atlas: call.atlas === null ? null : call.atlas === call.truth,
+        });
         // Only a whole free game counts as a best.
-        setBest(rememberGround(groundTotals(after.results).right));
+        if (after.results.length === after.order.length) {
+          setBest(rememberGround(groundTotals(after.results).right));
+        }
       }
       dispatch(action);
     },

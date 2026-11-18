@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GameRecord } from "@/lib/game/deck";
 import { GROUND_DAILY_KEY, dailyGroundOrder } from "@/lib/game/groundDaily";
 import { BEST_GROUND_KEY, dealGround, type GroundMap } from "@/lib/game/onTheGround";
+import { loadQuickRecord } from "@/lib/game/quickRecord";
 import type { CatalogPhoto } from "@/lib/game/types";
 import { GROUND_COVERS, atlasGroundCover, type GroundCover } from "@/lib/trueClues";
 import { gameFor } from "@/test/deck";
@@ -130,6 +131,15 @@ describe("OnTheGround", () => {
     expect(
       screen.getByText(new RegExp(`Atlas's clues named the ground on ${read} of the 5 photos`)),
     ).toBeInTheDocument();
+    // Every call counted in your clue reading as it was made, Atlas on the photos it read.
+    const atlasRight = reads.filter((c, n) => c === truthOf(n)).length;
+    expect(loadQuickRecord()["on-the-ground"].free).toEqual({
+      runs: 1,
+      rounds: 5,
+      right: 3,
+      atlasPlayed: read,
+      atlasRight,
+    });
 
     // A worse game keeps the best.
     fireEvent.click(screen.getByRole("button", { name: "Play again" }));
@@ -231,8 +241,15 @@ describe("OnTheGround, today's game", () => {
     expect(screen.getByText(/The next game is dealt in 5h 12m\./)).toBeInTheDocument();
     await waitFor(() => expect(screen.getAllByTestId("ground-row")[0]).toHaveTextContent("Place"));
     expect(screen.getAllByTestId("ground-row")).toHaveLength(5);
-    // Today's game keeps its own result, apart from the free games' best.
+    // Today's game keeps its own result, apart from the free games' best, and is read into your
+    // clue reading from the day kept, never counted again as a free game.
     expect(localStorage.getItem(BEST_GROUND_KEY)).toBeNull();
+    expect(loadQuickRecord()["on-the-ground"].free.rounds).toBe(0);
+    expect(loadQuickRecord()["on-the-ground"].daily).toMatchObject({
+      runs: 1,
+      rounds: 5,
+      right: 3,
+    });
 
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "share", { value: undefined, configurable: true });

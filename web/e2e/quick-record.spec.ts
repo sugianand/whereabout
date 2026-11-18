@@ -224,3 +224,78 @@ test("Clue mix's calls count on Your map under each clue, the continent and the 
   await expect(page).toHaveURL(/\/clue-mix\/?$/);
   expect(errors).toEqual([]);
 });
+
+const GROUND_COVERS = [
+  "Built-up",
+  "Tree cover",
+  "Grassland",
+  "Permanent water bodies",
+  "Bare / sparse vegetation",
+];
+
+test("What's on the ground?'s free games and today's game count on Your map under the ground", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
+  const photo = page.getByTestId("ground-photo");
+  // Calls the photo on screen right or wrong, and returns Atlas's [right, read] on it from the card.
+  async function call(right: boolean) {
+    await expect(photo).toHaveAttribute("data-photo", /.+/);
+    const truth = BY_ID.get((await photo.getAttribute("data-photo"))!)!.landCover!;
+    const pick = right ? truth : truth === "Grassland" ? "Built-up" : "Grassland";
+    const button = page.getByTestId(`ground-${GROUND_COVERS.indexOf(pick) + 1}`);
+    await expect(button).toBeEnabled();
+    await button.click();
+    await expect(card.getByRole("heading")).toHaveText(right ? "Correct" : "Wrong");
+    const text = (await card.textContent())!;
+    if (text.includes("Atlas's clues named no ground cover")) return [0, 0] as const;
+    expect(text).toMatch(/Atlas read it as /);
+    return [text.includes(", and got it.") ? 1 : 0, 1] as const;
+  }
+
+  // A free game: two right, then three wrong.
+  await page.goto("./on-the-ground");
+  const atlas = [0, 0];
+  for (let n = 0; n < 5; n++) {
+    await expect(page.getByText(`Photo ${n + 1} of 5`, { exact: true })).toBeVisible();
+    const [r, p] = await call(n < 2);
+    atlas[0] += r;
+    atlas[1] += p;
+    await card.getByRole("button", { name: n === 4 ? "See the results" : "Next photo" }).click();
+  }
+  await expect(page.getByRole("heading", { level: 1, name: "2 of 5" })).toBeVisible();
+
+  // Today's game: one right call, then away. The day is counted from what it keeps.
+  await page.goto("./on-the-ground/daily");
+  const today = await call(true);
+
+  await page.goto("./map/");
+  const section = page.getByTestId("clue-reading");
+  const record = section.getByTestId("record-ground");
+  await expect(record.getByRole("heading", { name: "The ground" })).toBeVisible();
+  await expect(record.getByTestId("record-ground-on-the-ground")).toHaveText(
+    "2 What's on the ground? games, 1 of them today's",
+  );
+  // Clue mix hasn't been played, so it isn't listed, and no other clue has a card.
+  await expect(record.getByTestId("record-ground-clue-mix-ground")).toHaveCount(0);
+  await expect(section.getByTestId("record-climate")).toHaveCount(0);
+  const you = record.getByTestId("record-ground-you");
+  await expect(you).toHaveAttribute("data-right", "3");
+  await expect(you).toHaveAttribute("data-played", "6");
+  const them = record.getByTestId("record-ground-atlas");
+  await expect(them).toHaveAttribute("data-right", String(atlas[0] + today[0]));
+  await expect(them).toHaveAttribute("data-played", String(atlas[1] + today[1]));
+
+  // The card fits the screen, and leads to today's game.
+  const { width } = page.viewportSize()!;
+  const box = (await record.boundingBox())!;
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
+  await record.getByRole("link", { name: "Today's What's on the ground?" }).click();
+  await expect(page).toHaveURL(/\/on-the-ground\/daily\/?$/);
+  await expect(page.getByText("Photo 2 of 5", { exact: true })).toBeVisible();
+  expect(errors).toEqual([]);
+});

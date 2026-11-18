@@ -1,7 +1,7 @@
 /**
  * Atlas's quick-game record: how your picks in Further North and Odd one out, and your clue
- * reading in Left or right? (the road), Which climate? (the climate) and Clue mix (those two,
- * the continent and the ground), compare with Atlas's on the same photos, from the games played in this
+ * reading in Left or right? (the road), Which climate? (the climate), What's on the ground? (the
+ * ground) and Clue mix (all three and the continent), compare with Atlas's on the same photos, from the games played in this
  * browser. Clue mix is kept a clue at a time (`clue-mix-road` and so on), and `clueReading`
  * adds each clue up across the games that ask it.
  *
@@ -10,7 +10,8 @@
  *   `QUICK_RECORD_KEY`, so leaving mid-run still counts the rounds played;
  * - today's runs, read back from the days each game already keeps (src/lib/game/dailyRuns.ts),
  *   so nothing is counted twice: the daily screens never call `recordFreeRound`. Today's Which
- *   climate? keeps every call (./climateDaily.ts), and is read back call by call; today's Clue
+ *   climate? and What's on the ground? keep every call (./climateDaily.ts, ./groundDaily.ts), and
+ *   are read back call by call; today's Clue
  *   mix is split by clue from each step's place in the cycle (`clueDayTallies`).
  *
  * You are judged on every round you answered, Atlas on the rounds it played (it sits out a
@@ -22,6 +23,7 @@ import { loadClimateDays, type ClimateDay } from "./climateDaily";
 import { answeredSteps, loadClueDays, type ClueDay } from "./clueDaily";
 import { CLUE_CYCLE, clueAt, clueCycleFor, type ClueKind } from "./clueMix";
 import { loadDailyRuns, type DailyRun } from "./dailyRuns";
+import { loadGroundDays, type GroundDay } from "./groundDaily";
 import { NORTH_DAILY_KEY } from "./northDaily";
 import { ODD_DAILY_KEY } from "./oddDaily";
 import { SIDE_DAILY_KEY } from "./sideDaily";
@@ -34,6 +36,7 @@ export const RECORD_GAMES = [
   "odd-one-out",
   "left-right",
   "which-climate",
+  "on-the-ground",
   "clue-mix-road",
   "clue-mix-climate",
   "clue-mix-continent",
@@ -51,7 +54,7 @@ export const CLUE_SOURCES: Readonly<Record<ClueKind, readonly RecordGame[]>> = {
   road: ["left-right", "clue-mix-road"],
   climate: ["which-climate", "clue-mix-climate"],
   continent: ["clue-mix-continent"],
-  ground: ["clue-mix-ground"],
+  ground: ["on-the-ground", "clue-mix-ground"],
 };
 /** The rest: picking between photos. */
 export const PICK_GAMES = ["further-north", "odd-one-out"] as const satisfies readonly RecordGame[];
@@ -62,6 +65,7 @@ const DAILY_TALLIES: Record<RecordGame, () => Tally> = {
   "odd-one-out": () => dailyTally(loadDailyRuns(ODD_DAILY_KEY)),
   "left-right": () => dailyTally(loadDailyRuns(SIDE_DAILY_KEY)),
   "which-climate": () => climateDayTally(loadClimateDays()),
+  "on-the-ground": () => groundDayTally(loadGroundDays()),
   "clue-mix-road": () => clueDayTallies(loadClueDays()).road,
   "clue-mix-climate": () => clueDayTallies(loadClueDays()).climate,
   "clue-mix-continent": () => clueDayTallies(loadClueDays()).continent,
@@ -143,13 +147,20 @@ export function dailyTally(days: Readonly<Record<string, DailyRun>>): Tally {
   return tally;
 }
 
+/** A call kept whole by a five-photo clue game's day: right or wrong, the truth and Atlas's read. */
+interface KeptCall<T> {
+  correct: boolean;
+  truth: T;
+  atlas: T | null;
+}
+
 /**
- * Today's Which climate? games as a tally: each day kept is a game, each call a photo, and Atlas
- * is judged on the photos it gave a climate read for. A day started but not called is nothing.
+ * Days of a five-photo clue game as a tally: each day kept is a game, each call a photo, and
+ * Atlas is judged on the photos it gave a read for. A day started but not called is nothing.
  */
-export function climateDayTally(days: Readonly<Record<string, ClimateDay>>): Tally {
+function callDayTally<T>(days: Iterable<{ results: readonly KeptCall<T>[] }>): Tally {
   let tally = EMPTY_TALLY;
-  for (const { results } of Object.values(days)) {
+  for (const { results } of days) {
     if (results.length === 0) continue;
     const read = results.filter((r) => r.atlas !== null);
     tally = addTallies(tally, {
@@ -161,6 +172,16 @@ export function climateDayTally(days: Readonly<Record<string, ClimateDay>>): Tal
     });
   }
   return tally;
+}
+
+/** Today's Which climate? games as a tally (`callDayTally`). */
+export function climateDayTally(days: Readonly<Record<string, ClimateDay>>): Tally {
+  return callDayTally(Object.values(days));
+}
+
+/** Today's What's on the ground? games as a tally (`callDayTally`): Atlas reads only some covers. */
+export function groundDayTally(days: Readonly<Record<string, GroundDay>>): Tally {
+  return callDayTally(Object.values(days));
 }
 
 /**

@@ -76,6 +76,14 @@ const GAMES: Record<RecordGame, GameInfo> = {
     run: ["game", "games"],
     sitsOut: "Atlas sits out a photo when it said nothing about the climate",
   },
+  "on-the-ground": {
+    name: "What's on the ground?",
+    href: "/on-the-ground",
+    daily: "/on-the-ground/daily",
+    unit: "photo",
+    run: ["game", "games"],
+    sitsOut: "Atlas sits out a photo when none of its clues named a city, a skyline or a coast",
+  },
   "clue-mix-road": CLUE_MIX,
   "clue-mix-climate": CLUE_MIX,
   "clue-mix-continent": CLUE_MIX,
@@ -320,9 +328,9 @@ const GRID = "mt-4 grid gap-4 md:grid-cols-2";
 /**
  * You and Atlas in the quick games, and your clue reading: for Further North and Odd one out,
  * how many rounds you got right of those you answered and how many Atlas got right of those it
- * played; for each clue (the road, the climate, the continent), the same over every game that
- * asks it, so Clue mix's road calls count with Left or right?'s and its climate calls with Which
- * climate?'s. From the free runs and today's runs played in this browser
+ * played; for each clue (the road, the climate, the continent, the ground), the same over every
+ * game that asks it, so Clue mix's road calls count with Left or right?'s, its climate calls with
+ * Which climate?'s and its ground calls with What's on the ground?'s. From the free runs and today's runs played in this browser
  * (`lib/game/quickRecord.ts`). Read after mount, so the static page never guesses at it; each
  * section, and each clue, shows nothing until it has been played. Under the clue reading, the
  * climates you misread most (`ClimateMixUps`).
@@ -353,7 +361,7 @@ export default function QuickRecord({
         <RecordSection
           id="clue-reading"
           title="Your clue reading"
-          blurb="How often you've read the road, the climate and the continent, in the clue games and Clue mix, free runs and today's, against Atlas's own read of the same photos."
+          blurb="How often you've read the road, the climate, the continent and the ground, in the clue games and Clue mix, free runs and today's, against Atlas's own read of the same photos."
         >
           <ul className={GRID}>
             {clues.map((c) => (
