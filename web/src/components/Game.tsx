@@ -241,7 +241,11 @@ function PhotoPicker({
         const region = regionFromSlug(v);
         onPick(isTier(v) ? { tier: v } : region ? { region } : null);
       }}
-      className="pointer-events-auto max-w-32 rounded-full border border-chalk/30 bg-ocean-deep/60 py-1 pl-3 pr-1 text-xs font-semibold text-chalk backdrop-blur transition hover:border-chalk"
+      className="pointer-events-auto max-w-36 shrink-0 appearance-none rounded-full border border-chalk/30 bg-ocean-deep/60 bg-[length:10px_10px] bg-[right_0.7rem_center] bg-no-repeat py-1 pl-3 pr-7 text-xs font-semibold leading-[1.125rem] text-chalk backdrop-blur transition hover:border-chalk"
+      style={{
+        backgroundImage:
+          "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.5 3.5 5 7l3.5-3.5' fill='none' stroke='%23e8eef2' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")",
+      }}
     >
       <option value="any">Any photos</option>
       {tiers && (
