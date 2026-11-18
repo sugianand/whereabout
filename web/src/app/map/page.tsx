@@ -39,7 +39,10 @@ export default function YourMapPage() {
       </h1>
       <p className="mt-4 max-w-2xl text-lg text-chalk-dim">
         Every photo you&apos;ve played, where it was really taken, marked by how close your pin
-        landed. It stays in this browser and nowhere else.
+        landed. It stays in this browser and nowhere else.{" "}
+        <Link href="/album" className="font-semibold text-sonar underline-offset-2 hover:underline">
+          Your album →
+        </Link>
       </p>
       {/* Only what the closest calls need: where records live, which photos are dealt, and
           the continents a game can be played on. */}

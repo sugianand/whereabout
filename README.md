@@ -221,6 +221,11 @@ and of every quick game, so each way to play is one tap away before you've finis
 on one phone or laptop: each pins the same photo in turn behind a "Pass to …" screen that hides the
 last pin, then one reveal shows every numbered pin, Atlas's, and the running table. Five photos a
 game, the first turn moves one seat along each round, and the names are kept for the next game.
+**Your album** (at `/album`, linked from Your map and the results screen) collects every photo
+you've played under its continent, newest first, each with its picture, how close your pin landed
+and its credit, and counts how many of the game's photos you've found, in all and per continent.
+The photos still to find stay blank: each continent ends on a card counting them, with a game on
+that continent to go and find them.
 **Your map** (at `/map`) puts every photo you've played on one globe, each mark shaped and
 coloured by how close your pin landed (a circle, diamond, triangle or cross, so it reads without
 colour vision too), with the countries and continents you've seen counted and your rounds

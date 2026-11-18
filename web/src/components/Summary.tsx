@@ -831,6 +831,17 @@ export default function Summary({
       </Link>
 
       <Link
+        href="/album"
+        className="mt-4 block rounded-2xl border border-gold/40 p-5 transition hover:border-gold hover:bg-gold/5"
+      >
+        <span className="block font-sign text-2xl font-bold text-gold">Your album</span>
+        <span className="mt-1 block text-chalk-dim">
+          Every photo you&apos;ve played, collected by continent, and how many each still holds for
+          you to find.
+        </span>
+      </Link>
+
+      <Link
         href="/stamps"
         className="mt-4 block rounded-2xl border border-gold/40 p-5 transition hover:border-gold hover:bg-gold/5"
       >

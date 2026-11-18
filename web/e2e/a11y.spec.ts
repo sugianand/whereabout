@@ -71,6 +71,7 @@ const FIRST_SCREENS = [
   "./pass-and-play",
   "./today",
   "./map",
+  "./album",
   "./stamps",
   "./atlas",
   "./you",
@@ -88,7 +89,7 @@ for (const colorScheme of ["dark", "light"] as const) {
       });
     }
 
-    test("a whole game passes axe: the round, its help, the Games menu, a reveal, the results, then Your map, Today and Stamps", async ({
+    test("a whole game passes axe: the round, its help, the Games menu, a reveal, the results, then Your map, Your album, Today and Stamps", async ({
       page,
     }) => {
       test.setTimeout(120_000);
@@ -125,7 +126,7 @@ for (const colorScheme of ["dark", "light"] as const) {
       await expectAccessible(page, "the results");
 
       // The pages that read what the browser kept, now with a game in them.
-      for (const path of ["./map", "./today", "./stamps"]) {
+      for (const path of ["./map", "./album", "./today", "./stamps"]) {
         await page.goto(path);
         await page.waitForLoadState("networkidle");
         await expectAccessible(page, `${path} after a game`);
