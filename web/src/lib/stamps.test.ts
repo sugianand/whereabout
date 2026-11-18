@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { rememberClimateDay } from "@/lib/game/climateDaily";
 import { archiveDays } from "@/lib/game/dailyArchive";
+import { rememberGroundDay } from "@/lib/game/groundDaily";
 import { rememberLeftRight } from "@/lib/game/leftRight";
+import { rememberGround, type GroundResult } from "@/lib/game/onTheGround";
 import { EMPTY_TALLY, recordFreeRound, type Tally } from "@/lib/game/quickRecord";
 import { rememberSideDay } from "@/lib/game/sideDaily";
 import { rememberClimate, type ClimateResult } from "@/lib/game/whichClimate";
@@ -93,8 +95,10 @@ describe("readStamps", () => {
       "beat-atlas-on-the-ground",
       "road-reader",
       "climate-reader",
+      "ground-reader",
       "road-ahead",
       "climate-ahead",
+      "ground-ahead",
     ]);
     expect(stamps.every((s) => !s.earned)).toBe(true);
     // Every id read is one the store accepts.
@@ -276,19 +280,33 @@ const tally = (rounds: number, right: number, atlasPlayed: number, atlasRight: n
 
 const clues = (over: Partial<NonNullable<StampSources["clues"]>> = {}) =>
   sources({
-    clues: { bestRun: 0, bestClimate: 0, road: EMPTY_TALLY, climate: EMPTY_TALLY, ...over },
+    clues: {
+      bestRun: 0,
+      bestClimate: 0,
+      bestGround: 0,
+      road: EMPTY_TALLY,
+      climate: EMPTY_TALLY,
+      ground: EMPTY_TALLY,
+      ...over,
+    },
   });
 
 describe("clue stamps", () => {
   it("are all unearned with nothing played, counting toward a run and a whole game", () => {
     const stamps = readStamps(sources()).filter((s) => s.group === "clues");
-    expect(stamps.map((s) => s.earned)).toEqual([false, false, false, false]);
+    expect(stamps.map((s) => s.earned)).toEqual([false, false, false, false, false, false]);
     expect(byId(stamps, "road-reader").progress).toEqual({
       have: 0,
       need: ROAD_READER_RUN,
       unit: ["call in a row", "calls in a row"],
     });
     expect(byId(stamps, "climate-reader").progress?.need).toBe(5);
+    expect(byId(stamps, "ground-reader").progress).toEqual({
+      have: 0,
+      need: 5,
+      unit: ["photo right", "photos right"],
+    });
+    expect(byId(stamps, "ground-ahead").progress?.need).toBe(CLUE_PHOTOS);
     expect(byId(stamps, "road-ahead").progress?.need).toBe(CLUE_PHOTOS);
     expect(stamps.every((s) => s.note === null)).toBe(true);
   });
@@ -309,6 +327,38 @@ describe("clue stamps", () => {
     expect(four.progress?.have).toBe(4);
     expect(four.note).toBe("Right on 65% of the climates you've named");
     expect(byId(readStamps(clues({ bestClimate: 5 })), "climate-reader").earned).toBe(true);
+  });
+
+  it("earns the ground reader for five of five, with the rate named until then", () => {
+    const four = byId(
+      readStamps(clues({ bestGround: 4, ground: tally(16, 12, 6, 3) })),
+      "ground-reader",
+    );
+    expect(four.earned).toBe(false);
+    expect(four.progress?.have).toBe(4);
+    expect(toGo(four.progress!)).toBe("1 photo right to go");
+    expect(four.note).toBe("Right on 75% of the covers you've named");
+    // The climate's five of five earns nothing here, nor the ground's the climate reader.
+    const climate = readStamps(clues({ bestClimate: 5 }));
+    expect(byId(climate, "ground-reader").earned).toBe(false);
+    const ground = readStamps(clues({ bestGround: 5, ground: tally(5, 5, 2, 1) }));
+    expect(byId(ground, "ground-reader").earned).toBe(true);
+    expect(byId(ground, "ground-reader").note).toBeNull();
+    expect(byId(ground, "climate-reader").earned).toBe(false);
+  });
+
+  it("earns the ground ahead of Atlas by the same rule as the other clues", () => {
+    // Atlas reads only some covers: ahead over 40 photos, but it has read only 29 of them.
+    const short = byId(readStamps(clues({ ground: tally(40, 30, 29, 15) })), "ground-ahead");
+    expect(short.earned).toBe(false);
+    expect(short.progress).toMatchObject({ have: 29, need: CLUE_PHOTOS });
+    expect(short.note).toBe("So far: you 75%, Atlas 52%");
+    const ahead = byId(readStamps(clues({ ground: tally(45, 33, 30, 18) })), "ground-ahead");
+    expect(ahead.earned).toBe(true);
+    expect(ahead.progress).toBeNull();
+    const behind = byId(readStamps(clues({ ground: tally(30, 15, 30, 21) })), "ground-ahead");
+    expect(behind.earned).toBe(false);
+    expect(behind.note).toBe("Atlas is ahead of you by 20 points. Read on to pull ahead.");
   });
 
   it("earns a lead over Atlas only over thirty photos you both read", () => {
@@ -355,7 +405,14 @@ describe("loadClueSources", () => {
 
   it("is empty in a fresh browser", () => {
     const c = loadClueSources();
-    expect(c).toEqual({ bestRun: 0, bestClimate: 0, road: EMPTY_TALLY, climate: EMPTY_TALLY });
+    expect(c).toEqual({
+      bestRun: 0,
+      bestClimate: 0,
+      bestGround: 0,
+      road: EMPTY_TALLY,
+      climate: EMPTY_TALLY,
+      ground: EMPTY_TALLY,
+    });
   });
 
   it("takes the longer of the free best and a day's run, and only whole climate days", () => {
@@ -386,6 +443,49 @@ describe("loadClueSources", () => {
     recordFreeRound("left-right", { first: true, correct: true, atlas: false });
     recordFreeRound("left-right", { first: false, correct: false, atlas: true });
     expect(loadClueSources().road).toEqual(tally(2, 1, 2, 1));
+  });
+
+  it("takes the better of the free ground best and a whole day, never a practice best", () => {
+    const cover = (id: string, picked: GroundResult["picked"], truth: GroundResult["truth"]) => ({
+      id,
+      picked,
+      truth,
+      correct: picked === truth,
+      atlas: truth === "Built-up" ? ("Built-up" as const) : null,
+    });
+    rememberGround(2);
+    // A practice game of your mix-ups keeps its own best, which is no ground reader.
+    rememberGround(5, "whereabout:on-the-ground-mix-ups-best");
+    // Today's game is four of four so far: not a whole game.
+    rememberGroundDay(
+      TODAY,
+      ["a", "b", "c", "d"].map((id) => cover(id, "Tree cover", "Tree cover")),
+    );
+    rememberGroundDay("2026-11-09", [
+      cover("a", "Built-up", "Built-up"),
+      cover("b", "Permanent water bodies", "Permanent water bodies"),
+      cover("c", "Tree cover", "Grassland"),
+      cover("d", "Bare / sparse vegetation", "Bare / sparse vegetation"),
+      cover("e", "Built-up", "Built-up"),
+    ]);
+    let c = loadClueSources();
+    expect(c.bestGround).toBe(4);
+    // Both days are in the ground's reading: 9 calls, 8 right; Atlas read the two built-up.
+    expect(c.ground).toMatchObject({ rounds: 9, right: 8, atlasPlayed: 2, atlasRight: 2 });
+    rememberGround(5);
+    c = loadClueSources();
+    expect(c.bestGround).toBe(5);
+  });
+
+  it("counts Clue mix's ground steps with What's on the ground?'s calls", () => {
+    recordFreeRound("on-the-ground", { first: true, correct: true, atlas: null });
+    recordFreeRound("clue-mix-ground", { first: true, correct: false, atlas: true });
+    expect(loadClueSources().ground).toMatchObject({
+      rounds: 2,
+      right: 1,
+      atlasPlayed: 1,
+      atlasRight: 1,
+    });
   });
 
   it("counts Clue mix's road and climate calls with Left or right?'s and Which climate?'s", () => {

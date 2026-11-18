@@ -2,6 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { rememberClimateDay } from "@/lib/game/climateDaily";
+import { rememberGroundDay } from "@/lib/game/groundDaily";
 import { BEST_LEFT_RIGHT_KEY } from "@/lib/game/leftRight";
 import { rememberNameDay } from "@/lib/game/nameDaily";
 import { QUICK_RECORD_KEY } from "@/lib/game/quickRecord";
@@ -32,7 +33,7 @@ beforeEach(() => localStorage.clear());
 describe("Stamps", () => {
   it("shows every stamp uncollected on a first visit, with the next one up", async () => {
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
-    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^0 of 25 collected\.$/);
+    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^0 of 27 collected\.$/);
     expect(screen.getByRole("heading", { name: "Continents cleared" })).toBeInTheDocument();
     expect(screen.getByTestId("stamp-cleared-oceania")).toHaveAttribute("data-earned", "false");
     expect(screen.getByTestId("stamp-cleared-oceania-progress")).toHaveTextContent(
@@ -71,7 +72,7 @@ describe("Stamps", () => {
     );
     const { unmount } = render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
     const standing = await screen.findByTestId("stamps-standing");
-    expect(standing).toHaveTextContent("2 of 25 collected. 2 new stamps since you last looked.");
+    expect(standing).toHaveTextContent("2 of 27 collected. 2 new stamps since you last looked.");
     const oceania = screen.getByTestId("stamp-cleared-oceania");
     expect(oceania).toHaveAttribute("data-earned", "true");
     expect(within(oceania).getByText("New")).toBeInTheDocument();
@@ -92,7 +93,7 @@ describe("Stamps", () => {
     // The map forgotten, the stamp stays, no longer new.
     localStorage.removeItem(PLAYED_KEY);
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
-    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^2 of 25 collected\.$/);
+    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^2 of 27 collected\.$/);
     const kept = screen.getByTestId("stamp-cleared-oceania");
     expect(kept).toHaveAttribute("data-earned", "true");
     expect(within(kept).queryByText("New")).toBeNull();
@@ -105,7 +106,7 @@ describe("Stamps", () => {
     rememberOddDay("2026-11-10", { streak: 1, atlasRight: 2, atlasPlayed: 2, ended: "miss" });
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
     expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(
-      "1 of 25 collected. 1 new stamp since you last looked.",
+      "1 of 27 collected. 1 new stamp since you last looked.",
     );
     expect(screen.getByRole("heading", { name: "Beat Atlas" })).toBeInTheDocument();
     const won = screen.getByTestId("stamp-beat-atlas-name-country");
@@ -134,16 +135,37 @@ describe("Stamps", () => {
         atlas: "Temperate" as const,
       })),
     );
+    // Today's What's on the ground?, five of five, Atlas reading only the one built-up photo.
+    rememberGroundDay(
+      "2026-11-10",
+      (["Built-up", "Grassland", "Tree cover", "Grassland", "Tree cover"] as const).map(
+        (cover, i) => ({
+          id: `g${i}`,
+          picked: cover,
+          truth: cover,
+          correct: true,
+          atlas: cover === "Built-up" ? cover : null,
+        }),
+      ),
+    );
     // 40 free road calls, 30 right, Atlas 33 of 40: behind past thirty photos.
     const free = { runs: 3, rounds: 40, right: 30, atlasPlayed: 40, atlasRight: 33 };
-    localStorage.setItem(QUICK_RECORD_KEY, JSON.stringify({ "left-right": free }));
+    // 34 free ground calls, 27 right; Atlas read 29 of them: one photo short.
+    const ground = { runs: 7, rounds: 34, right: 27, atlasPlayed: 29, atlasRight: 12 };
+    localStorage.setItem(
+      QUICK_RECORD_KEY,
+      JSON.stringify({ "left-right": free, "on-the-ground": ground }),
+    );
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
     expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(
-      "2 of 25 collected. 2 new stamps since you last looked.",
+      "4 of 27 collected. 4 new stamps since you last looked.",
     );
     expect(screen.getByRole("heading", { name: "Reading the clues" })).toBeInTheDocument();
     expect(screen.getByTestId("stamp-road-reader")).toHaveAttribute("data-earned", "true");
     expect(screen.getByTestId("stamp-climate-reader")).toHaveAttribute("data-earned", "true");
+    expect(screen.getByTestId("stamp-ground-reader")).toHaveAttribute("data-earned", "true");
+    // Today's game makes it 30 photos read with Atlas: you 82% (32 of 39), Atlas 43% (13 of 30).
+    expect(screen.getByTestId("stamp-ground-ahead")).toHaveAttribute("data-earned", "true");
     const road = screen.getByTestId("stamp-road-ahead");
     expect(road).toHaveAttribute("data-earned", "false");
     expect(within(road).queryByRole("progressbar")).toBeNull();
@@ -163,6 +185,10 @@ describe("Stamps", () => {
     expect(within(intro).getByRole("link", { name: "Which climate?" })).toHaveAttribute(
       "href",
       "/which-climate",
+    );
+    expect(within(intro).getByRole("link", { name: "What's on the ground?" })).toHaveAttribute(
+      "href",
+      "/on-the-ground",
     );
   });
 });

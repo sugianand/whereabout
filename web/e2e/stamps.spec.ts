@@ -156,11 +156,15 @@ test("the clue games earn the clue stamps, and the group leads to them", async (
     // A free Left or right? run of 10, and 35 climates named with Atlas on all of them.
     localStorage.setItem("whereabout:left-right-best", "10");
     localStorage.setItem("whereabout:which-climate-best", "4");
+    // Five of five at What's on the ground?, but only from a practice game of the mix-ups.
+    localStorage.setItem("whereabout:on-the-ground-mix-ups-best", "5");
+    localStorage.setItem("whereabout:on-the-ground-best", "3");
     localStorage.setItem(
       "whereabout:quick-record",
       JSON.stringify({
         "which-climate": { runs: 7, rounds: 35, right: 28, atlasPlayed: 35, atlasRight: 21 },
         "left-right": { runs: 2, rounds: 12, right: 10, atlasPlayed: 12, atlasRight: 11 },
+        "on-the-ground": { runs: 8, rounds: 40, right: 22, atlasPlayed: 31, atlasRight: 21 },
       }),
     );
   });
@@ -173,15 +177,36 @@ test("the clue games earn the clue stamps, and the group leads to them", async (
     "12 of 30 photos read with Atlas",
   );
   await expect(page.getByTestId("stamp-road-ahead")).toContainText("So far: you 83%, Atlas 92%");
+  // The practice best is no ground reader; the free best counts toward it.
+  await expect(page.getByTestId("stamp-ground-reader")).toHaveAttribute("data-earned", "false");
+  await expect(page.getByTestId("stamp-ground-reader-progress")).toHaveText("3 of 5 photos right");
+  await expect(page.getByTestId("stamp-ground-reader")).toContainText(
+    "Right on 55% of the covers you've named",
+  );
+  // Past thirty photos with Atlas but behind it: the gap, and no progress bar.
+  const groundAhead = page.getByTestId("stamp-ground-ahead");
+  await expect(groundAhead).toHaveAttribute("data-earned", "false");
+  await expect(groundAhead).toContainText("Atlas is ahead of you by 13 points.");
+  await expect(groundAhead.getByRole("progressbar")).toHaveCount(0);
 
   await page.setViewportSize({ width: 320, height: 700 });
   await page.getByTestId("stamp-climate-ahead").scrollIntoViewIfNeeded();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  await groundAhead.scrollIntoViewIfNeeded();
+  const box = await groundAhead.boundingBox();
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(320);
 
   await page
     .getByTestId("stamps-clues-intro")
     .getByRole("link", { name: "Left or right?" })
     .click();
   await expect(page).toHaveURL(/\/left-right\/?$/);
+  await page.goBack();
+  await page
+    .getByTestId("stamps-clues-intro")
+    .getByRole("link", { name: "What's on the ground?" })
+    .click();
+  await expect(page).toHaveURL(/\/on-the-ground\/?$/);
   expect(errors).toEqual([]);
 });

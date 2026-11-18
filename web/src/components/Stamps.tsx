@@ -181,13 +181,20 @@ export default function Stamps({
                     className="underline underline-offset-2 hover:text-chalk"
                   >
                     Left or right?
-                  </Link>{" "}
-                  and{" "}
+                  </Link>
+                  ,{" "}
                   <Link
                     href="/which-climate"
                     className="underline underline-offset-2 hover:text-chalk"
                   >
                     Which climate?
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    href="/on-the-ground"
+                    className="underline underline-offset-2 hover:text-chalk"
+                  >
+                    What&apos;s on the ground?
                   </Link>
                   , free games and today&apos;s, and your clue reading on Your map.
                 </p>

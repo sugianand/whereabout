@@ -12,10 +12,12 @@
  *   by the same rule as Atlas's day on Today (`DayTally.versus`). Until then, the note gives the
  *   closest you came on the days kept.
  * - Reading the clues: a road reader for a Left or right? run of `ROAD_READER_RUN`, a climate
- *   reader for every photo right in a whole Which climate? game (free or today's; a practice game
- *   of your mix-ups is dealt from fewer climates and doesn't count), and one per clue for reading
- *   it better than Atlas over at least `CLUE_PHOTOS` photos, by Your map's clue reading
- *   (`lib/game/quickRecord.ts`), with Atlas's rate over the photos it read.
+ *   reader for every photo right in a whole Which climate? game and a ground reader for every
+ *   photo right in a whole What's on the ground? game (free or today's; a practice game of your
+ *   mix-ups is dealt from fewer climates or covers and doesn't count), and one per clue (the
+ *   road, the climate, the ground) for reading it better than Atlas over at least `CLUE_PHOTOS`
+ *   photos, by Your map's clue reading (`lib/game/quickRecord.ts`), with Atlas's rate over the
+ *   photos it read.
  *
  * The days every game keeps are the last `ARCHIVE_DAYS`, and the map's history is capped, so a
  * stamp could otherwise fade once its proof is gone. Each stamp is therefore written down under
@@ -30,6 +32,8 @@ import { isDayKey } from "@/lib/game/dailyArchive";
 import { regionSlug } from "@/lib/game/regions";
 import { formatDistance, formatPoints } from "@/lib/geo";
 import { loadClimateDays } from "@/lib/game/climateDaily";
+import { loadGroundDays } from "@/lib/game/groundDaily";
+import { GROUND_PHOTOS, loadBestGround } from "@/lib/game/onTheGround";
 import { loadBestLeftRight } from "@/lib/game/leftRight";
 import {
   clueReading,
@@ -65,8 +69,10 @@ export const CLUE_PHOTOS = 30;
 export const CLUE_STAMP_IDS = [
   "road-reader",
   "climate-reader",
+  "ground-reader",
   "road-ahead",
   "climate-ahead",
+  "ground-ahead",
 ] as const;
 export type ClueStampId = (typeof CLUE_STAMP_IDS)[number];
 
@@ -127,16 +133,21 @@ export interface ClueSources {
   bestRun: number;
   /** Most photos right in one whole Which climate? game, free or today's. */
   bestClimate: number;
+  /** Most photos right in one whole What's on the ground? game, free or today's. */
+  bestGround: number;
   /** Your clue reading against Atlas's, free and daily, Clue mix included (`clueReading`). */
   road: Tally;
   climate: Tally;
+  ground: Tally;
 }
 
 export const NO_CLUES: ClueSources = {
   bestRun: 0,
   bestClimate: 0,
+  bestGround: 0,
   road: { runs: 0, rounds: 0, right: 0, atlasPlayed: 0, atlasRight: 0 },
   climate: { runs: 0, rounds: 0, right: 0, atlasPlayed: 0, atlasRight: 0 },
+  ground: { runs: 0, rounds: 0, right: 0, atlasPlayed: 0, atlasRight: 0 },
 };
 
 const BADGE_ICONS: Record<BadgeId, string> = {
@@ -402,8 +413,34 @@ function aheadStamp(id: ClueStampId, tally: Tally, name: string, how: string, ic
   };
 }
 
+/**
+ * Every photo right in one whole game of five: `best` is the most right in a whole game kept,
+ * and until the stamp is earned the note gives the rate over every call of that clue so far.
+ */
+function wholeGameStamp(
+  id: ClueStampId,
+  best: number,
+  need: number,
+  tally: Tally,
+  name: string,
+  how: string,
+  icon: string,
+  named: string,
+): Stamp {
+  const rate = percent(tally.right, tally.rounds);
+  return {
+    id,
+    group: "clues",
+    name,
+    how,
+    icon,
+    earned: best >= need,
+    progress: { have: Math.min(best, need), need, unit: ["photo right", "photos right"] },
+    note: best < need && rate !== null ? `Right on ${rate}% of the ${named} you've named` : null,
+  };
+}
+
 function clueStamps({ clues = NO_CLUES }: StampSources): Stamp[] {
-  const climateRate = percent(clues.climate.right, clues.climate.rounds);
   return [
     {
       id: "road-reader",
@@ -419,23 +456,26 @@ function clueStamps({ clues = NO_CLUES }: StampSources): Stamp[] {
       },
       note: null,
     },
-    {
-      id: "climate-reader",
-      group: "clues",
-      name: "Climate reader",
-      how: `Name the climate of all ${CLIMATE_PHOTOS} photos of a Which climate? game`,
-      icon: "🌦️",
-      earned: clues.bestClimate >= CLIMATE_PHOTOS,
-      progress: {
-        have: Math.min(clues.bestClimate, CLIMATE_PHOTOS),
-        need: CLIMATE_PHOTOS,
-        unit: ["photo right", "photos right"],
-      },
-      note:
-        clues.bestClimate < CLIMATE_PHOTOS && climateRate !== null
-          ? `Right on ${climateRate}% of the climates you've named`
-          : null,
-    },
+    wholeGameStamp(
+      "climate-reader",
+      clues.bestClimate,
+      CLIMATE_PHOTOS,
+      clues.climate,
+      "Climate reader",
+      `Name the climate of all ${CLIMATE_PHOTOS} photos of a Which climate? game`,
+      "🌦️",
+      "climates",
+    ),
+    wholeGameStamp(
+      "ground-reader",
+      clues.bestGround,
+      GROUND_PHOTOS,
+      clues.ground,
+      "Ground reader",
+      `Name the ground of all ${GROUND_PHOTOS} photos of a What's on the ground? game`,
+      "🌱",
+      "covers",
+    ),
     aheadStamp(
       "road-ahead",
       clues.road,
@@ -449,6 +489,13 @@ function clueStamps({ clues = NO_CLUES }: StampSources): Stamp[] {
       "Climate ahead of Atlas",
       `Read the climate better than Atlas over at least ${CLUE_PHOTOS} photos`,
       "🌡️",
+    ),
+    aheadStamp(
+      "ground-ahead",
+      clues.ground,
+      "Ground ahead of Atlas",
+      `Read what covers the ground better than Atlas over at least ${CLUE_PHOTOS} photos`,
+      "🌳",
     ),
   ];
 }
@@ -466,20 +513,27 @@ export function readStamps(sources: StampSources): Stamp[] {
 
 /**
  * What the clue games keep in this browser, for `StampSources.clues`: the free bests and the
- * days each daily keeps (only whole Which climate? days), and Your map's clue reading.
+ * days each daily keeps (only whole Which climate? and What's on the ground? days), and Your
+ * map's clue reading. A practice game of your mix-ups keeps its best under its own key, so it
+ * is never read here.
  */
 export function loadClueSources(): ClueSources {
   const runs = Object.values(loadSideDays()).map((d) => d.streak);
   const games = Object.values(loadClimateDays())
     .filter((d) => d.results.length >= CLIMATE_PHOTOS)
     .map((d) => d.results.filter((r) => r.correct).length);
+  const grounds = Object.values(loadGroundDays())
+    .filter((d) => d.results.length >= GROUND_PHOTOS)
+    .map((d) => d.results.filter((r) => r.correct).length);
   // The same figures as Your map's clue reading: Clue mix's calls count with each clue's game.
   const reading = clueReading(loadQuickRecord());
   return {
     bestRun: Math.max(loadBestLeftRight(), ...runs),
     bestClimate: Math.max(loadBestClimate(), ...games),
+    bestGround: Math.max(loadBestGround(), ...grounds),
     road: reading.road.total,
     climate: reading.climate.total,
+    ground: reading.ground.total,
   };
 }
 
