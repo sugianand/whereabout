@@ -190,6 +190,12 @@ Five photos a game; your best game is kept in your browser.
 five photos on the same UTC day with the same even deal: one try a day, each call kept as it is
 made so a reload picks up at the next photo, and shared as a score and a square a photo, naming no
 place or cover.
+After a whole free game, *Challenge a friend* sends a link naming the five photos and your call
+on each as one letter a cover (the same `b`/`t`/`g`/`w`/`s` a Clue mix link writes for the
+ground): the friend plays the same five in the same order, sees your call marked *Friend* on the
+band only once they've made theirs, and can send theirs back with a head-to-head picture. The score
+to beat is worked out from your calls against each photo's own WorldCover label, never carried in
+the link, and a challenge never counts as a best.
 **Today** (at `/today`, in the Games menu and on the results screen) puts every daily game on one
 page: the Daily Five, Further North, Odd one out, Which way?, How far apart?, Name the country,
 Hot and cold, Line them up, Close-up, Left or right?, Which climate?, Clue mix and What's on the ground?, each with where it stands in your browser (not started, under way or its result), the time to the next deal, and one
