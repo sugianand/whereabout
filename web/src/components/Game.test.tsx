@@ -5,6 +5,7 @@ import atlasData from "@/data/atlas.json";
 import catalog from "@/data/photos.json";
 import { loadChallengeLog } from "@/lib/challengeLog";
 import { LocalBackend } from "@/lib/game/backends";
+import { bundledById, bundledContinents } from "@/lib/game/bundled";
 import { pickDaily } from "@/lib/game/daily";
 import { ARCHIVE_NOTICE } from "@/lib/game/dailyArchive";
 import { encodeChallenge } from "@/lib/game/challenge";
@@ -78,6 +79,8 @@ describe("Game", { timeout: 20000 }, () => {
     expect(modeTitle({ kind: "daily", day: "2026-10-09" })).toBe("Daily Five, October 9");
     expect(modeTitle({ kind: "fresh", game: 2 })).toBe("Fresh game");
     expect(modeTitle({ kind: "tier", tier: "hard", game: 1 })).toBe("Hard game");
+    expect(modeTitle({ kind: "find", region: null, game: 1 })).toBe("Find the rest");
+    expect(modeTitle({ kind: "find", region: "Asia", game: 1 })).toBe("Find the rest of Asia");
   });
 
   it("offers Pocket Atlas from the first screen, and hides it during the reveal", async () => {
@@ -594,6 +597,125 @@ describe("Game", { timeout: 20000 }, () => {
       );
       await screen.findByText("Fresh game", {}, WAIT);
       expect(screen.queryByRole("combobox", { name: /Which photos/ })).toBeNull();
+    });
+  });
+
+  describe("find the rest of your album", () => {
+    const srcToId = new Map((catalog as CatalogPhoto[]).map((p) => [p.imageUrl, p.id]));
+    const shownId = async () =>
+      srcToId.get((await screen.findByRole("img", {}, WAIT)).getAttribute("src")!);
+    const albumIds = bundledGame.deck.ids.filter((id) => Object.hasOwn(bundledContinents, id));
+
+    /** Every album photo found except `missing`, as your map keeps them. */
+    function foundAllBut(missing: readonly string[]) {
+      const skip = new Set(missing);
+      const history = albumIds
+        .filter((id) => !skip.has(id))
+        .map((id) => {
+          const p = bundledById.get(id)!.photo;
+          return {
+            id,
+            lng: p.lng,
+            lat: p.lat,
+            place: p.place,
+            country: p.country,
+            km: 100,
+            score: 4000,
+            day: "2026-10-01",
+          };
+        });
+      localStorage.setItem(PLAYED_KEY, JSON.stringify(history));
+    }
+
+    async function playOut(map: FakeMap, seen: string[]) {
+      for (let i = 0; i < ROUNDS_PER_GAME; i++) {
+        seen.push((await shownId())!);
+        const card = await playRound(map, { lng: 0, lat: 0 });
+        fireEvent.click(
+          within(card).getByRole("button", { name: /^(Next photo|See your results)$/ }),
+        );
+      }
+    }
+
+    it("opens from ?find on the photos still missing, then fills the game with found ones", async () => {
+      const missing = [albumIds[3], albumIds[40], albumIds[100]];
+      foundAllBut(missing);
+      window.history.replaceState(null, "", "/?find");
+      render(<Game {...bundledGame} continents={bundledContinents} today={TODAY} />);
+      const map = await mapReady();
+      expect(await screen.findByText("Find the rest", {}, WAIT)).toBeInTheDocument();
+      expect(screen.getByTestId("find-left")).toHaveTextContent(
+        "3 photos still missing from your album",
+      );
+      expect(window.location.search).toBe("?find");
+
+      const seen: string[] = [];
+      await playOut(map, seen);
+      // The three missing photos come first; the other two are photos already found.
+      expect(new Set(seen.slice(0, 3))).toEqual(new Set(missing));
+      expect(new Set(seen).size).toBe(ROUNDS_PER_GAME);
+      for (const id of seen.slice(3)) expect(albumIds).toContain(id);
+      // The album is full now: nothing more to find, so the next game is a fresh one.
+      await screen.findByRole("button", { name: "Play a fresh game" }, WAIT);
+      expect(screen.queryByRole("button", { name: /^Find more/ })).toBeNull();
+      expect(screen.queryByRole("button", { name: /^Find the rest/ })).toBeNull();
+    });
+
+    it("deals one continent's missing photos from ?find=, and another game there while any are left", async () => {
+      const region = offeredRegions(bundledGame.deck.regions)[0];
+      const inRegion = bundledGame.deck.regions[region]!;
+      const elsewhere = albumIds.find((id) => bundledContinents[id] !== region)!;
+      const missing = [...inRegion.slice(0, 7), elsewhere];
+      foundAllBut(missing);
+      window.history.replaceState(null, "", `/?find=${regionSlug(region)}`);
+      render(<Game {...bundledGame} continents={bundledContinents} today={TODAY} />);
+      const map = await mapReady();
+      expect(await screen.findByText(`Find the rest of ${region}`, {}, WAIT)).toBeInTheDocument();
+      expect(screen.getByTestId("find-left")).toHaveTextContent(
+        `7 photos still missing from your album in ${region}`,
+      );
+
+      const seen: string[] = [];
+      await playOut(map, seen);
+      for (const id of seen) expect(inRegion.slice(0, 7)).toContain(id);
+      // Two still missing there, and the one elsewhere: both ways to find them are offered.
+      fireEvent.click(await screen.findByRole("button", { name: /^Find the rest/ }, WAIT));
+      expect(await screen.findByText("Find the rest", {}, WAIT)).toBeInTheDocument();
+      expect(screen.getByTestId("find-left")).toHaveTextContent(
+        "3 photos still missing from your album",
+      );
+      await waitFor(() => expect(window.location.search).toBe("?find"));
+    });
+
+    it("offers the rest from a fresh game's results, and opens a fresh game when nothing is missing", async () => {
+      foundAllBut([]);
+      window.history.replaceState(null, "", "/?find");
+      const full = render(<Game {...bundledGame} continents={bundledContinents} today={TODAY} />);
+      await mapReady();
+      expect(await screen.findAllByText("Fresh game", {}, WAIT)).not.toHaveLength(0);
+      await waitFor(() => expect(window.location.search).toBe(""));
+      full.unmount();
+
+      localStorage.clear();
+      render(<Game {...bundledGame} continents={bundledContinents} today={TODAY} />);
+      const map = await mapReady();
+      await screen.findByText("Fresh game", {}, WAIT);
+      await playOut(map, []);
+      const left = albumIds.length - ROUNDS_PER_GAME;
+      const find = await screen.findByRole("button", { name: /^Find the rest/ }, WAIT);
+      expect(find).toHaveTextContent(
+        `${left.toLocaleString("en-US")} photos are still missing from your album`,
+      );
+      fireEvent.click(find);
+      expect(await screen.findByText("Find the rest", {}, WAIT)).toBeInTheDocument();
+    });
+
+    it("has no find game without the album's continents, as with the API server", async () => {
+      foundAllBut([albumIds[0]]);
+      window.history.replaceState(null, "", "/?find");
+      render(<Game {...bundledGame} today={TODAY} />);
+      await mapReady();
+      expect(await screen.findAllByText("Fresh game", {}, WAIT)).not.toHaveLength(0);
     });
   });
 

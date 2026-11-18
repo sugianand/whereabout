@@ -128,6 +128,22 @@ export default function Album({ deck, continents, history, loadRecord }: AlbumPr
             </Link>
           </p>
         )}
+        {album.found > 0 && album.found < album.total && (
+          <p className="mt-4 text-chalk-dim">
+            A game of five photos you haven&apos;t found yet, from anywhere.{" "}
+            <Link
+              href="/?find"
+              className="font-semibold text-sonar underline-offset-2 hover:underline"
+            >
+              Find the rest →
+            </Link>
+          </p>
+        )}
+        {album.total > 0 && album.found >= album.total && (
+          <p className="mt-4 font-semibold text-gold">
+            Your album is full: you&apos;ve found every photo the game deals.
+          </p>
+        )}
       </section>
 
       {album.continents.map((row) => (
@@ -254,10 +270,10 @@ function ContinentPage({
             <span className="text-chalk-dim">{left === 1 ? "photo" : "photos"} still to find</span>
             {playable && (
               <Link
-                href={`/?region=${regionSlug(row.continent)}`}
+                href={`/?find=${regionSlug(row.continent)}`}
                 className="font-semibold text-sonar underline-offset-2 hover:underline"
               >
-                Play {row.continent} →
+                Find them in {row.continent} →
               </Link>
             )}
           </li>

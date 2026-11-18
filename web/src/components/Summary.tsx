@@ -109,6 +109,10 @@ type SummaryProps = {
   onRematch?: () => void;
   /** Start a Blitz game from the quick games; omitted, Blitz isn't offered there. */
   onPlayBlitz?: () => void;
+  /** Photos still missing from your album, counted as the game ended. */
+  albumLeft?: number;
+  /** Deal five of the photos still missing from your album; unset when none are. */
+  onFindRest?: () => void;
   /** Where the quick games' Country Streak opens; omitted, it isn't offered there. */
   streakHref?: string;
 };
@@ -493,6 +497,8 @@ export default function Summary({
   rematch,
   onRematch,
   onPlayBlitz,
+  albumLeft,
+  onFindRest,
   streakHref,
 }: SummaryProps) {
   const t = totals(results);
@@ -829,6 +835,20 @@ export default function Summary({
           the countries you&apos;ve seen.
         </span>
       </Link>
+
+      {onFindRest && albumLeft !== undefined && albumLeft > 0 && (
+        <button
+          type="button"
+          onClick={onFindRest}
+          className="mt-4 block w-full rounded-2xl border border-gold/40 p-5 text-left transition hover:border-gold hover:bg-gold/5"
+        >
+          <span className="block font-sign text-2xl font-bold text-gold">Find the rest</span>
+          <span className="mt-1 block text-chalk-dim">
+            {albumLeft === 1 ? "1 photo is" : `${albumLeft.toLocaleString("en-US")} photos are`}{" "}
+            still missing from your album. Five of them, dealt for you.
+          </span>
+        </button>
+      )}
 
       <Link
         href="/album"

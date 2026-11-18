@@ -92,15 +92,63 @@ test("the photos of a game land in the album under their continents, with their 
   expect(errors).toEqual([]);
 });
 
-test("a continent's blank card leads to a game on that continent", async ({ page }) => {
+test("a continent's blank card deals a game of the photos still missing there", async ({
+  page,
+}) => {
   await page.goto("./album/");
-  const play = page
-    .getByTestId("album-left")
-    .getByRole("link", { name: /^Play .+ →$/ })
-    .first();
-  await expect(play).toHaveAttribute("href", /\?region=[a-z-]+$/);
-  await play.click();
+  const card = page.getByTestId("album-left").filter({ has: page.getByRole("link") }).first();
+  const left = (await card.locator("span").first().textContent())!.trim();
+  const find = card.getByRole("link", { name: /^Find them in .+ →$/ });
+  await expect(find).toHaveAttribute("href", /\?find=[a-z-]+$/);
+  const continent = (await find.textContent())!.match(/^Find them in (.+) →$/)![1];
+  await find.click();
   await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
+  await expect(page.getByText(`Find the rest of ${continent}`, { exact: true })).toBeVisible();
+  await expect(page.getByTestId("find-left")).toHaveText(
+    `${left} photos still missing from your album in ${continent}`,
+  );
+});
+
+test("find the rest deals photos the album is missing, and the album fills from it", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+
+  await page.goto("./?daily");
+  const card = await playRound(page);
+  await expect(card).toBeVisible();
+  const first = JSON.parse(
+    (await page.evaluate(() => localStorage.getItem("whereabout:played"))) ?? "[]",
+  ) as { id: string }[];
+  expect(first).toHaveLength(1);
+
+  await page.goto("./album/");
+  await expect(page.getByTestId("album-found")).toHaveText("1");
+  const total = Number(
+    (await page.getByText(/of [\d,]+ photos found/).textContent())!
+      .match(/of ([\d,]+)/)![1]
+      .replace(/,/g, ""),
+  );
+  await page.getByRole("link", { name: "Find the rest →" }).click();
+  await expect(page).toHaveURL(/\?find$/);
+  await expect(page.getByText("Find the rest", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("find-left")).toHaveText(
+    `${(total - 1).toLocaleString("en-US")} photos still missing from your album`,
+  );
+  for (let round = 1; round <= 2; round++) {
+    const played = await playRound(page);
+    if (round < 2) await played.getByRole("button", { name: "Next photo" }).click();
+  }
+  const kept = JSON.parse(
+    (await page.evaluate(() => localStorage.getItem("whereabout:played"))) ?? "[]",
+  ) as { id: string }[];
+  // Two new photos: the one already found was never dealt again.
+  expect(new Set(kept.map((p) => p.id)).size).toBe(3);
+
+  await page.goto("./album/");
+  await expect(page.getByTestId("album-found")).toHaveText("3");
+  expect(errors).toEqual([]);
 });
 
 test("a found photo opens large with the day found and both distances, and turns through its continent", async ({

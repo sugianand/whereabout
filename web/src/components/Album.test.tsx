@@ -71,10 +71,12 @@ describe("Album", () => {
     // Every continent still shows what it holds, with a game there when it can fill one.
     const asia = section("Asia");
     expect(within(asia).getByText("0 of 2 found")).toBeInTheDocument();
-    expect(within(asia).getByRole("link", { name: "Play Asia →" })).toHaveAttribute(
+    expect(within(asia).getByRole("link", { name: "Find them in Asia →" })).toHaveAttribute(
       "href",
-      "/?region=asia",
+      "/?find=asia",
     );
+    // Nothing found yet: a first game, not "find the rest".
+    expect(screen.queryByRole("link", { name: "Find the rest →" })).toBeNull();
     expect(within(section("Antarctica")).queryByRole("link")).toBeNull();
   });
 
@@ -118,6 +120,26 @@ describe("Album", () => {
     );
     expect(within(section("Asia")).getByText("2 of 2 found")).toBeInTheDocument();
     expect(within(section("Asia")).queryByTestId("album-left")).toBeNull();
+    // The rest of the album is still to find, from anywhere.
+    expect(screen.getByRole("link", { name: "Find the rest →" })).toHaveAttribute(
+      "href",
+      "/?find",
+    );
+  });
+
+  it("says when the album is full, with nothing left to find", () => {
+    const all = Object.keys(continents).map((id) => played(id));
+    render(
+      <Album
+        deck={deck}
+        continents={continents}
+        history={all}
+        loadRecord={vi.fn(async (id: string) => record(id))}
+      />,
+    );
+    expect(screen.getByText(/Your album is full/)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Find/ })).toBeNull();
+    expect(screen.queryByTestId("album-left")).toBeNull();
   });
 
   it("shows a continent's first photos, then all of them, loading the rest only when asked", async () => {

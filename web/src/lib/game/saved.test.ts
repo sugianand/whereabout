@@ -141,6 +141,10 @@ describe("parseSaved", () => {
     expect(tamper((g) => (g.v = 2))).toBeNull();
     expect(tamper((g) => (g.mode = { kind: "tier", tier: "impossible", game: 1 }))).toBeNull();
     expect(tamper((g) => (g.mode = { kind: "region", region: "Atlantis", game: 1 }))).toBeNull();
+    expect(tamper((g) => (g.mode = { kind: "find", region: null, game: 1 }))).not.toBeNull();
+    expect(tamper((g) => (g.mode = { kind: "find", region: "Asia", game: 2 }))).not.toBeNull();
+    expect(tamper((g) => (g.mode = { kind: "find", region: "Atlantis", game: 1 }))).toBeNull();
+    expect(tamper((g) => (g.mode = { kind: "find", game: 1 }))).toBeNull();
     expect(
       tamper((g) => (g.mode = { kind: "daily", day: "2026-10-20", archive: true })),
     ).not.toBeNull();
@@ -292,6 +296,11 @@ describe("sameKindOfGame", () => {
         { kind: "region", region: "Europe", game: 1 },
       ),
     ).toBe(false);
+    const find = (region: "Asia" | null, game = 1): GameMode => ({ kind: "find", region, game });
+    expect(sameKindOfGame(find(null), find(null, 4))).toBe(true);
+    expect(sameKindOfGame(find("Asia"), find("Asia", 2))).toBe(true);
+    expect(sameKindOfGame(find("Asia"), find(null))).toBe(false);
+    expect(sameKindOfGame(find(null), FRESH)).toBe(false);
   });
 });
 

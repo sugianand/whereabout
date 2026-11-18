@@ -3,7 +3,17 @@ import { describe, expect, it } from "vitest";
 import type { Continent } from "@/lib/continents";
 import type { PlayedPhoto } from "@/lib/playedMap";
 
-import { SWIPE_PX, buildAlbum, eachLimited, percentFound, stepIn, swipeStep } from "./album";
+import {
+  SWIPE_PX,
+  buildAlbum,
+  dealMissing,
+  eachLimited,
+  findPool,
+  missingFrom,
+  percentFound,
+  stepIn,
+  swipeStep,
+} from "./album";
 
 function played(id: string, over: Partial<PlayedPhoto> = {}): PlayedPhoto {
   return {
@@ -124,5 +134,54 @@ describe("swipeStep", () => {
     expect(swipeStep(-(SWIPE_PX - 1), 0)).toBe(0);
     expect(swipeStep(0, 0)).toBe(0);
     expect(swipeStep(-80, 120)).toBe(0);
+  });
+});
+
+describe("find the rest", () => {
+  const deckIds = ["e1", "x1", "e2", "a1", "e3", "o1"];
+  const regions = { Europe: ["e1", "e2", "e3"], Asia: ["a1"] };
+
+  it("deals from every photo the album holds, or from one continent's game", () => {
+    // x1 has no continent, so it is not in the album and finding it fills nothing.
+    expect(findPool(deckIds, continents, null, regions)).toEqual(["e1", "e2", "a1", "e3", "o1"]);
+    expect(findPool(deckIds, continents, "Europe", regions)).toEqual(["e1", "e2", "e3"]);
+    expect(findPool(deckIds, continents, "Africa", regions)).toEqual([]);
+  });
+
+  it("counts as missing only the photos never revealed", () => {
+    expect(missingFrom(["e1", "e2", "e3"], [played("e2"), played("a1")])).toEqual(["e1", "e3"]);
+  });
+
+  it("deals only missing photos while there are enough", () => {
+    const pool = Array.from({ length: 20 }, (_, i) => `p${i}`);
+    const history = pool.slice(0, 10).map((id) => played(id));
+    for (let seed = 0; seed < 20; seed++) {
+      const dealt = dealMissing(pool, history, [], 5, () => seed / 20);
+      expect(dealt).toHaveLength(5);
+      expect(new Set(dealt).size).toBe(5);
+      for (const id of dealt) expect(pool.slice(10)).toContain(id);
+    }
+  });
+
+  it("prefers missing photos not dealt lately", () => {
+    const pool = Array.from({ length: 10 }, (_, i) => `p${i}`);
+    const recent = ["p0", "p1", "p2", "p3", "p4"];
+    expect(new Set(dealMissing(pool, [], recent, 5, () => 0.3))).toEqual(
+      new Set(["p5", "p6", "p7", "p8", "p9"]),
+    );
+  });
+
+  it("deals the last few missing first and fills the game with found photos", () => {
+    const pool = Array.from({ length: 12 }, (_, i) => `p${i}`);
+    const history = pool.filter((id) => id !== "p4" && id !== "p9").map((id) => played(id));
+    const dealt = dealMissing(pool, history, [], 5, () => 0.5);
+    expect(dealt).toHaveLength(5);
+    expect(new Set(dealt.slice(0, 2))).toEqual(new Set(["p4", "p9"]));
+    expect(new Set(dealt).size).toBe(5);
+    for (const id of dealt) expect(pool).toContain(id);
+  });
+
+  it("never deals more than the pool holds", () => {
+    expect(dealMissing(["e1", "e2"], [played("e1")], [], 5)).toEqual(["e2", "e1"]);
   });
 });

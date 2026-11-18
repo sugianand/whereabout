@@ -12,6 +12,7 @@ import {
   useState,
 } from "react";
 
+import { dealMissing, findPool, missingFrom } from "@/lib/album";
 import { ApiBackend, LocalBackend } from "@/lib/game/backends";
 import {
   BLITZ_SECONDS,
@@ -91,6 +92,7 @@ export function modeTitle(mode: GameMode): string {
   if (mode.kind === "fresh") return "Fresh game";
   if (mode.kind === "tier") return `${TIER_NAMES[mode.tier]} game`;
   if (mode.kind === "region") return `${mode.region} game`;
+  if (mode.kind === "find") return mode.region ? `Find the rest of ${mode.region}` : "Find the rest";
   if (mode.kind === "challenge")
     return isTimedChallenge(mode.challenge) ? "A friend's Blitz challenge" : "A friend's challenge";
   if (mode.kind === "blitz") return "Blitz";
@@ -119,6 +121,11 @@ type GameProps = {
   backendFor?: (photos: CatalogPhoto[]) => GameBackend;
   /** For tests: load records without the network. Defaults to fetching the static files. */
   loadRecords?: (ids: string[]) => Promise<GameRecord[]>;
+  /**
+   * Each dealt photo's continent: the album's photos (`lib/album.ts`), so a game can be dealt
+   * from the ones still missing from it. Without it there is no "find the rest" game.
+   */
+  continents?: Record<string, Continent>;
 };
 
 /** True when the page URL asks for a Daily Five (`?daily`, or `?daily=2026-10-20` for a past one). */
@@ -147,6 +154,19 @@ function urlRegion(): Continent | null {
   return regionFromSlug(new URLSearchParams(window.location.search).get("region"));
 }
 
+/**
+ * The "find the rest" game the page URL asks for: `?find` for the whole album, `?find=europe`
+ * for one continent's page; null without `find`, or when it names no continent.
+ */
+function urlFind(): { region: Continent | null } | null {
+  const params = new URLSearchParams(window.location.search);
+  if (!params.has("find")) return null;
+  const value = params.get("find") ?? "";
+  if (value === "") return { region: null };
+  const region = regionFromSlug(value);
+  return region ? { region } : null;
+}
+
 /** The friend's challenge the page URL carries (`?challenge=`), or null without one. */
 function urlChallenge(deckIds: readonly string[]): ReturnType<typeof parseChallenge> | null {
   const value = new URLSearchParams(window.location.search).get(CHALLENGE_PARAM);
@@ -173,7 +193,9 @@ function syncUrl(mode: GameMode) {
   else url.searchParams.delete(CHALLENGE_PARAM);
   if (mode.kind === "blitz") url.searchParams.set("blitz", "");
   else url.searchParams.delete("blitz");
-  const search = url.search.replace(/(daily|blitz)=(?=&|$)/g, "$1");
+  if (mode.kind === "find") url.searchParams.set("find", mode.region ? regionSlug(mode.region) : "");
+  else url.searchParams.delete("find");
+  const search = url.search.replace(/(daily|blitz|find)=(?=&|$)/g, "$1");
   const next = `${url.pathname}${search}${url.hash}`;
   if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
     window.history.replaceState(window.history.state, "", next);
@@ -243,12 +265,31 @@ function PhotoPicker({
   );
 }
 
-export default function Game({ apiUrl, deck, start, today, backendFor, loadRecords }: GameProps) {
+export default function Game({
+  apiUrl,
+  deck,
+  start,
+  today,
+  backendFor,
+  loadRecords,
+  continents,
+}: GameProps) {
   // Tiers and continents choose which photos a game deals, so they only exist when the browser
   // deals them.
   const tiers = apiUrl ? null : deck.tiers;
   const regions: Regions = useMemo(() => (apiUrl ? {} : (deck.regions ?? {})), [apiUrl, deck]);
   const regionList = useMemo(() => offeredRegions(regions), [regions]);
+  // The album's photos, for "find the rest" games; dealt by the browser, so not with the API.
+  const album = apiUrl ? undefined : continents;
+  /** The photos a find game on `region` (or anywhere) deals from, and how many are missing. */
+  const findLeft = useCallback(
+    (region: Continent | null) => {
+      if (!album) return { pool: [] as string[], left: 0 };
+      const pool = findPool(deck.ids, album, region, regions);
+      return { pool, left: missingFrom(pool, loadPlayed()).length };
+    },
+    [album, deck.ids, regions],
+  );
   // The mode is decided in the browser after hydration: the URL, today's date and the photos
   // this browser played recently are all unknown when the static page is built.
   const [mode, setMode] = useState<GameMode | null>(null);
@@ -297,6 +338,10 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   // The rematch against Atlas the summary offers, worked out as each game ends (see `next`):
   // null until five photos Atlas beat the player on are waiting (src/lib/game/rematch.ts).
   const [rematchOffer, setRematchOffer] = useState<Challenge | null>(null);
+  // Photos still missing from the album when the game ended, for the summary's "find the rest".
+  const [albumLeft, setAlbumLeft] = useState(0);
+  // How many were missing when a find game was dealt, for its header.
+  const [findCount, setFindCount] = useState<number | null>(null);
 
   useEffect(() => {
     if (mode) return;
@@ -310,6 +355,15 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
       const tier = kind === "fresh" && tiers ? urlTier() : null;
       const wanted = kind === "fresh" && !tier ? urlRegion() : null;
       const region = wanted && regions[wanted] ? wanted : null;
+      // A find game needs a photo still missing from the album, on a continent that can fill a
+      // game; otherwise the address opens a fresh game.
+      const findAsked = kind === "fresh" && !tier && !wanted && !blitz ? urlFind() : null;
+      const find =
+        findAsked &&
+        (findAsked.region === null || regions[findAsked.region]) &&
+        findLeft(findAsked.region).left > 0
+          ? findAsked
+          : null;
       const day = dayKey(today ?? new Date());
       // The archive deals in the browser too; the API backend only plays today's.
       const daily =
@@ -327,11 +381,13 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
               ? { kind: "tier", tier, game: 1 }
               : region
                 ? { kind: "region", region, game: 1 }
-                : { kind: "fresh", game: 1 };
+                : find
+                  ? { kind: "find", region: find.region, game: 1 }
+                  : { kind: "fresh", game: 1 };
       // The plain address reopens whatever game was left unfinished; an address asking for a
       // particular game reopens it only if that is the one kept.
       const explicit =
-        !!start || linked !== null || blitz || kind === "daily" || !!tier || !!wanted;
+        !!start || linked !== null || blitz || kind === "daily" || !!tier || !!wanted || !!find;
       const saved = apiUrl
         ? null
         : gameToResume(loadSaved(deck.ids, Date.now()), requested, explicit, day);
@@ -347,7 +403,7 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
       setMode(requested);
     });
     return () => cancelAnimationFrame(id);
-  }, [mode, start, today, tiers, regions, apiUrl, deck.ids]);
+  }, [mode, start, today, tiers, regions, apiUrl, deck.ids, findLeft]);
 
   const pool = useMemo(() => deck.ids.map((id) => ({ id })), [deck.ids]);
 
@@ -372,9 +428,23 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
             ? within(tiers[mode.tier].ids)
             : mode.kind === "region" && regions[mode.region]
               ? within(regions[mode.region]!)
-              : pickFresh(pool, loadRecent(), ROUNDS_PER_GAME);
+              : mode.kind === "find" && album
+                ? dealMissing(
+                    findPool(deck.ids, album, mode.region, regions),
+                    loadPlayed(),
+                    loadRecent(),
+                    ROUNDS_PER_GAME,
+                  ).map((id) => ({ id }))
+                : pickFresh(pool, loadRecent(), ROUNDS_PER_GAME);
     return picked.map((p) => p.id);
-  }, [mode, pool, tiers, regions, resumedFor]);
+  }, [mode, pool, tiers, regions, resumedFor, album, deck.ids]);
+
+  // A find game's header counts what was missing as it was dealt (a resumed one, as it reopened).
+  useEffect(() => {
+    // Storage is read in the browser, once the find game is chosen.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFindCount(mode?.kind === "find" ? findLeft(mode.region).left : null);
+  }, [mode, findLeft]);
 
   // Remember what was dealt, so the next visit or fresh game opens on other photos.
   useEffect(() => {
@@ -685,6 +755,8 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
       setBlitzBest(mode.kind === "blitz" ? rememberBlitz(t.player) : null);
       // Rematches are dealt by the browser, like challenges.
       setRematchOffer(apiUrl ? null : pickRematch(loadRematch(), deck.ids));
+      // The round just revealed is already on your map, so this counts it as found.
+      setAlbumLeft(findLeft(null).left);
       const todayKey = dayKey(today ?? new Date());
       setDailyScores(
         mode.kind === "daily"
@@ -727,7 +799,11 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
    */
   function playFresh() {
     setMode((m) =>
-      m?.kind === "tier" || m?.kind === "region" || m?.kind === "blitz"
+      m?.kind === "tier" ||
+      m?.kind === "region" ||
+      m?.kind === "blitz" ||
+      // Another find game while its page still has photos to find, then fresh ones.
+      (m?.kind === "find" && findLeft(m.region).left > 0)
         ? { ...m, game: m.game + 1 }
         : // After a friend's Blitz challenge, a Blitz of the player's own.
           m && isTimedMode(m)
@@ -751,6 +827,12 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
   /** A fresh untimed game of five, from a Blitz (the Games menu's "Five rounds"). */
   function playRounds() {
     setMode((m) => ({ kind: "fresh", game: m && "game" in m ? m.game + 1 : 1 }));
+    restart();
+  }
+
+  /** Five photos still missing from the album, from anywhere. */
+  function playFind() {
+    setMode((m) => ({ kind: "find", region: null, game: m && "game" in m ? m.game + 1 : 1 }));
     restart();
   }
 
@@ -833,7 +915,11 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
             ? `Play another ${TIER_NAMES[mode.tier]} game`
             : mode?.kind === "region"
               ? `Play another ${mode.region} game`
-              : mode?.kind === "blitz"
+              : mode?.kind === "find" && findLeft(mode.region).left > 0
+                ? mode.region
+                  ? `Find more in ${mode.region}`
+                  : "Find more"
+                : mode?.kind === "blitz"
                 ? "Play another Blitz"
                 : mode && isTimedMode(mode)
                   ? "Play a Blitz of your own"
@@ -858,6 +944,12 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
         rematch={mode?.kind === "rematch" ? mode.rematch : undefined}
         onRematch={rematchOffer ? playRematch : undefined}
         onPlayBlitz={apiUrl ? undefined : playBlitz}
+        albumLeft={album ? albumLeft : undefined}
+        onFindRest={
+          album && albumLeft > 0 && !(mode?.kind === "find" && mode.region === null)
+            ? playFind
+            : undefined
+        }
         streakHref={
           apiUrl || deck.streakIds.length === 0
             ? undefined
@@ -940,6 +1032,15 @@ export default function Game({ apiUrl, deck, start, today, backendFor, loadRecor
           {mode?.kind === "region" && (
             <p className="mt-1 inline-block rounded-full bg-ocean-deep/60 px-2 py-0.5 text-[11px] text-chalk-dim backdrop-blur">
               {regionBlurb(mode.region, regions)}
+            </p>
+          )}
+          {mode?.kind === "find" && findCount !== null && (
+            <p
+              className="mt-1 inline-block rounded-full bg-ocean-deep/60 px-2 py-0.5 text-[11px] text-chalk-dim backdrop-blur"
+              data-testid="find-left"
+            >
+              {findCount === 1 ? "1 photo" : `${findCount.toLocaleString("en-US")} photos`} still
+              missing from your album{mode.region ? ` in ${mode.region}` : ""}
             </p>
           )}
           {mode?.kind === "challenge" && !replayed && (

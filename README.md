@@ -224,8 +224,10 @@ game, the first turn moves one seat along each round, and the names are kept for
 **Your album** (at `/album`, linked from Your map and the results screen) collects every photo
 you've played under its continent, newest first, each with its picture, how close your pin landed
 and its credit, and counts how many of the game's photos you've found, in all and per continent.
-The photos still to find stay blank: each continent ends on a card counting them, with a game on
-that continent to go and find them. Tap a found photo to open it large, with the day you found it,
+The photos still to find stay blank: each continent ends on a card counting them. **Find the
+rest** deals a five-photo game only from photos missing from your album, anywhere (`?find`) or on
+one continent (`?find=europe`), from the album and the results screen; once fewer than five are
+left, the last ones come first and photos you've found fill the game, until the album is full. Tap a found photo to open it large, with the day you found it,
 how far off your pin and Atlas's landed, its points and its postcard, and turn through the
 continent with ← and →, a swipe or the buttons.
 **Your map** (at `/map`) puts every photo you've played on one globe, each mark shaped and

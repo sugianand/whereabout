@@ -9,6 +9,7 @@
  */
 
 import { CONTINENTS, type Continent } from "@/lib/continents";
+import { pickFresh } from "@/lib/game/fresh";
 import type { PlayedPhoto } from "@/lib/playedMap";
 
 export interface AlbumContinent {
@@ -106,4 +107,51 @@ export const SWIPE_PX = 50;
 export function swipeStep(dx: number, dy: number): -1 | 0 | 1 {
   if (Math.abs(dx) < SWIPE_PX || Math.abs(dx) <= Math.abs(dy)) return 0;
   return dx < 0 ? 1 : -1;
+}
+
+/**
+ * The photos a "find the rest" game can deal: every photo the album holds (those with a
+ * continent), or, for one continent, the photos a continent game deals there. Deck order.
+ */
+export function findPool(
+  deckIds: readonly string[],
+  continents: Readonly<Record<string, Continent>>,
+  region: Continent | null,
+  regions: Readonly<Partial<Record<Continent, readonly string[]>>>,
+): string[] {
+  if (region) return [...(regions[region] ?? [])];
+  return deckIds.filter((id) => Object.hasOwn(continents, id));
+}
+
+/** The photos of `pool` not yet in the album: never revealed in a round of the five-photo game. */
+export function missingFrom(pool: readonly string[], history: readonly PlayedPhoto[]): string[] {
+  const found = new Set(history.map((p) => p.id));
+  return pool.filter((id) => !found.has(id));
+}
+
+/**
+ * Deal a "find the rest" game: `count` photos missing from the album, shuffled, preferring ones
+ * not dealt lately (`pickFresh`). When fewer than `count` are still missing, every one of them is
+ * dealt and the game is filled out with photos already found, so the last few can be found in a
+ * whole game. Missing photos come first.
+ */
+export function dealMissing(
+  pool: readonly string[],
+  history: readonly PlayedPhoto[],
+  recent: readonly string[],
+  count: number,
+  random: () => number = Math.random,
+): string[] {
+  const missing = missingFrom(pool, history);
+  const picked = pickFresh(
+    missing.map((id) => ({ id })),
+    recent,
+    count,
+    random,
+  ).map((p) => p.id);
+  if (picked.length >= count) return picked;
+  const missingSet = new Set(missing);
+  const found = pool.filter((id) => !missingSet.has(id)).map((id) => ({ id }));
+  const fill = pickFresh(found, recent, count - picked.length, random).map((p) => p.id);
+  return [...picked, ...fill];
 }

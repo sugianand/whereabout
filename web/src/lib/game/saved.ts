@@ -137,6 +137,8 @@ function isMode(v: unknown, deckIds: readonly string[]): v is GameMode {
       return game && isTier(v.tier);
     case "region":
       return game && (CONTINENTS as readonly unknown[]).includes(v.region);
+    case "find":
+      return game && (v.region === null || (CONTINENTS as readonly unknown[]).includes(v.region));
     case "challenge":
     case "rematch": {
       // A rematch carries the same shape as a challenge: five photos and a score on each.
