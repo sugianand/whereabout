@@ -858,6 +858,57 @@ describe("RevealCard postcard", () => {
     );
   });
 
+  it("keeps a long article link to one line on a phone, with More to read it whole", () => {
+    // jsdom has no layout: report the link as wider than the room it has.
+    const widths = vi
+      .spyOn(HTMLElement.prototype, "scrollWidth", "get")
+      .mockImplementation(function (this: HTMLElement) {
+        return this.tagName === "A" && this.textContent?.startsWith("Read about") ? 480 : 0;
+      });
+    const room = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(300);
+    try {
+      const title = "Robberg Nature Reserve and Marine Protected Area";
+      render(
+        <RevealCard
+          result={withPostcard({
+            article: { title, url: "https://en.wikipedia.org/wiki/Robberg" },
+          })}
+          isLast={false}
+          onNext={() => {}}
+        />,
+      );
+      // The cut is only visual: the link's name is still the whole title.
+      const link = screen.getByRole("link", { name: `Read about ${title} on Wikipedia` });
+      expect(link).toHaveClass("truncate");
+      expect(link.parentElement).not.toHaveClass("flex-wrap");
+      const more = screen.getByRole("button", { name: "More" });
+      expect(more).toHaveClass("shrink-0");
+      fireEvent.click(more);
+      expect(link).not.toHaveClass("truncate");
+      expect(link.parentElement).toHaveClass("flex-wrap");
+      fireEvent.click(screen.getByRole("button", { name: "Less" }));
+      expect(link).toHaveClass("truncate");
+    } finally {
+      widths.mockRestore();
+      room.mockRestore();
+    }
+  });
+
+  it("offers no More when the link and the description both fit", () => {
+    render(
+      <RevealCard
+        result={withPostcard({
+          description: "A bridge over the river.",
+          article: { title: "Kourou", url: "https://en.wikipedia.org/wiki/Kourou" },
+        })}
+        isLast={false}
+        onNext={() => {}}
+      />,
+    );
+    expect(screen.getByRole("link", { name: "Read about Kourou on Wikipedia" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "More" })).toBeNull();
+  });
+
   it("shows whichever half the photo has", () => {
     const { unmount } = render(
       <RevealCard

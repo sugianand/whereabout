@@ -727,6 +727,54 @@ test("on a phone the answer stays in view above the result card", async ({ page 
   await expect(page.getByText("out of 25,000 points")).toBeVisible();
 });
 
+test("on a phone a long Wikipedia link keeps to one line beside More, which opens it", async ({
+  page,
+}) => {
+  test.skip(
+    (page.viewportSize()?.width ?? 1000) >= 768,
+    "wider screens show the postcard whole",
+  );
+  // The five photos with the longest article titles, dealt through a challenge link.
+  const catalog: { id: string; postcard?: { article?: { title: string } } }[] = JSON.parse(
+    readFileSync(resolve(process.cwd(), "src/data/photos.json"), "utf8"),
+  );
+  const atlas = JSON.parse(readFileSync(resolve(process.cwd(), "src/data/atlas.json"), "utf8"));
+  const five = catalog
+    .filter((p) => p.postcard?.article && Object.hasOwn(atlas.guesses, p.id))
+    .sort((a, b) => b.postcard!.article!.title.length - a.postcard!.article!.title.length)
+    .slice(0, 5);
+  await page.goto(`./?challenge=${five.map((p) => p.id).join(".")}_1.1.1.1.1`);
+  for (let round = 1; round <= 5; round++) {
+    const card = await playRoundWithKeyboard(page);
+    const title = five[round - 1].postcard!.article!.title;
+    // After a far miss beside a friend's score, a phone keeps the postcard in Atlas's fold.
+    if (!(await card.getByTestId("postcard-article").isVisible())) {
+      await card.getByRole("button", { name: "How Atlas guessed" }).click();
+    }
+    const link = card
+      .getByRole("link", { name: `Read about ${title} on Wikipedia` })
+      .filter({ visible: true });
+    await expect(link).toBeVisible();
+    const row = link.locator("..");
+    // A line of the row is 16px; its controls reach 24px to tap without making it taller.
+    const line = 24;
+    expect((await row.boundingBox())!.height, `round ${round}: one line`).toBeLessThan(line);
+    // The row never pushes the card sideways.
+    const cardBox = (await card.boundingBox())!;
+    const rowBox = (await row.boundingBox())!;
+    expect(rowBox.x + rowBox.width).toBeLessThanOrEqual(cardBox.x + cardBox.width);
+    if (round === 1) {
+      // More shows the whole title, and Less folds it back to one line.
+      await card.getByRole("button", { name: "More" }).click();
+      await expect.poll(async () => (await row.boundingBox())!.height).toBeGreaterThan(line);
+      await card.getByRole("button", { name: "Less" }).click();
+      await expect.poll(async () => (await row.boundingBox())!.height).toBeLessThan(line);
+    }
+    await card.getByRole("button", { name: round < 5 ? "Next photo" : "See your results" }).click();
+  }
+  await expect(page.getByTestId("challenge-result")).toBeVisible();
+});
+
 test("on the narrowest phones every header control stays on screen", async ({ page }) => {
   test.skip(
     (page.viewportSize()?.width ?? 1000) >= 768,

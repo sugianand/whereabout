@@ -14,7 +14,9 @@ const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLa
  *
  * Phones keep the card short enough to leave the answer in view, so a description longer than
  * one line is cut there with a "More" button; wider screens show it whole. The description's
- * credit ends its text, so it is never cut off for good.
+ * credit ends its text, so it is never cut off for good. The Wikipedia link keeps to one line
+ * beside "More" on a phone too, ending in an ellipsis when the article's title is long, and
+ * "More" shows it whole; the link's name for screen readers is always the whole title.
  */
 export default function PostcardNote({
   postcard,
@@ -34,6 +36,7 @@ export default function PostcardNote({
   const article =
     postcard.article && isWikipediaUrl(postcard.article.url) ? postcard.article : undefined;
   const textRef = useRef<HTMLParagraphElement>(null);
+  const linkRef = useRef<HTMLAnchorElement>(null);
   const textId = useId();
   const [expanded, setExpanded] = useState(false);
   const [cut, setCut] = useState(false);
@@ -45,22 +48,28 @@ export default function PostcardNote({
     setExpanded(false);
   }
 
-  // Whether the one-line cut hides anything, measured whenever it could change: on a resize of
-  // the window or of the text itself.
+  // Whether the one-line cuts hide anything, the description's below or the link's beside,
+  // measured whenever that could change: on a resize of the window or of the text itself.
   useBrowserLayoutEffect(() => {
-    const el = textRef.current;
-    if (!el || expanded) return;
-    const measure = () => setCut(el.scrollHeight > el.clientHeight + 1);
+    const text = textRef.current;
+    const link = linkRef.current;
+    if ((!text && !link) || expanded) return;
+    const measure = () =>
+      setCut(
+        (!!text && text.scrollHeight > text.clientHeight + 1) ||
+          (!!link && link.scrollWidth > link.clientWidth + 1),
+      );
     measure();
     window.addEventListener("resize", measure);
     // A copy in a closed fold has no layout until the fold opens: measure it again then.
     const seen = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
-    seen?.observe(el);
+    if (text) seen?.observe(text);
+    if (link) seen?.observe(link);
     return () => {
       window.removeEventListener("resize", measure);
       seen?.disconnect();
     };
-  }, [description, expanded]);
+  }, [description, article?.title, expanded]);
 
   if (!description && !article) return null;
 
@@ -91,15 +100,20 @@ export default function PostcardNote({
           )}
         </p>
       )}
-      {/* Each control here is 24 px tall to tap (py-1) without making the card taller (-my-1). */}
+      {/* Each control here is 24 px tall to tap (py-1) without making the card taller (-my-1).
+          On a phone the row stays one line until "More" opens it: a long title ends in "…". */}
       {(article || toggle) && (
-        <p className="mt-0.5 flex flex-wrap items-baseline gap-x-3 text-xs md:mt-1">
+        <p
+          className={`mt-0.5 flex items-baseline gap-x-3 text-xs md:mt-1 md:flex-wrap ${expanded ? "flex-wrap" : ""}`}
+        >
           {article && (
             <a
+              ref={linkRef}
               href={article.url}
               target="_blank"
               rel="noreferrer"
-              className="-my-1 py-1 font-semibold text-gold underline decoration-gold/40 underline-offset-2 hover:decoration-gold"
+              data-testid={`${testId}-article`}
+              className={`-my-1 py-1 font-semibold text-gold underline decoration-gold/40 underline-offset-2 hover:decoration-gold ${expanded ? "" : "min-w-0 truncate md:overflow-visible md:whitespace-normal"}`}
             >
               Read about {article.title} on Wikipedia
             </a>
@@ -110,7 +124,7 @@ export default function PostcardNote({
               aria-expanded={expanded}
               aria-controls={textId}
               onClick={() => setExpanded((e) => !e)}
-              className="-my-1 py-1 font-semibold text-gold md:hidden"
+              className="-my-1 shrink-0 py-1 font-semibold text-gold md:hidden"
             >
               {expanded ? "Less" : "More"}
             </button>
