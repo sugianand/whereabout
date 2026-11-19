@@ -21,6 +21,8 @@
  * - Your album (`lib/album.ts`): a quarter, half and all of the album found, and one per
  *   continent for its page complete, read from the same history the album is, so the counts on
  *   a stamp and on the album always agree.
+ * - The World Tour (`lib/tour.ts`): one per leg of the route, earned when the leg is cleared, and
+ *   one for the whole tour with how many legs are left, read from the record the tour page reads.
  *
  * The days every game keeps are the last `ARCHIVE_DAYS`, and the map's history is capped, so a
  * stamp could otherwise fade once its proof is gone. Each stamp is therefore written down under
@@ -52,6 +54,7 @@ import { VERSUS_GAMES, type DayTally, type TodayGameId, type Versus } from "@/li
 import { CLIMATE_PHOTOS, loadBestClimate } from "@/lib/game/whichClimate";
 import { currentStreak, type PlayerRecord } from "@/lib/playerRecord";
 import type { PlayedPhoto } from "@/lib/playedMap";
+import { clearedCount, TOUR_ROUTE, type TourRecord } from "@/lib/tour";
 import type { Units } from "@/lib/units";
 
 export const STAMPS_KEY = "whereabout:stamps";
@@ -88,6 +91,7 @@ export const ALBUM_SHARES = [
 ] as const;
 export type AlbumShareStampId = (typeof ALBUM_SHARES)[number]["id"];
 export type AlbumPageStampId = `album-${string}-page`;
+export type TourLegStampId = `tour-${string}`;
 
 export type StampId =
   | BadgeId
@@ -97,9 +101,11 @@ export type StampId =
   | AtlasStampId
   | ClueStampId
   | AlbumShareStampId
-  | AlbumPageStampId;
+  | AlbumPageStampId
+  | TourLegStampId
+  | "tour-complete";
 
-export type StampGroup = "badges" | "continents" | "days" | "atlas" | "clues" | "album";
+export type StampGroup = "badges" | "continents" | "days" | "atlas" | "clues" | "album" | "tour";
 
 export const STAMP_GROUPS: readonly { id: StampGroup; title: string }[] = [
   { id: "badges", title: "Badges" },
@@ -108,6 +114,7 @@ export const STAMP_GROUPS: readonly { id: StampGroup; title: string }[] = [
   { id: "atlas", title: "Beat Atlas" },
   { id: "clues", title: "Reading the clues" },
   { id: "album", title: "Your album" },
+  { id: "tour", title: "World Tour" },
 ];
 
 /** How far along an unearned stamp is: `have` of `need`, counted in `unit`. */
@@ -151,6 +158,8 @@ export interface StampSources {
    * read from it and `played`, as on the album page. No album stamps if not given or empty.
    */
   album?: Readonly<Record<string, Continent>>;
+  /** The World Tour's route (`tourRoute`) and its record (`loadTour`); no tour stamps without. */
+  tour?: { route: readonly Continent[]; record: TourRecord };
 }
 
 /** What the clue games keep, for the clue stamps. */
@@ -205,6 +214,10 @@ export function albumPageStampId(c: Continent): AlbumPageStampId {
   return `album-${regionSlug(c)}-page`;
 }
 
+export function tourLegStampId(c: Continent): TourLegStampId {
+  return `tour-${regionSlug(c)}`;
+}
+
 /** Every stamp id there can be, in the order the page lists them. */
 export const STAMP_IDS: readonly StampId[] = [
   ...BADGES.map((b) => b.id),
@@ -215,6 +228,8 @@ export const STAMP_IDS: readonly StampId[] = [
   ...CLUE_STAMP_IDS,
   ...ALBUM_SHARES.map((a) => a.id),
   ...CONTINENTS.map(albumPageStampId),
+  ...TOUR_ROUTE.map(tourLegStampId),
+  "tour-complete",
 ];
 
 const KNOWN: ReadonlySet<string> = new Set(STAMP_IDS);
@@ -579,6 +594,45 @@ function albumStamps({ album: continents, played }: StampSources): Stamp[] {
   return [...shares, ...pages];
 }
 
+/**
+ * The World Tour's stamps: one per leg in route order, earned once the leg is cleared, then the
+ * whole tour with the legs cleared counted. A leg played but not cleared notes its best game
+ * against Atlas, the same lead or deficit the tour page shows, so a near miss says how near.
+ */
+function tourStamps({ tour }: StampSources): Stamp[] {
+  if (!tour || tour.route.length === 0) return [];
+  const { route, record } = tour;
+  const legs = route.map((c): Stamp => {
+    const leg = record[c];
+    const earned = Boolean(leg?.cleared);
+    return {
+      id: tourLegStampId(c),
+      group: "tour",
+      name: `${c} leg`,
+      how: `Outscore Atlas over a five-photo game in ${c}`,
+      icon: "🚩",
+      earned,
+      progress: null,
+      note:
+        !earned && leg
+          ? closestWords({ you: leg.best.you, atlas: leg.best.atlas, unit: "points" })
+          : null,
+    };
+  });
+  const cleared = clearedCount(route, record);
+  const whole: Stamp = {
+    id: "tour-complete",
+    group: "tour",
+    name: "The whole tour",
+    how: `Clear all ${route.length} legs of the World Tour`,
+    icon: "🗺️",
+    earned: cleared >= route.length,
+    progress: { have: cleared, need: route.length, unit: ["leg", "legs"] },
+    note: null,
+  };
+  return [...legs, whole];
+}
+
 /** Every stamp as the browser's records stand, before what was kept is added in. */
 export function readStamps(sources: StampSources): Stamp[] {
   return [
@@ -588,6 +642,7 @@ export function readStamps(sources: StampSources): Stamp[] {
     ...atlasStamps(sources),
     ...clueStamps(sources),
     ...albumStamps(sources),
+    ...tourStamps(sources),
   ];
 }
 

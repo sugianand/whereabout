@@ -255,3 +255,43 @@ test("the album's stamps count the photos found, and a find game fills them", as
   await expect(page.getByTestId("album-found")).toHaveText("1");
   expect(errors).toEqual([]);
 });
+
+test("the World Tour's legs are stamps, with the legs left and a near miss, and lead to the tour", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("./stamps");
+  await expect(page.getByRole("heading", { name: "World Tour", level: 2 })).toBeVisible();
+  const whole = page.getByTestId("stamp-tour-complete-progress");
+  await expect(whole).toHaveText(/^0 of \d+ legs$/);
+  const legs = (await whole.textContent())!.match(/of (\d+)/)![1];
+  await expect(page.getByTestId("stamp-tour-europe")).toHaveAttribute("data-earned", "false");
+
+  // Europe cleared and Africa lost narrowly, as the tour keeps them.
+  const day = new Date().toISOString().slice(0, 10);
+  await page.evaluate((cleared) => {
+    localStorage.setItem(
+      "whereabout:tour",
+      JSON.stringify({
+        Europe: { tries: 1, best: { you: 15000, atlas: 14000 }, cleared },
+        Africa: { tries: 1, best: { you: 9000, atlas: 9100 }, cleared: null },
+      }),
+    );
+  }, day);
+  await page.reload();
+  await expect(page.getByTestId("stamp-tour-europe")).toHaveAttribute("data-earned", "true");
+  await expect(page.getByTestId("stamp-tour-africa")).toContainText(
+    "Closest so far: 9,000 points to Atlas's 9,100",
+  );
+  await expect(whole).toHaveText(`1 of ${legs} legs`);
+
+  await page.setViewportSize({ width: 320, height: 700 });
+  await whole.scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+
+  // The group leads to the tour, which counts the same leg cleared.
+  await page.getByTestId("stamps-tour-intro").getByRole("link", { name: "World Tour" }).click();
+  await expect(page.getByRole("heading", { name: "World Tour", level: 1 })).toBeVisible();
+  expect(errors).toEqual([]);
+});

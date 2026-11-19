@@ -10,6 +10,7 @@ import { rememberOddDay } from "@/lib/game/oddDaily";
 import { PLAYED_KEY } from "@/lib/playedMap";
 import { RECORD_KEY } from "@/lib/playerRecord";
 import { STAMPS_KEY } from "@/lib/stamps";
+import { TOUR_KEY } from "@/lib/tour";
 
 import Stamps from "./Stamps";
 
@@ -220,5 +221,35 @@ describe("Stamps", () => {
       "album-quarter": "2026-11-10",
       "album-oceania-page": "2026-11-10",
     });
+  });
+
+  it("shows the World Tour's stamps from the tour's record, with the legs left", async () => {
+    localStorage.setItem(
+      TOUR_KEY,
+      JSON.stringify({
+        Europe: { tries: 2, best: { you: 14000, atlas: 12000 }, cleared: "2026-11-09" },
+        Africa: { tries: 1, best: { you: 8000, atlas: 9500 }, cleared: null },
+      }),
+    );
+    render(
+      <Stamps
+        countries={COUNTRIES}
+        deckIds={IDS}
+        tourRoute={["Europe", "Africa", "Asia"]}
+        now={now}
+      />,
+    );
+    expect(await screen.findByRole("heading", { name: "World Tour" })).toBeInTheDocument();
+    const intro = screen.getByTestId("stamps-tour-intro");
+    expect(within(intro).getByRole("link", { name: "World Tour" })).toHaveAttribute(
+      "href",
+      "/tour",
+    );
+    expect(screen.getByTestId("stamp-tour-europe")).toHaveAttribute("data-earned", "true");
+    const africa = screen.getByTestId("stamp-tour-africa");
+    expect(africa).toHaveAttribute("data-earned", "false");
+    expect(africa).toHaveTextContent("Closest so far: 8,000 points to Atlas's 9,500");
+    expect(screen.getByTestId("stamp-tour-complete-progress")).toHaveTextContent("1 of 3 legs");
+    expect(JSON.parse(localStorage.getItem(STAMPS_KEY)!)).toEqual({ "tour-europe": "2026-11-10" });
   });
 });

@@ -13,6 +13,7 @@ import { VERSUS_GAMES, type DayTally, type Versus } from "@/lib/game/today";
 import { BADGE_IDS } from "./badges";
 import { EMPTY_RECORD, type PlayerRecord } from "./playerRecord";
 import type { PlayedPhoto } from "./playedMap";
+import { addLeg, type TourRecord } from "./tour";
 import {
   CLUE_PHOTOS,
   FULL_WEEK,
@@ -23,6 +24,7 @@ import {
   albumShareNeed,
   atlasStampId,
   closestWords,
+  tourLegStampId,
   collectStamps,
   countriesByContinent,
   keepStamps,
@@ -482,6 +484,88 @@ describe("album stamps", () => {
     expect(byId(later.stamps, "album-oceania-page").earned).toBe(true);
     expect(later.fresh).toEqual([]);
     expect(parseKeptStamps(JSON.stringify(first.kept))["album-oceania-page"]).toBe(TODAY);
+  });
+});
+
+describe("tour stamps", () => {
+  const ROUTE = ["Europe", "Africa", "Asia"] as const;
+  const tourOf = (record: TourRecord) =>
+    readStamps(sources({ tour: { route: ROUTE, record } })).filter((s) => s.group === "tour");
+
+  it("lists a leg per stop in route order, then the whole tour, none earned at first", () => {
+    const stamps = tourOf({});
+    expect(stamps.map((s) => s.id)).toEqual([
+      "tour-europe",
+      "tour-africa",
+      "tour-asia",
+      "tour-complete",
+    ]);
+    expect(stamps.every((s) => !s.earned)).toBe(true);
+    expect(byId(stamps, "tour-asia")).toMatchObject({
+      name: "Asia leg",
+      how: "Outscore Atlas over a five-photo game in Asia",
+      progress: null,
+      note: null,
+    });
+    expect(byId(stamps, "tour-complete").how).toBe("Clear all 3 legs of the World Tour");
+    expect(byId(stamps, "tour-complete").progress).toEqual({
+      have: 0,
+      need: 3,
+      unit: ["leg", "legs"],
+    });
+    for (const s of stamps) expect(STAMP_IDS).toContain(s.id);
+  });
+
+  it("earns a cleared leg, counts it on the whole tour, and notes a near miss elsewhere", () => {
+    let record = addLeg({}, "Africa", { you: 9000, atlas: 12000 }, TODAY);
+    record = addLeg(record, "Africa", { you: 11900, atlas: 12000 }, TODAY);
+    record = addLeg(record, "Europe", { you: 15000, atlas: 14000 }, TODAY);
+    record = addLeg(record, "Asia", { you: 10000, atlas: 10000 }, TODAY);
+    const stamps = tourOf(record);
+    expect(byId(stamps, "tour-europe")).toMatchObject({ earned: true, note: null });
+    // The best of the two Africa games, the smaller deficit.
+    expect(byId(stamps, "tour-africa")).toMatchObject({
+      earned: false,
+      note: "Closest so far: 11,900 points to Atlas's 12,000",
+    });
+    // A tie never clears a leg.
+    expect(byId(stamps, "tour-asia")).toMatchObject({
+      earned: false,
+      note: "Level with Atlas so far: 10,000 points each",
+    });
+    const whole = byId(stamps, "tour-complete");
+    expect(whole.earned).toBe(false);
+    expect(toGo(whole.progress!)).toBe("2 legs to go");
+  });
+
+  it("earns the whole tour once every leg on the route is cleared", () => {
+    const record = ROUTE.reduce<TourRecord>(
+      (r, c) => addLeg(r, c, { you: 2, atlas: 1 }, TODAY),
+      // A leg off this route doesn't count, cleared or not.
+      addLeg({}, "Oceania", { you: 0, atlas: 5 }, TODAY),
+    );
+    const stamps = tourOf(record);
+    expect(stamps.every((s) => s.earned)).toBe(true);
+    expect(byId(stamps, "tour-complete").progress).toMatchObject({ have: 3, need: 3 });
+  });
+
+  it("has no tour stamps without a route, and an id for every stop the tour can have", () => {
+    expect(readStamps(sources()).filter((s) => s.group === "tour")).toEqual([]);
+    expect(
+      readStamps(sources({ tour: { route: [], record: {} } })).filter((s) => s.group === "tour"),
+    ).toEqual([]);
+    expect(tourLegStampId("South America")).toBe("tour-south-america");
+    expect(STAMP_IDS).toContain("tour-antarctica");
+    expect(STAMP_IDS).toContain("tour-complete");
+  });
+
+  it("keeps a leg's stamp once earned, even if the tour's record is cleared", () => {
+    const won = addLeg({}, "Europe", { you: 2, atlas: 1 }, TODAY);
+    const first = collectStamps(tourOf(won), {}, TODAY);
+    expect(first.fresh).toEqual(["tour-europe"]);
+    const later = collectStamps(tourOf({}), first.kept, "2026-12-01");
+    expect(byId(later.stamps, "tour-europe").earned).toBe(true);
+    expect(parseKeptStamps(JSON.stringify(first.kept))["tour-europe"]).toBe(TODAY);
   });
 });
 

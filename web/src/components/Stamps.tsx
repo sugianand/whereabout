@@ -18,6 +18,7 @@ import {
   type Stamp,
   type StampId,
 } from "@/lib/stamps";
+import { loadTour } from "@/lib/tour";
 import { useUnits } from "@/lib/useUnits";
 
 import GamesMenu from "./GamesMenu";
@@ -98,6 +99,7 @@ export default function Stamps({
   countries,
   deckIds,
   album,
+  tourRoute,
   now = systemNow,
 }: {
   /** The countries the game deals photos from, by continent. */
@@ -105,6 +107,8 @@ export default function Stamps({
   deckIds: readonly string[];
   /** Each photo the album holds, with its continent; no album stamps without it. */
   album?: Readonly<Record<string, Continent>>;
+  /** The World Tour's legs in route order; no tour stamps without it. */
+  tourRoute?: readonly Continent[];
   now?: () => Date;
 }) {
   const units = useUnits();
@@ -123,12 +127,13 @@ export default function Stamps({
       units,
       clues: loadClueSources(),
       album,
+      tour: tourRoute ? { route: tourRoute, record: loadTour() } : undefined,
     });
     const { stamps: collected, fresh } = keepStamps(stamps, today);
     // Units change only the closest pin's words, so a new stamp stays new across a switch.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setView((was) => ({ stamps: collected, fresh: was ? was.fresh : fresh }));
-  }, [countries, deckIds, album, now, units]);
+  }, [countries, deckIds, album, tourRoute, now, units]);
 
   const earned = view?.stamps.filter((s) => s.earned).length ?? 0;
   const next = view ? nextStamp(view.stamps) : null;
@@ -216,6 +221,15 @@ export default function Stamps({
                   deals only photos you haven&apos;t found.
                 </p>
               )}
+              {group.id === "tour" && (
+                <p className="mt-1 text-sm text-chalk-dim" data-testid="stamps-tour-intro">
+                  From the{" "}
+                  <Link href="/tour" className="underline underline-offset-2 hover:text-chalk">
+                    World Tour
+                  </Link>
+                  : any five-photo game on a continent counts toward its leg.
+                </p>
+              )}
               <ul className="mt-3 grid gap-3 sm:grid-cols-2">
                 {stamps.map((s) => (
                   <StampCard key={s.id} stamp={s} fresh={view.fresh.includes(s.id)} />
@@ -227,7 +241,7 @@ export default function Stamps({
 
       <p className="mt-10 text-sm text-chalk-dim">
         Stamps come from what you&apos;ve played in this browser: your record, your map and album,
-        the clue games and the days kept on{" "}
+        the clue games, the World Tour and the days kept on{" "}
         <Link href="/today" className="underline underline-offset-2 hover:text-chalk">
           Today
         </Link>

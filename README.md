@@ -210,9 +210,10 @@ game (on a day it played every photo you did), and six for reading the clues: a 
 of 10, five of five at Which climate? and at What's on the ground?, and reading the road, the
 climate or the ground better than Atlas over at least 30 photos you've both read, and for your
 album: a quarter, half and all of it found, and each continent's page complete, counted from the
-same history the album reads. Each says how it's earned and how close you are (for
-Atlas, your nearest miss on the days kept), the one nearest to done is named next, and a stamp once
-collected stays.
+same history the album reads, and for the World Tour: each leg cleared and the whole tour, with
+the legs left, from the record `/tour` reads. Each says how it's earned and how close you are (for
+Atlas, your nearest miss on the days kept; for a leg not yet cleared, your best game there against
+Atlas), the one nearest to done is named next, and a stamp once collected stays.
 
 The results screen gathers these quick games (Blitz, Country Streak, Survival, Further North, Odd
 one out, How far apart? and Which way?) in one list, each with your best from this browser beside its name, so you see what
