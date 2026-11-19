@@ -596,3 +596,52 @@ body {
     display: inline;
   }
 }
+
+/* ── Full photo / bigger globe (while guessing) ── */
+.wb-stage[data-view="photo"] .wb-photo {
+  inset: 0;
+}
+
+.wb-stage[data-view="photo"] .wb-globe-panel {
+  display: none;
+}
+
+.wb-stage[data-view="globe"] .wb-photo {
+  display: none;
+}
+
+.wb-stage[data-view="globe"] .wb-globe-panel,
+.wb-stage[data-view="globe"] .wb-globe-panel:hover,
+.wb-stage[data-view="globe"] .wb-globe-panel:focus-within {
+  inset: 0;
+  width: auto;
+  height: auto;
+  padding: calc(var(--wb-header-h, 7rem) + 0.25rem) 0.75rem 0.75rem;
+  background: var(--color-ocean-deep);
+  transition: none;
+}
+
+.wb-stage[data-view="globe"] .wb-globe-frame,
+.wb-stage[data-view="globe"] .wb-globe-panel:hover .wb-globe-frame,
+.wb-stage[data-view="globe"] .wb-globe-panel:focus-within .wb-globe-frame {
+  flex: 1;
+  height: auto;
+  transition: none;
+}
+
+/* Big-text phones scroll as one column: there the bigger globe just takes the screen's height. */
+@media (max-width: 17.5em),
+  (orientation: portrait) and (max-width: 47.99em) and (max-height: 26em) {
+  .wb-stage-flow[data-view="photo"] .wb-photo {
+    height: 85dvh;
+  }
+
+  .wb-stage-flow[data-view="globe"] .wb-globe-panel {
+    display: contents;
+  }
+
+  .wb-stage-flow[data-view="globe"] .wb-globe-frame {
+    flex: none;
+    height: 85dvh;
+  }
+}

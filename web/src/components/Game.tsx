@@ -301,6 +301,10 @@ export default function Game({
   const [state, dispatch] = useReducer(gameReducer, initialState);
   // The first-visit card. Browser storage is only readable after hydration, so it starts closed.
   const [introOpen, setIntroOpen] = useState(false);
+  // While guessing, the player can give the whole screen to the photo or to the globe.
+  const [viewFor, setViewFor] = useState<{ round?: string; view: "split" | "photo" | "globe" }>({
+    view: "split",
+  });
   const stageRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLElement>(null);
 
@@ -986,6 +990,11 @@ export default function Game({
   }
 
   const round = state.phase === "guessing" ? state.round : (shown?.round ?? null);
+  const canExpand = state.phase === "guessing" && !shown;
+  // Every new round starts from the usual split screen.
+  const view = canExpand && viewFor.round === round?.roundId ? viewFor.view : "split";
+  const setView = (next: "split" | "photo" | "globe") =>
+    setViewFor({ round: round?.roundId, view: next });
   const pin = state.phase === "guessing" ? state.pin : (shown?.pin ?? null);
   const score = totals(state.results).player;
   const error = state.phase === "guessing" || state.phase === "loading" ? state.error : null;
@@ -1000,6 +1009,7 @@ export default function Game({
       ref={stageRef}
       className="wb-stage wb-stage-flow relative h-dvh w-full overflow-hidden bg-ocean-deep"
       data-phase={shown ? "revealed" : state.phase}
+      data-view={canExpand ? view : "split"}
       data-replay={replayed ? "true" : undefined}
     >
       <h1 className="sr-only">{`Whereabout: ${title}, ${replayed ? "looking again at " : ""}round ${roundNumber} of ${ROUNDS_PER_GAME}`}</h1>
@@ -1023,6 +1033,17 @@ export default function Game({
             data-photo-placeholder="showing"
             aria-hidden="true"
           />
+        )}
+        {canExpand && round && (
+          <button
+            type="button"
+            onClick={() => setView(view === "photo" ? "split" : "photo")}
+            aria-pressed={view === "photo"}
+            className="wb-expand-photo pointer-events-auto absolute z-20 flex items-center gap-1.5 rounded-full border border-chalk/30 bg-ocean-deep/75 px-3 py-1.5 text-xs font-semibold text-chalk shadow-lg backdrop-blur transition hover:border-chalk bottom-3 right-3"
+          >
+            <ExpandIcon shrink={view === "photo"} />
+            {view === "photo" ? "Back to the globe" : "Full photo"}
+          </button>
         )}
         {introOpen && !shown && (
           // Taps pass straight through the card to the photo underneath.
@@ -1220,6 +1241,17 @@ export default function Game({
         onKeyDownCapture={introOpen ? dismissIntro : undefined}
       >
         <div className="wb-globe-frame">
+          {canExpand && (
+            <button
+              type="button"
+              onClick={() => setView(view === "globe" ? "split" : "globe")}
+              aria-pressed={view === "globe"}
+              className="pointer-events-auto absolute z-20 flex items-center gap-1.5 rounded-full border border-chalk/30 bg-ocean-deep/75 px-3 py-1.5 text-xs font-semibold text-chalk shadow-lg backdrop-blur transition hover:border-chalk bottom-3 right-3"
+            >
+              <ExpandIcon shrink={view === "globe"} />
+              {view === "globe" ? "Show the photo" : "Bigger globe"}
+            </button>
+          )}
           <Globe
             pin={pin}
             onPinChange={onPinChange}
@@ -1324,5 +1356,18 @@ export default function Game({
         </div>
       )}
     </main>
+  );
+}
+
+/** Four corner arrows: pointing out to expand, in to shrink back. */
+function ExpandIcon({ shrink }: { shrink: boolean }) {
+  return (
+    <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      {shrink ? (
+        <path d="M6 2v4H2M10 2v4h4M6 14v-4H2M10 14v-4h4" />
+      ) : (
+        <path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4" />
+      )}
+    </svg>
   );
 }
