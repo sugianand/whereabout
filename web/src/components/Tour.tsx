@@ -9,6 +9,7 @@ import { formatPoints } from "@/lib/geo";
 import { clearedCount, loadTour, nextStop, type TourLeg, type TourRecord } from "@/lib/tour";
 
 import TourGlobe from "./TourGlobe";
+import TourShare from "./TourShare";
 
 export interface TourProps {
   /** The legs in route order (`tourRoute`), each with the photos its continent game deals from. */
@@ -85,6 +86,8 @@ export default function Tour({ legs, record: given }: TourProps) {
           style={{ width: route.length ? `${(cleared / route.length) * 100}%` : 0 }}
         />
       </div>
+
+      {route.some((c) => record[c]) && <TourShare route={route} record={record} />}
 
       <TourGlobe route={route} record={given ?? stored} />
 

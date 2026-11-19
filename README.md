@@ -241,6 +241,9 @@ Asia, Oceania, South America, North America, then Antarctica when the game deals
 is a five-photo continent game, cleared the first time you outscore Atlas over the five (judged
 on the photos Atlas also guessed). Any continent game counts, and its results screen says who
 holds the leg, how many are cleared and offers the next stop. Kept only in this browser.
+**Share your tour** draws the route as a line of stops (cleared, next or still ahead) with each
+leg's best game against Atlas as a lead or a deficit in points, and sends it with the same line
+of margins and a link to `/tour` (*Share as text* sends the line alone).
 **Your map** (at `/map`) puts every photo you've played on one globe, each mark shaped and
 coloured by how close your pin landed (a circle, diamond, triangle or cross, so it reads without
 colour vision too), with the countries and continents you've seen counted and your rounds

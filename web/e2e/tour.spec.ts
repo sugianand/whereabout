@@ -157,3 +157,55 @@ test("the route is drawn on a globe that flies to the next stop, with cleared le
   await noSidewaysScroll(page);
   expect(errors).toEqual([]);
 });
+
+test("the tour shares as a picture of the route and as a line of each leg's margin", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  await page.goto("./tour/");
+  await expect(page.getByTestId("tour-progress")).toHaveText(/^0 of \d continents cleared$/);
+  await expect(page.getByRole("button", { name: "Share your tour" })).toHaveCount(0);
+
+  await page.evaluate(() =>
+    localStorage.setItem(
+      "whereabout:tour",
+      JSON.stringify({
+        Europe: { tries: 2, best: { you: 20000, atlas: 15000 }, cleared: "2026-11-17" },
+        Africa: { tries: 1, best: { you: 9000, atlas: 12500 }, cleared: null },
+      }),
+    ),
+  );
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.reload();
+  const picture = page.getByRole("button", { name: "Share your tour" });
+  await expect(picture).toBeVisible();
+  await picture.scrollIntoViewIfNeeded();
+  await expect(picture).toBeInViewport({ ratio: 1 });
+  const [download] = await Promise.all([page.waitForEvent("download"), picture.click()]);
+  expect(download.suggestedFilename()).toMatch(/^whereabout-tour-1-of-\d\.png$/);
+  const png = readFileSync((await download.path())!);
+  expect(png.subarray(1, 4).toString()).toBe("PNG");
+  expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1080, 1080]);
+  await expect(page.getByText("Tour saved as a picture.", { exact: false })).toBeVisible();
+
+  const sent = () => page.evaluate(() => (window as unknown as { sent: string }).sent);
+  const withPicture = await sent();
+  const lines = withPicture.split("\n");
+  expect(lines[0]).toMatch(/^Whereabout World Tour: 1 of \d continents cleared against Atlas$/);
+  expect(lines[1]).toMatch(/^Europe \+5,000 ✓ · Africa −3,500 · Asia not played/);
+  expect(lines[2]).toMatch(/\/whereabout\/tour\/$/);
+
+  await page.evaluate(() => ((window as unknown as { sent: string }).sent = ""));
+  await page.getByRole("button", { name: "Share as text" }).click();
+  await expect(page.getByText("Tour copied. Paste it anywhere.")).toBeVisible();
+  expect(await sent()).toBe(withPicture);
+  await noSidewaysScroll(page);
+});

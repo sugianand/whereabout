@@ -83,6 +83,36 @@ describe("the World Tour page", () => {
       "Your best tied Atlas at 5,000, over 1 game.",
     );
   });
+
+  it("offers to share the tour only once a leg is played, and shares its margins as text", async () => {
+    const { unmount } = render(<Tour legs={LEGS} record={{}} />);
+    expect(screen.queryByRole("button", { name: "Share your tour" })).toBeNull();
+    unmount();
+
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("navigator", { ...navigator, share: undefined, clipboard: { writeText } });
+    render(
+      <Tour
+        legs={LEGS}
+        record={{
+          Europe: { tries: 2, best: { you: 16200, atlas: 14000 }, cleared: "2026-11-18" },
+          Asia: { tries: 3, best: { you: 9000, atlas: 12500 }, cleared: null },
+        }}
+      />,
+    );
+    const share = screen.getByTestId("tour-share");
+    expect(
+      within(share).getByRole("button", { name: "Share your tour" }),
+    ).toHaveAccessibleDescription("Your World Tour: 1 of 3 continents cleared.");
+    fireEvent.click(within(share).getByRole("button", { name: "Share as text" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    expect((writeText.mock.calls[0][0] as string).split("\n").slice(0, 2)).toEqual([
+      "Whereabout World Tour: 1 of 3 continents cleared against Atlas",
+      "Europe +2,200 ✓ · Africa not played · Asia −3,500",
+    ]);
+    expect(within(share).getByRole("status")).toHaveTextContent("Tour copied. Paste it anywhere.");
+    vi.unstubAllGlobals();
+  });
 });
 
 type Features = { features: { properties: Record<string, unknown> }[] };
