@@ -20,7 +20,14 @@ import {
   ringsHeld,
   type BullseyeRound,
 } from "@/lib/game/bullseye";
+import {
+  bullseyeDailyShare,
+  dailyBullseyeOrder,
+  loadBullseyeDay,
+  rememberBullseyeDay,
+} from "@/lib/game/bullseyeDaily";
 import { seededShuffle } from "@/lib/game/daily";
+import { runToday } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import { formatDistance, formatPoints, type LngLat } from "@/lib/geo";
 import type { RevealView, RingMark } from "@/lib/reveal";
@@ -28,6 +35,7 @@ import type { Units } from "@/lib/units";
 import { useUnits } from "@/lib/useUnits";
 
 import ControlsHelp from "./ControlsHelp";
+import { DailyRunResult } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
 import Globe from "./Globe";
 import PhotoViewer from "./PhotoViewer";
@@ -39,6 +47,13 @@ type BullseyeProps = {
   loadRecords?: (ids: string[]) => Promise<GameRecord[]>;
   /** For tests: the randomness that shuffles each game. */
   random?: () => number;
+  /**
+   * Today's game (src/lib/game/bullseyeDaily.ts): the day's five photos, one try a day, picked
+   * back up after a reload at the first photo not yet bet on.
+   */
+  daily?: boolean;
+  /** For tests: the clock that picks today's game. */
+  now?: () => Date;
 };
 
 /** The ring keys, 1 for the tightest. */
@@ -99,23 +114,35 @@ function RingPicker({
  * inside the ring scores the ring's points, the tightest paying most. Five photos against
  * Atlas's own bets, its ring picked from its own confidence.
  */
-export default function Bullseye({ deck, loadRecords, random }: BullseyeProps) {
+export default function Bullseye({ deck, loadRecords, random, daily = false, now }: BullseyeProps) {
   const [state, dispatch] = useReducer(bullseyeReducer, initialBullseye);
   const [best, setBest] = useState(0);
   // The best before this game, so the end screen can say when it was beaten.
   const [bestBefore, setBestBefore] = useState(0);
   const [records, setRecords] = useState<ReadonlyMap<string, GameRecord>>(() => new Map());
   const [error, setError] = useState<string | null>(null);
+  // The day today's game was dealt for, kept when the clock passes midnight mid-game.
+  const [day, setDay] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const units = useUnits();
 
   const start = useCallback(() => {
+    if (daily) {
+      const today = runToday(now?.());
+      setDay(today);
+      dispatch({
+        type: "start",
+        order: dailyBullseyeOrder(deck.ids, today),
+        from: loadBullseyeDay(today)?.results,
+      });
+      return;
+    }
     const stored = loadBestBullseye();
     setBest(stored);
     setBestBefore(stored);
     const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
     dispatch({ type: "start", order: seededShuffle(deck.ids, seed).slice(0, BULLSEYE_PHOTOS) });
-  }, [deck.ids, random]);
+  }, [daily, deck.ids, now, random]);
 
   // The order is shuffled in the browser after hydration, never at build time.
   useEffect(() => {
@@ -170,18 +197,27 @@ export default function Bullseye({ deck, loadRecords, random }: BullseyeProps) {
   const placeBet = useCallback(() => {
     if (!guessing?.pin || !current) return;
     const { photo, atlas } = current;
-    dispatch({
+    const action = {
       type: "bet",
       truth: photo,
       atlas: atlas ? { lng: atlas.lng, lat: atlas.lat, confidence: atlas.confidence } : null,
-    });
-  }, [current, guessing]);
+    } as const;
+    if (day) {
+      // Kept after every bet, settled by the reducer's own rules, so a reload can't take it back.
+      const after = bullseyeReducer(guessing, action);
+      if (after.phase === "answered") rememberBullseyeDay(day, after.results);
+    }
+    dispatch(action);
+  }, [current, day, guessing]);
 
   const next = useCallback(() => {
     const after = bullseyeReducer(state, { type: "next" });
-    if (after.phase === "finished") setBest(rememberBullseye(bullseyeTotal(after.results)));
+    // Today's game is played once for the day, apart from the free games' best.
+    if (after.phase === "finished" && !day) {
+      setBest(rememberBullseye(bullseyeTotal(after.results)));
+    }
     dispatch({ type: "next" });
-  }, [state]);
+  }, [day, state]);
 
   // G bets from anywhere on the screen, like a round's guess; 1 to 4 pick a ring.
   useEffect(() => {
@@ -222,6 +258,10 @@ export default function Bullseye({ deck, loadRecords, random }: BullseyeProps) {
     return marks;
   }, [pin, ringKm, atlasBet]);
 
+  if (state.phase === "finished" && day && state.results.length > 0) {
+    return <DayResult day={day} results={state.results} units={units} now={now} />;
+  }
+
   if (state.phase === "finished") {
     const total = bullseyeTotal(state.results);
     return (
@@ -246,7 +286,7 @@ export default function Bullseye({ deck, loadRecords, random }: BullseyeProps) {
       data-phase={answered ? "revealed" : "guessing"}
       data-photo={current?.photo.id}
     >
-      <h1 className="sr-only">{`Whereabout: Bullseye, photo ${(playing?.index ?? 0) + 1} of ${of}`}</h1>
+      <h1 className="sr-only">{`Whereabout: Bullseye${daily ? ", today" : ""}, photo ${(playing?.index ?? 0) + 1} of ${of}`}</h1>
 
       <div className="wb-photo">
         {current ? (
@@ -274,11 +314,17 @@ export default function Bullseye({ deck, loadRecords, random }: BullseyeProps) {
             Whereabout
           </Link>
           <p className="mt-1 text-sm text-chalk-dim">
-            {`Bullseye: photo ${(playing?.index ?? 0) + 1} of ${of}`}
+            {`Bullseye${daily ? ", today" : ""}: photo ${(playing?.index ?? 0) + 1} of ${of}`}
           </p>
           <div className="pointer-events-auto mt-2 flex items-center gap-2">
             <GamesMenu screen="bullseye" streakHref="/streak" />
             <ControlsHelp screen="bullseye" />
+            <Link
+              href={daily ? "/bullseye" : "/bullseye/daily"}
+              className="whitespace-nowrap text-sm text-gold underline underline-offset-2 hover:brightness-110"
+            >
+              {daily ? "Free games" : "Today's game"}
+            </Link>
           </div>
         </div>
         <div className="pointer-events-auto text-right">
@@ -299,10 +345,12 @@ export default function Bullseye({ deck, loadRecords, random }: BullseyeProps) {
                 <dd className="tabular text-sonar">{formatPoints(atlas.total)}</dd>
               </div>
             )}
-            <div className="flex justify-end gap-1.5">
-              <dt>Best</dt>
-              <dd className="tabular">{formatPoints(best)}</dd>
-            </div>
+            {!daily && (
+              <div className="flex justify-end gap-1.5">
+                <dt>Best</dt>
+                <dd className="tabular">{formatPoints(best)}</dd>
+              </div>
+            )}
           </dl>
         </div>
       </header>
@@ -425,6 +473,52 @@ function BullseyeCard({
   );
 }
 
+/** Each photo's ring, whether it held, how far off the pin was and what it scored. */
+function PhotoList({ results, units }: { results: readonly BullseyeRound[]; units: Units }) {
+  return (
+    <ol className="mt-6 space-y-2" aria-label="Your photos">
+      {results.map((r, i) => (
+        <li key={r.id} className="flex items-baseline justify-between gap-4 text-sm">
+          <span className="text-chalk-dim">
+            {`Photo ${i + 1}: ${r.you.inside ? "inside" : "outside"} ${ringName(r.you.ring, units)}, ${formatDistance(r.you.km, units)} off`}
+          </span>
+          <span className="tabular shrink-0 font-semibold">{formatPoints(r.you.score)}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** Today's Bullseye once its last photo is bet on, on this visit or an earlier one. */
+function DayResult({
+  day,
+  results,
+  units,
+  now,
+}: {
+  day: string;
+  results: readonly BullseyeRound[];
+  units: Units;
+  now?: () => Date;
+}) {
+  const atlas = bullseyeAtlasLine(results);
+  const held = ringsHeld(results);
+  return (
+    <DailyRunResult
+      game="Bullseye"
+      day={day}
+      unit="game"
+      headline={`${formatPoints(bullseyeTotal(results))} points`}
+      summary={`Out of ${formatPoints(results.length * PHOTO_POINTS)}. Your rings held ${held} of ${results.length} photos.${atlas ? ` ${atlas}` : ""}`}
+      shareText={(href) => bullseyeDailyShare(day, results, href, units)}
+      freeHref="/bullseye"
+      now={now}
+    >
+      <PhotoList results={results} units={units} />
+    </DailyRunResult>
+  );
+}
+
 function Finished({
   results,
   best,
@@ -459,16 +553,7 @@ function Finished({
               {atlas}
             </p>
           )}
-          <ol className="mt-6 space-y-2" aria-label="Your photos">
-            {results.map((r, i) => (
-              <li key={r.id} className="flex items-baseline justify-between gap-4 text-sm">
-                <span className="text-chalk-dim">
-                  {`Photo ${i + 1}: ${r.you.inside ? "inside" : "outside"} ${ringName(r.you.ring, units)}, ${formatDistance(r.you.km, units)} off`}
-                </span>
-                <span className="tabular shrink-0 font-semibold">{formatPoints(r.you.score)}</span>
-              </li>
-            ))}
-          </ol>
+          <PhotoList results={results} units={units} />
         </>
       )}
       <div className="mt-8 flex flex-wrap items-center gap-4">

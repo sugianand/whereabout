@@ -77,6 +77,10 @@ test("stamps come from what the browser keeps, are marked new once, and fit a 32
         atlas: null,
       });
       keep("whereabout:on-the-ground-daily", { results: ["a", "b", "c", "d", "e"].map(ground) });
+      // So is Bullseye from 2026-11-21 on.
+      const ring = { at: { lng: 0, lat: 0 }, ring: 3, km: 100 };
+      const bet = (id: string) => ({ id, you: ring, atlas: null });
+      keep("whereabout:bullseye-daily", { results: ["a", "b", "c", "d", "e"].map(bet) });
     },
     { played: [pin("p1", "AU", 900), pin("p2", "NZ", 120), pin("p3", "PF", 3000)], day: yesterday },
   );

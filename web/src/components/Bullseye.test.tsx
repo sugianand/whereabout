@@ -1,7 +1,8 @@
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BEST_BULLSEYE_KEY, RINGS } from "@/lib/game/bullseye";
+import { BULLSEYE_DAILY_KEY, dailyBullseyeOrder, loadBullseyeDay } from "@/lib/game/bullseyeDaily";
 import { seededShuffle } from "@/lib/game/daily";
 import type { GameRecord } from "@/lib/game/deck";
 import type { CatalogPhoto } from "@/lib/game/types";
@@ -159,5 +160,124 @@ describe("Bullseye", () => {
     );
     expect(localStorage.getItem(BEST_BULLSEYE_KEY)).toBe("2500");
     expect(within(screen.getByRole("list", { name: "Your photos" })).getAllByRole("listitem")).toHaveLength(5);
+  });
+});
+
+function useClipboard() {
+  const sent = { text: "" };
+  Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+  Object.defineProperty(navigator, "clipboard", {
+    value: { writeText: async (t: string) => void (sent.text = t) },
+    configurable: true,
+  });
+  return sent;
+}
+
+describe("today's Bullseye", () => {
+  const DAY = "2026-11-21";
+  const now = () => new Date(`${DAY}T12:00:00Z`);
+  const today = dailyBullseyeOrder(
+    RECORDS.map((r) => r.photo.id),
+    DAY,
+  ).map((id) => byId.get(id)!);
+
+  async function setupDay(remount = false) {
+    const game = gameFor(RECORDS);
+    const seen = FakeMap.instances.length;
+    render(<Bullseye deck={game.deck} loadRecords={game.loadRecords} daily now={now} />);
+    if (remount) await waitFor(() => expect(FakeMap.instances.length).toBeGreaterThan(seen));
+    else await waitFor(() => expect(FakeMap.instances.length).toBeGreaterThan(0));
+    const map = FakeMap.instances.at(-1)!;
+    act(() => map.emit("load"));
+    await screen.findByRole("button", { name: "Zoom in on the photo" });
+    return map;
+  }
+
+  const shownId = () => document.querySelector("main")!.getAttribute("data-photo");
+
+  /** Pin `at` on the photo showing, bet `ring` (a radio's name) and go on from its answer. */
+  async function play(map: FakeMap, at: { lng: number; lat: number }, ring: RegExp, last = false) {
+    act(() => map.click(at.lng, at.lat));
+    fireEvent.click(screen.getByRole("radio", { name: ring }));
+    fireEvent.keyDown(window, { key: "g" });
+    const card = await screen.findByRole("region");
+    fireEvent.click(
+      within(card).getByRole("button", { name: last ? "See your score" : "Next photo" }),
+    );
+  }
+
+  it("deals the day's photos and picks up after a reload at the next photo, on the ring last bet", async () => {
+    const map = await setupDay();
+    await waitFor(() => expect(shownId()).toBe(today[0]!.id));
+    expect(screen.getByText("Bullseye, today: photo 1 of 5")).toBeInTheDocument();
+    expect(screen.queryByText("Best")).toBeNull();
+    expect(screen.getByRole("link", { name: "Free games" })).toHaveAttribute("href", "/bullseye");
+    // Kept the moment the bet is made, before its answer is read.
+    act(() => map.click(today[0]!.lng, today[0]!.lat));
+    fireEvent.click(screen.getByRole("radio", { name: /^250 km/ }));
+    fireEvent.keyDown(window, { key: "g" });
+    await screen.findByRole("region");
+    expect(loadBullseyeDay(DAY)?.results).toMatchObject([
+      { id: today[0]!.id, you: { ring: 0, inside: true, score: 1000 } },
+    ]);
+
+    cleanup();
+    await setupDay(true);
+    await waitFor(() => expect(shownId()).toBe(today[1]!.id));
+    expect(screen.getByText("Bullseye, today: photo 2 of 5")).toBeInTheDocument();
+    expect(screen.getByTestId("bullseye-score")).toHaveTextContent("1,000");
+    expect(screen.getByRole("radio", { name: /^250 km/ })).toBeChecked();
+  });
+
+  it("ends in the day's result with a share of the rings, never dealt again, the free best untouched", async () => {
+    const sent = useClipboard();
+    window.history.replaceState(null, "", "/bullseye/daily");
+    const map = await setupDay();
+    for (const [i, photo] of today.slice(0, 5).entries()) {
+      await waitFor(() => expect(shownId()).toBe(photo.id));
+      // Every other photo pinned on the far side of the world, outside any ring.
+      const at = i % 2 === 0 ? photo : { lng: photo.lng - 180, lat: -photo.lat };
+      await play(map, at, /^2,000 km/, i === 4);
+    }
+    expect(await screen.findByRole("heading", { level: 1, name: "750 points" })).toBeInTheDocument();
+    expect(
+      screen.getByText(/^Out of 5,000\. Your rings held 3 of 5 photos\. Atlas scored 5,000.*next game is dealt/),
+    ).toBeTruthy();
+    const share = screen.getByRole("button", { name: "Share today's game" });
+    expect(share).toHaveFocus();
+    expect(screen.getByRole("list", { name: "Your photos" }).children).toHaveLength(5);
+    expect(localStorage.getItem(BEST_BULLSEYE_KEY)).toBeNull();
+
+    fireEvent.click(share);
+    await waitFor(() => expect(sent.text).not.toBe(""));
+    const lines = sent.text.split("\n");
+    expect(lines.slice(0, 4)).toEqual([
+      `Whereabout · Bullseye · ${DAY}`,
+      "🎯 750 of 5,000 · 3 of 5 rings held",
+      "🟩 2,000 km  🟥 2,000 km  🟩 2,000 km  🟥 2,000 km  🟩 2,000 km",
+      "Atlas: 5,000 · 5 of 5 rings held",
+    ]);
+    for (const photo of today) expect(sent.text).not.toContain(photo.place);
+
+    cleanup();
+    const game = gameFor(RECORDS);
+    render(<Bullseye deck={game.deck} loadRecords={game.loadRecords} daily now={now} />);
+    expect(await screen.findByRole("heading", { name: "750 points" })).toBeInTheDocument();
+    expect(screen.queryByRole("application")).toBeNull();
+  });
+
+  it("treats a day it can't read as not started", async () => {
+    localStorage.setItem(BULLSEYE_DAILY_KEY, JSON.stringify({ [DAY]: { results: "no" } }));
+    await setupDay();
+    await waitFor(() => expect(shownId()).toBe(today[0]!.id));
+    expect(screen.getByText("Bullseye, today: photo 1 of 5")).toBeInTheDocument();
+  });
+
+  it("links the free game to today's", async () => {
+    await setup();
+    expect(screen.getByRole("link", { name: "Today's game" })).toHaveAttribute(
+      "href",
+      "/bullseye/daily",
+    );
   });
 });

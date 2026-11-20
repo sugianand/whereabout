@@ -3,6 +3,8 @@ import { resolve } from "node:path";
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+import { TODAY_GAMES } from "../src/lib/game/today";
+
 const PHOTO = readFileSync(resolve(process.cwd(), "e2e/fixtures/photo.png"));
 const CATALOG = new Map(
   (
@@ -99,7 +101,8 @@ test("Bullseye bets a ring around each pin: inside pays the ring, outside nothin
   await expect(card).toContainText("Inside your ring");
   await expect(card.getByRole("heading", { level: 2 })).toHaveText("1,000 points");
   await expect(card.getByTestId("bullseye-you")).toHaveText(
-    /^You: Inside the 250 km ring, [\d,]+ km off: 1,000 points\.$/,
+    // Under 10 km the distance reads to a tenth, and under 1 km in metres.
+    /^You: Inside the 250 km ring, [\d,.]+ k?m off: 1,000 points\.$/,
   );
   // Atlas bets on every photo it guessed, its ring from its own confidence.
   await expect(card.getByTestId("bullseye-atlas")).toHaveText(
@@ -153,13 +156,107 @@ test("Bullseye bets a ring around each pin: inside pays the ring, outside nothin
   expect(errors).toEqual([]);
 });
 
-test("the ring buttons and the bet fit a 320px phone", async ({ page }) => {
+test("today's Bullseye deals the day's five once, picks up after a reload, and shares the rings", async ({
+  page,
+}) => {
+  test.setTimeout(300_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const today = new Date().toISOString().slice(0, 10);
+
+  // The free game links to today's.
+  await page.goto("./bullseye");
+  await page.getByRole("link", { name: "Today's game" }).click();
+  await expect(page).toHaveURL(/\/bullseye\/daily\/?$/, { timeout: 20_000 });
+  await expect(page.getByText("Bullseye, today: photo 1 of 5")).toBeVisible();
+  const first = await page.locator("main[data-photo]").getAttribute("data-photo");
+
+  // Everyone on one day gets the same photos: a fresh player is dealt the same first one.
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await expect(page.locator("main[data-photo]")).toHaveAttribute("data-photo", first!);
+
+  const score = page.getByTestId("bullseye-score");
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+
+  // Photo 1 on the place with the tightest ring; once bet, a reload can't take it back.
+  let truth = await photoAt(page);
+  await pinNear(page, truth);
+  await page.keyboard.press("1");
+  await page.keyboard.press("g");
+  await expect(card.getByRole("heading", { level: 2 })).toHaveText("1,000 points");
+  await page.reload();
+  await expect(page.getByText("Bullseye, today: photo 2 of 5")).toBeVisible();
+  await expect(score).toHaveText("1,000");
+  await expect(page.getByRole("radio", { name: /^250 km/ })).toBeChecked();
+  await expect(page.getByText("Best", { exact: true })).toHaveCount(0);
+
+  // Photos 2 to 5 on the place with the widest ring.
+  for (let i = 2; i <= 5; i++) {
+    await expect(page.getByText(`Bullseye, today: photo ${i} of 5`)).toBeVisible();
+    truth = await photoAt(page);
+    await pinNear(page, truth);
+    await page.keyboard.press("4");
+    await page.keyboard.press("g");
+    await expect(card.getByRole("heading", { level: 2 })).toHaveText("100 points");
+    await page.keyboard.press("Enter");
+  }
+
+  // The day's result, again after a reload: never dealt a second time.
+  const heading = page.getByRole("heading", { level: 1 });
+  await expect(heading).toHaveText("1,400 points");
+  await page.reload();
+  await expect(heading).toHaveText("1,400 points");
+  await expect(page.getByText(/Your rings held 5 of 5 photos\..*The next game is dealt in \d+/)).toBeVisible();
+  await expect(page.getByRole("application")).toHaveCount(0);
+  await expect(page.getByRole("list", { name: "Your photos" }).getByRole("listitem")).toHaveCount(5);
+
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  await page.getByRole("button", { name: "Share today's game" }).click();
+  await expect(page.getByText("Result copied. Paste it anywhere.")).toBeVisible();
+  const sent = await page.evaluate(() => (window as unknown as { sent: string }).sent);
+  expect(sent).toContain(
+    `Whereabout · Bullseye · ${today}\n🎯 1,400 of 5,000 · 5 of 5 rings held\n🟩 250 km  🟩 5,000 km  🟩 5,000 km  🟩 5,000 km  🟩 5,000 km\n`,
+  );
+  expect(sent).toMatch(/\/whereabout\/bullseye\/daily\/?$/);
+  expect(sent).not.toContain(first!);
+
+  // The free game's best is its own, and Today counts the day once Bullseye is one of its games.
+  expect(await page.evaluate(() => localStorage.getItem("whereabout:bullseye-best"))).toBe(null);
+  const since = TODAY_GAMES.find((g) => g.id === "bullseye")!.since!;
+  if (today >= since) {
+    await page.goto("./today");
+    const today_ = page.getByTestId("today-bullseye");
+    await expect(today_).toHaveAttribute("data-status", "done");
+    await expect(today_).toContainText("1,400 of 5,000");
+  }
+  expect(errors).toEqual([]);
+});
+
+test("the ring buttons and the bet fit a 320px phone, today's game too", async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 1000) >= 768, "a phone layout check");
   await page.setViewportSize({ width: 320, height: 640 });
-  await page.goto("./bullseye");
-  await photoAt(page);
-  for (const name of [/^250 km/, /^750 km/, /^2,000 km/, /^5,000 km/]) {
-    await expectOnScreen(page.getByRole("radio", { name }).locator(".."));
+  for (const [path, link] of [
+    ["./bullseye", "Today's game"],
+    ["./bullseye/daily", "Free games"],
+  ] as const) {
+    await page.goto(path);
+    await photoAt(page);
+    for (const name of [/^250 km/, /^750 km/, /^2,000 km/, /^5,000 km/]) {
+      await expectOnScreen(page.getByRole("radio", { name }).locator(".."));
+    }
+    await expectOnScreen(page.getByRole("link", { name: link }));
+    await expectOnScreen(page.getByTestId("bullseye-score"));
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      320,
+    );
   }
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });

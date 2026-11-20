@@ -67,14 +67,18 @@ export interface Bet {
   score: number;
 }
 
-/** The bet of a pin at `at` with ring `ring` on a photo at `truth`. */
-export function bet(at: LngLat, ring: number, truth: LngLat): Bet {
+/** The bet of a pin at `at` with ring `ring` on a photo `km` away from it. */
+export function settleBet(at: LngLat, ring: number, km: number): Bet {
   const r = RINGS[ring];
   if (!r) throw new RangeError(`no ring ${ring}`);
-  const km = haversineKm(at, truth);
   // A whisker of slack, so a photo on the ring's own line counts as inside.
   const inside = km <= r.km + 1e-9;
   return { at, ring, km, inside, score: inside ? r.points : 0 };
+}
+
+/** The bet of a pin at `at` with ring `ring` on a photo at `truth`. */
+export function bet(at: LngLat, ring: number, truth: LngLat): Bet {
+  return settleBet(at, ring, haversineKm(at, truth));
 }
 
 export interface BullseyeRound {
@@ -116,7 +120,8 @@ export type BullseyeState =
   | { phase: "finished"; order: readonly string[]; results: readonly BullseyeRound[] };
 
 export type BullseyeAction =
-  | { type: "start"; order: readonly string[] }
+  /** `from` picks up a game already under way, at the first photo it hasn't bet on. */
+  | { type: "start"; order: readonly string[]; from?: readonly BullseyeRound[] }
   | { type: "pinned"; pin: LngLat }
   | { type: "ring"; ring: number }
   | { type: "bet"; truth: LngLat; atlas: (LngLat & { confidence: number }) | null }
@@ -128,8 +133,11 @@ export function bullseyeReducer(state: BullseyeState, action: BullseyeAction): B
   switch (action.type) {
     case "start": {
       const { order } = action;
-      if (order.length === 0) return { phase: "finished", order, results: [] };
-      return { phase: "guessing", order, index: 0, results: [], pin: null, ring: DEFAULT_RING };
+      const results = action.from ?? [];
+      if (results.length >= order.length) return { phase: "finished", order, results };
+      // A game picked back up starts on the ring its last photo was bet on, as if never left.
+      const ring = results.at(-1)?.you.ring ?? DEFAULT_RING;
+      return { phase: "guessing", order, index: results.length, results, pin: null, ring };
     }
     case "pinned":
       return state.phase === "guessing" ? { ...state, pin: action.pin } : state;

@@ -129,6 +129,22 @@ describe("bullseyeReducer", () => {
     expect(ringsHeld(s.results)).toBe(2);
     expect(atlasBullseyeTotal(s.results)).toEqual({ total: 0, played: 1, held: 0 });
   });
+
+  it("picks a game back up at the first photo not bet on, on the ring last bet", () => {
+    const first = { id: "a", you: bet(PARIS, 3, BERLIN), atlas: null };
+    const s = bullseyeReducer(initialBullseye, {
+      type: "start",
+      order: ["a", "b", "c"],
+      from: [first],
+    });
+    expect(s).toMatchObject({ phase: "guessing", index: 1, ring: 3, pin: null, results: [first] });
+  });
+
+  it("starts a game with every photo bet on already finished", () => {
+    const from = ["a", "b"].map((id) => ({ id, you: bet(PARIS, 0, PARIS), atlas: null }));
+    const s = bullseyeReducer(initialBullseye, { type: "start", order: ["a", "b"], from });
+    expect(s).toEqual({ phase: "finished", order: ["a", "b"], results: from });
+  });
 });
 
 describe("the words", () => {

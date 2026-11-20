@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { bet, type BullseyeRound } from "./bullseye";
+import { rememberBullseyeDay } from "./bullseyeDaily";
 import { rememberClimateDay } from "./climateDaily";
 import { rememberClueDay } from "./clueDaily";
 import { rememberCloseDay } from "./closeDaily";
@@ -287,6 +289,19 @@ const GROUND_GAME: GroundResult[] = [
   { id: "e", picked: "Tree cover", truth: "Grassland", correct: false, atlas: "Built-up" },
 ];
 
+const PARIS = { lng: 2.35, lat: 48.86 };
+const BERLIN = { lng: 13.4, lat: 52.52 };
+
+/**
+ * A whole Bullseye game: your 2,000 km ring holds every photo (1,250), and Atlas's 750 km ring
+ * misses all but the photo it pinned on the spot (1,000).
+ */
+const BULLSEYE_GAME: BullseyeRound[] = ["a", "b", "c", "d", "e"].map((id, i) => ({
+  id,
+  you: bet(PARIS, 2, BERLIN),
+  atlas: i === 0 ? bet(BERLIN, 0, BERLIN) : bet(PARIS, 1, BERLIN),
+}));
+
 /** Finish one game joined later on `day`, as it writes its own store. */
 const finishJoined: Partial<Record<TodayGameId, (day: string) => void>> = {
   "line-up": (day) => rememberLineDay(day, { results: Array<RowResult>(5).fill(ROW) }),
@@ -301,6 +316,7 @@ const finishJoined: Partial<Record<TodayGameId, (day: string) => void>> = {
   "clue-mix": (day) =>
     rememberClueDay(day, { streak: 5, atlasRight: 4, atlasPlayed: 6, ended: "miss" }),
   "on-the-ground": (day) => rememberGroundDay(day, GROUND_GAME),
+  bullseye: (day) => rememberBullseyeDay(day, BULLSEYE_GAME),
 };
 
 /** Every daily game finished on `day` but `except`, each as it writes its own store. */
@@ -492,6 +508,35 @@ describe("today's What's on the ground? on Today", () => {
   it("makes no call against Atlas when its clues named no cover on a photo", () => {
     rememberGroundDay(DAY_IN, [...GROUND_GAME.slice(0, 4), { ...GROUND_GAME[4], atlas: null }]);
     expect(game()).toMatchObject({ status: "done", atlas: "3 of 4", versus: null });
+  });
+});
+
+describe("today's Bullseye on Today", () => {
+  const DAY_IN = "2026-11-21";
+  const AT = new Date(`${DAY_IN}T12:00:00Z`);
+  const game = () => todayGames(DAY_IN, IDS, AT).find((g) => g.id === "bullseye")!;
+
+  it("reads the bets as they are kept, and calls the game against Atlas when it bet every photo", () => {
+    expect(todayGames("2026-11-20", IDS, AT).some((g) => g.id === "bullseye")).toBe(false);
+    expect(game()).toMatchObject({ status: "new", line: "Not started", href: "/bullseye/daily" });
+    rememberBullseyeDay(DAY_IN, BULLSEYE_GAME.slice(0, 2));
+    expect(game()).toMatchObject({
+      status: "going",
+      line: "2 of 5 photos, 500 points",
+      atlas: "1,000 points",
+    });
+    finishJoined.bullseye!(DAY_IN);
+    expect(game()).toMatchObject({
+      status: "done",
+      line: "1,250 of 5,000",
+      atlas: "1,000 points",
+      versus: { you: 1250, atlas: 1000, unit: "points", call: "you" },
+    });
+  });
+
+  it("makes no call against Atlas when it never guessed a photo", () => {
+    rememberBullseyeDay(DAY_IN, [...BULLSEYE_GAME.slice(0, 4), { ...BULLSEYE_GAME[4]!, atlas: null }]);
+    expect(game()).toMatchObject({ status: "done", atlas: "1,000 points", versus: null });
   });
 });
 

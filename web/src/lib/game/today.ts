@@ -2,9 +2,9 @@
  * Today: every daily game on one page. Each game already keeps its own day in this browser, so
  * this reads those records back and adds none of its own: the Daily Five's first score and the
  * game in progress (./dailyArchive.ts, ./saved.ts), the streak games' runs (./dailyRuns.ts)
- * and the photos and rows of How far apart?, Hot and cold, Line them up, Close-up, Which climate?
- * and What's on the ground? (./farDaily.ts, ./hotDaily.ts, ./lineDaily.ts, ./closeDaily.ts,
- * ./climateDaily.ts, ./groundDaily.ts). What a game can't read back counts as not started.
+ * and the photos and rows of How far apart?, Hot and cold, Line them up, Close-up, Which climate?,
+ * What's on the ground? and Bullseye (./farDaily.ts, ./hotDaily.ts, ./lineDaily.ts,
+ * ./closeDaily.ts, ./climateDaily.ts, ./groundDaily.ts, ./bullseyeDaily.ts). What a game can't read back counts as not started.
  *
  * Like every share in the game, the combined line is scores and counts only, so it spoils no
  * photo. Only finished games go in it: a run still going has no result yet.
@@ -18,6 +18,13 @@
 
 import { MAX_POINTS, formatPoints } from "@/lib/geo";
 
+import {
+  BULLSEYE_PHOTOS,
+  PHOTO_POINTS as BULLSEYE_POINTS,
+  atlasBullseyeTotal,
+  bullseyeTotal,
+} from "./bullseye";
+import { loadBullseyeDay } from "./bullseyeDaily";
 import { loadClimateDay } from "./climateDaily";
 import { loadClueDay } from "./clueDaily";
 import { loadCloseDay } from "./closeDaily";
@@ -54,7 +61,8 @@ export type TodayGameId =
   | "left-right"
   | "which-climate"
   | "clue-mix"
-  | "on-the-ground";
+  | "on-the-ground"
+  | "bullseye";
 
 /** One daily game: where it lives, whatever the browser holds. */
 export interface TodayGameInfo {
@@ -173,6 +181,15 @@ export const TODAY_GAMES: readonly TodayGameInfo[] = [
     blurb: "Five photos: built-up, trees, grassland, water or bare ground?",
     // From the next UTC day, so a day already played in full isn't left one game short.
     since: "2026-11-19",
+  },
+  {
+    id: "bullseye",
+    name: "Bullseye",
+    href: "/bullseye/daily",
+    icon: "🎯",
+    blurb: "Five photos: pin each and bet a ring around it, the tighter the more it pays.",
+    // From the next UTC day, so a day already played in full isn't left one game short.
+    since: "2026-11-21",
   },
 ];
 
@@ -359,6 +376,23 @@ function onTheGround(day: string) {
   return photoCalls(results, GROUND_PHOTOS, groundTotals(results));
 }
 
+function bullseye(day: string) {
+  const results = loadBullseyeDay(day)?.results ?? [];
+  if (results.length === 0)
+    return { status: "new" as const, line: NOT_STARTED, atlas: null, versus: null };
+  const you = bullseyeTotal(results);
+  const atlas = atlasBullseyeTotal(results);
+  const rival = atlas.played > 0 ? `${formatPoints(atlas.total)} points` : null;
+  if (results.length < BULLSEYE_PHOTOS) {
+    const line = `${results.length} of ${BULLSEYE_PHOTOS} photos, ${formatPoints(you)} points`;
+    return { status: "going" as const, line, atlas: rival, versus: null };
+  }
+  const line = `${formatPoints(you)} of ${formatPoints(BULLSEYE_PHOTOS * BULLSEYE_POINTS)}`;
+  // Atlas's points are only a score against yours when it bet on every photo.
+  const called = atlas.played === BULLSEYE_PHOTOS ? versus(you, atlas.total, "points") : null;
+  return { status: "done" as const, line, atlas: rival, versus: called };
+}
+
 /** Every daily game dealt on `day`, with its standing in this browser. */
 export function todayGames(
   day: string,
@@ -394,6 +428,8 @@ export function todayGames(
         return { ...info, ...streakGame(loadClueDay(day), "clue") };
       case "on-the-ground":
         return { ...info, ...onTheGround(day) };
+      case "bullseye":
+        return { ...info, ...bullseye(day) };
     }
   });
 }

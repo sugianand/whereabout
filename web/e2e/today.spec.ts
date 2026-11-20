@@ -174,6 +174,9 @@ test("full days count up on a calendar that fits the screen", async ({ page }) =
       keep("whereabout:which-climate-daily", { results: ["a", "b", "c", "d", "e"].map(call) });
       const ground = (id: string) => ({ id, picked: "Grassland", truth: "Grassland", atlas: null });
       keep("whereabout:on-the-ground-daily", { results: ["a", "b", "c", "d", "e"].map(ground) });
+      const ring = { at: { lng: 0, lat: 0 }, ring: 3, km: 100 };
+      const bet = (id: string) => ({ id, you: ring, atlas: null });
+      keep("whereabout:bullseye-daily", { results: ["a", "b", "c", "d", "e"].map(bet) });
     },
     { full: [before(1), before(2)], partly: before(3) },
   );

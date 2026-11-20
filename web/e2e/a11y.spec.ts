@@ -56,6 +56,7 @@ const FIRST_SCREENS = [
   "./which-way",
   "./hot-cold",
   "./bullseye",
+  "./bullseye/daily",
   "./name-country",
   "./line-up",
   "./close-up",

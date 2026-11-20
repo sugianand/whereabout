@@ -108,7 +108,11 @@ the globe as you move the pin: if the photo was taken inside the ring it scores 
 Atlas bets on every photo it guessed with the same rings, its pin its own guess and its ring picked
 from its confidence in the country by a fixed rule (80% sure or more bets 250 km, 50% 750 km, 20%
 2,000 km, below that 5,000 km); the answer draws both rings, Atlas's dashed, so you see whose ring
-held the photo. Five photos a game; your best is kept in your browser.
+held the photo. Five photos a game; your best is kept in your browser. **Today's game** (at
+`/bullseye/daily`, on Today from 2026-11-21) deals everyone the same five photos on the same UTC
+day, one try a day. Each bet is kept as it is made, so a reload picks up at the next photo on the
+ring you last bet and can't take one back; the share line is your points, each photo's ring and
+whether it held, and Atlas's tally, spoiling no place and no distance.
 **Name the country** (at `/name-country`, in the Games menu) shows one photo and four countries from
 the same continent, drawn from the countries the globe draws: tap the right one, or press 1 to 4,
 and go on until your first miss. Atlas picks too, the name it gave the most of the four, and the
