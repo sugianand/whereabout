@@ -61,7 +61,83 @@ describe("the World Tour page", () => {
     expect(screen.getByTestId("tour-progress")).toHaveTextContent(
       "Tour complete: you've beaten Atlas on all 3 continents.",
     );
-    expect(screen.queryByText("Next stop")).toBeNull();
+    const route = screen.getByRole("list", { name: "The route" });
+    expect(within(route).queryByText("Next stop")).toBeNull();
+    // ...and the Blitz lap opens on its first leg.
+    const lap = screen.getByRole("list", { name: "The Blitz lap" });
+    expect(within(lap).getByText("Next stop")).toBeInTheDocument();
+  });
+
+  it("keeps the Blitz lap shut until the first lap is complete", () => {
+    const won = { tries: 1, best: { you: 2, atlas: 1 }, cleared: "2026-11-18" };
+    render(<Tour legs={LEGS} record={{ Europe: won }} blitzRecord={{ Europe: won }} />);
+    const lap = screen.getByTestId("blitz-lap");
+    expect(within(lap).getByRole("heading", { name: "Second lap: Blitz" })).toBeInTheDocument();
+    expect(screen.getByTestId("blitz-locked")).toHaveTextContent(
+      "Clear every leg to open the Blitz lap",
+    );
+    expect(screen.queryAllByTestId("blitz-stop")).toHaveLength(0);
+    expect(within(lap).queryByRole("link")).toBeNull();
+  });
+
+  it("opens the Blitz lap once the tour is complete, with its own progress and timed games", () => {
+    const won = { tries: 1, best: { you: 2, atlas: 1 }, cleared: "2026-11-18" };
+    render(
+      <Tour
+        legs={LEGS}
+        record={{ Europe: won, Africa: won, Asia: won }}
+        blitzRecord={{
+          Europe: { tries: 2, best: { you: 9000, atlas: 7000 }, cleared: "2026-11-19" },
+          Africa: { tries: 1, best: { you: 6000, atlas: 8000 }, cleared: null },
+        }}
+      />,
+    );
+    expect(screen.queryByTestId("blitz-locked")).toBeNull();
+    expect(screen.getByTestId("blitz-progress")).toHaveTextContent(
+      "1 of 3 continents cleared against the clock",
+    );
+    expect(
+      screen.getByRole("progressbar", { name: "Continents cleared on the Blitz lap" }),
+    ).toHaveAttribute("aria-valuenow", "1");
+    const stops = screen.getAllByTestId("blitz-stop");
+    expect(stops.map((s) => [s.dataset.continent, s.dataset.state])).toEqual([
+      ["Europe", "cleared"],
+      ["Africa", "next"],
+      ["Asia", "ahead"],
+    ]);
+    expect(within(stops[0]).getByRole("heading", { level: 3 })).toHaveTextContent("Europe Blitz");
+    expect(within(stops[0]).getByRole("link", { name: "Play Europe Blitz again" })).toHaveAttribute(
+      "href",
+      "/?region=europe&blitz",
+    );
+    expect(stops[1]).toHaveTextContent(
+      "Atlas holds it. Your closest: 2,000 points behind, over 1 game.",
+    );
+    expect(stops[1]).toHaveTextContent("Five of 40 photos taken in Africa, 30 seconds each.");
+    expect(within(stops[1]).getByRole("link", { name: "Play Africa Blitz" })).toHaveAttribute(
+      "href",
+      "/?region=africa&blitz",
+    );
+    // The first lap's legs are untouched by the second's.
+    expect(screen.getAllByTestId("tour-stop").map((s) => s.dataset.state)).toEqual([
+      "cleared",
+      "cleared",
+      "cleared",
+    ]);
+  });
+
+  it("says when the Blitz lap is complete, read from this browser", () => {
+    const won = { tries: 1, best: { you: 2, atlas: 1 }, cleared: "2026-11-18" };
+    const all = { Europe: won, Africa: won, Asia: won };
+    localStorage.setItem("whereabout:tour-blitz", JSON.stringify(all));
+    try {
+      render(<Tour legs={LEGS} record={all} />);
+      expect(screen.getByTestId("blitz-progress")).toHaveTextContent(
+        "Blitz lap complete: you've beaten Atlas against the clock on all 3 continents.",
+      );
+    } finally {
+      localStorage.removeItem("whereabout:tour-blitz");
+    }
   });
 
   it("reads the tour this browser keeps", () => {
@@ -235,6 +311,7 @@ function result(i: number, you: number, atlas: number): RoundResult {
 }
 
 const leg = (over: Partial<LegResult>): LegResult => ({
+  lap: "first",
   continent: "Europe",
   game: { you: 15000, atlas: 12000 },
   won: true,
@@ -284,7 +361,28 @@ describe("the World Tour on the results screen", () => {
       "/tour",
     );
     fireEvent.click(within(card).getByRole("button", { name: "Next stop: Africa" }));
-    expect(onPlayLeg).toHaveBeenCalledWith("Africa");
+    expect(onPlayLeg).toHaveBeenCalledWith("Africa", "first");
+  });
+
+  it("words a Blitz leg as the second lap's, and leads to its next stop against the clock", () => {
+    expect(tourLegLine(leg({ lap: "blitz" }))).toBe(
+      "Europe Blitz cleared: you beat Atlas on its home ground by 3,000 points.",
+    );
+    const onPlayLeg = vi.fn();
+    render(
+      <Summary
+        results={[result(1, 5000, 4000)]}
+        title="Europe Blitz"
+        onPlayAgain={() => {}}
+        tour={leg({ lap: "blitz" })}
+        onPlayLeg={onPlayLeg}
+      />,
+    );
+    const card = screen.getByRole("region", { name: "World Tour, Blitz lap" });
+    expect(card).toHaveTextContent("World Tour: Blitz lap");
+    expect(card).toHaveTextContent("1 of 3 continents cleared on the Blitz lap.");
+    fireEvent.click(within(card).getByRole("button", { name: "Next stop: Africa Blitz" }));
+    expect(onPlayLeg).toHaveBeenCalledWith("Africa", "blitz");
   });
 
   it("offers no next stop while this leg is still Atlas's, and none once the tour is done", () => {
@@ -315,7 +413,7 @@ describe("the World Tour on the results screen", () => {
       />,
     );
     expect(screen.getByRole("region", { name: "World Tour" })).toHaveTextContent(
-      "You've beaten Atlas on all 3 continents.",
+      "You've beaten Atlas on all 3 continents. The Blitz lap is open on the tour.",
     );
     expect(screen.queryByRole("button", { name: /Next stop/ })).toBeNull();
   });

@@ -23,7 +23,7 @@ import { SQUARE_SETS, inSquares, type SquareSet } from "@/lib/squares";
 import { useSquares } from "@/lib/useSquares";
 import type { Units } from "@/lib/units";
 import { CONTINENTS, type Continent } from "@/lib/continents";
-import type { LegResult } from "@/lib/tour";
+import type { LegResult, TourLap } from "@/lib/tour";
 import {
   MIN_RANKED_ROUNDS,
   continentStandings,
@@ -110,10 +110,10 @@ type SummaryProps = {
   onRematch?: () => void;
   /** Start a Blitz game from the quick games; omitted, Blitz isn't offered there. */
   onPlayBlitz?: () => void;
-  /** Set after a continent game: what it did to the World Tour (`lib/tour.ts`). */
+  /** Set after a continent game: what it did to its lap of the World Tour (`lib/tour.ts`). */
   tour?: LegResult;
-  /** Deal a continent game, the tour's next stop. */
-  onPlayLeg?: (region: Continent) => void;
+  /** Deal the tour's next stop on a lap: a continent game, or a continent Blitz. */
+  onPlayLeg?: (region: Continent, lap: TourLap) => void;
   /** Photos still missing from your album, counted as the game ended. */
   albumLeft?: number;
   /** Deal five of the photos still missing from your album; unset when none are. */
@@ -125,7 +125,8 @@ type SummaryProps = {
 /** The World Tour's line for a finished continent game: who holds the leg, and by how much. */
 export function tourLegLine(leg: LegResult): string {
   const by = formatPoints(Math.abs(leg.game.you - leg.game.atlas));
-  const where = leg.continent;
+  // On the Blitz lap the leg is "Europe Blitz", so a line never reads as the first lap's.
+  const where = leg.lap === "blitz" ? `${leg.continent} Blitz` : leg.continent;
   if (leg.firstClear) return `${where} cleared: you beat Atlas on its home ground by ${by} points.`;
   if (leg.won) return `You beat Atlas in ${where} again, by ${by} points.`;
   if (leg.held) return `Atlas won this one in ${where} by ${by} points, but the leg stays yours.`;
@@ -143,30 +144,37 @@ function TourLegCard({
   onPlayLeg,
 }: {
   leg: LegResult;
-  onPlayLeg?: (region: Continent) => void;
+  onPlayLeg?: (region: Continent, lap: TourLap) => void;
 }) {
   const next = leg.next;
+  const blitz = leg.lap === "blitz";
   return (
     <section
-      aria-label="World Tour"
+      aria-label={blitz ? "World Tour, Blitz lap" : "World Tour"}
       data-testid="tour-leg"
+      data-lap={leg.lap}
       className={`mt-6 rounded-2xl border p-5 ${leg.won ? "border-gold/60 bg-gold/5" : "border-graticule"}`}
     >
-      <p className="font-sign text-2xl font-bold text-gold">World Tour</p>
+      <p className="font-sign text-2xl font-bold text-gold">
+        World Tour{blitz && <span className="text-sonar">: Blitz lap</span>}
+      </p>
       <p className="mt-1 text-lg">{tourLegLine(leg)}</p>
       <p className="mt-1 text-chalk-dim">
         {next === null
-          ? `You've beaten Atlas on all ${leg.total} continents.`
-          : `${leg.cleared} of ${leg.total} continents cleared.`}
+          ? blitz
+            ? `You've beaten Atlas against the clock on all ${leg.total} continents.`
+            : `You've beaten Atlas on all ${leg.total} continents. The Blitz lap is open on the tour.`
+          : `${leg.cleared} of ${leg.total} continents cleared${blitz ? " on the Blitz lap" : ""}.`}
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
         {next !== null && next !== leg.continent && onPlayLeg && (
           <button
             type="button"
-            onClick={() => onPlayLeg(next)}
+            onClick={() => onPlayLeg(next, leg.lap)}
             className="rounded-full bg-gold px-5 py-2 font-semibold text-ocean-deep transition hover:brightness-110"
           >
             Next stop: {next}
+            {blitz && " Blitz"}
           </button>
         )}
         <Link href="/tour" className="font-semibold text-sonar underline-offset-2 hover:underline">

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { BLITZ_MS, clockWithTimeLeft, remainingMs, secondsShown, fractionLeft } from "./blitz";
 import { LocalBackend } from "./backends";
-import { sameKindOfGame, type GameMode } from "./mode";
+import { isTimedMode, sameKindOfGame, type GameMode } from "./mode";
 import {
   SAVED_GAME_KEY,
   SAVED_GAME_MAX_AGE_MS,
@@ -141,6 +141,9 @@ describe("parseSaved", () => {
     expect(tamper((g) => (g.v = 2))).toBeNull();
     expect(tamper((g) => (g.mode = { kind: "tier", tier: "impossible", game: 1 }))).toBeNull();
     expect(tamper((g) => (g.mode = { kind: "region", region: "Atlantis", game: 1 }))).toBeNull();
+    const blitzAsia = { kind: "region", region: "Asia", game: 1, blitz: true } as const;
+    expect(tamper((g) => (g.mode = blitzAsia))).not.toBeNull();
+    expect(tamper((g) => (g.mode = { ...blitzAsia, blitz: "yes" as unknown as true }))).toBeNull();
     expect(tamper((g) => (g.mode = { kind: "find", region: null, game: 1 }))).not.toBeNull();
     expect(tamper((g) => (g.mode = { kind: "find", region: "Asia", game: 2 }))).not.toBeNull();
     expect(tamper((g) => (g.mode = { kind: "find", region: "Atlantis", game: 1 }))).toBeNull();
@@ -296,6 +299,13 @@ describe("sameKindOfGame", () => {
         { kind: "region", region: "Europe", game: 1 },
       ),
     ).toBe(false);
+    // A continent Blitz (the tour's second lap) is not the untimed continent game.
+    const asia: GameMode = { kind: "region", region: "Asia", game: 1 };
+    const asiaBlitz: GameMode = { kind: "region", region: "Asia", game: 2, blitz: true };
+    expect(sameKindOfGame(asia, asiaBlitz)).toBe(false);
+    expect(sameKindOfGame(asiaBlitz, { ...asiaBlitz, game: 5 })).toBe(true);
+    expect(isTimedMode(asiaBlitz)).toBe(true);
+    expect(isTimedMode(asia)).toBe(false);
     const find = (region: "Asia" | null, game = 1): GameMode => ({ kind: "find", region, game });
     expect(sameKindOfGame(find(null), find(null, 4))).toBe(true);
     expect(sameKindOfGame(find("Asia"), find("Asia", 2))).toBe(true);

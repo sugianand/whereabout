@@ -13,6 +13,18 @@ import { CONTINENTS, type Continent } from "@/lib/continents";
 
 export const TOUR_KEY = "whereabout:tour";
 
+/**
+ * The second lap, kept apart from the first: the same route, each leg a continent game against
+ * the 30-second Blitz clock. It opens on `/tour` once the first lap is complete, and only a
+ * continent Blitz counts on it, so neither lap's legs are ever cleared by the other's games.
+ */
+export const BLITZ_TOUR_KEY = "whereabout:tour-blitz";
+
+/** Which lap a game or a record is on: the first, untimed, or the Blitz lap. */
+export type TourLap = "first" | "blitz";
+
+const LAP_KEYS: Record<TourLap, string> = { first: TOUR_KEY, blitz: BLITZ_TOUR_KEY };
+
 /** The order the tour visits the continents in; only those the deck can deal a game on are on it. */
 export const TOUR_ROUTE: readonly Continent[] = [
   "Europe",
@@ -45,6 +57,8 @@ export type TourRecord = Partial<Record<Continent, TourLeg>>;
 
 /** What one finished continent game did to the tour, for the results screen. */
 export interface LegResult {
+  /** The lap this game was played on. */
+  lap: TourLap;
   continent: Continent;
   game: LegGame;
   /** This game beat Atlas. */
@@ -112,9 +126,11 @@ export function legResult(
   after: TourRecord,
   continent: Continent,
   game: LegGame,
+  lap: TourLap = "first",
 ): LegResult {
   const won = beatAtlas(game);
   return {
+    lap,
     continent,
     game,
     won,
@@ -169,18 +185,22 @@ function browserStore(): TourStore | null {
   }
 }
 
-export function loadTour(store: TourStore | null = browserStore()): TourRecord {
+/** One lap's record from this browser: the first lap unless asked for the Blitz lap. */
+export function loadTour(
+  store: TourStore | null = browserStore(),
+  lap: TourLap = "first",
+): TourRecord {
   if (!store) return {};
   try {
-    return parseTour(store.getItem(TOUR_KEY));
+    return parseTour(store.getItem(LAP_KEYS[lap]));
   } catch {
     return {};
   }
 }
 
 /**
- * Add one finished continent game to the stored tour and say what it did. Saved best effort:
- * with storage blocked the results screen still tells this game's story.
+ * Add one finished continent game to its lap's stored record and say what it did. Saved best
+ * effort: with storage blocked the results screen still tells this game's story.
  */
 export function rememberLeg(
   route: readonly Continent[],
@@ -188,13 +208,14 @@ export function rememberLeg(
   game: LegGame,
   day: string,
   store: TourStore | null = browserStore(),
+  lap: TourLap = "first",
 ): LegResult {
-  const before = loadTour(store);
+  const before = loadTour(store, lap);
   const after = addLeg(before, continent, game, day);
   try {
-    store?.setItem(TOUR_KEY, JSON.stringify(after));
+    store?.setItem(LAP_KEYS[lap], JSON.stringify(after));
   } catch {
     // Quota or privacy mode: this game's result still shows.
   }
-  return legResult(route, before, after, continent, game);
+  return legResult(route, before, after, continent, game, lap);
 }

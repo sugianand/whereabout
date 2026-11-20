@@ -12,14 +12,15 @@ import type { Tier } from "./tiers";
  * archive (./dailyArchive.ts): it never counts toward the streak. A rematch replays the five
  * photos Atlas beat the player by the most, with their first try on each to beat (./rematch.ts).
  * A find game deals photos still missing from the player's album, anywhere or on one continent
- * (`lib/album.ts`). `game` counts games of that kind in one visit, so each new one is
- * a new value even when nothing else changes.
+ * (`lib/album.ts`). A continent game with `blitz` is played against the Blitz clock: the World
+ * Tour's second lap (`lib/tour.ts`). `game` counts games of that kind in one visit, so each new
+ * one is a new value even when nothing else changes.
  */
 export type GameMode =
   | { kind: "daily"; day: string; archive?: boolean }
   | { kind: "fresh"; game: number }
   | { kind: "tier"; tier: Tier; game: number }
-  | { kind: "region"; region: Continent; game: number }
+  | { kind: "region"; region: Continent; game: number; blitz?: true }
   | { kind: "find"; region: Continent | null; game: number }
   | { kind: "challenge"; challenge: Challenge }
   | { kind: "rematch"; rematch: Challenge }
@@ -36,7 +37,7 @@ export function sameKindOfGame(a: GameMode, b: GameMode): boolean {
     case "tier":
       return b.kind === "tier" && a.tier === b.tier;
     case "region":
-      return b.kind === "region" && a.region === b.region;
+      return b.kind === "region" && a.region === b.region && !a.blitz === !b.blitz;
     case "find":
       return b.kind === "find" && a.region === b.region;
     case "challenge":
@@ -51,7 +52,14 @@ export function sameKindOfGame(a: GameMode, b: GameMode): boolean {
   }
 }
 
-/** True when every photo of the game is played against the Blitz clock: a Blitz, or a friend's Blitz challenge. */
+/**
+ * True when every photo of the game is played against the Blitz clock: a Blitz, a continent
+ * Blitz on the tour's second lap, or a friend's Blitz challenge.
+ */
 export function isTimedMode(mode: GameMode): boolean {
-  return mode.kind === "blitz" || (mode.kind === "challenge" && isTimedChallenge(mode.challenge));
+  return (
+    mode.kind === "blitz" ||
+    (mode.kind === "region" && mode.blitz === true) ||
+    (mode.kind === "challenge" && isTimedChallenge(mode.challenge))
+  );
 }

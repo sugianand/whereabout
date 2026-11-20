@@ -68,6 +68,15 @@ test("stamps come from what the browser keeps, are marked new once, and fit a 32
       });
       const call = (id: string) => ({ id, picked: "Arid", truth: "Arid", atlas: null });
       keep("whereabout:which-climate-daily", { results: ["a", "b", "c", "d", "e"].map(call) });
+      // What's on the ground? is a daily game from 2026-11-19 on, so a full day needs it too;
+      // one miss keeps its five-of-five stamp out of this count.
+      const ground = (id: string, i: number) => ({
+        id,
+        picked: i === 0 ? "Built-up" : "Grassland",
+        truth: "Grassland",
+        atlas: null,
+      });
+      keep("whereabout:on-the-ground-daily", { results: ["a", "b", "c", "d", "e"].map(ground) });
     },
     { played: [pin("p1", "AU", 900), pin("p2", "NZ", 120), pin("p3", "PF", 3000)], day: yesterday },
   );

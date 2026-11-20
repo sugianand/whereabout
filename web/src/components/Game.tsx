@@ -92,7 +92,7 @@ export type { GameMode } from "@/lib/game/mode";
 export function modeTitle(mode: GameMode): string {
   if (mode.kind === "fresh") return "Fresh game";
   if (mode.kind === "tier") return `${TIER_NAMES[mode.tier]} game`;
-  if (mode.kind === "region") return `${mode.region} game`;
+  if (mode.kind === "region") return mode.blitz ? `${mode.region} Blitz` : `${mode.region} game`;
   if (mode.kind === "find") return mode.region ? `Find the rest of ${mode.region}` : "Find the rest";
   if (mode.kind === "challenge")
     return isTimedChallenge(mode.challenge) ? "A friend's Blitz challenge" : "A friend's challenge";
@@ -192,7 +192,8 @@ function syncUrl(mode: GameMode) {
   if (mode.kind === "challenge")
     url.searchParams.set(CHALLENGE_PARAM, encodeChallenge(mode.challenge));
   else url.searchParams.delete(CHALLENGE_PARAM);
-  if (mode.kind === "blitz") url.searchParams.set("blitz", "");
+  // A continent Blitz (the tour's second lap) is `?region=europe&blitz`.
+  if (isTimedMode(mode) && mode.kind !== "challenge") url.searchParams.set("blitz", "");
   else url.searchParams.delete("blitz");
   if (mode.kind === "find") url.searchParams.set("find", mode.region ? regionSlug(mode.region) : "");
   else url.searchParams.delete("find");
@@ -361,11 +362,13 @@ export default function Game({
       const linked = start || apiUrl ? null : urlChallenge(deck.ids);
       if (linked && !linked.ok) setChallengeNotice(CHALLENGE_NOTICE[linked.reason]);
       // Blitz deals in the browser like tiers and continents; the API backend plays untimed.
-      const blitz = !start && !apiUrl && !urlWantsDaily() && urlWantsBlitz();
+      const timed = !start && !apiUrl && !urlWantsDaily() && urlWantsBlitz();
       const kind = start ?? (urlWantsDaily() ? "daily" : "fresh");
       const tier = kind === "fresh" && tiers ? urlTier() : null;
       const wanted = kind === "fresh" && !tier ? urlRegion() : null;
       const region = wanted && regions[wanted] ? wanted : null;
+      // `?region=europe&blitz` is a continent game against the clock, the tour's second lap.
+      const blitz = timed && !region;
       // A find game needs a photo still missing from the album, on a continent that can fill a
       // game; otherwise the address opens a fresh game.
       const findAsked = kind === "fresh" && !tier && !wanted && !blitz ? urlFind() : null;
@@ -391,7 +394,9 @@ export default function Game({
             : tier
               ? { kind: "tier", tier, game: 1 }
               : region
-                ? { kind: "region", region, game: 1 }
+                ? timed
+                  ? { kind: "region", region, game: 1, blitz: true }
+                  : { kind: "region", region, game: 1 }
                 : find
                   ? { kind: "find", region: find.region, game: 1 }
                   : { kind: "fresh", game: 1 };
@@ -766,7 +771,8 @@ export default function Game({
       setBlitzBest(mode.kind === "blitz" ? rememberBlitz(t.player) : null);
       // Rematches are dealt by the browser, like challenges.
       setRematchOffer(apiUrl ? null : pickRematch(loadRematch(), deck.ids));
-      // A continent game is a leg of the World Tour, judged on the photos Atlas also guessed.
+      // A continent game is a leg of the World Tour, judged on the photos Atlas also guessed; a
+      // continent Blitz is a leg of its second lap, kept apart.
       setTourLeg(
         mode.kind === "region" && !apiUrl && t.atlasRounds > 0
           ? rememberLeg(
@@ -777,6 +783,8 @@ export default function Game({
                 atlas: t.atlas,
               },
               dayKey(today ?? new Date()),
+              undefined,
+              mode.blitz ? "blitz" : "first",
             )
           : null,
       );
@@ -836,6 +844,17 @@ export default function Game({
           ? { kind: "blitz", game: 1 }
           : { kind: "fresh", game: m?.kind === "fresh" ? m.game + 1 : 1 },
     );
+    restart();
+  }
+
+  /** The tour's next stop on the lap just played: a continent game, or a continent Blitz. */
+  function playLeg(region: Continent, lap: "first" | "blitz") {
+    setMode((m) => {
+      const game = m && "game" in m ? m.game + 1 : 1;
+      return lap === "blitz"
+        ? { kind: "region", region, game, blitz: true }
+        : { kind: "region", region, game };
+    });
     restart();
   }
 
@@ -940,7 +959,9 @@ export default function Game({
           mode?.kind === "tier"
             ? `Play another ${TIER_NAMES[mode.tier]} game`
             : mode?.kind === "region"
-              ? `Play another ${mode.region} game`
+              ? mode.blitz
+                ? `Play another ${mode.region} Blitz`
+                : `Play another ${mode.region} game`
               : mode?.kind === "find" && findLeft(mode.region).left > 0
                 ? mode.region
                   ? `Find more in ${mode.region}`
@@ -971,7 +992,7 @@ export default function Game({
         onRematch={rematchOffer ? playRematch : undefined}
         onPlayBlitz={apiUrl ? undefined : playBlitz}
         tour={tourLeg ?? undefined}
-        onPlayLeg={(region) => playFrom({ region })}
+        onPlayLeg={playLeg}
         albumLeft={album ? albumLeft : undefined}
         onFindRest={
           album && albumLeft > 0 && !(mode?.kind === "find" && mode.region === null)

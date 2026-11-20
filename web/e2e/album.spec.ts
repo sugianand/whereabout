@@ -179,14 +179,16 @@ test("a found photo opens large with the day found and both distances, and turns
   const box = (await dialog.boundingBox())!;
   expect(box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
 
-  // The arrow keys turn through the continent the photo was found on, held at its ends.
-  const counter = dialog.getByText(/ · \d+ of \d+$/);
+  // The arrow keys turn through the continent the photo was found on, held at its ends. The
+  // sheet is named for the photo on it, so once it turns it is found by its role alone.
+  const sheet = page.getByRole("dialog");
+  const counter = sheet.getByText(/ · \d+ of \d+$/);
   const total = Number((await counter.textContent())!.match(/of (\d+)$/)![1]);
   await expect(counter).toHaveText(/ · 1 of \d+$/);
   if (total > 1) {
     await page.keyboard.press("ArrowRight");
     await expect(counter).toHaveText(/ · 2 of \d+$/);
-    await expect(dialog.getByRole("heading")).not.toHaveText(newest.place);
+    await expect(sheet.getByRole("heading")).not.toHaveText(newest.place);
     await page.keyboard.press("ArrowLeft");
   }
   await page.keyboard.press("ArrowLeft");

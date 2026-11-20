@@ -136,7 +136,11 @@ function isMode(v: unknown, deckIds: readonly string[]): v is GameMode {
     case "tier":
       return game && isTier(v.tier);
     case "region":
-      return game && (CONTINENTS as readonly unknown[]).includes(v.region);
+      return (
+        game &&
+        (CONTINENTS as readonly unknown[]).includes(v.region) &&
+        (v.blitz === undefined || v.blitz === true)
+      );
     case "find":
       return game && (v.region === null || (CONTINENTS as readonly unknown[]).includes(v.region));
     case "challenge":

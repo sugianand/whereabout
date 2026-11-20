@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  BLITZ_TOUR_KEY,
   TOUR_KEY,
   addLeg,
   beatAtlas,
@@ -166,5 +167,42 @@ describe("the stored tour", () => {
     const store = memoryStore();
     rememberLeg(["Asia"], "Asia", { you: 2, atlas: 1 }, "2026-11-18", store);
     expect([...store.data.keys()]).toEqual([TOUR_KEY]);
+  });
+
+  it("keeps the Blitz lap apart, so neither lap's games clear the other's legs", () => {
+    const store = memoryStore();
+    const route = tourRoute(["Europe", "Africa"]);
+    rememberLeg(route, "Europe", { you: 14000, atlas: 12000 }, "2026-11-18", store);
+    const blitz = rememberLeg(
+      route,
+      "Europe",
+      { you: 9000, atlas: 11000 },
+      "2026-11-19",
+      store,
+      "blitz",
+    );
+    // The first lap's Europe is cleared, but the Blitz lap's is still Atlas's.
+    expect(blitz).toMatchObject({ lap: "blitz", won: false, held: false, cleared: 0 });
+    expect(blitz.next).toBe("Europe");
+    expect([...store.data.keys()].sort()).toEqual([BLITZ_TOUR_KEY, TOUR_KEY].sort());
+    expect(loadTour(store).Europe?.tries).toBe(1);
+    expect(loadTour(store, "blitz").Europe).toEqual({
+      tries: 1,
+      best: { you: 9000, atlas: 11000 },
+      cleared: null,
+    });
+    const won = rememberLeg(
+      route,
+      "Europe",
+      { you: 12000, atlas: 11000 },
+      "2026-11-20",
+      store,
+      "blitz",
+    );
+    expect(won).toMatchObject({ lap: "blitz", firstClear: true, cleared: 1, next: "Africa" });
+    expect(loadTour(store).Africa).toBeUndefined();
+    expect(rememberLeg(route, "Africa", { you: 1, atlas: 0 }, "2026-11-20", store).lap).toBe(
+      "first",
+    );
   });
 });

@@ -244,6 +244,9 @@ holds the leg, how many are cleared and offers the next stop. Kept only in this 
 **Share your tour** draws the route as a line of stops (cleared, next or still ahead) with each
 leg's best game against Atlas as a lead or a deficit in points, and sends it with the same line
 of margins and a link to `/tour` (*Share as text* sends the line alone).
+Once every leg is cleared, **the Blitz lap** opens below the route: the same legs again, each a
+continent game against the 30-second Blitz clock (`/?region=europe&blitz`), with its own
+progress and record, so neither lap's games clear the other's legs.
 **Your map** (at `/map`) puts every photo you've played on one globe, each mark shaped and
 coloured by how close your pin landed (a circle, diamond, triangle or cross, so it reads without
 colour vision too), with the countries and continents you've seen counted and your rounds

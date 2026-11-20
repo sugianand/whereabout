@@ -209,3 +209,68 @@ test("the tour shares as a picture of the route and as a line of each leg's marg
   expect(await sent()).toBe(withPicture);
   await noSidewaysScroll(page);
 });
+
+test("a complete tour opens the Blitz lap: each leg against the clock, kept apart from the first", async ({
+  page,
+}) => {
+  test.setTimeout(150_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const won = { tries: 1, best: { you: 20000, atlas: 15000 }, cleared: "2026-11-17" };
+  await page.addInitScript((leg) => {
+    if (sessionStorage.getItem("seeded")) return;
+    sessionStorage.setItem("seeded", "1");
+    const all = [
+      "Europe",
+      "Africa",
+      "Asia",
+      "Oceania",
+      "South America",
+      "North America",
+      "Antarctica",
+    ];
+    localStorage.setItem(
+      "whereabout:tour",
+      JSON.stringify(Object.fromEntries(all.map((c) => [c, leg]))),
+    );
+  }, won);
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.goto("./tour/");
+  await expect(page.getByTestId("tour-progress")).toContainText("Tour complete");
+  await expect(page.getByTestId("blitz-locked")).toHaveCount(0);
+  await expect(page.getByTestId("blitz-progress")).toHaveText(
+    /^0 of \d continents cleared against the clock$/,
+  );
+  const first = page.getByTestId("blitz-stop").first();
+  await expect(first).toHaveAttribute("data-continent", "Europe");
+  await expect(first).toHaveAttribute("data-state", "next");
+  await expect(first).toContainText("30 seconds each.");
+  await noSidewaysScroll(page);
+
+  await first.getByRole("link", { name: "Play Europe Blitz" }).click();
+  await expect(page).toHaveURL(/\?region=europe&blitz$/);
+  await expect(page.getByText("Europe Blitz", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("blitz-clock")).toBeVisible();
+  await playGame(page);
+
+  const card = page.getByRole("region", { name: "World Tour, Blitz lap" });
+  await expect(card).toBeVisible();
+  await expect(card).toContainText(
+    /Europe Blitz cleared: you beat Atlas|Atlas holds Europe Blitz by [\d,]+ points|A tie with Atlas in Europe Blitz/,
+  );
+  await expect(page.getByRole("button", { name: "Play another Europe Blitz" })).toBeVisible();
+  await noSidewaysScroll(page);
+  const kept = await page.evaluate(() => ({
+    first: JSON.parse(localStorage.getItem("whereabout:tour") ?? "{}"),
+    blitz: JSON.parse(localStorage.getItem("whereabout:tour-blitz") ?? "{}"),
+  }));
+  // The Blitz game counts on its own lap only.
+  expect(kept.blitz.Europe.tries).toBe(1);
+  expect(kept.first.Europe).toEqual(won);
+
+  await card.getByRole("link", { name: "See the tour →" }).click();
+  await expect(page).toHaveURL(/\/tour\/?$/, { timeout: 30_000 });
+  const europe = page.getByTestId("blitz-stop").first();
+  await expect(europe).toContainText(kept.blitz.Europe.cleared ? /^.*Cleared/ : /over 1 game/);
+  expect(errors).toEqual([]);
+});
