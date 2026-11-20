@@ -699,13 +699,19 @@ test("on a phone the answer stays in view above the result card", async ({ page 
     const card = await playRoundWithKeyboard(page);
     const truth = page.locator(".globe-pin--truth");
     await expect(truth).toBeVisible({ timeout: 5_000 });
-    // Let the camera finish framing the answer before measuring.
-    await page.waitForTimeout(800);
+    // The camera eases to frame the answer; on a loaded machine its last frames can land late,
+    // so wait for it to settle above the card rather than for a fixed time.
+    await expect
+      .poll(
+        async () => {
+          const cardTop = (await card.boundingBox())!.y;
+          const pinBox = (await truth.boundingBox())!;
+          return cardTop - (pinBox.y + pinBox.height);
+        },
+        { message: `round ${round}: gold pin above the card`, timeout: 5_000 },
+      )
+      .toBeGreaterThan(0);
     const cardBox = (await card.boundingBox())!;
-    const pinBox = (await truth.boundingBox())!;
-    expect(pinBox.y + pinBox.height, `round ${round}: gold pin above the card`).toBeLessThan(
-      cardBox.y,
-    );
     expect(
       cardBox.height,
       `round ${round}: card leaves most of the screen to the globe`,
