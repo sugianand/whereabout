@@ -528,6 +528,7 @@ test.describe("on a touch screen", () => {
     ["which-climate", "./which-climate", "Controls for Which climate?"],
     ["clue-mix", "./clue-mix", "Controls for Clue mix"],
     ["on-the-ground", "./on-the-ground", "Controls for What's on the ground?"],
+    ["bullseye", "./bullseye", "Controls for Bullseye"],
   ] as const) {
     test(`the help button lists ${screen}'s gestures on screen`, async ({ page }) => {
       await page.goto(path);

@@ -3,7 +3,7 @@
  * gathered for the results screen's mode cards so a player sees what to beat before opening one.
  *
  * Nothing new is stored here. Each mode keeps its own best under its own key (blitz.ts,
- * streak.ts, survival.ts, furtherNorth.ts, oddOneOut.ts, howFar.ts, whichWay.ts, hotCold.ts,
+ * streak.ts, survival.ts, furtherNorth.ts, oddOneOut.ts, howFar.ts, whichWay.ts, hotCold.ts, bullseye.ts,
  * nameCountry.ts, lineUp.ts, closeUp.ts, leftRight.ts,
  * whichClimate.ts, clueMix.ts, onTheGround.ts); this only reads them back through the
  * same loaders, so a value a mode would refuse (a negative streak, junk JSON) is refused here too.
@@ -13,6 +13,7 @@ import { CONTINENTS, type Continent } from "@/lib/continents";
 import { formatPoints } from "@/lib/geo";
 
 import { loadBlitzBest } from "./blitz";
+import { loadBestBullseye } from "./bullseye";
 import { loadBestNorth } from "./furtherNorth";
 import { loadBestHot } from "./hotCold";
 import { loadBestHowFar } from "./howFar";
@@ -39,6 +40,7 @@ export const QUICK_MODES = [
   "how-far",
   "which-way",
   "hot-cold",
+  "bullseye",
   "name-country",
   "line-up",
   "close-up",
@@ -73,6 +75,7 @@ export interface QuickBests {
   "which-way": number | null;
   /** The best whole game's points. */
   "hot-cold": number | null;
+  bullseye: number | null;
   /** The longest run of countries named. */
   "name-country": number | null;
   /** The most photos put in place in a whole game. */
@@ -98,6 +101,7 @@ export const NO_BESTS: QuickBests = {
   "how-far": null,
   "which-way": null,
   "hot-cold": null,
+  bullseye: null,
   "name-country": null,
   "line-up": null,
   "close-up": null,
@@ -136,6 +140,7 @@ export function loadQuickBests(): QuickBests {
     "how-far": positive(loadBestHowFar()),
     "which-way": positive(loadBestWay()),
     "hot-cold": positive(loadBestHot()),
+    bullseye: positive(loadBestBullseye()),
     "name-country": positive(loadBestName()),
     "line-up": positive(loadBestLine()),
     "close-up": positive(loadBestClose()),
@@ -194,7 +199,8 @@ export function bestLine(mode: QuickMode, bests: QuickBests): string | null {
       return n === null ? null : `Best: ${inARow(n)}`;
     }
     case "how-far":
-    case "hot-cold": {
+    case "hot-cold":
+    case "bullseye": {
       const n = bests[mode];
       return n === null ? null : `Best: ${formatPoints(n)} points`;
     }

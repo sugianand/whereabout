@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import { BLITZ_BEST_KEY } from "./blitz";
+import { BEST_BULLSEYE_KEY } from "./bullseye";
 import { BEST_NORTH_KEY } from "./furtherNorth";
 import { BEST_HOW_FAR_KEY } from "./howFar";
 import { BEST_LEFT_RIGHT_KEY } from "./leftRight";
@@ -34,6 +35,7 @@ describe("loadQuickBests", () => {
     localStorage.setItem(BEST_HOW_FAR_KEY, "3120");
     localStorage.setItem(BEST_WAY_KEY, "4");
     localStorage.setItem(BEST_HOT_KEY, "21500");
+    localStorage.setItem(BEST_BULLSEYE_KEY, "2750");
     localStorage.setItem(BEST_NAME_KEY, "7");
     localStorage.setItem(BEST_LINE_KEY, "14");
     localStorage.setItem(BEST_CLOSE_KEY, "11");
@@ -50,6 +52,7 @@ describe("loadQuickBests", () => {
       "how-far": 3120,
       "which-way": 4,
       "hot-cold": 21500,
+      bullseye: 2750,
       "name-country": 7,
       "line-up": 14,
       "close-up": 11,
@@ -68,6 +71,7 @@ describe("loadQuickBests", () => {
     localStorage.setItem(BEST_WAY_KEY, "-1");
     localStorage.setItem(BEST_CLIMATE_KEY, "6");
     localStorage.setItem(BEST_GROUND_KEY, "0");
+    localStorage.setItem(BEST_BULLSEYE_KEY, "1.5");
     const bests = loadQuickBests();
     expect(bests["which-climate"]).toBeNull();
     expect(bests["on-the-ground"]).toBeNull();
@@ -76,6 +80,7 @@ describe("loadQuickBests", () => {
     expect(bests["further-north"]).toBeNull();
     expect(bests["odd-one-out"]).toBeNull();
     expect(bests.survival).toBeNull();
+    expect(bests.bullseye).toBeNull();
   });
 });
 
@@ -108,6 +113,7 @@ describe("bestLine", () => {
     "how-far": 3120,
     "which-way": 2,
     "hot-cold": 21500,
+    bullseye: 2750,
     "name-country": 7,
     "line-up": 14,
     "close-up": 11,
@@ -126,6 +132,7 @@ describe("bestLine", () => {
     expect(bestLine("how-far", bests)).toBe("Best: 3,120 points");
     expect(bestLine("which-way", bests)).toBe("Best: 2 in a row");
     expect(bestLine("hot-cold", bests)).toBe("Best: 21,500 points");
+    expect(bestLine("bullseye", bests)).toBe("Best: 2,750 points");
     expect(bestLine("name-country", bests)).toBe("Best: 7 in a row");
     expect(bestLine("line-up", bests)).toBe("Best: 14 of 20 in place");
     expect(bestLine("close-up", bests)).toBe("Best: 11 of 15 points");

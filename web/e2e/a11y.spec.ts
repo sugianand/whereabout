@@ -55,6 +55,7 @@ const FIRST_SCREENS = [
   "./how-far",
   "./which-way",
   "./hot-cold",
+  "./bullseye",
   "./name-country",
   "./line-up",
   "./close-up",
@@ -201,6 +202,17 @@ for (const colorScheme of ["dark", "light"] as const) {
           .first(),
       ).toBeVisible();
       await expectAccessible(page, "hot-cold after a pin");
+    });
+
+    // Bullseye's answer card names both rings over the globe's panel.
+    test("bullseye passes axe at its first answer", async ({ page }) => {
+      await page.goto("./bullseye");
+      await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
+      await page.getByRole("application", { name: /Globe/ }).focus();
+      await page.keyboard.press("Enter");
+      await page.keyboard.press("g");
+      await expect(page.getByTestId("bullseye-you")).toBeVisible();
+      await expectAccessible(page, "bullseye answer");
     });
   });
 }

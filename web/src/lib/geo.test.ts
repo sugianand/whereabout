@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { clampLat, formatLngLat, graticule, normalize, nudge, wrapLng } from "./geo";
+import {
+  circlePath,
+  clampLat,
+  formatLngLat,
+  graticule,
+  haversineKm,
+  normalize,
+  nudge,
+  wrapLng,
+} from "./geo";
 
 describe("wrapLng", () => {
   it.each([
@@ -93,5 +102,42 @@ describe("graticule", () => {
   it("rejects steps that do not divide 180", () => {
     expect(() => graticule(7)).toThrow(RangeError);
     expect(() => graticule(0)).toThrow(RangeError);
+  });
+});
+
+describe("circlePath", () => {
+  const PARIS = { lng: 2.35, lat: 48.86 };
+
+  it("puts every point the radius away from the centre, and closes the ring", () => {
+    const ring = circlePath(PARIS, 750, 48);
+    expect(ring).toHaveLength(49);
+    for (const [lng, lat] of ring) {
+      expect(haversineKm(PARIS, { lng, lat })).toBeCloseTo(750, 6);
+    }
+    const [first, last] = [ring[0]!, ring.at(-1)!];
+    expect(haversineKm({ lng: first[0], lat: first[1] }, { lng: last[0], lat: last[1] })).toBeLessThan(1e-6);
+  });
+
+  it("starts due north of the centre", () => {
+    const [lng, lat] = circlePath(PARIS, 1000, 8)[0]!;
+    expect(lng).toBeCloseTo(PARIS.lng, 9);
+    expect(lat).toBeGreaterThan(PARIS.lat);
+  });
+
+  it("runs unbroken across the antimeridian and around a pole", () => {
+    for (const center of [
+      { lng: 179.5, lat: -17 },
+      { lng: 0, lat: 80 },
+    ]) {
+      const ring = circlePath(center, 2000, 96);
+      for (let i = 1; i < ring.length; i++) {
+        expect(Math.abs(ring[i]![0] - ring[i - 1]![0])).toBeLessThan(180);
+      }
+    }
+  });
+
+  it("refuses a negative or endless radius", () => {
+    expect(() => circlePath(PARIS, -1)).toThrow(RangeError);
+    expect(() => circlePath(PARIS, Number.NaN)).toThrow(RangeError);
   });
 });

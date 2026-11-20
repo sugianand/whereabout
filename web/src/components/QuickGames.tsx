@@ -73,6 +73,11 @@ const BLURBS: Record<QuickMode, { name: string; blurb: string }> = {
     blurb:
       "One photo, three pins to find its country: every miss says how far off you were and which way to head. Five photos against Atlas's single pin.",
   },
+  bullseye: {
+    name: "Bullseye",
+    blurb:
+      "Pin each photo and bet a ring around your pin: the tighter the ring, the more it pays, but only if the photo is inside. Five photos against Atlas's own bets.",
+  },
   "name-country": {
     name: "Name the country",
     blurb:
@@ -229,6 +234,7 @@ export default function QuickGames({
           "how-far",
           "which-way",
           "hot-cold",
+          "bullseye",
           "name-country",
           "line-up",
           "close-up",

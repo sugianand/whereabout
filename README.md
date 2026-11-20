@@ -101,6 +101,14 @@ is kept as it drops, so a reload picks up where you were and can't take back a m
 shows each photo's pins, spoiling no place. After a free game, *Challenge a friend* sends a link that deals the
 same five photos in the same order, with your points and the pin that found each country shown
 after every photo and the total to beat in the header; it carries ids and numbers only.
+**Bullseye** (at `/bullseye`, in the Games menu) asks how sure you are as well as where. With each
+pin you bet a ring around it, 250, 750, 2,000 or 5,000 km (tap one or press 1 to 4), drawn true on
+the globe as you move the pin: if the photo was taken inside the ring it scores the ring's 1,000,
+500, 250 or 100 points, and outside it scores nothing, so a tight ring pays most and misses most.
+Atlas bets on every photo it guessed with the same rings, its pin its own guess and its ring picked
+from its confidence in the country by a fixed rule (80% sure or more bets 250 km, 50% 750 km, 20%
+2,000 km, below that 5,000 km); the answer draws both rings, Atlas's dashed, so you see whose ring
+held the photo. Five photos a game; your best is kept in your browser.
 **Name the country** (at `/name-country`, in the Games menu) shows one photo and four countries from
 the same continent, drawn from the countries the globe draws: tap the right one, or press 1 to 4,
 and go on until your first miss. Atlas picks too, the name it gave the most of the four, and the

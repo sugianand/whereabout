@@ -35,6 +35,7 @@ export type HelpScreen =
   | "how-far"
   | "which-way"
   | "hot-cold"
+  | "bullseye"
   | "name-country"
   | "line-up"
   | "close-up"
@@ -280,6 +281,37 @@ export const CONTROLS: Record<HelpScreen, readonly ControlGroup[]> = {
       ],
     },
   ],
+  bullseye: [
+    PHOTO_CONTROLS,
+    GLOBE_CONTROLS,
+    {
+      title: "Your bet",
+      controls: [
+        {
+          id: "ring",
+          does: "Pick your ring, tightest to widest",
+          keys: [k("1"), k("2"), k("3"), k("4")],
+          mouse: "The ring buttons",
+          touch: "The ring buttons",
+        },
+        {
+          id: "bet",
+          does: "Bet: the photo scores your ring's points if it was taken inside it",
+          keys: [k("G", ROUND_KEYS.guess)],
+          mouse: "Bet",
+          touch: "Bet",
+        },
+        {
+          id: "next",
+          does: "Next photo, from the answer",
+          keys: [k("Enter")],
+          mouse: "Next photo",
+          touch: "Next photo",
+        },
+        HELP,
+      ],
+    },
+  ],
   "name-country": [
     PHOTO_CONTROLS,
     {
@@ -466,6 +498,7 @@ export const SCREEN_TITLES: Record<HelpScreen, string> = {
   "how-far": "Controls for How far apart?",
   "which-way": "Controls for Which way?",
   "hot-cold": "Controls for Hot and cold",
+  bullseye: "Controls for Bullseye",
   "name-country": "Controls for Name the country",
   "line-up": "Controls for Line them up",
   "close-up": "Controls for Close-up",
@@ -476,14 +509,18 @@ export const SCREEN_TITLES: Record<HelpScreen, string> = {
 };
 
 /**
- * True when a key press is going into something the player types or chooses in. A slider only
- * takes arrow and paging keys, so a shortcut like `?` still works while it has focus.
+ * True when a key press is going into something the player types or chooses in. A slider, a
+ * radio button or a checkbox only takes arrow, paging and Space keys, so a shortcut like `?` or
+ * Bullseye's G still works while one has focus.
  */
 export function isTypingTarget(target: EventTarget | null): boolean {
   if (!target || typeof (target as Element).closest !== "function") return false;
   const el = target as HTMLElement;
   if (el.isContentEditable) return true;
-  return !!el.closest("input:not([type='range']), textarea, select, [contenteditable='true']");
+  // Sliders, radio buttons and checkboxes take only arrows, paging and Space, never letters.
+  return !!el.closest(
+    "input:not([type='range']):not([type='radio']):not([type='checkbox']), textarea, select, [contenteditable='true']",
+  );
 }
 
 /** True for a bare key press (no Ctrl, Alt or Cmd) that isn't typing into a field. */

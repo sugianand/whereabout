@@ -34,9 +34,11 @@ import {
   revealCamera,
   revealLines,
   revealPadding,
+  ringLines,
   visibleFrame,
   type RevealLines,
   type RevealView,
+  type RingMark,
 } from "@/lib/reveal";
 
 export type GlobeProps = {
@@ -50,6 +52,8 @@ export type GlobeProps = {
   disabled?: boolean;
   /** After a guess: the true location and every guess, drawn as arcs that land on the truth. */
   reveal?: RevealView | null;
+  /** Rings around pins (Bullseye): the player's bet while guessing, and Atlas's at the reveal. */
+  rings?: readonly RingMark[] | null;
   /** Countries to fill in (Country Streak): the player's pick, and the answer once shown. */
   countries?: CountryMarks | null;
   /**
@@ -65,6 +69,7 @@ export type GlobeProps = {
 export const GLOBE_LOAD_MARK = "whereabout:globe-load";
 
 const REVEAL_SOURCE = "reveal";
+const RING_SOURCE = "rings";
 const EMPTY_LINES: RevealLines = { type: "FeatureCollection", features: [] };
 
 function prefersReducedMotion(): boolean {
@@ -92,6 +97,34 @@ function addRevealLayers(map: MapLibreMap, light: GlobeLight) {
     layout: { "line-cap": "round", "line-join": "round" },
     paint: { "line-color": color, "line-width": 2.5 },
   });
+  // Rings under the arcs. Atlas's is dashed, so colour is never the only way to tell them apart.
+  map.addSource(RING_SOURCE, { type: "geojson", data: EMPTY_LINES });
+  map.addLayer(
+    {
+      id: "ring-line",
+      type: "line",
+      source: RING_SOURCE,
+      filter: ["==", ["get", "actor"], "player"],
+      layout: { "line-join": "round" },
+      paint: { "line-color": color, "line-width": 2.5, "line-opacity": 0.9 },
+    },
+    "reveal-glow",
+  );
+  map.addLayer(
+    {
+      id: "ring-line-atlas",
+      type: "line",
+      source: RING_SOURCE,
+      filter: ["==", ["get", "actor"], "atlas"],
+      paint: {
+        "line-color": color,
+        "line-width": 2.5,
+        "line-opacity": 0.9,
+        "line-dasharray": [2, 1.5],
+      },
+    },
+    "reveal-glow",
+  );
 }
 
 /** Repaints a loaded globe in the other chart: sea, land, borders, sky, heatmap and arcs. */
@@ -101,6 +134,8 @@ function paintChart(map: MapLibreMap, light: GlobeLight) {
   }
   map.setPaintProperty("reveal-glow", "line-color", revealLineColor(light));
   map.setPaintProperty("reveal-line", "line-color", revealLineColor(light));
+  map.setPaintProperty("ring-line", "line-color", revealLineColor(light));
+  map.setPaintProperty("ring-line-atlas", "line-color", revealLineColor(light));
   map.setSky(globeSky(light));
 }
 
@@ -216,6 +251,7 @@ export default function Globe({
   onPinChange,
   disabled = false,
   reveal = null,
+  rings = null,
   countries = null,
   hold = false,
   className,
@@ -438,6 +474,14 @@ export default function Globe({
       if (mapRef.current) setBeliefHeat(mapRef.current, null);
     };
   }, [belief, ready]);
+
+  // Bullseye's rings, redrawn whenever a pin moves or a bet changes.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const source = map.getSource(RING_SOURCE) as { setData(d: RevealLines): void } | undefined;
+    source?.setData(rings?.length ? ringLines(rings) : EMPTY_LINES);
+  }, [rings, ready]);
 
   // Country Streak's marks. Compared by value, so a new object with the same codes is no repaint.
   const picked = countries?.picked ?? null;

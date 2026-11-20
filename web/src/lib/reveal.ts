@@ -1,4 +1,4 @@
-import { greatCirclePath, haversineKm, type LngLat } from "./geo";
+import { circlePath, greatCirclePath, haversineKm, type LngLat } from "./geo";
 
 /** Who made a guess. Each actor has one color everywhere (docs/design.md). */
 export type Actor = "player" | "atlas";
@@ -21,6 +21,25 @@ export interface RevealLines {
     properties: { actor: Actor };
     geometry: { type: "LineString"; coordinates: [number, number][] };
   }[];
+}
+
+/** A ring drawn on the globe around a pin (Bullseye's bets): `km` from `center` all round. */
+export interface RingMark {
+  actor: Actor;
+  center: LngLat;
+  km: number;
+}
+
+/** Rings as lines for the globe, each tagged with whose it is so it takes that actor's colour. */
+export function ringLines(rings: readonly RingMark[], segments = 96): RevealLines {
+  return {
+    type: "FeatureCollection",
+    features: rings.map(({ actor, center, km }) => ({
+      type: "Feature" as const,
+      properties: { actor },
+      geometry: { type: "LineString" as const, coordinates: circlePath(center, km, segments) },
+    })),
+  };
 }
 
 /** How long the arcs take to draw from each guess to the truth. */

@@ -110,4 +110,15 @@ describe("isShortcut", () => {
     expect(isShortcut(press("?", { shiftKey: true }, slider))).toBe(true);
     slider.remove();
   });
+
+  it("still fires on a radio button or a checkbox, so a ring picked by tap can bet with G", () => {
+    for (const type of ["radio", "checkbox"]) {
+      const input = document.createElement("input");
+      input.type = type;
+      document.body.append(input);
+      expect(isTypingTarget(input)).toBe(false);
+      expect(isShortcut(press("g", {}, input))).toBe(true);
+      input.remove();
+    }
+  });
 });

@@ -11,7 +11,7 @@ import {
   globeSky,
   revealLineColor,
 } from "@/lib/basemap";
-import type { LngLat } from "@/lib/geo";
+import { haversineKm, type LngLat } from "@/lib/geo";
 import { setTheme } from "@/lib/theme";
 import type { RevealLines, RevealView } from "@/lib/reveal";
 
@@ -251,8 +251,40 @@ describe("Globe", () => {
 
     it("adds the arc layers when the map loads, with nothing drawn yet", async () => {
       const { map } = await renderGlobe();
-      expect(map.layers.map((l) => l.id)).toEqual(["reveal-glow", "reveal-line"]);
+      expect(map.layers.map((l) => l.id)).toEqual([
+        "reveal-glow",
+        "reveal-line",
+        "ring-line",
+        "ring-line-atlas",
+      ]);
       expect(lines(map).features).toHaveLength(0);
+      expect((map.sources.rings!.data as RevealLines).features).toHaveLength(0);
+    });
+
+    it("draws Bullseye's rings true on the sphere, redraws them and clears them", async () => {
+      const center = { lng: 10, lat: 50 };
+      const props = { pin: center, onPinChange: () => {} };
+      const view = render(<Globe {...props} rings={[{ actor: "player", center, km: 750 }]} />);
+      await waitFor(() => expect(FakeMap.instances).toHaveLength(1));
+      const map = FakeMap.instances[0]!;
+      act(() => map.emit("load"));
+      const rings = () => (map.sources.rings!.data as RevealLines).features;
+      await waitFor(() => expect(rings()).toHaveLength(1));
+      const [lng, lat] = rings()[0]!.geometry.coordinates[10]!;
+      expect(haversineKm(center, { lng: lng!, lat: lat! })).toBeCloseTo(750, 3);
+
+      view.rerender(
+        <Globe
+          {...props}
+          rings={[
+            { actor: "player", center, km: 250 },
+            { actor: "atlas", center: { lng: 12, lat: 41 }, km: 2000 },
+          ]}
+        />,
+      );
+      expect(rings().map((f) => f.properties.actor)).toEqual(["player", "atlas"]);
+      view.rerender(<Globe {...props} rings={[]} />);
+      expect(rings()).toHaveLength(0);
     });
 
     it("draws an arc from every guess to the truth and pins Atlas and the truth", async () => {

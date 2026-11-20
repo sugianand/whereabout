@@ -139,6 +139,44 @@ export function greatCirclePath(a: LngLat, b: LngLat, segments = 64): [number, n
   return points;
 }
 
+/**
+ * The closed line of every point `km` from `center` along the ground: a ring drawn on the globe.
+ * Each point is the great-circle destination from the centre at an even step of bearing, so the
+ * ring is true on the sphere (round on the globe, not on a flat map). Longitudes are unwrapped
+ * like `greatCirclePath`'s, so a ring across the antimeridian or around a pole draws unbroken.
+ */
+export function circlePath(center: LngLat, km: number, segments = 96): [number, number][] {
+  if (!Number.isFinite(km) || km < 0) {
+    throw new RangeError("radius must be a non-negative finite number");
+  }
+  const phi1 = toRad(center.lat);
+  const lambda1 = toRad(center.lng);
+  const delta = km / EARTH_RADIUS_KM;
+  const points: [number, number][] = [];
+  let previousLng: number | null = null;
+  for (let i = 0; i <= segments; i++) {
+    // The last point repeats the first, so the line closes.
+    const theta = ((i % segments) / segments) * 2 * Math.PI;
+    const sinPhi2 =
+      Math.sin(phi1) * Math.cos(delta) + Math.cos(phi1) * Math.sin(delta) * Math.cos(theta);
+    const phi2 = Math.asin(Math.min(1, Math.max(-1, sinPhi2)));
+    const lambda2 =
+      lambda1 +
+      Math.atan2(
+        Math.sin(theta) * Math.sin(delta) * Math.cos(phi1),
+        Math.cos(delta) - Math.sin(phi1) * sinPhi2,
+      );
+    let lng = toDeg(lambda2);
+    if (previousLng !== null) {
+      while (lng - previousLng > 180) lng -= 360;
+      while (lng - previousLng < -180) lng += 360;
+    }
+    previousLng = lng;
+    points.push([lng, toDeg(phi2)]);
+  }
+  return points;
+}
+
 /** How far off a guess was, for people: "1,234 km", "7.5 km", "450 m"; in miles "767 mi", "4.7 mi", "820 ft". */
 export function formatDistance(km: number, units: Units = "km"): string {
   if (units === "km") {
