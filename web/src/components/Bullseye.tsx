@@ -18,8 +18,19 @@ import {
   rememberBullseye,
   ringName,
   ringsHeld,
+  type Bet,
   type BullseyeRound,
 } from "@/lib/game/bullseye";
+import {
+  BULLSEYE_CHALLENGE_PARAM,
+  bullseyeChallengeLine,
+  bullseyeChallengeScore,
+  bullseyeChallengeText,
+  bullseyeFriendBet,
+  bullseyeHeadToHead,
+  parseBullseyeChallenge,
+  type BullseyeChallenge,
+} from "@/lib/game/bullseyeChallenge";
 import {
   bullseyeDailyShare,
   dailyBullseyeOrder,
@@ -31,6 +42,7 @@ import { runToday } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import { formatDistance, formatPoints, type LngLat } from "@/lib/geo";
 import type { RevealView, RingMark } from "@/lib/reveal";
+import { sendShare, type ShareOutcome } from "@/lib/share";
 import type { Units } from "@/lib/units";
 import { useUnits } from "@/lib/useUnits";
 
@@ -38,6 +50,7 @@ import ControlsHelp from "./ControlsHelp";
 import { DailyRunResult } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
 import Globe from "./Globe";
+import { HeadToHeadButton } from "./HeadToHeadButton";
 import PhotoViewer from "./PhotoViewer";
 import UnitsSwitch from "./UnitsSwitch";
 
@@ -54,6 +67,27 @@ type BullseyeProps = {
   daily?: boolean;
   /** For tests: the clock that picks today's game. */
   now?: () => Date;
+};
+
+/** Why a challenge link was set aside for a fresh game. */
+export const BULLSEYE_CHALLENGE_NOTICE = {
+  malformed: "That challenge link was cut short, so here's a fresh game instead.",
+  missing: "That challenge's photos aren't in the game any more, so here's a fresh game instead.",
+} as const;
+
+/** Take the challenge out of the address, so a reload deals a fresh game, not the old link. */
+function dropChallengeParam() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has(BULLSEYE_CHALLENGE_PARAM)) return;
+  url.searchParams.delete(BULLSEYE_CHALLENGE_PARAM);
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+const CHALLENGE_NOTE: Record<ShareOutcome, string> = {
+  shared: "Challenge sent.",
+  copied: "Challenge link copied. Whoever opens it plays these five photos, in the same order.",
+  cancelled: "",
+  failed: "Couldn't copy the link. Your browser blocked the clipboard.",
 };
 
 /** The ring keys, 1 for the tightest. */
@@ -123,10 +157,15 @@ export default function Bullseye({ deck, loadRecords, random, daily = false, now
   const [error, setError] = useState<string | null>(null);
   // The day today's game was dealt for, kept when the clock passes midnight mid-game.
   const [day, setDay] = useState<string | null>(null);
+  // A friend's challenge this game answers (src/lib/game/bullseyeChallenge.ts): their five
+  // photos and their ring and distance on each, shown once you have bet on that photo.
+  const [challenge, setChallenge] = useState<BullseyeChallenge | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const units = useUnits();
 
-  const start = useCallback(() => {
+  /** Deal a game; `fromLink` takes up a challenge the address carries, as the page opens. */
+  const start = useCallback((fromLink = false) => {
     if (daily) {
       const today = runToday(now?.());
       setDay(today);
@@ -140,13 +179,25 @@ export default function Bullseye({ deck, loadRecords, random, daily = false, now
     const stored = loadBestBullseye();
     setBest(stored);
     setBestBefore(stored);
+    const value = fromLink
+      ? new URLSearchParams(window.location.search).get(BULLSEYE_CHALLENGE_PARAM)
+      : null;
+    const linked = value === null ? null : parseBullseyeChallenge(value, deck.ids);
+    setNotice(linked && !linked.ok ? BULLSEYE_CHALLENGE_NOTICE[linked.reason] : null);
+    if (linked?.ok) {
+      setChallenge(linked.challenge);
+      dispatch({ type: "start", order: linked.challenge.ids });
+      return;
+    }
+    setChallenge(null);
+    dropChallengeParam();
     const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
     dispatch({ type: "start", order: seededShuffle(deck.ids, seed).slice(0, BULLSEYE_PHOTOS) });
   }, [daily, deck.ids, now, random]);
 
   // The order is shuffled in the browser after hydration, never at build time.
   useEffect(() => {
-    const id = requestAnimationFrame(() => start());
+    const id = requestAnimationFrame(() => start(true));
     return () => cancelAnimationFrame(id);
   }, [start]);
 
@@ -212,12 +263,13 @@ export default function Bullseye({ deck, loadRecords, random, daily = false, now
 
   const next = useCallback(() => {
     const after = bullseyeReducer(state, { type: "next" });
-    // Today's game is played once for the day, apart from the free games' best.
-    if (after.phase === "finished" && !day) {
+    // Today's game is played once for the day, apart from the free games' best, and a friend's
+    // challenge never counts as one: its photos were picked by someone who had seen them.
+    if (after.phase === "finished" && !day && !challenge) {
       setBest(rememberBullseye(bullseyeTotal(after.results)));
     }
     dispatch({ type: "next" });
-  }, [day, state]);
+  }, [challenge, day, state]);
 
   // G bets from anywhere on the screen, like a round's guess; 1 to 4 pick a ring.
   useEffect(() => {
@@ -268,9 +320,10 @@ export default function Bullseye({ deck, loadRecords, random, daily = false, now
       <Finished
         results={state.results}
         best={best}
-        newBest={total > bestBefore}
+        newBest={!challenge && total > bestBefore}
         units={units}
-        onAgain={start}
+        challenge={challenge}
+        onAgain={() => start()}
       />
     );
   }
@@ -316,6 +369,11 @@ export default function Bullseye({ deck, loadRecords, random, daily = false, now
           <p className="mt-1 text-sm text-chalk-dim">
             {`Bullseye${daily ? ", today" : ""}: photo ${(playing?.index ?? 0) + 1} of ${of}`}
           </p>
+          {challenge && (
+            <p className="text-sm text-chalk-dim" data-testid="bullseye-challenge">
+              {`A friend's challenge: ${formatPoints(bullseyeChallengeScore(challenge))} to beat`}
+            </p>
+          )}
           <div className="pointer-events-auto mt-2 flex items-center gap-2">
             <GamesMenu screen="bullseye" streakHref="/streak" />
             <ControlsHelp screen="bullseye" />
@@ -345,7 +403,15 @@ export default function Bullseye({ deck, loadRecords, random, daily = false, now
                 <dd className="tabular text-sonar">{formatPoints(atlas.total)}</dd>
               </div>
             )}
-            {!daily && (
+            {challenge && (
+              <div className="flex justify-end gap-1.5">
+                <dt>Friend</dt>
+                <dd className="tabular text-flare" data-testid="bullseye-friend-score">
+                  {formatPoints(bullseyeChallengeScore(challenge, results.length))}
+                </dd>
+              </div>
+            )}
+            {!daily && !challenge && (
               <div className="flex justify-end gap-1.5">
                 <dt>Best</dt>
                 <dd className="tabular">{formatPoints(best)}</dd>
@@ -379,6 +445,11 @@ export default function Bullseye({ deck, loadRecords, random, daily = false, now
                 ? `Bet ${ringName(ring, units)} for ${formatPoints(RINGS[ring]!.points)}`
                 : "Tap the globe to pin the photo"}
             </button>
+            {notice && guessing && results.length === 0 && (
+              <p role="status" className="mt-2 text-center text-sm text-chalk-dim">
+                {notice}
+              </p>
+            )}
             {error && (
               <p role="alert" className="mt-2 text-center text-sm text-flare">
                 {error}
@@ -395,6 +466,7 @@ export default function Bullseye({ deck, loadRecords, random, daily = false, now
             round={answered.round}
             record={current}
             units={units}
+            friend={challenge ? bullseyeFriendBet(challenge, answered.index) : null}
             last={answered.index + 1 >= answered.order.length}
             onNext={next}
           />
@@ -408,12 +480,15 @@ function BullseyeCard({
   round,
   record,
   units,
+  friend,
   last,
   onNext,
 }: {
   round: BullseyeRound;
   record: GameRecord;
   units: Units;
+  /** On a friend's challenge: the bet they made on this photo, shown once you have made yours. */
+  friend: Bet | null;
   last: boolean;
   onNext: () => void;
 }) {
@@ -451,6 +526,12 @@ function BullseyeCard({
           {` (dashed ring): ${betLine(atlas, units)}`}
         </p>
       )}
+      {friend && (
+        <p className="mt-1 text-sm text-chalk-dim" data-testid="bullseye-friend">
+          <span className="text-flare">Friend</span>
+          {`: ${betLine(friend, units)}`}
+        </p>
+      )}
       <div className="mt-4 flex items-center gap-4 md:mt-5">
         <button
           ref={nextRef}
@@ -474,17 +555,37 @@ function BullseyeCard({
 }
 
 /** Each photo's ring, whether it held, how far off the pin was and what it scored. */
-function PhotoList({ results, units }: { results: readonly BullseyeRound[]; units: Units }) {
+function PhotoList({
+  results,
+  units,
+  friend = null,
+}: {
+  results: readonly BullseyeRound[];
+  units: Units;
+  /** On a friend's challenge: their bets, listed under yours. */
+  friend?: BullseyeChallenge | null;
+}) {
+  const words = (b: Bet) =>
+    `${b.inside ? "inside" : "outside"} ${ringName(b.ring, units)}, ${formatDistance(b.km, units)} off`;
   return (
     <ol className="mt-6 space-y-2" aria-label="Your photos">
-      {results.map((r, i) => (
-        <li key={r.id} className="flex items-baseline justify-between gap-4 text-sm">
-          <span className="text-chalk-dim">
-            {`Photo ${i + 1}: ${r.you.inside ? "inside" : "outside"} ${ringName(r.you.ring, units)}, ${formatDistance(r.you.km, units)} off`}
-          </span>
-          <span className="tabular shrink-0 font-semibold">{formatPoints(r.you.score)}</span>
-        </li>
-      ))}
+      {results.map((r, i) => {
+        const theirs = friend ? bullseyeFriendBet(friend, i) : null;
+        return (
+          <li key={r.id} className="text-sm" data-testid="bullseye-row">
+            <span className="flex items-baseline justify-between gap-4">
+              <span className="text-chalk-dim">{`Photo ${i + 1}: ${words(r.you)}`}</span>
+              <span className="tabular shrink-0 font-semibold">{formatPoints(r.you.score)}</span>
+            </span>
+            {theirs && (
+              <span className="flex items-baseline justify-between gap-4">
+                <span className="text-chalk-dim">{`Friend: ${words(theirs)}`}</span>
+                <span className="tabular shrink-0 text-flare">{formatPoints(theirs.score)}</span>
+              </span>
+            )}
+          </li>
+        );
+      })}
     </ol>
   );
 }
@@ -524,12 +625,15 @@ function Finished({
   best,
   newBest,
   units,
+  challenge,
   onAgain,
 }: {
   results: readonly BullseyeRound[];
   best: number;
   newBest: boolean;
   units: Units;
+  /** The friend's challenge this game answered, if it was one. */
+  challenge: BullseyeChallenge | null;
   onAgain: () => void;
 }) {
   const none = results.length === 0;
@@ -546,14 +650,25 @@ function Finished({
         <>
           <p className="mt-4 text-lg text-chalk-dim">
             {`Out of ${formatPoints(results.length * PHOTO_POINTS)}. Your rings held ${held} of ${results.length} photos. `}
-            {newBest ? "That's your new best!" : best > 0 ? `Your best is ${formatPoints(best)}.` : ""}
+            {challenge
+              ? ""
+              : newBest
+                ? "That's your new best!"
+                : best > 0
+                  ? `Your best is ${formatPoints(best)}.`
+                  : ""}
           </p>
+          {challenge && (
+            <p className="mt-2 text-chalk" data-testid="bullseye-challenge-line">
+              {bullseyeChallengeLine(results, challenge)}
+            </p>
+          )}
           {atlas && (
             <p className="mt-2 text-chalk" data-testid="bullseye-atlas-total">
               {atlas}
             </p>
           )}
-          <PhotoList results={results} units={units} />
+          <PhotoList results={results} units={units} friend={challenge} />
         </>
       )}
       <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -563,13 +678,60 @@ function Finished({
             onClick={onAgain}
             className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
           >
-            Play again
+            {challenge ? "Play a fresh game" : "Play again"}
           </button>
+        )}
+        {results.length === BULLSEYE_PHOTOS && (
+          <ChallengeButton results={results} units={units} answering={challenge} />
         )}
         <Link href="/" className="text-chalk-dim underline underline-offset-2 hover:text-chalk">
           Back to the main game
         </Link>
       </div>
     </main>
+  );
+}
+
+/**
+ * Challenge a friend from a whole free game (src/lib/game/bullseyeChallenge.ts): a link to the
+ * same five photos with your ring and distance on each. Answering a challenge, it sends one back,
+ * with the head-to-head picture beside it.
+ */
+function ChallengeButton({
+  results,
+  units,
+  answering,
+}: {
+  results: readonly BullseyeRound[];
+  units: Units;
+  answering: BullseyeChallenge | null;
+}) {
+  const [sent, setSent] = useState("");
+  const text = () => bullseyeChallengeText(results, window.location.href, answering ?? undefined);
+  async function send() {
+    setSent(CHALLENGE_NOTE[await sendShare(text(), navigator)]);
+  }
+  return (
+    <span className="flex min-w-0 flex-col">
+      <span className="flex flex-wrap gap-x-3 gap-y-2">
+        <button
+          type="button"
+          onClick={send}
+          className="rounded-full border-2 border-gold px-5 py-2.5 font-semibold text-gold transition hover:bg-gold/10"
+        >
+          {answering ? "Send yours back" : "Challenge a friend"}
+        </button>
+        {answering && (
+          <HeadToHeadButton
+            headToHead={bullseyeHeadToHead(results, answering, window.location.href, units)}
+            replyText={text}
+            onNote={setSent}
+          />
+        )}
+      </span>
+      <span role="status" className={sent ? "mt-1 text-xs text-chalk-dim" : "sr-only"}>
+        {sent}
+      </span>
+    </span>
   );
 }

@@ -260,3 +260,135 @@ test("the ring buttons and the bet fit a 320px phone, today's game too", async (
     );
   }
 });
+
+test("a Bullseye challenge deals a friend the same five, with the sender's ring shown after theirs", async ({
+  page,
+}) => {
+  test.setTimeout(300_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  const sent = () => page.evaluate(() => (window as unknown as { sent: string }).sent);
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+
+  // The sender pins each photo where the keyboard first drops the pin, on the widest ring.
+  await page.goto("./bullseye");
+  const game: string[] = [];
+  for (let i = 1; i <= 5; i++) {
+    await expect(page.getByText(`Bullseye: photo ${i} of 5`)).toBeVisible();
+    await photoAt(page);
+    game.push((await page.locator("main[data-photo]").getAttribute("data-photo"))!);
+    await page.getByRole("application", { name: /Globe/ }).focus();
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("4");
+    await page.keyboard.press("g");
+    await card.getByRole("button", { name: /Next photo|See your score/ }).click();
+  }
+  const total = (await page.getByRole("heading", { level: 1 }).innerText()).replace(" points", "");
+  await page.getByRole("button", { name: "Challenge a friend" }).click();
+  await expect(page.getByText(/^Challenge (sent|link copied)/)).toBeVisible();
+  const message = await sent();
+  expect(message).toMatch(new RegExp(`^Whereabout · Bullseye: ${total} points, \\d of 5 rings held\\.`));
+  const link = message.split("\n").at(-1)!;
+  expect(link).toMatch(
+    new RegExp(`/whereabout/bullseye/?\\?challenge=${game.join("\\.")}_44444_\\d+(\\.\\d+){4}$`),
+  );
+
+  // The friend, with nothing kept, gets the same five and pins each on the place, tightest ring.
+  await page.evaluate(() => localStorage.clear());
+  await page.goto(link);
+  await expect(page.getByTestId("bullseye-challenge")).toHaveText(
+    `A friend's challenge: ${total} to beat`,
+  );
+  for (let i = 0; i < 5; i++) {
+    await expect(page.locator("main[data-photo]")).toHaveAttribute("data-photo", game[i]!);
+    const truth = await photoAt(page);
+    await expect(page.getByTestId("bullseye-friend")).toHaveCount(0);
+    await pinNear(page, truth);
+    await page.keyboard.press("1");
+    await page.keyboard.press("g");
+    await expect(card.getByTestId("bullseye-friend")).toHaveText(
+      /^Friend: (Inside the 5,000 km ring, [\d,]+ km off: 100 points|Outside the 5,000 km ring, [\d,]+ km off: no points)\.$/,
+    );
+    await expectOnScreen(card.getByRole("button", { name: /Next photo|See your score/ }));
+    await page.keyboard.press("Enter");
+  }
+  await expect(page.getByTestId("bullseye-challenge-line")).toHaveText(
+    /^(You beat your friend's|Your friend's|A dead heat)/,
+  );
+  await expect(page.getByTestId("bullseye-row")).toHaveCount(5);
+  await expect(page.getByTestId("bullseye-row").first()).toContainText("Friend: ");
+  expect(await page.evaluate(() => localStorage.getItem("whereabout:bullseye-best"))).toBeNull();
+
+  await page.getByRole("button", { name: "Send yours back" }).click();
+  await expect(page.getByText(/^Challenge (sent|link copied)/)).toBeVisible();
+  const reply = await sent();
+  expect(reply.split("\n").at(-1)).toMatch(new RegExp(`\\?challenge=${game.join("\\.")}_11111_`));
+
+  // Head to head: both games as a 1080px picture, saved, with the reply link copied.
+  await page.evaluate(() => ((window as unknown as { sent: string }).sent = ""));
+  const picture = page.getByRole("button", { name: "Share head to head" });
+  const [download] = await Promise.all([page.waitForEvent("download"), picture.click()]);
+  expect(download.suggestedFilename()).toBe("whereabout-bullseye-head-to-head.png");
+  const png = readFileSync((await download.path())!);
+  expect(png.subarray(1, 4).toString()).toBe("PNG");
+  expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1080, 1080]);
+  expect(await sent()).toBe(reply);
+  const kept = await page.evaluate(() => localStorage.getItem("whereabout:head-to-head"));
+  expect(JSON.parse(kept!)).toEqual([expect.objectContaining({ game: "Bullseye" })]);
+
+  // A fresh game drops the link.
+  await page.getByRole("button", { name: "Play a fresh game" }).click();
+  await expect(page.getByText("Bullseye: photo 1 of 5")).toBeVisible();
+  await expect(page.getByTestId("bullseye-challenge")).toHaveCount(0);
+  expect(new URL(page.url()).search).toBe("");
+  expect(errors).toEqual([]);
+});
+
+test("a broken Bullseye challenge says so and deals a fresh game", async ({ page }) => {
+  await page.goto("./bullseye?challenge=wm001_111_1");
+  await expect(page.getByText(/That challenge link was cut short/)).toBeVisible();
+  await expect(page.getByTestId("bullseye-challenge")).toHaveCount(0);
+  await expect(page.getByText("Bullseye: photo 1 of 5")).toBeVisible();
+});
+
+test("a Bullseye challenge's answer card and end buttons fit a 320px phone", async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 1000) >= 768, "a phone layout check");
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 320, height: 568 });
+  const ids = [...CATALOG.keys()].slice(0, 5);
+  await page.goto(`./bullseye?challenge=${ids.join(".")}_12341_120.900.1999.251.20050`);
+  await expect(page.getByTestId("bullseye-challenge")).toHaveText(
+    "A friend's challenge: 1,350 to beat",
+  );
+  await expectOnScreen(page.getByTestId("bullseye-friend-score"));
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+  for (let i = 0; i < 5; i++) {
+    await photoAt(page);
+    await page.getByRole("application", { name: /Globe/ }).focus();
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("g");
+    await expect(card.getByTestId("bullseye-friend")).toBeVisible();
+    await expectOnScreen(card);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      320,
+    );
+    await page.keyboard.press("Enter");
+  }
+  for (const name of ["Play a fresh game", "Send yours back", "Share head to head"]) {
+    const button = page.getByRole("button", { name });
+    await button.scrollIntoViewIfNeeded();
+    const box = (await button.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(321);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+});

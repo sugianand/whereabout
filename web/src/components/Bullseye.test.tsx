@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BEST_BULLSEYE_KEY, RINGS } from "@/lib/game/bullseye";
 import { BULLSEYE_DAILY_KEY, dailyBullseyeOrder, loadBullseyeDay } from "@/lib/game/bullseyeDaily";
@@ -279,5 +279,100 @@ describe("today's Bullseye", () => {
       "href",
       "/bullseye/daily",
     );
+  });
+});
+
+describe("a Bullseye challenge", () => {
+  // The friend played p6, p1, p2, p3 and p4 in that order on the 250 km ring, 100 km off on
+  // the first four and 6,000 km off the last: 4,000 points to beat.
+  const LINKED = ["p6", "p1", "p2", "p3", "p4"].map((id) => byId.get(id)!);
+  const FRIEND = "p6.p1.p2.p3.p4_11111_100.100.100.100.6000";
+
+  afterEach(() => window.history.replaceState(null, "", "/"));
+
+  const shownId = () => document.querySelector("main")!.getAttribute("data-photo");
+
+  it("deals the friend's five, shows their ring once yours is bet, and sends yours back", async () => {
+    const sent = useClipboard();
+    window.history.replaceState(null, "", `/bullseye?challenge=${FRIEND}`);
+    const map = await setup();
+    expect(screen.getByTestId("bullseye-challenge")).toHaveTextContent(
+      "A friend's challenge: 4,000 to beat",
+    );
+    expect(screen.queryByText("Best")).toBeNull();
+    for (const [i, photo] of LINKED.entries()) {
+      await waitFor(() => expect(shownId()).toBe(photo.id));
+      expect(screen.getByTestId("bullseye-friend-score")).toHaveTextContent(
+        ["0", "1,000", "2,000", "3,000", "4,000"][i]!,
+      );
+      act(() => map.click(photo.lng, photo.lat));
+      fireEvent.click(screen.getByRole("radio", { name: /^250 km/ }));
+      fireEvent.keyDown(window, { key: "g" });
+      const card = await screen.findByRole("region");
+      expect(within(card).getByTestId("bullseye-friend")).toHaveTextContent(
+        i < 4
+          ? "Friend: Inside the 250 km ring, 100 km off: 1,000 points."
+          : "Friend: Outside the 250 km ring, 6,000 km off: no points.",
+      );
+      fireEvent.click(within(card).getByRole("button", { name: /Next photo|See your score/ }));
+    }
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("5,000 points");
+    expect(screen.getByTestId("bullseye-challenge-line")).toHaveTextContent(
+      "You beat your friend's 4,000 by 1,000.",
+    );
+    expect(screen.getAllByTestId("bullseye-row")[4]).toHaveTextContent(
+      "Friend: outside the 250 km ring, 6,000 km off",
+    );
+    // A challenge's photos were picked by someone who had seen them: never a best.
+    expect(localStorage.getItem(BEST_BULLSEYE_KEY)).toBeNull();
+    expect(screen.queryByText(/new best/)).toBeNull();
+    expect(screen.getByRole("button", { name: "Share head to head" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Send yours back" }));
+    await waitFor(() => expect(sent.text).not.toBe(""));
+    expect(sent.text.split("\n")).toEqual([
+      "Whereabout · Bullseye: 5,000 points, 5 of 5 rings held.",
+      "That beats your 4,000. Your turn to bet.",
+      "http://localhost:3000/bullseye?challenge=p6.p1.p2.p3.p4_11111_0.0.0.0.0",
+    ]);
+    for (const photo of LINKED) expect(sent.text).not.toContain(photo.place);
+
+    fireEvent.click(screen.getByRole("button", { name: "Play a fresh game" }));
+    await waitFor(() => expect(screen.queryByTestId("bullseye-challenge")).toBeNull());
+    expect(window.location.search).toBe("");
+  });
+
+  it.each([
+    ["p6.p1.p2.p3_1111_1.2.3.4", "That challenge link was cut short, so here's a fresh game instead."],
+    [
+      "p6.p1.p2.p3.zz_11111_1.2.3.4.5",
+      "That challenge's photos aren't in the game any more, so here's a fresh game instead.",
+    ],
+  ])("sets the link %s aside for a fresh game", async (value, notice) => {
+    window.history.replaceState(null, "", `/bullseye?challenge=${value}`);
+    await setup();
+    expect(await screen.findByText(notice)).toBeInTheDocument();
+    expect(screen.queryByTestId("bullseye-challenge")).toBeNull();
+    expect(window.location.search).toBe("");
+    await waitFor(() => expect(shownId()).toBe(ORDER[0]!.id));
+  });
+
+  it("offers a whole free game to a friend", async () => {
+    const sent = useClipboard();
+    const map = await setup();
+    for (let i = 0; i < 5; i++) {
+      await waitFor(() => expect(shownId()).toBe(ORDER[i]!.id));
+      act(() => map.click(ORDER[i]!.lng, ORDER[i]!.lat));
+      fireEvent.keyDown(window, { key: "g" });
+      const card = await screen.findByRole("region");
+      expect(within(card).queryByTestId("bullseye-friend")).toBeNull();
+      fireEvent.click(within(card).getByRole("button", { name: /Next photo|See your score/ }));
+    }
+    fireEvent.click(await screen.findByRole("button", { name: "Challenge a friend" }));
+    await waitFor(() => expect(sent.text).not.toBe(""));
+    expect(sent.text).toContain(
+      `?challenge=${ORDER.map((p) => p.id).join(".")}_22222_0.0.0.0.0`,
+    );
+    expect(screen.queryByRole("button", { name: "Share head to head" })).toBeNull();
   });
 });

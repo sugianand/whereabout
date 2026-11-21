@@ -112,7 +112,12 @@ held the photo. Five photos a game; your best is kept in your browser. **Today's
 `/bullseye/daily`, on Today from 2026-11-21) deals everyone the same five photos on the same UTC
 day, one try a day. Each bet is kept as it is made, so a reload picks up at the next photo on the
 ring you last bet and can't take one back; the share line is your points, each photo's ring and
-whether it held, and Atlas's tally, spoiling no place and no distance.
+whether it held, and Atlas's tally, spoiling no place and no distance. After a whole free game,
+*Challenge a friend* sends a link to the same five photos with your ring on each and how far off
+your pin landed, in whole kilometres rounded up so every ring keeps its verdict; the friend sees
+your bet on each photo only once they have made theirs, and the points to beat are settled from
+those rings and distances by the game's own rule, never read from the link. The end screen lists
+both bets photo by photo and offers *Send yours back* and a head-to-head picture.
 **Name the country** (at `/name-country`, in the Games menu) shows one photo and four countries from
 the same continent, drawn from the countries the globe draws: tap the right one, or press 1 to 4,
 and go on until your first miss. Atlas picks too, the name it gave the most of the four, and the
