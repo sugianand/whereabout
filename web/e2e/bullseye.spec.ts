@@ -466,3 +466,53 @@ test("Your map shows how often each of your rings held against Atlas's, counted 
   await expect(page).toHaveURL(/\/bullseye\/?$/);
   expect(errors).toEqual([]);
 });
+
+test("five tight rings held in one game earn the Bullseye stamp, with the bets beside Atlas counted", async ({
+  page,
+}) => {
+  test.setTimeout(300_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+
+  await page.goto("./stamps");
+  await expect(page.getByRole("heading", { name: "Bullseye", level: 2 })).toBeVisible();
+  const tight = page.getByTestId("stamp-bullseye-five-tight");
+  await expect(tight).toHaveAttribute("data-earned", "false");
+  await expect(page.getByTestId("stamp-bullseye-five-tight-progress")).toHaveText(
+    "0 of 5 tight rings in a game",
+  );
+
+  // A whole game on the place every time, on the 250 km ring.
+  await page.getByTestId("stamps-bullseye-intro").getByRole("link", { name: "Bullseye", exact: true }).click();
+  await expect(page).toHaveURL(/\/bullseye\/?$/);
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+  let atlasBets = 0;
+  for (let i = 1; i <= 5; i++) {
+    await expect(page.getByText(`Bullseye: photo ${i} of 5`)).toBeVisible();
+    await pinNear(page, await photoAt(page));
+    await page.keyboard.press("1");
+    await page.keyboard.press("g");
+    await expect(card.getByRole("heading", { level: 2 })).toHaveText("1,000 points");
+    if ((await card.getByTestId("bullseye-atlas").count()) > 0) atlasBets++;
+    await page.keyboard.press("Enter");
+  }
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("5,000 points");
+
+  await page.goto("./stamps");
+  await expect(tight).toHaveAttribute("data-earned", "true");
+  await expect(page.getByTestId("stamps-standing")).toContainText("since you last looked");
+  // The other stamp counts the photos Atlas bet on beside you, from Your calibration's tallies.
+  await expect(page.getByTestId("stamp-bullseye-calibrated-progress")).toHaveText(
+    `${atlasBets} of 30 photos bet with Atlas`,
+  );
+
+  await page.setViewportSize({ width: 320, height: 700 });
+  await tight.scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  await page
+    .getByTestId("stamps-bullseye-intro")
+    .getByRole("link", { name: /your calibration/ })
+    .click();
+  await expect(page).toHaveURL(/\/map\/?$/);
+  expect(errors).toEqual([]);
+});

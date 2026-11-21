@@ -23,6 +23,9 @@
  *   a stamp and on the album always agree.
  * - The World Tour (`lib/tour.ts`): one per leg of the route, earned when the leg is cleared, and
  *   one for the whole tour with how many legs are left, read from the record the tour page reads.
+ * - Bullseye (`lib/game/bullseye.ts`): five tight rings held in one whole game, free or today's,
+ *   and your rings holding their photos more often than Atlas's over at least
+ *   `BULLSEYE_CALIBRATION_PHOTOS` photos, by Your calibration on Your map.
  *
  * The days every game keeps are the last `ARCHIVE_DAYS`, and the map's history is capped, so a
  * stamp could otherwise fade once its proof is gone. Each stamp is therefore written down under
@@ -41,6 +44,16 @@ import { loadClimateDays } from "@/lib/game/climateDaily";
 import { loadGroundDays } from "@/lib/game/groundDaily";
 import { GROUND_PHOTOS, loadBestGround } from "@/lib/game/onTheGround";
 import { loadBestLeftRight } from "@/lib/game/leftRight";
+import { BULLSEYE_PHOTOS, loadBestTight, tightRingsHeld } from "@/lib/game/bullseye";
+import {
+  calibrationLeader,
+  emptyCalibration,
+  heldRate,
+  loadCalibration,
+  totals,
+  type Calibration,
+} from "@/lib/game/bullseyeCalibration";
+import { loadBullseyeDays } from "@/lib/game/bullseyeDaily";
 import {
   clueReading,
   loadQuickRecord,
@@ -93,6 +106,12 @@ export type AlbumShareStampId = (typeof ALBUM_SHARES)[number]["id"];
 export type AlbumPageStampId = `album-${string}-page`;
 export type TourLegStampId = `tour-${string}`;
 
+/** Photos bet beside Atlas before holding your rings more often earns the calibration stamp. */
+export const BULLSEYE_CALIBRATION_PHOTOS = 30;
+
+export const BULLSEYE_STAMP_IDS = ["bullseye-five-tight", "bullseye-calibrated"] as const;
+export type BullseyeStampId = (typeof BULLSEYE_STAMP_IDS)[number];
+
 export type StampId =
   | BadgeId
   | ContinentStampId
@@ -103,9 +122,18 @@ export type StampId =
   | AlbumShareStampId
   | AlbumPageStampId
   | TourLegStampId
-  | "tour-complete";
+  | "tour-complete"
+  | BullseyeStampId;
 
-export type StampGroup = "badges" | "continents" | "days" | "atlas" | "clues" | "album" | "tour";
+export type StampGroup =
+  | "badges"
+  | "continents"
+  | "days"
+  | "atlas"
+  | "clues"
+  | "album"
+  | "tour"
+  | "bullseye";
 
 export const STAMP_GROUPS: readonly { id: StampGroup; title: string }[] = [
   { id: "badges", title: "Badges" },
@@ -115,6 +143,7 @@ export const STAMP_GROUPS: readonly { id: StampGroup; title: string }[] = [
   { id: "clues", title: "Reading the clues" },
   { id: "album", title: "Your album" },
   { id: "tour", title: "World Tour" },
+  { id: "bullseye", title: "Bullseye" },
 ];
 
 /** How far along an unearned stamp is: `have` of `need`, counted in `unit`. */
@@ -160,6 +189,16 @@ export interface StampSources {
   album?: Readonly<Record<string, Continent>>;
   /** The World Tour's route (`tourRoute`) and its record (`loadTour`); no tour stamps without. */
   tour?: { route: readonly Continent[]; record: TourRecord };
+  /** What Bullseye keeps (`loadBullseyeSources`); none played if not given. */
+  bullseye?: BullseyeSources;
+}
+
+/** What Bullseye keeps, for its stamps. */
+export interface BullseyeSources {
+  /** The most 250 km rings held in one whole game, free or today's. */
+  bestTight: number;
+  /** Every ring bet and held, yours and Atlas's, as Your calibration counts them. */
+  calibration: Calibration;
 }
 
 /** What the clue games keep, for the clue stamps. */
@@ -230,6 +269,7 @@ export const STAMP_IDS: readonly StampId[] = [
   ...CONTINENTS.map(albumPageStampId),
   ...TOUR_ROUTE.map(tourLegStampId),
   "tour-complete",
+  ...BULLSEYE_STAMP_IDS,
 ];
 
 const KNOWN: ReadonlySet<string> = new Set(STAMP_IDS);
@@ -633,6 +673,61 @@ function tourStamps({ tour }: StampSources): Stamp[] {
   return [...legs, whole];
 }
 
+const pct = (rate: number | null) => `${Math.round((rate ?? 0) * 100)}%`;
+
+/**
+ * Bullseye's stamps. Five tight rings in one game counts the most held in a whole game kept.
+ * Rings held more often than Atlas is earned once Atlas has bet on `BULLSEYE_CALIBRATION_PHOTOS`
+ * photos beside you (it only bets on photos you bet on too) and your rings hold their photos more
+ * often than its do, by the same comparison as Your calibration, so the stamp and Your map agree.
+ */
+function bullseyeStamps({ bullseye }: StampSources): Stamp[] {
+  const bestTight = bullseye?.bestTight ?? 0;
+  const cal = bullseye?.calibration ?? emptyCalibration();
+  const you = totals(cal.you);
+  const atlas = totals(cal.atlas);
+  const photos = Math.min(you.bet, atlas.bet);
+  const enough = photos >= BULLSEYE_CALIBRATION_PHOTOS;
+  const leader = calibrationLeader(cal);
+  const calibrated = enough && leader === "you";
+  const rates = `yours ${pct(heldRate(you))}, Atlas's ${pct(heldRate(atlas))}`;
+  let note: string | null = null;
+  if (!calibrated && enough) note = `Rings held: ${rates}. Bet on to pull ahead.`;
+  else if (!calibrated && leader !== null) note = `Rings held so far: ${rates}`;
+  return [
+    {
+      id: "bullseye-five-tight",
+      group: "bullseye",
+      name: "Five tight rings",
+      how: `Bet the tightest ring on all ${BULLSEYE_PHOTOS} photos of a Bullseye game and hold every one`,
+      icon: "🏹",
+      earned: bestTight >= BULLSEYE_PHOTOS,
+      progress: {
+        have: Math.min(bestTight, BULLSEYE_PHOTOS),
+        need: BULLSEYE_PHOTOS,
+        unit: ["tight ring in a game", "tight rings in a game"],
+      },
+      note: null,
+    },
+    {
+      id: "bullseye-calibrated",
+      group: "bullseye",
+      name: "Surer than Atlas",
+      how: `Hold your Bullseye rings more often than Atlas holds its over at least ${BULLSEYE_CALIBRATION_PHOTOS} photos`,
+      icon: "⚖️",
+      earned: calibrated,
+      progress: enough
+        ? null
+        : {
+            have: photos,
+            need: BULLSEYE_CALIBRATION_PHOTOS,
+            unit: ["photo bet with Atlas", "photos bet with Atlas"],
+          },
+      note,
+    },
+  ];
+}
+
 /** Every stamp as the browser's records stand, before what was kept is added in. */
 export function readStamps(sources: StampSources): Stamp[] {
   return [
@@ -643,7 +738,21 @@ export function readStamps(sources: StampSources): Stamp[] {
     ...clueStamps(sources),
     ...albumStamps(sources),
     ...tourStamps(sources),
+    ...bullseyeStamps(sources),
   ];
+}
+
+/**
+ * What Bullseye keeps in this browser, for `StampSources.bullseye`: the most tight rings held in
+ * a whole free game, or in one of today's games played out, and every bet as Your calibration
+ * counts them. A friend's challenge counts toward the calibration but not the five tight rings,
+ * as it never counts toward the best either.
+ */
+export function loadBullseyeSources(): BullseyeSources {
+  const days = Object.values(loadBullseyeDays())
+    .filter((d) => d.results.length >= BULLSEYE_PHOTOS)
+    .map((d) => tightRingsHeld(d.results));
+  return { bestTight: Math.max(loadBestTight(), ...days), calibration: loadCalibration() };
 }
 
 /**

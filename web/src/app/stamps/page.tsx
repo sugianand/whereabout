@@ -9,7 +9,7 @@ import { tourRoute } from "@/lib/tour";
 export const metadata: Metadata = {
   title: "Stamps — Whereabout",
   description:
-    "Stamps to collect in Whereabout: badges, every country of a continent pinned, full days of daily games, your album filled, World Tour legs cleared. Each says how it is earned and how close you are. Kept only in your browser.",
+    "Stamps to collect in Whereabout: badges, every country of a continent pinned, full days of daily games, your album filled, World Tour legs cleared, Bullseye rings held. Each says how it is earned and how close you are. Kept only in your browser.",
 };
 
 // Which countries a continent's stamp asks for is settled at build time from the photos dealt;

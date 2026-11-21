@@ -5,6 +5,7 @@ import { circlePath, haversineKm, type LngLat } from "@/lib/geo";
 import {
   ATLAS_RING_FROM,
   BEST_BULLSEYE_KEY,
+  BEST_TIGHT_KEY,
   DEFAULT_RING,
   RINGS,
   atlasBet,
@@ -17,8 +18,12 @@ import {
   bullseyeTotal,
   initialBullseye,
   loadBestBullseye,
+  loadBestTight,
   rememberBullseye,
+  rememberTight,
   ringsHeld,
+  settleBet,
+  tightRingsHeld,
   type BullseyeState,
 } from "./bullseye";
 
@@ -192,5 +197,33 @@ describe("the best", () => {
     expect(loadBestBullseye()).toBe(1250);
     localStorage.setItem(BEST_BULLSEYE_KEY, "soup");
     expect(loadBestBullseye()).toBe(0);
+  });
+});
+
+describe("tight rings held", () => {
+  const at = { lng: 0, lat: 0 };
+  const r = (ring: number, km: number) => ({ id: `${ring}-${km}`, you: settleBet(at, ring, km), atlas: null });
+
+  it("counts only the tightest ring, and only when it held", () => {
+    expect(tightRingsHeld([r(0, 100), r(0, 250), r(0, 251), r(1, 100), r(3, 10)])).toBe(2);
+    expect(tightRingsHeld([])).toBe(0);
+  });
+
+  it("keeps the most in a game, never more than a game's photos", () => {
+    expect(loadBestTight()).toBe(0);
+    expect(rememberTight(3)).toBe(3);
+    expect(rememberTight(2)).toBe(3);
+    expect(localStorage.getItem(BEST_TIGHT_KEY)).toBe("3");
+    expect(rememberTight(9)).toBe(5);
+    expect(loadBestTight()).toBe(5);
+  });
+
+  it("reads junk as none, and a perfect best kept earlier as five", () => {
+    localStorage.setItem(BEST_TIGHT_KEY, "two");
+    expect(loadBestTight()).toBe(0);
+    localStorage.setItem(BEST_TIGHT_KEY, "-4");
+    expect(loadBestTight()).toBe(0);
+    localStorage.setItem(BEST_BULLSEYE_KEY, "5000");
+    expect(loadBestTight()).toBe(5);
   });
 });

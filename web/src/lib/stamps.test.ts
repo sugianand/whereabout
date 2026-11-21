@@ -1,5 +1,18 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import {
+  BEST_BULLSEYE_KEY,
+  BEST_TIGHT_KEY,
+  settleBet,
+  type BullseyeRound,
+} from "@/lib/game/bullseye";
+import {
+  addRound,
+  emptyCalibration,
+  recordBullseyeRound,
+  type Calibration,
+} from "@/lib/game/bullseyeCalibration";
+import { rememberBullseyeDay } from "@/lib/game/bullseyeDaily";
 import { rememberClimateDay } from "@/lib/game/climateDaily";
 import { archiveDays } from "@/lib/game/dailyArchive";
 import { rememberGroundDay } from "@/lib/game/groundDaily";
@@ -15,6 +28,7 @@ import { EMPTY_RECORD, type PlayerRecord } from "./playerRecord";
 import type { PlayedPhoto } from "./playedMap";
 import { addLeg, type TourRecord } from "./tour";
 import {
+  BULLSEYE_CALIBRATION_PHOTOS,
   CLUE_PHOTOS,
   FULL_WEEK,
   ROAD_READER_RUN,
@@ -28,6 +42,7 @@ import {
   collectStamps,
   countriesByContinent,
   keepStamps,
+  loadBullseyeSources,
   loadClueSources,
   loadKeptStamps,
   longestFullRun,
@@ -104,6 +119,8 @@ describe("readStamps", () => {
       "road-ahead",
       "climate-ahead",
       "ground-ahead",
+      "bullseye-five-tight",
+      "bullseye-calibrated",
     ]);
     expect(stamps.every((s) => !s.earned)).toBe(true);
     // Every id read is one the store accepts.
@@ -567,6 +584,131 @@ describe("tour stamps", () => {
     const later = collectStamps(tourOf({}), first.kept, "2026-12-01");
     expect(byId(later.stamps, "tour-europe").earned).toBe(true);
     expect(parseKeptStamps(JSON.stringify(first.kept))["tour-europe"]).toBe(TODAY);
+  });
+});
+
+/** A photo bet on `ring` (0 the tightest), held or not, and Atlas's bet on its own ring. */
+function round(
+  id: string,
+  ring: number,
+  held: boolean,
+  atlas: { ring: number; held: boolean } | null = null,
+): BullseyeRound {
+  const at = { lng: 0, lat: 0 };
+  return {
+    id,
+    you: settleBet(at, ring, held ? 10 : 9000),
+    atlas: atlas ? settleBet(at, atlas.ring, atlas.held ? 10 : 9000) : null,
+  };
+}
+
+/** `n` photos bet beside Atlas: you hold `you` of them, Atlas `atlas`. */
+function calibration(n: number, you: number, atlas: number): Calibration {
+  let cal = emptyCalibration();
+  for (let i = 0; i < n; i++) {
+    cal = addRound(cal, round(`p${i}`, 2, i < you, { ring: 1, held: i < atlas }));
+  }
+  return cal;
+}
+
+describe("Bullseye stamps", () => {
+  const bullseye = (bestTight: number, cal: Calibration = emptyCalibration()) =>
+    sources({ bullseye: { bestTight, calibration: cal } });
+
+  it("lists both under Bullseye, none earned in a fresh browser, with ids kept", () => {
+    const stamps = readStamps(sources()).filter((s) => s.group === "bullseye");
+    expect(stamps.map((s) => s.id)).toEqual(["bullseye-five-tight", "bullseye-calibrated"]);
+    for (const s of stamps) {
+      expect(s.earned).toBe(false);
+      expect(s.note).toBeNull();
+      expect(STAMP_IDS).toContain(s.id);
+    }
+    expect(byId(stamps, "bullseye-five-tight").progress).toEqual({
+      have: 0,
+      need: 5,
+      unit: ["tight ring in a game", "tight rings in a game"],
+    });
+    expect(byId(stamps, "bullseye-calibrated").progress?.need).toBe(BULLSEYE_CALIBRATION_PHOTOS);
+  });
+
+  it("counts the most tight rings held in a game, and earns five", () => {
+    const four = byId(readStamps(bullseye(4)), "bullseye-five-tight");
+    expect(four.earned).toBe(false);
+    expect(toGo(four.progress!)).toBe("1 tight ring in a game to go");
+    expect(byId(readStamps(bullseye(5)), "bullseye-five-tight").earned).toBe(true);
+  });
+
+  it("counts photos bet beside Atlas, with the rates so far, short of the photos", () => {
+    const s = byId(readStamps(bullseye(0, calibration(12, 9, 3))), "bullseye-calibrated");
+    expect(s.earned).toBe(false);
+    expect(s.progress).toMatchObject({ have: 12, need: BULLSEYE_CALIBRATION_PHOTOS });
+    expect(s.note).toBe("Rings held so far: yours 75%, Atlas's 25%");
+  });
+
+  it("only counts the photos Atlas bet on toward the photos needed", () => {
+    let cal = calibration(BULLSEYE_CALIBRATION_PHOTOS - 1, 20, 10);
+    cal = addRound(cal, round("solo", 0, true));
+    const s = byId(readStamps(bullseye(0, cal)), "bullseye-calibrated");
+    expect(s.earned).toBe(false);
+    expect(s.progress?.have).toBe(BULLSEYE_CALIBRATION_PHOTOS - 1);
+  });
+
+  it("earns it once your rings hold more often over enough photos, and not level or behind", () => {
+    const n = BULLSEYE_CALIBRATION_PHOTOS;
+    const ahead = byId(readStamps(bullseye(0, calibration(n, 16, 15))), "bullseye-calibrated");
+    expect(ahead.earned).toBe(true);
+    expect(ahead.progress).toBeNull();
+
+    const level = byId(readStamps(bullseye(0, calibration(n, 15, 15))), "bullseye-calibrated");
+    expect(level.earned).toBe(false);
+    expect(level.progress).toBeNull();
+    expect(level.note).toBe("Rings held: yours 50%, Atlas's 50%. Bet on to pull ahead.");
+
+    const behind = byId(readStamps(bullseye(0, calibration(n, 12, 18))), "bullseye-calibrated");
+    expect(behind.earned).toBe(false);
+    expect(behind.note).toBe("Rings held: yours 40%, Atlas's 60%. Bet on to pull ahead.");
+  });
+
+  it("keeps a Bullseye stamp once earned, after its proof is gone", () => {
+    const first = collectStamps(readStamps(bullseye(5)), {}, TODAY);
+    expect(first.fresh).toContain("bullseye-five-tight");
+    const later = collectStamps(readStamps(bullseye(0)), first.kept, "2026-12-01");
+    expect(byId(later.stamps, "bullseye-five-tight").earned).toBe(true);
+  });
+});
+
+describe("loadBullseyeSources", () => {
+  beforeEach(() => localStorage.clear());
+
+  const tightDay = (held: number, of = 5) =>
+    Array.from({ length: of }, (_, i) => round(`d${i}`, 0, i < held));
+
+  it("is empty in a fresh browser", () => {
+    expect(loadBullseyeSources()).toEqual({ bestTight: 0, calibration: emptyCalibration() });
+  });
+
+  it("takes the most of the free games' kept tight rings and a whole day's", () => {
+    localStorage.setItem(BEST_TIGHT_KEY, "2");
+    rememberBullseyeDay("2026-11-09", tightDay(4));
+    // Today's game is three photos in, all held tight: not a whole game yet.
+    rememberBullseyeDay(TODAY, tightDay(3, 3));
+    expect(loadBullseyeSources().bestTight).toBe(4);
+  });
+
+  it("reads a perfect free best kept before tight rings were, as five", () => {
+    localStorage.setItem(BEST_BULLSEYE_KEY, "5000");
+    expect(loadBullseyeSources().bestTight).toBe(5);
+    localStorage.setItem(BEST_BULLSEYE_KEY, "4500");
+    expect(loadBullseyeSources().bestTight).toBe(0);
+  });
+
+  it("adds up free bets and today's, as Your calibration does", () => {
+    recordBullseyeRound(round("f1", 1, true, { ring: 0, held: false }));
+    rememberBullseyeDay("2026-11-09", [round("d1", 1, false, { ring: 1, held: true })]);
+    const { calibration: cal } = loadBullseyeSources();
+    expect(cal.you[1]).toEqual({ bet: 2, held: 1 });
+    expect(cal.atlas[0]).toEqual({ bet: 1, held: 0 });
+    expect(cal.atlas[1]).toEqual({ bet: 1, held: 1 });
   });
 });
 

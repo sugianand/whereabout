@@ -228,7 +228,9 @@ of 10, five of five at Which climate? and at What's on the ground?, and reading 
 climate or the ground better than Atlas over at least 30 photos you've both read, and for your
 album: a quarter, half and all of it found, and each continent's page complete, counted from the
 same history the album reads, and for the World Tour: each leg cleared and the whole tour, with
-the legs left, from the record `/tour` reads. Each says how it's earned and how close you are (for
+the legs left, from the record `/tour` reads, and two for Bullseye: five 250 km rings held in one
+whole free or daily game, and your rings holding more often than Atlas's over at least 30 photos
+it bet on beside you, by Your calibration. Each says how it's earned and how close you are (for
 Atlas, your nearest miss on the days kept; for a leg not yet cleared, your best game there against
 Atlas), the one nearest to done is named next, and a stamp once collected stays.
 

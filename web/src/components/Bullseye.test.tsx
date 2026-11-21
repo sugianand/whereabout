@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { BEST_BULLSEYE_KEY, RINGS } from "@/lib/game/bullseye";
+import { BEST_BULLSEYE_KEY, BEST_TIGHT_KEY, RINGS } from "@/lib/game/bullseye";
 import { loadCalibration, loadFreeCalibration, totals } from "@/lib/game/bullseyeCalibration";
 import { BULLSEYE_DAILY_KEY, dailyBullseyeOrder, loadBullseyeDay } from "@/lib/game/bullseyeDaily";
 import { seededShuffle } from "@/lib/game/daily";
@@ -167,6 +167,27 @@ describe("Bullseye", () => {
     );
     expect(localStorage.getItem(BEST_BULLSEYE_KEY)).toBe("2500");
     expect(within(screen.getByRole("list", { name: "Your photos" })).getAllByRole("listitem")).toHaveLength(5);
+    // Bet on the 750 km ring throughout: no tight ring held, for the Bullseye stamp.
+    expect(localStorage.getItem(BEST_TIGHT_KEY)).toBeNull();
+  });
+
+  it("keeps the tight rings held in a whole game for the Bullseye stamp", async () => {
+    const map = await setup();
+    for (let i = 0; i < 5; i++) {
+      await waitFor(() =>
+        expect(document.querySelector("main")).toHaveAttribute("data-photo", ORDER[i]!.id),
+      );
+      act(() => map.click(ORDER[i]!.lng, ORDER[i]!.lat));
+      // The tightest ring on the first three photos, then the widest.
+      fireEvent.keyDown(window, { key: i < 3 ? "1" : "4" });
+      fireEvent.keyDown(window, { key: "g" });
+      const card = await screen.findByRole("region");
+      // Nothing is kept until the game is whole.
+      expect(localStorage.getItem(BEST_TIGHT_KEY)).toBeNull();
+      fireEvent.click(within(card).getByRole("button", { name: /Next photo|See your score/ }));
+    }
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("3,200 points");
+    expect(localStorage.getItem(BEST_TIGHT_KEY)).toBe("3");
   });
 });
 
@@ -257,6 +278,8 @@ describe("today's Bullseye", () => {
     expect(share).toHaveFocus();
     expect(screen.getByRole("list", { name: "Your photos" }).children).toHaveLength(5);
     expect(localStorage.getItem(BEST_BULLSEYE_KEY)).toBeNull();
+    // Today's tight rings are read from its kept day, never written as a free game's.
+    expect(localStorage.getItem(BEST_TIGHT_KEY)).toBeNull();
 
     fireEvent.click(share);
     await waitFor(() => expect(sent.text).not.toBe(""));
@@ -333,8 +356,10 @@ describe("a Bullseye challenge", () => {
     expect(screen.getAllByTestId("bullseye-row")[4]).toHaveTextContent(
       "Friend: outside the 250 km ring, 6,000 km off",
     );
-    // A challenge's photos were picked by someone who had seen them: never a best.
+    // A challenge's photos were picked by someone who had seen them: never a best, and its five
+    // tight rings never count toward the Bullseye stamp.
     expect(localStorage.getItem(BEST_BULLSEYE_KEY)).toBeNull();
+    expect(localStorage.getItem(BEST_TIGHT_KEY)).toBeNull();
     expect(screen.queryByText(/new best/)).toBeNull();
     expect(screen.getByRole("button", { name: "Share head to head" })).toBeInTheDocument();
 

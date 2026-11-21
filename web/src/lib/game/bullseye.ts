@@ -20,6 +20,8 @@ import type { Units } from "@/lib/units";
 
 export const BULLSEYE_PHOTOS = 5;
 export const BEST_BULLSEYE_KEY = "whereabout:bullseye-best";
+/** The most tight rings held in one whole free game or challenge, for the Bullseye stamps. */
+export const BEST_TIGHT_KEY = "whereabout:bullseye-tight-best";
 
 export interface Ring {
   /** The ring's radius around the pin, in kilometres. */
@@ -176,6 +178,11 @@ export function ringsHeld(results: readonly BullseyeRound[]): number {
   return results.filter((r) => r.you.inside).length;
 }
 
+/** How many photos you bet the tightest ring on and it held: five in a game is a perfect one. */
+export function tightRingsHeld(results: readonly BullseyeRound[]): number {
+  return results.filter((r) => r.you.ring === 0 && r.you.inside).length;
+}
+
 /** Atlas's total over the photos it played, and how many that was. */
 export function atlasBullseyeTotal(results: readonly BullseyeRound[]): {
   total: number;
@@ -254,4 +261,34 @@ export function rememberBullseye(total: number): number {
     // Private mode or full storage: the game still counts for this visit.
   }
   return total;
+}
+
+/**
+ * The most tight rings held in one whole game in this browser, 0 when none is kept. A free game
+ * kept before this was recorded still counts if its best is perfect: only five tight rings held
+ * score every photo's points.
+ */
+export function loadBestTight(): number {
+  let kept = 0;
+  try {
+    const value = Number(storage()?.getItem(BEST_TIGHT_KEY));
+    if (Number.isInteger(value) && value > 0) kept = Math.min(value, BULLSEYE_PHOTOS);
+  } catch {
+    // Unreadable storage keeps nothing.
+  }
+  const perfect = loadBestBullseye() >= BULLSEYE_PHOTOS * PHOTO_POINTS ? BULLSEYE_PHOTOS : 0;
+  return Math.max(kept, perfect);
+}
+
+/** Keep a whole game's tight rings held if it beats the stored most, and return the most. */
+export function rememberTight(held: number): number {
+  const best = loadBestTight();
+  if (!Number.isInteger(held) || held <= best) return best;
+  const next = Math.min(held, BULLSEYE_PHOTOS);
+  try {
+    storage()?.setItem(BEST_TIGHT_KEY, String(next));
+  } catch {
+    // Private mode or full storage: the game still counted on screen.
+  }
+  return next;
 }

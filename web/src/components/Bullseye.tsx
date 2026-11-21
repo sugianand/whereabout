@@ -16,8 +16,10 @@ import {
   initialBullseye,
   loadBestBullseye,
   rememberBullseye,
+  rememberTight,
   ringName,
   ringsHeld,
+  tightRingsHeld,
   type Bet,
   type BullseyeRound,
 } from "@/lib/game/bullseye";
@@ -271,6 +273,8 @@ export default function Bullseye({ deck, loadRecords, random, daily = false, now
     // challenge never counts as one: its photos were picked by someone who had seen them.
     if (after.phase === "finished" && !day && !challenge) {
       setBest(rememberBullseye(bullseyeTotal(after.results)));
+      // So do the tight rings held, for the Bullseye stamp; today's are read from its kept days.
+      rememberTight(tightRingsHeld(after.results));
     }
     dispatch({ type: "next" });
   }, [challenge, day, state]);

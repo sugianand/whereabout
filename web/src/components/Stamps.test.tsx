@@ -1,6 +1,8 @@
 import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { BEST_TIGHT_KEY, settleBet } from "@/lib/game/bullseye";
+import { recordBullseyeRound } from "@/lib/game/bullseyeCalibration";
 import { rememberClimateDay } from "@/lib/game/climateDaily";
 import { rememberGroundDay } from "@/lib/game/groundDaily";
 import { BEST_LEFT_RIGHT_KEY } from "@/lib/game/leftRight";
@@ -34,7 +36,7 @@ beforeEach(() => localStorage.clear());
 describe("Stamps", () => {
   it("shows every stamp uncollected on a first visit, with the next one up", async () => {
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
-    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^0 of 28 collected\.$/);
+    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^0 of 30 collected\.$/);
     expect(screen.getByRole("heading", { name: "Continents cleared" })).toBeInTheDocument();
     expect(screen.getByTestId("stamp-cleared-oceania")).toHaveAttribute("data-earned", "false");
     expect(screen.getByTestId("stamp-cleared-oceania-progress")).toHaveTextContent(
@@ -73,7 +75,7 @@ describe("Stamps", () => {
     );
     const { unmount } = render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
     const standing = await screen.findByTestId("stamps-standing");
-    expect(standing).toHaveTextContent("2 of 28 collected. 2 new stamps since you last looked.");
+    expect(standing).toHaveTextContent("2 of 30 collected. 2 new stamps since you last looked.");
     const oceania = screen.getByTestId("stamp-cleared-oceania");
     expect(oceania).toHaveAttribute("data-earned", "true");
     expect(within(oceania).getByText("New")).toBeInTheDocument();
@@ -94,7 +96,7 @@ describe("Stamps", () => {
     // The map forgotten, the stamp stays, no longer new.
     localStorage.removeItem(PLAYED_KEY);
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
-    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^2 of 28 collected\.$/);
+    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^2 of 30 collected\.$/);
     const kept = screen.getByTestId("stamp-cleared-oceania");
     expect(kept).toHaveAttribute("data-earned", "true");
     expect(within(kept).queryByText("New")).toBeNull();
@@ -107,7 +109,7 @@ describe("Stamps", () => {
     rememberOddDay("2026-11-10", { streak: 1, atlasRight: 2, atlasPlayed: 2, ended: "miss" });
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
     expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(
-      "1 of 28 collected. 1 new stamp since you last looked.",
+      "1 of 30 collected. 1 new stamp since you last looked.",
     );
     expect(screen.getByRole("heading", { name: "Beat Atlas" })).toBeInTheDocument();
     const won = screen.getByTestId("stamp-beat-atlas-name-country");
@@ -159,7 +161,7 @@ describe("Stamps", () => {
     );
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
     expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(
-      "4 of 28 collected. 4 new stamps since you last looked.",
+      "4 of 30 collected. 4 new stamps since you last looked.",
     );
     expect(screen.getByRole("heading", { name: "Reading the clues" })).toBeInTheDocument();
     expect(screen.getByTestId("stamp-road-reader")).toHaveAttribute("data-earned", "true");
@@ -251,5 +253,39 @@ describe("Stamps", () => {
     expect(africa).toHaveTextContent("Closest so far: 8,000 points to Atlas's 9,500");
     expect(screen.getByTestId("stamp-tour-complete-progress")).toHaveTextContent("1 of 3 legs");
     expect(JSON.parse(localStorage.getItem(STAMPS_KEY)!)).toEqual({ "tour-europe": "2026-11-10" });
+  });
+
+  it("shows Bullseye's stamps from the tight rings kept and every ring bet", async () => {
+    localStorage.setItem(BEST_TIGHT_KEY, "5");
+    const at = { lng: 0, lat: 0 };
+    // Four photos bet beside Atlas: your 2,000 km ring held three, Atlas's 750 km ring one.
+    for (let i = 0; i < 4; i++) {
+      recordBullseyeRound({
+        id: `p${i}`,
+        you: settleBet(at, 2, i < 3 ? 100 : 9000),
+        atlas: settleBet(at, 1, i < 1 ? 100 : 9000),
+      });
+    }
+    render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
+    expect(await screen.findByRole("heading", { name: "Bullseye" })).toBeInTheDocument();
+    const intro = screen.getByTestId("stamps-bullseye-intro");
+    expect(within(intro).getByRole("link", { name: "Bullseye" })).toHaveAttribute(
+      "href",
+      "/bullseye",
+    );
+    expect(within(intro).getByRole("link", { name: /your calibration/ })).toHaveAttribute(
+      "href",
+      "/map",
+    );
+    expect(screen.getByTestId("stamp-bullseye-five-tight")).toHaveAttribute("data-earned", "true");
+    const calibrated = screen.getByTestId("stamp-bullseye-calibrated");
+    expect(calibrated).toHaveAttribute("data-earned", "false");
+    expect(screen.getByTestId("stamp-bullseye-calibrated-progress")).toHaveTextContent(
+      "4 of 30 photos bet with Atlas",
+    );
+    expect(calibrated).toHaveTextContent("Rings held so far: yours 75%, Atlas's 25%");
+    expect(JSON.parse(localStorage.getItem(STAMPS_KEY)!)).toEqual({
+      "bullseye-five-tight": "2026-11-10",
+    });
   });
 });
