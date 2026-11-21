@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BEST_BULLSEYE_KEY, RINGS } from "@/lib/game/bullseye";
+import { loadCalibration, loadFreeCalibration, totals } from "@/lib/game/bullseyeCalibration";
 import { BULLSEYE_DAILY_KEY, dailyBullseyeOrder, loadBullseyeDay } from "@/lib/game/bullseyeDaily";
 import { seededShuffle } from "@/lib/game/daily";
 import type { GameRecord } from "@/lib/game/deck";
@@ -138,6 +139,12 @@ describe("Bullseye", () => {
     expect(card).toHaveTextContent("Outside your ring");
     expect(within(card).getByRole("heading")).toHaveTextContent("0 points");
     expect(screen.getByTestId("bullseye-score")).toHaveTextContent("500");
+    // Each bet is tallied for Your calibration as it is placed: yours and Atlas's.
+    const cal = loadFreeCalibration();
+    expect(cal.you[1]).toEqual({ bet: 1, held: 1 });
+    expect(cal.you[3]).toEqual({ bet: 1, held: 0 });
+    // Atlas guessed both photos on the spot, sure of each: its tightest ring held twice.
+    expect(cal.atlas[0]).toEqual({ bet: 2, held: 2 });
   });
 
   it("ends with the rings held, Atlas's total and a new best kept", async () => {
@@ -220,6 +227,9 @@ describe("today's Bullseye", () => {
     expect(loadBullseyeDay(DAY)?.results).toMatchObject([
       { id: today[0]!.id, you: { ring: 0, inside: true, score: 1000 } },
     ]);
+    // Your calibration reads today's bets from the kept day, so they are never tallied twice.
+    expect(totals(loadFreeCalibration().you).bet).toBe(0);
+    expect(loadCalibration().you[0]).toEqual({ bet: 1, held: 1 });
 
     cleanup();
     await setupDay(true);

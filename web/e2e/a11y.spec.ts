@@ -205,8 +205,11 @@ for (const colorScheme of ["dark", "light"] as const) {
       await expectAccessible(page, "hot-cold after a pin");
     });
 
-    // Bullseye's answer card names both rings over the globe's panel.
-    test("bullseye passes axe at its first answer", async ({ page }) => {
+    // Bullseye's answer card names both rings over the globe's panel; the bet then shows on
+    // Your map's calibration chart.
+    test("bullseye passes axe at its first answer, and Your calibration after it", async ({
+      page,
+    }) => {
       await page.goto("./bullseye");
       await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
       await page.getByRole("application", { name: /Globe/ }).focus();
@@ -214,6 +217,9 @@ for (const colorScheme of ["dark", "light"] as const) {
       await page.keyboard.press("g");
       await expect(page.getByTestId("bullseye-you")).toBeVisible();
       await expectAccessible(page, "bullseye answer");
+      await page.goto("./map");
+      await expect(page.getByTestId("calibration-line")).toBeVisible();
+      await expectAccessible(page, "your calibration");
     });
   });
 }

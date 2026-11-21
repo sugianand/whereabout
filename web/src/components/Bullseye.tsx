@@ -37,6 +37,7 @@ import {
   loadBullseyeDay,
   rememberBullseyeDay,
 } from "@/lib/game/bullseyeDaily";
+import { recordBullseyeRound } from "@/lib/game/bullseyeCalibration";
 import { seededShuffle } from "@/lib/game/daily";
 import { runToday } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
@@ -253,10 +254,13 @@ export default function Bullseye({ deck, loadRecords, random, daily = false, now
       truth: photo,
       atlas: atlas ? { lng: atlas.lng, lat: atlas.lat, confidence: atlas.confidence } : null,
     } as const;
-    if (day) {
-      // Kept after every bet, settled by the reducer's own rules, so a reload can't take it back.
-      const after = bullseyeReducer(guessing, action);
-      if (after.phase === "answered") rememberBullseyeDay(day, after.results);
+    const after = bullseyeReducer(guessing, action);
+    if (after.phase === "answered") {
+      // Today's bets are kept after every one, settled by the reducer's own rules, so a reload
+      // can't take them back, and Your calibration reads them from there; a free game's or a
+      // challenge's are tallied for it here, bet by bet.
+      if (day) rememberBullseyeDay(day, after.results);
+      else recordBullseyeRound(after.round);
     }
     dispatch(action);
   }, [current, day, guessing]);

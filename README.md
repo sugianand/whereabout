@@ -294,7 +294,10 @@ you've called wrong most in What's on the ground?, with *Practise these covers*
 (`/on-the-ground/mix-ups`). Then **you and Atlas in the quick
 games**: for Further North and Odd one out, the rounds you got right of those you answered beside
 the rounds Atlas got right of those it played, free runs and today's runs together, and who is
-ahead. Then **head to head with friends**: every friend's challenge you've answered from a link,
+ahead. Then **your calibration**: for each Bullseye ring, how many photos you bet it on and how
+many it held, beside the same for Atlas's rings, drawn as a bar per ring for each side, with who
+holds their rings more often; free games, friends' challenges and today's games all count, each
+bet tallied as it is placed (only counts are kept, never a photo or a pin). Then **head to head with friends**: every friend's challenge you've answered from a link,
 in any game, won, lost or tied, grouped by game with each result in its own units, a link to
 play theirs again and *Send a rematch*, which sends your result on it back. It is kept only in
 your browser.

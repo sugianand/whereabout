@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import BullseyeCalibration from "@/components/BullseyeCalibration";
 import HeadToHeadLog from "@/components/HeadToHeadLog";
 import MixUps from "@/components/MixUps";
 import PlayedMap from "@/components/PlayedMap";
@@ -25,7 +26,7 @@ const streakable = ((r) => CONTINENTS.filter((c) => r[c]))(
 export const metadata: Metadata = {
   title: "Your map — Whereabout",
   description:
-    "Every photo you've played in Whereabout on one globe, coloured by how close your pin landed, with the countries you've seen and how you stand against Atlas in the quick games, how often you read the road and the climate right, the climates and ground you misread, the countries you mix up, and every friend's challenge you've answered. Kept only in your browser.",
+    "Every photo you've played in Whereabout on one globe, coloured by how close your pin landed, with the countries you've seen and how you stand against Atlas in the quick games, how often you read the road and the climate right, the climates and ground you misread, the countries you mix up, how often your Bullseye rings hold against Atlas's, and every friend's challenge you've answered. Kept only in your browser.",
 };
 
 export default function YourMapPage() {
@@ -54,6 +55,7 @@ export default function YourMapPage() {
         climateCounts={photosByClimate(bundledClimateGroups)}
         groundCounts={photosByCover(bundledGroundCovers)}
       />
+      <BullseyeCalibration />
       <HeadToHeadLog />
     </main>
   );

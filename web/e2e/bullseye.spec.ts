@@ -399,3 +399,70 @@ test("a Bullseye challenge's answer card and end buttons fit a 320px phone", asy
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });
+
+test("Your map shows how often each of your rings held against Atlas's, counted bet by bet", async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 320, height: 640 });
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+
+  await page.goto("./bullseye");
+  await expect(page.getByText("Bullseye: photo 1 of 5")).toBeVisible();
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+
+  // Photo 1 held on the tightest ring, photo 2 missed on it.
+  let truth = await photoAt(page);
+  await pinNear(page, truth);
+  await page.keyboard.press("1");
+  await page.keyboard.press("g");
+  await expect(card).toContainText("Inside your ring");
+  const atlasFirst = await card.getByTestId("bullseye-atlas").innerText();
+  await page.keyboard.press("Enter");
+  await expect(page.getByText("Bullseye: photo 2 of 5")).toBeVisible();
+  truth = await photoAt(page);
+  await pinNear(page, { lng: truth.lng, lat: truth.lat > 0 ? truth.lat - 40 : truth.lat + 40 });
+  await page.keyboard.press("g");
+  await expect(card).toContainText("Outside your ring");
+  const atlasSecond = await card.getByTestId("bullseye-atlas").innerText();
+
+  // Leaving mid-game still counts the two photos bet.
+  await page.goto("./map");
+  const section = page.getByTestId("calibration");
+  await expect(section.getByRole("heading", { name: "Your calibration" })).toBeVisible();
+  await expect(page.getByTestId("calibration-line")).toContainText(
+    "Your rings held 1 of 2 photos (50%)",
+  );
+  const tight = page.getByTestId("calibration-ring-0-you");
+  await expect(tight).toHaveAttribute("data-bet", "2");
+  await expect(tight).toHaveAttribute("data-held", "1");
+  await expect(tight.getByRole("meter", { name: "You: the 250 km ring held" })).toHaveAttribute(
+    "aria-valuenow",
+    "50",
+  );
+  await expect(page.getByTestId("calibration-ring-3-you")).toContainText("Not bet yet");
+
+  // Atlas's rings: as many bets in all as photos it played, held as its answer cards said.
+  const atlasBets = [atlasFirst, atlasSecond].filter((t) => t.startsWith("Atlas"));
+  const atlasHeld = atlasBets.filter((t) => t.includes(": Inside")).length;
+  let bet = 0;
+  let held = 0;
+  for (let i = 0; i < 4; i++) {
+    const bar = page.getByTestId(`calibration-ring-${i}-atlas`);
+    bet += Number(await bar.getAttribute("data-bet"));
+    held += Number(await bar.getAttribute("data-held"));
+  }
+  expect(bet).toBe(atlasBets.length);
+  expect(held).toBe(atlasHeld);
+
+  // The chart fits a 320px phone with no sideways scroll.
+  await section.scrollIntoViewIfNeeded();
+  const scrolls = await page.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+  );
+  expect(scrolls).toBe(false);
+  await page.getByRole("link", { name: "Play Bullseye" }).click();
+  await expect(page).toHaveURL(/\/bullseye\/?$/);
+  expect(errors).toEqual([]);
+});
