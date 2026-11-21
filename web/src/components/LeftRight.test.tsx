@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GameRecord } from "@/lib/game/deck";
@@ -61,6 +61,9 @@ async function setup() {
   const loadRecords = vi.fn(game.loadRecords);
   render(<LeftRight deck={game.deck} sides={SIDES} loadRecords={loadRecords} random={() => 0} />);
   await waitFor(() => expect(button("left")).toBeEnabled());
+  // The keys are listened for in an effect, which a slow machine may not have run yet when the
+  // buttons are first enabled; flush it so a key pressed next is heard.
+  await act(async () => {});
   return { loadRecords };
 }
 
