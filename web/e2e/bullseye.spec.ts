@@ -34,6 +34,11 @@ async function expectOnScreen(locator: Locator) {
   expect(box.y + box.height).toBeLessThanOrEqual(height + 1);
 }
 
+/** Let the answer card finish rising into place (`.wb-card`'s animation) before measuring it. */
+async function settled(card: Locator) {
+  await card.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
+}
+
 async function photoAt(page: Page) {
   await expect(page.getByRole("button", { name: "Zoom in on the photo" })).toBeVisible();
   const id = await page.locator("main[data-photo]").getAttribute("data-photo");
@@ -318,6 +323,7 @@ test("a Bullseye challenge deals a friend the same five, with the sender's ring 
     await expect(card.getByTestId("bullseye-friend")).toHaveText(
       /^Friend: (Inside the 5,000 km ring, [\d,]+ km off: 100 points|Outside the 5,000 km ring, [\d,]+ km off: no points)\.$/,
     );
+    await settled(card);
     await expectOnScreen(card.getByRole("button", { name: /Next photo|See your score/ }));
     await page.keyboard.press("Enter");
   }
@@ -377,6 +383,7 @@ test("a Bullseye challenge's answer card and end buttons fit a 320px phone", asy
     await page.keyboard.press("Enter");
     await page.keyboard.press("g");
     await expect(card.getByTestId("bullseye-friend")).toBeVisible();
+    await settled(card);
     await expectOnScreen(card);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
       320,
