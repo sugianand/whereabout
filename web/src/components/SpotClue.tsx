@@ -36,6 +36,17 @@ import {
   type SpotResult,
 } from "@/lib/game/spotClue";
 import {
+  SPOT_CHALLENGE_PARAM,
+  parseSpotChallenge,
+  spotChallengeLine,
+  spotChallengeScore,
+  spotChallengeText,
+  spotFriendResult,
+  spotFriendResults,
+  spotHeadToHead,
+  type SpotChallenge,
+} from "@/lib/game/spotChallenge";
+import {
   dailySpotOrder,
   loadSpotDay,
   rememberSpotDay,
@@ -45,10 +56,12 @@ import {
 import type { AtlasLooked } from "@/lib/game/types";
 import { formatPoints } from "@/lib/geo";
 import { sources } from "@/lib/photoSources";
+import { sendShare, type ShareOutcome } from "@/lib/share";
 
 import ControlsHelp from "./ControlsHelp";
 import { DailyRunResult } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
+import { HeadToHeadButton } from "./HeadToHeadButton";
 
 type SpotClueProps = {
   deck: Deck;
@@ -69,6 +82,27 @@ type SpotClueProps = {
 
 const ARROW_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"]);
 type Arrow = "ArrowLeft" | "ArrowRight" | "ArrowUp" | "ArrowDown";
+
+/** Why a challenge link was set aside for a fresh game. */
+export const SPOT_CHALLENGE_NOTICE = {
+  malformed: "That challenge link was cut short, so here's a fresh game instead.",
+  missing: "That challenge's photos aren't in the game any more, so here's a fresh game instead.",
+} as const;
+
+/** Take the challenge out of the address, so a reload deals a fresh game, not the old link. */
+function dropChallengeParam() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has(SPOT_CHALLENGE_PARAM)) return;
+  url.searchParams.delete(SPOT_CHALLENGE_PARAM);
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+const CHALLENGE_NOTE: Record<ShareOutcome, string> = {
+  shared: "Challenge sent.",
+  copied: "Challenge link copied. Whoever opens it plays these five photos, in the same order.",
+  cancelled: "",
+  failed: "Couldn't copy the link. Your browser blocked the clipboard.",
+};
 
 /**
  * Spot the clue (src/lib/game/spotClue.ts): the square of the photo Atlas saw and the country it
@@ -94,30 +128,49 @@ export default function SpotClue({
   const gridRef = useRef<HTMLDivElement>(null);
   // The day today's game was dealt for, kept when the clock passes midnight mid-game.
   const [day, setDay] = useState<string | null>(null);
+  // A friend's challenge this game answers (src/lib/game/spotChallenge.ts): their five photos and
+  // the square they picked on each, shown on Atlas's map once you have locked in yours.
+  const [challenge, setChallenge] = useState<SpotChallenge | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  const start = useCallback(() => {
-    setCursor(null);
-    if (daily) {
-      const today = runToday(now?.());
-      setDay(today);
-      dispatch({
-        type: "start",
-        order: dailySpotOrder(ids, today),
-        from: loadSpotDay(today)?.results,
-      });
-      return;
-    }
-    const stored = loadBestSpot();
-    setBest(stored);
-    setBestBeforeGame(stored);
-    const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
-    setCursor(null);
-    dispatch({ type: "start", order: dealSpot(ids, seed) });
-  }, [daily, ids, now, random]);
+  /** Deal a game; `fromLink` takes up a challenge the address carries, as the page opens. */
+  const start = useCallback(
+    (fromLink = false) => {
+      setCursor(null);
+      if (daily) {
+        const today = runToday(now?.());
+        setDay(today);
+        dispatch({
+          type: "start",
+          order: dailySpotOrder(ids, today),
+          from: loadSpotDay(today)?.results,
+        });
+        return;
+      }
+      const stored = loadBestSpot();
+      setBest(stored);
+      setBestBeforeGame(stored);
+      const value = fromLink
+        ? new URLSearchParams(window.location.search).get(SPOT_CHALLENGE_PARAM)
+        : null;
+      const linked = value === null ? null : parseSpotChallenge(value, ids);
+      setNotice(linked && !linked.ok ? SPOT_CHALLENGE_NOTICE[linked.reason] : null);
+      if (linked?.ok) {
+        setChallenge(linked.challenge);
+        dispatch({ type: "start", order: linked.challenge.ids });
+        return;
+      }
+      setChallenge(null);
+      dropChallengeParam();
+      const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
+      dispatch({ type: "start", order: dealSpot(ids, seed) });
+    },
+    [daily, ids, now, random],
+  );
 
   // The game is dealt in the browser after hydration, never at build time.
   useEffect(() => {
-    const id = requestAnimationFrame(() => start());
+    const id = requestAnimationFrame(() => start(true));
     return () => cancelAnimationFrame(id);
   }, [start]);
 
@@ -128,11 +181,19 @@ export default function SpotClue({
 
   const playing = state.phase === "picking" || state.phase === "answered" ? state : null;
   const index = playing ? playing.results.length - (playing.phase === "answered" ? 1 : 0) : 0;
-  // The summary names every photo played, so it needs them all.
+  // The summary names every photo played, so it needs them all. A challenge needs every map from
+  // the start, to score the friend's squares and say the points to beat.
   const over = state.phase === "done" ? state.results : null;
   const wanted = useMemo(
-    () => (playing ? playing.order.slice(index, index + 2) : over ? over.map((r) => r.id) : []),
-    [playing, index, over],
+    () =>
+      playing
+        ? challenge
+          ? [...playing.order]
+          : playing.order.slice(index, index + 2)
+        : over
+          ? over.map((r) => r.id)
+          : [],
+    [playing, index, over, challenge],
   );
   const missing = wanted.filter((id) => !records.has(id)).join(",");
 
@@ -174,12 +235,17 @@ export default function SpotClue({
       // Kept after every photo, so a reload can't take a square back. Today's game is played
       // once for the day, apart from the free game's best.
       if (after.phase === "answered") rememberSpotDay(day, after.results);
-    } else if (after.phase === "answered" && after.results.length === after.order.length) {
-      // Only a whole game counts as a best.
+    } else if (
+      !challenge &&
+      after.phase === "answered" &&
+      after.results.length === after.order.length
+    ) {
+      // Only a whole game counts as a best, and never a challenge: its photos were picked by
+      // someone who had seen them.
       setBest(rememberSpot(spotTotals(after.results).points));
     }
     dispatch({ type: "picked", result });
-  }, [ready, square, record, looked, state, day]);
+  }, [ready, square, record, looked, state, day, challenge]);
 
   const next = useCallback(() => {
     setCursor(null);
@@ -227,8 +293,9 @@ export default function SpotClue({
         results={state.results}
         records={records}
         best={best}
-        newBest={spotTotals(state.results).points > bestBeforeGame}
-        onAgain={start}
+        newBest={!challenge && spotTotals(state.results).points > bestBeforeGame}
+        challenge={challenge}
+        onAgain={() => start()}
       />
     );
   }
@@ -239,6 +306,9 @@ export default function SpotClue({
   const last = playing !== null && results.length === playing.order.length;
   const atlas = record?.atlas ?? null;
   const pick = atlas?.topCountries[0]?.country ?? null;
+  const toBeat = challenge ? spotChallengeScore(challenge, records) : null;
+  const friendSoFar = challenge ? spotChallengeScore(challenge, records, results.length) : null;
+  const friendHere = challenge && answered ? spotFriendResult(challenge, index, records) : null;
 
   return (
     <main
@@ -262,22 +332,43 @@ export default function SpotClue({
           <p className="text-sm text-chalk-dim" aria-live="polite">
             {`Photo ${index + 1} of ${playing?.order.length ?? SPOT_PHOTOS}`}
           </p>
-          <Link
-            href={daily ? "/spot-the-clue" : "/spot-the-clue/daily"}
-            className="text-sm text-gold underline underline-offset-2 hover:brightness-110"
-          >
-            {daily ? "Free games" : "Today's game"}
-          </Link>
+          <div className="mt-2 flex items-center gap-2">
+            <GamesMenu screen="spot-the-clue" streakHref="/streak" />
+            <ControlsHelp screen="spot-the-clue" />
+            <Link
+              href={daily ? "/spot-the-clue" : "/spot-the-clue/daily"}
+              className="whitespace-nowrap text-sm text-gold underline underline-offset-2 hover:brightness-110"
+            >
+              {daily ? "Free games" : "Today's game"}
+            </Link>
+          </div>
         </div>
-        <div className="flex shrink-0 items-start gap-3">
-          <GamesMenu screen="spot-the-clue" streakHref="/streak" />
-          <ControlsHelp screen="spot-the-clue" />
+        <div className="shrink-0">
           <dl className="text-right">
             <dt className="text-sm text-chalk-dim">Score</dt>
             <dd className="font-sign tabular text-3xl font-bold leading-none">
               {formatPoints(totals.points)}
             </dd>
-            {!daily && (
+            {challenge && (
+              <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
+                <dt>Friend</dt>
+                <dd className="tabular text-flare" data-testid="spot-friend-score">
+                  {friendSoFar === null ? "…" : formatPoints(friendSoFar)}
+                </dd>
+              </div>
+            )}
+            {challenge && (
+              // In the score column, so a challenge's header is no taller than a free game's.
+              <div className="flex justify-end gap-1.5 text-sm text-chalk-dim">
+                <dt>
+                  <span className="sr-only">A friend&apos;s challenge: points </span>To beat
+                </dt>
+                <dd className="tabular" data-testid="spot-challenge">
+                  {toBeat === null ? "…" : formatPoints(toBeat)}
+                </dd>
+              </div>
+            )}
+            {!daily && !challenge && (
               <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
                 <dt>Best</dt>
                 <dd className="tabular">{formatPoints(best)}</dd>
@@ -298,6 +389,7 @@ export default function SpotClue({
         looked={looked}
         square={square}
         answered={answered}
+        friend={friendHere}
         onPick={setCursor}
         gridRef={gridRef}
       />
@@ -318,6 +410,12 @@ export default function SpotClue({
         </div>
       )}
 
+      {notice && !answered && results.length === 0 && (
+        <p role="status" className="px-4 pb-3 text-center text-sm text-chalk-dim">
+          {notice}
+        </p>
+      )}
+
       {error && (
         <p role="alert" className="absolute inset-x-4 bottom-4 text-center text-sm text-flare">
           {error}
@@ -331,6 +429,7 @@ export default function SpotClue({
             result={answered}
             looked={looked}
             record={record}
+            friend={friendHere}
             onNext={next}
             nextLabel={last ? "See the results" : "Next photo"}
           />
@@ -346,6 +445,7 @@ function SpotPhoto({
   looked,
   square,
   answered,
+  friend,
   onPick,
   gridRef,
 }: {
@@ -353,6 +453,8 @@ function SpotPhoto({
   looked: AtlasLooked | null;
   square: number | null;
   answered: SpotResult | null;
+  /** On a friend's challenge: the square they picked, marked once you have locked in yours. */
+  friend: SpotResult | null;
   onPick: (cell: number) => void;
   gridRef: RefObject<HTMLDivElement | null>;
 }) {
@@ -427,6 +529,23 @@ function SpotPhoto({
                 );
               })}
             </div>
+            {friend && friend.cell < looked.cells.length && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 grid"
+                style={gridStyle(looked.grid)}
+              >
+                <div
+                  data-testid="spot-friend"
+                  data-cell={friend.cell}
+                  className="z-20 m-[5px] rounded-sm border-[3px] border-flare"
+                  style={{
+                    gridColumn: (friend.cell % looked.grid) + 1,
+                    gridRow: Math.floor(friend.cell / looked.grid) + 1,
+                  }}
+                />
+              </div>
+            )}
           </>
         )}
         {looked && !answered && (
@@ -470,12 +589,15 @@ function SpotCard({
   result,
   looked,
   record,
+  friend,
   onNext,
   nextLabel,
 }: {
   result: SpotResult;
   looked: AtlasLooked;
   record: GameRecord;
+  /** On a friend's challenge: their square on this photo, scored against the same map. */
+  friend: SpotResult | null;
   onNext: () => void;
   nextLabel: string;
 }) {
@@ -502,7 +624,20 @@ function SpotCard({
           ? "You picked the square that mattered most to Atlas (white dashes mark it)."
           : `Your square (gold) mattered ${Math.round((result.points / SPOT_MAX) * 100)}% as much to Atlas as its most telling one (white dashes).`}
       </p>
-      <p className="text-sm text-chalk-dim">{hottestLine(looked)}</p>
+      {/* Said by the dashed square too, so a short phone drops it to keep the photo in view. */}
+      <p className="text-sm text-chalk-dim [@media(max-height:600px)]:hidden">
+        {hottestLine(looked)}
+      </p>
+      {friend && (
+        <p className="mt-1 text-sm text-chalk" data-testid="spot-friend-line">
+          <span className="text-flare">Friend</span>
+          {friend.cell === result.cell
+            ? `: the same square, ${formatPoints(friend.points)} points.`
+            : friend.cell < looked.cells.length
+              ? ` (red): ${cellName(looked.grid, friend.cell).toLowerCase()}, ${formatPoints(friend.points)} points.`
+              : ": a square off the grid, 0 points."}
+        </p>
+      )}
       {pick && (
         <p className="mt-1 text-sm text-chalk-dim" data-testid="spot-atlas">
           {`Atlas said ${countryName(pick)}, ${sure}% sure${pick === photo.country ? ", and it was right" : ": wrong"}. The photo: ${photo.place}.`}
@@ -534,26 +669,40 @@ function SpotCard({
 function SquareList({
   results,
   records,
+  friend = null,
 }: {
   results: readonly SpotResult[];
   records: ReadonlyMap<string, GameRecord>;
+  /** On a friend's challenge: their squares, scored, listed under yours. */
+  friend?: readonly SpotResult[] | null;
 }) {
   return (
     <ol className="mt-6 space-y-2" aria-label="Your squares">
-      {results.map((r, i) => (
-        <li
-          key={r.id}
-          className="rounded-xl border border-graticule/70 px-3 py-2 text-sm"
-          data-testid="spot-row"
-        >
-          <span className="block text-chalk">
-            {records.get(r.id)?.photo.place ?? `Photo ${i + 1}`}
-          </span>
-          <span className="block text-chalk-dim">
-            {`${spotVerdict(r)}: ${formatPoints(r.points)} points`}
-          </span>
-        </li>
-      ))}
+      {results.map((r, i) => {
+        const theirs = friend?.[i];
+        return (
+          <li
+            key={r.id}
+            className="rounded-xl border border-graticule/70 px-3 py-2 text-sm"
+            data-testid="spot-row"
+          >
+            <span className="block text-chalk">
+              {records.get(r.id)?.photo.place ?? `Photo ${i + 1}`}
+            </span>
+            <span className="block text-chalk-dim">
+              {theirs
+                ? `You: ${formatPoints(r.points)} points (${spotVerdict(r).toLowerCase()})`
+                : `${spotVerdict(r)}: ${formatPoints(r.points)} points`}
+            </span>
+            {theirs && (
+              <span className="block text-chalk-dim">
+                <span className="text-flare">Friend</span>
+                {`: ${formatPoints(theirs.points)} points (${spotVerdict(theirs).toLowerCase()})`}
+              </span>
+            )}
+          </li>
+        );
+      })}
     </ol>
   );
 }
@@ -592,16 +741,21 @@ function SpotSummary({
   records,
   best,
   newBest,
+  challenge,
   onAgain,
 }: {
   results: readonly SpotResult[];
   records: ReadonlyMap<string, GameRecord>;
   best: number;
   newBest: boolean;
+  /** The friend's challenge this game answered, if it was one. */
+  challenge: SpotChallenge | null;
   onAgain: () => void;
 }) {
   const none = results.length === 0;
   const { points, hottest } = spotTotals(results);
+  // The friend's squares, scored once every photo's map is in.
+  const theirs = challenge ? spotFriendResults(challenge, records) : null;
   const againRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     againRef.current?.focus({ preventScroll: true });
@@ -621,10 +775,16 @@ function SpotSummary({
           <p className="mt-4 text-lg text-chalk">
             {`Out of ${formatPoints(results.length * SPOT_MAX)}. You found Atlas's most telling square on ${hottest} of ${results.length} photos.`}
           </p>
-          <p className="mt-1 text-chalk-dim">
-            {newBest ? "That's your new best!" : `Your best is ${formatPoints(best)} points.`}
-          </p>
-          <SquareList results={results} records={records} />
+          {challenge ? (
+            <p className="mt-2 text-chalk" data-testid="spot-challenge-line">
+              {theirs ? spotChallengeLine(results, theirs) : "Scoring your friend's squares…"}
+            </p>
+          ) : (
+            <p className="mt-1 text-chalk-dim">
+              {newBest ? "That's your new best!" : `Your best is ${formatPoints(best)} points.`}
+            </p>
+          )}
+          <SquareList results={results} records={records} friend={theirs} />
         </>
       )}
       <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -635,13 +795,59 @@ function SpotSummary({
             onClick={onAgain}
             className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
           >
-            Play again
+            {challenge ? "Play a fresh game" : "Play again"}
           </button>
+        )}
+        {results.length === SPOT_PHOTOS && (!challenge || theirs) && (
+          <ChallengeButton results={results} answering={challenge ? theirs : null} />
         )}
         <Link href="/" className="text-chalk-dim underline underline-offset-2 hover:text-chalk">
           Back to the main game
         </Link>
       </div>
     </main>
+  );
+}
+
+/**
+ * Challenge a friend from a whole free game (src/lib/game/spotChallenge.ts): a link to the same
+ * five photos with your square on each. Answering a challenge, it sends one back, with the
+ * head-to-head picture beside it.
+ */
+function ChallengeButton({
+  results,
+  answering,
+}: {
+  results: readonly SpotResult[];
+  /** The friend's squares, scored, when this game answered their challenge. */
+  answering: readonly SpotResult[] | null;
+}) {
+  const [sent, setSent] = useState("");
+  const text = () => spotChallengeText(results, window.location.href, answering ?? undefined);
+  async function send() {
+    setSent(CHALLENGE_NOTE[await sendShare(text(), navigator)]);
+  }
+  return (
+    <span className="flex min-w-0 flex-col">
+      <span className="flex flex-wrap gap-x-3 gap-y-2">
+        <button
+          type="button"
+          onClick={send}
+          className="rounded-full border-2 border-gold px-5 py-2.5 font-semibold text-gold transition hover:bg-gold/10"
+        >
+          {answering ? "Send yours back" : "Challenge a friend"}
+        </button>
+        {answering && (
+          <HeadToHeadButton
+            headToHead={spotHeadToHead(results, answering, window.location.href)}
+            replyText={text}
+            onNote={setSent}
+          />
+        )}
+      </span>
+      <span role="status" className={sent ? "mt-1 text-xs text-chalk-dim" : "sr-only"}>
+        {sent}
+      </span>
+    </span>
   );
 }

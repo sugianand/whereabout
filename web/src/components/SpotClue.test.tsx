@@ -238,3 +238,116 @@ describe("today's Spot the clue", () => {
     );
   });
 });
+
+function useClipboard() {
+  const sent = { text: "" };
+  Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+  Object.defineProperty(navigator, "clipboard", {
+    value: { writeText: async (t: string) => void (sent.text = t) },
+    configurable: true,
+  });
+  return sent;
+}
+
+describe("a Spot the clue challenge", () => {
+  // The friend played s6, s1, s2, s3 and s4 in that order: the hottest square, the middle, a cold
+  // corner, the hottest and the middle again: 3,000 points to beat.
+  const LINKED = ["s6", "s1", "s2", "s3", "s4"];
+  const FRIEND = "s6.s1.s2.s3.s4_6.4.0.6.4";
+
+  afterEach(() => window.history.replaceState(null, "", "/"));
+
+  it("deals the friend's five, shows their square once yours is in, and sends yours back", async () => {
+    const sent = useClipboard();
+    window.history.replaceState(null, "", `/spot-the-clue?challenge=${FRIEND}`);
+    await setup();
+    // Every map arrives up front, so the friend's squares are scored before the first photo.
+    await waitFor(() => expect(screen.getByTestId("spot-challenge")).toHaveTextContent("3,000"));
+    expect(screen.queryByText("Best")).toBeNull();
+    for (const [i, id] of LINKED.entries()) {
+      await waitFor(() => expect(photoOn()).toBe(id));
+      expect(screen.getByTestId("spot-friend-score")).toHaveTextContent(
+        ["0", "1,000", "1,500", "1,500", "2,500"][i]!,
+      );
+      // The friend's square stays hidden until yours is locked in.
+      expect(screen.queryByTestId("spot-friend")).toBeNull();
+      // You: the hottest on the first three, the middle on the last two: 4,000.
+      if (i < 3) fireEvent.click(await screen.findByRole("button", { name: "Row 3, column 1" }));
+      fireEvent.keyDown(window, { key: "g" });
+      const card = await screen.findByRole("region");
+      const line = within(card).getByTestId("spot-friend-line");
+      if (i === 0) {
+        expect(line).toHaveTextContent("Friend: the same square, 1,000 points.");
+      } else if (i === 1) {
+        expect(line).toHaveTextContent("Friend (red): row 2, column 2, 500 points.");
+      } else if (i === 2) {
+        expect(line).toHaveTextContent("Friend (red): row 1, column 1, 0 points.");
+      }
+      expect(screen.getByTestId("spot-friend")).toHaveAttribute(
+        "data-cell",
+        FRIEND.split("_")[1]!.split(".")[i],
+      );
+      fireEvent.click(
+        within(card).getByRole("button", { name: i === 4 ? "See the results" : "Next photo" }),
+      );
+    }
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("4,000 points");
+    expect(screen.getByTestId("spot-challenge-line")).toHaveTextContent(
+      "You beat your friend's 3,000 by 1,000.",
+    );
+    expect(screen.getAllByTestId("spot-row")[2]).toHaveTextContent(
+      "You: 1,000 points (spot on)Friend: 0 points (cold)",
+    );
+    // A challenge's photos were picked by someone who had seen them: never a best.
+    expect(localStorage.getItem(BEST_SPOT_KEY)).toBeNull();
+    expect(screen.queryByText(/new best/)).toBeNull();
+    expect(screen.getByRole("button", { name: "Share head to head" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Send yours back" }));
+    await waitFor(() => expect(sent.text).not.toBe(""));
+    expect(sent.text.split("\n")).toEqual([
+      "Whereabout · Spot the clue: 4,000 points, Atlas's most telling square found on 3 of 5.",
+      "That beats your 3,000. Your turn to read Atlas.",
+      "http://localhost:3000/spot-the-clue?challenge=s6.s1.s2.s3.s4_6.6.6.4.4",
+    ]);
+    for (const id of LINKED) expect(sent.text).not.toContain(byId.get(id)!.photo.place);
+
+    fireEvent.click(screen.getByRole("button", { name: "Play a fresh game" }));
+    await waitFor(() => expect(screen.queryByTestId("spot-challenge")).toBeNull());
+    expect(window.location.search).toBe("");
+  });
+
+  it.each([
+    ["s6.s1.s2.s3_6.4.0.6", "That challenge link was cut short, so here's a fresh game instead."],
+    [
+      "s6.s1.s2.s3.zz_6.4.0.6.4",
+      "That challenge's photos aren't in the game any more, so here's a fresh game instead.",
+    ],
+  ])("sets the link %s aside for a fresh game", async (value, notice) => {
+    window.history.replaceState(null, "", `/spot-the-clue?challenge=${value}`);
+    await setup();
+    expect(await screen.findByText(notice)).toBeInTheDocument();
+    expect(screen.queryByTestId("spot-challenge")).toBeNull();
+    expect(window.location.search).toBe("");
+    expect(photoOn()).toBe(ORDER[0]);
+  });
+
+  it("offers a whole free game to a friend, with no head to head", async () => {
+    const sent = useClipboard();
+    await setup();
+    for (let n = 0; n < 5; n++) {
+      await waitFor(() => expect(photoOn()).toBe(ORDER[n]));
+      fireEvent.keyDown(window, { key: "g" });
+      const card = await screen.findByRole("region");
+      expect(within(card).queryByTestId("spot-friend-line")).toBeNull();
+      fireEvent.click(
+        within(card).getByRole("button", { name: n === 4 ? "See the results" : "Next photo" }),
+      );
+    }
+    fireEvent.click(await screen.findByRole("button", { name: "Challenge a friend" }));
+    await waitFor(() => expect(sent.text).not.toBe(""));
+    expect(sent.text).toContain(`?challenge=${ORDER.join(".")}_4.4.4.4.4`);
+    expect(sent.text).toContain("Same five photos: can you tell what Atlas looked at?");
+    expect(screen.queryByRole("button", { name: "Share head to head" })).toBeNull();
+  });
+});

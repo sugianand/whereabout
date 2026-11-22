@@ -130,7 +130,11 @@ your best is kept in your browser. **Today's game** (at `/spot-the-clue/daily`, 
 kept as it is locked in, so a reload picks up at the next photo and can't take one back, and a kept
 square is scored again against its photo's map rather than trusted; the share line is your points,
 how many of Atlas's most telling squares you found and a square per photo, green for spot on to red
-for cold, spoiling no place.
+for cold, spoiling no place. A whole free game can **challenge a friend**: the link deals them the
+same five photos and carries the square you picked on each, shown on Atlas's map in red once they
+have locked in theirs. The points to beat are scored from those squares against each photo's real
+map, never read from the link, and the end screen offers *Send yours back* and a head-to-head
+picture.
 **Name the country** (at `/name-country`, in the Games menu) shows one photo and four countries from
 the same continent, drawn from the countries the globe draws: tap the right one, or press 1 to 4,
 and go on until your first miss. Atlas picks too, the name it gave the most of the four, and the
