@@ -118,6 +118,14 @@ your pin landed, in whole kilometres rounded up so every ring keeps its verdict;
 your bet on each photo only once they have made theirs, and the points to beat are settled from
 those rings and distances by the game's own rule, never read from the link. The end screen lists
 both bets photo by photo and offers *Send yours back* and a head-to-head picture.
+**Spot the clue** (at `/spot-the-clue`, in the Games menu) asks you to read Atlas rather than the
+place. It shows the square of the photo Atlas saw and the country it picked, laid out as the 7 × 7
+grid Atlas's "where it looked" map is measured on: tap the square you think told Atlas most (or
+move there with the arrow keys and press G). The answer lays the real map over the photo, from
+occlusion saliency (how much greying out each patch lowered Atlas's probability for its country),
+with your square in gold and the most telling one dashed, and scores your square 1,000 times its
+share of the hottest. Five photos a game, dealt from photos whose map has a square that mattered;
+your best is kept in your browser.
 **Name the country** (at `/name-country`, in the Games menu) shows one photo and four countries from
 the same continent, drawn from the countries the globe draws: tap the right one, or press 1 to 4,
 and go on until your first miss. Atlas picks too, the name it gave the most of the four, and the

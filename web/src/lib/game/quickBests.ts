@@ -4,7 +4,7 @@
  *
  * Nothing new is stored here. Each mode keeps its own best under its own key (blitz.ts,
  * streak.ts, survival.ts, furtherNorth.ts, oddOneOut.ts, howFar.ts, whichWay.ts, hotCold.ts, bullseye.ts,
- * nameCountry.ts, lineUp.ts, closeUp.ts, leftRight.ts,
+ * spotClue.ts, nameCountry.ts, lineUp.ts, closeUp.ts, leftRight.ts,
  * whichClimate.ts, clueMix.ts, onTheGround.ts); this only reads them back through the
  * same loaders, so a value a mode would refuse (a negative streak, junk JSON) is refused here too.
  */
@@ -25,6 +25,7 @@ import { loadBestName } from "./nameCountry";
 import { loadBestOdd } from "./oddOneOut";
 import { GROUND_PHOTOS, loadBestGround } from "./onTheGround";
 import { regionSlug } from "./regions";
+import { loadBestSpot } from "./spotClue";
 import { loadBestStreak } from "./streak";
 import { loadBestSurvival, type SurvivalBest } from "./survival";
 import { CLIMATE_PHOTOS, loadBestClimate } from "./whichClimate";
@@ -41,6 +42,7 @@ export const QUICK_MODES = [
   "which-way",
   "hot-cold",
   "bullseye",
+  "spot-the-clue",
   "name-country",
   "line-up",
   "close-up",
@@ -76,6 +78,8 @@ export interface QuickBests {
   /** The best whole game's points. */
   "hot-cold": number | null;
   bullseye: number | null;
+  /** The best whole game's points. */
+  "spot-the-clue": number | null;
   /** The longest run of countries named. */
   "name-country": number | null;
   /** The most photos put in place in a whole game. */
@@ -102,6 +106,7 @@ export const NO_BESTS: QuickBests = {
   "which-way": null,
   "hot-cold": null,
   bullseye: null,
+  "spot-the-clue": null,
   "name-country": null,
   "line-up": null,
   "close-up": null,
@@ -141,6 +146,7 @@ export function loadQuickBests(): QuickBests {
     "which-way": positive(loadBestWay()),
     "hot-cold": positive(loadBestHot()),
     bullseye: positive(loadBestBullseye()),
+    "spot-the-clue": positive(loadBestSpot()),
     "name-country": positive(loadBestName()),
     "line-up": positive(loadBestLine()),
     "close-up": positive(loadBestClose()),
@@ -200,7 +206,8 @@ export function bestLine(mode: QuickMode, bests: QuickBests): string | null {
     }
     case "how-far":
     case "hot-cold":
-    case "bullseye": {
+    case "bullseye":
+    case "spot-the-clue": {
       const n = bests[mode];
       return n === null ? null : `Best: ${formatPoints(n)} points`;
     }

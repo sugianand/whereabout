@@ -95,6 +95,7 @@ test("on a 360px phone the Games button fits every quick game's header", async (
     "./odd-one-out",
     "./hot-cold",
     "./bullseye",
+    "./spot-the-clue",
     "./name-country",
     "./line-up",
     "./close-up",

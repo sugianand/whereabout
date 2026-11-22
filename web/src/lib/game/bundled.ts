@@ -11,6 +11,7 @@ import { continentMap } from "./clueMix";
 import { buildDeck, gameRecords } from "./deck";
 import { nameIds } from "./nameCountry";
 import { groundMap } from "./onTheGround";
+import { spotIds } from "./spotClue";
 import type { AtlasData, CatalogPhoto } from "./types";
 import { climateMap } from "./whichClimate";
 
@@ -54,3 +55,9 @@ export const bundledContinents = continentMap(bundledRecords.map((r) => r.photo)
  * deal an even game across the five covers without fetching every record (`onTheGround.ts`).
  */
 export const bundledGroundCovers = groundMap(bundledRecords.map((r) => r.photo));
+
+/**
+ * The photos Spot the clue can deal: those whose "where Atlas looked" map has a square that
+ * mattered (`spotIds`). Ids only; each map arrives with its photo's record.
+ */
+export const bundledSpotIds = spotIds(bundledRecords);

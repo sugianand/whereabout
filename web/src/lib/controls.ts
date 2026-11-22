@@ -36,6 +36,7 @@ export type HelpScreen =
   | "which-way"
   | "hot-cold"
   | "bullseye"
+  | "spot-the-clue"
   | "name-country"
   | "line-up"
   | "close-up"
@@ -312,6 +313,35 @@ export const CONTROLS: Record<HelpScreen, readonly ControlGroup[]> = {
       ],
     },
   ],
+  "spot-the-clue": [
+    {
+      title: "Your square",
+      controls: [
+        {
+          id: "move",
+          does: "Move your square around the photo",
+          keys: ARROWS,
+          mouse: "Click a square",
+          touch: "Tap a square",
+        },
+        {
+          id: "lock",
+          does: "Lock in your square: it scores by how much it told Atlas",
+          keys: [k("G", ROUND_KEYS.guess)],
+          mouse: "Lock in",
+          touch: "Lock in",
+        },
+        {
+          id: "next",
+          does: "Next photo, from the answer",
+          keys: [k("Enter")],
+          mouse: "Next photo",
+          touch: "Next photo",
+        },
+        HELP,
+      ],
+    },
+  ],
   "name-country": [
     PHOTO_CONTROLS,
     {
@@ -499,6 +529,7 @@ export const SCREEN_TITLES: Record<HelpScreen, string> = {
   "which-way": "Controls for Which way?",
   "hot-cold": "Controls for Hot and cold",
   bullseye: "Controls for Bullseye",
+  "spot-the-clue": "Controls for Spot the clue",
   "name-country": "Controls for Name the country",
   "line-up": "Controls for Line them up",
   "close-up": "Controls for Close-up",

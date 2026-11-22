@@ -295,6 +295,39 @@ test.describe("on a keyboard", () => {
     await expect(page.getByRole("button", { name: "Play again" })).toBeFocused();
   });
 
+  test("? lists Spot the clue's controls, and every one of its keys works", async ({ page }) => {
+    await page.goto("./spot-the-clue");
+    await expect(page.getByRole("button", { name: "Lock in row 4, column 4" })).toBeEnabled();
+    const sheet = await openWithKey(page, "Controls for Spot the clue");
+    await expectSheetLists(sheet, "spot-the-clue", false);
+    // An arrow or G pressed in the sheet doesn't move or lock the square behind it.
+    await page.keyboard.press("ArrowLeft");
+    await page.keyboard.press("g");
+    await page.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+    await expect(page.getByRole("button", { name: "Lock in row 4, column 4" })).toBeEnabled();
+
+    // Each arrow moves the square one step from the last; G locks it in; Enter moves on.
+    const step: Record<string, [number, number]> = {
+      ArrowLeft: [0, -1],
+      ArrowRight: [0, 1],
+      ArrowUp: [-1, 0],
+      ArrowDown: [1, 0],
+    };
+    let [row, col] = [4, 4];
+    for (const key of keysOf("spot-the-clue", "move")) {
+      await page.keyboard.press(key);
+      [row, col] = [row + step[key]![0], col + step[key]![1]];
+      await expect(
+        page.getByRole("button", { name: `Lock in row ${row}, column ${col}` }),
+      ).toBeEnabled();
+    }
+    await page.keyboard.press(keysOf("spot-the-clue", "lock")[0]);
+    await expect(page.getByRole("button", { name: "Next photo" })).toBeFocused();
+    await page.keyboard.press(keysOf("spot-the-clue", "next")[0]);
+    await expect(page.getByText("Photo 2 of 5", { exact: true })).toBeVisible();
+  });
+
   test("? lists Left or right?'s controls, and every one of its keys works", async ({ page }) => {
     await page.goto("./left-right");
     await expect(page.getByRole("button", { name: "Left: they drive on the left" })).toBeEnabled();
@@ -529,6 +562,7 @@ test.describe("on a touch screen", () => {
     ["clue-mix", "./clue-mix", "Controls for Clue mix"],
     ["on-the-ground", "./on-the-ground", "Controls for What's on the ground?"],
     ["bullseye", "./bullseye", "Controls for Bullseye"],
+    ["spot-the-clue", "./spot-the-clue", "Controls for Spot the clue"],
   ] as const) {
     test(`the help button lists ${screen}'s gestures on screen`, async ({ page }) => {
       await page.goto(path);

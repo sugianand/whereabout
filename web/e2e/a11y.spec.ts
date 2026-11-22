@@ -56,6 +56,7 @@ const FIRST_SCREENS = [
   "./which-way",
   "./hot-cold",
   "./bullseye",
+  "./spot-the-clue",
   "./bullseye/daily",
   "./name-country",
   "./line-up",
@@ -220,6 +221,14 @@ for (const colorScheme of ["dark", "light"] as const) {
       await page.goto("./map");
       await expect(page.getByTestId("calibration-line")).toBeVisible();
       await expectAccessible(page, "your calibration");
+    });
+
+    // Spot the clue's answer lays Atlas's map over the photo, with the card under it.
+    test("spot the clue passes axe at its first answer", async ({ page }) => {
+      await page.goto("./spot-the-clue");
+      await page.getByRole("button", { name: /^Lock in row/ }).click();
+      await expect(page.getByTestId("spot-atlas")).toBeVisible();
+      await expectAccessible(page, "spot the clue answer");
     });
   });
 }

@@ -53,6 +53,10 @@ describe("QuickGames", () => {
       "/hot-cold",
     );
     expect(screen.getByRole("link", { name: /^Bullseye/ })).toHaveAttribute("href", "/bullseye");
+    expect(screen.getByRole("link", { name: /^Spot the clue/ })).toHaveAttribute(
+      "href",
+      "/spot-the-clue",
+    );
     expect(screen.getByRole("link", { name: /^Name the country/ })).toHaveAttribute(
       "href",
       "/name-country",
