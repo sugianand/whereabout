@@ -20,6 +20,8 @@ import { rememberOddDay } from "./oddDaily";
 import { type GroundResult } from "./onTheGround";
 import { SAVED_GAME_KEY } from "./saved";
 import { rememberSideDay } from "./sideDaily";
+import { type SpotResult } from "./spotClue";
+import { rememberSpotDay } from "./spotDaily";
 import {
   CALENDAR_WEEKS,
   TODAY_GAMES,
@@ -32,6 +34,7 @@ import {
   gamesDone,
   todayGames,
   todayShare,
+  VERSUS_GAMES,
   type DayTally,
   type TodayGameId,
 } from "./today";
@@ -302,6 +305,15 @@ const BULLSEYE_GAME: BullseyeRound[] = ["a", "b", "c", "d", "e"].map((id, i) => 
   atlas: i === 0 ? bet(BERLIN, 0, BERLIN) : bet(PARIS, 1, BERLIN),
 }));
 
+/** A whole Spot the clue game: Atlas's hottest square on two photos, a warm one, two cold. */
+const SPOT_GAME: SpotResult[] = [
+  { id: "a", cell: 24, points: 1000, hottest: true },
+  { id: "b", cell: 3, points: 1000, hottest: true },
+  { id: "c", cell: 10, points: 640, hottest: false },
+  { id: "d", cell: 0, points: 0, hottest: false },
+  { id: "e", cell: 48, points: 0, hottest: false },
+];
+
 /** Finish one game joined later on `day`, as it writes its own store. */
 const finishJoined: Partial<Record<TodayGameId, (day: string) => void>> = {
   "line-up": (day) => rememberLineDay(day, { results: Array<RowResult>(5).fill(ROW) }),
@@ -317,6 +329,7 @@ const finishJoined: Partial<Record<TodayGameId, (day: string) => void>> = {
     rememberClueDay(day, { streak: 5, atlasRight: 4, atlasPlayed: 6, ended: "miss" }),
   "on-the-ground": (day) => rememberGroundDay(day, GROUND_GAME),
   bullseye: (day) => rememberBullseyeDay(day, BULLSEYE_GAME),
+  "spot-the-clue": (day) => rememberSpotDay(day, SPOT_GAME),
 };
 
 /** Every daily game finished on `day` but `except`, each as it writes its own store. */
@@ -535,8 +548,44 @@ describe("today's Bullseye on Today", () => {
   });
 
   it("makes no call against Atlas when it never guessed a photo", () => {
-    rememberBullseyeDay(DAY_IN, [...BULLSEYE_GAME.slice(0, 4), { ...BULLSEYE_GAME[4]!, atlas: null }]);
+    rememberBullseyeDay(DAY_IN, [
+      ...BULLSEYE_GAME.slice(0, 4),
+      { ...BULLSEYE_GAME[4]!, atlas: null },
+    ]);
     expect(game()).toMatchObject({ status: "done", atlas: "1,000 points", versus: null });
+  });
+});
+
+describe("today's Spot the clue on Today", () => {
+  const DAY_IN = "2026-11-23";
+  const AT = new Date(`${DAY_IN}T12:00:00Z`);
+  const game = () => todayGames(DAY_IN, IDS, AT).find((g) => g.id === "spot-the-clue")!;
+
+  it("reads the squares as they are kept, and never calls it against Atlas, the answer", () => {
+    expect(todayGames("2026-11-22", IDS, AT).some((g) => g.id === "spot-the-clue")).toBe(false);
+    expect(game()).toMatchObject({
+      status: "new",
+      line: "Not started",
+      href: "/spot-the-clue/daily",
+    });
+    rememberSpotDay(DAY_IN, SPOT_GAME.slice(0, 3));
+    expect(game()).toMatchObject({
+      status: "going",
+      line: "3 of 5 photos, 2,640 points",
+      atlas: null,
+    });
+    finishJoined["spot-the-clue"]!(DAY_IN);
+    expect(game()).toMatchObject({
+      status: "done",
+      line: "2,640 of 5,000",
+      atlas: null,
+      versus: null,
+    });
+  });
+
+  it("has no Beat Atlas game of its own", () => {
+    expect(VERSUS_GAMES.some((g) => g.id === "spot-the-clue")).toBe(false);
+    expect(VERSUS_GAMES.some((g) => g.id === "bullseye")).toBe(true);
   });
 });
 

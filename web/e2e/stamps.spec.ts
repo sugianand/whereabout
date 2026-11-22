@@ -81,6 +81,9 @@ test("stamps come from what the browser keeps, are marked new once, and fit a 32
       const ring = { at: { lng: 0, lat: 0 }, ring: 3, km: 100 };
       const bet = (id: string) => ({ id, you: ring, atlas: null });
       keep("whereabout:bullseye-daily", { results: ["a", "b", "c", "d", "e"].map(bet) });
+      // So is Spot the clue from 2026-11-23 on.
+      const square = (id: string) => ({ id, cell: 0, points: 0, hottest: false });
+      keep("whereabout:spot-the-clue-daily", { results: ["a", "b", "c", "d", "e"].map(square) });
     },
     { played: [pin("p1", "AU", 900), pin("p2", "NZ", 120), pin("p3", "PF", 3000)], day: yesterday },
   );

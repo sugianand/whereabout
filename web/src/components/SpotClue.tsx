@@ -14,6 +14,7 @@ import {
 
 import { isShortcut } from "@/lib/controls";
 import { countryName } from "@/lib/countries";
+import { runToday } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import {
   SPOT_MAX,
@@ -34,11 +35,19 @@ import {
   stepCell,
   type SpotResult,
 } from "@/lib/game/spotClue";
+import {
+  dailySpotOrder,
+  loadSpotDay,
+  rememberSpotDay,
+  settleSpot,
+  spotDailyShare,
+} from "@/lib/game/spotDaily";
 import type { AtlasLooked } from "@/lib/game/types";
 import { formatPoints } from "@/lib/geo";
 import { sources } from "@/lib/photoSources";
 
 import ControlsHelp from "./ControlsHelp";
+import { DailyRunResult } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
 
 type SpotClueProps = {
@@ -49,6 +58,13 @@ type SpotClueProps = {
   loadRecords?: (ids: string[]) => Promise<GameRecord[]>;
   /** For tests: the randomness that picks each game's seed. */
   random?: () => number;
+  /**
+   * Today's game (src/lib/game/spotDaily.ts): the day's five photos, one try a day, picked back
+   * up after a reload at the first photo not yet answered.
+   */
+  daily?: boolean;
+  /** For tests: the clock that picks today's game. */
+  now?: () => Date;
 };
 
 const ARROW_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"]);
@@ -60,7 +76,14 @@ type Arrow = "ArrowLeft" | "ArrowRight" | "ArrowUp" | "ArrowDown";
  * and press G. The answer lays Atlas's real "where it looked" map over the photo, with your
  * square and its hottest marked, and scores your square by how much it mattered. Five photos.
  */
-export default function SpotClue({ deck, ids, loadRecords, random }: SpotClueProps) {
+export default function SpotClue({
+  deck,
+  ids,
+  loadRecords,
+  random,
+  daily = false,
+  now,
+}: SpotClueProps) {
   const [state, dispatch] = useReducer(spotReducer, initialSpot);
   const [best, setBest] = useState(0);
   const [bestBeforeGame, setBestBeforeGame] = useState(0);
@@ -69,15 +92,28 @@ export default function SpotClue({ deck, ids, loadRecords, random }: SpotCluePro
   // The square picked so far on the photo in play; null until the record says how big the grid is.
   const [cursor, setCursor] = useState<number | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
+  // The day today's game was dealt for, kept when the clock passes midnight mid-game.
+  const [day, setDay] = useState<string | null>(null);
 
   const start = useCallback(() => {
+    setCursor(null);
+    if (daily) {
+      const today = runToday(now?.());
+      setDay(today);
+      dispatch({
+        type: "start",
+        order: dailySpotOrder(ids, today),
+        from: loadSpotDay(today)?.results,
+      });
+      return;
+    }
     const stored = loadBestSpot();
     setBest(stored);
     setBestBeforeGame(stored);
     const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
     setCursor(null);
     dispatch({ type: "start", order: dealSpot(ids, seed) });
-  }, [ids, random]);
+  }, [daily, ids, now, random]);
 
   // The game is dealt in the browser after hydration, never at build time.
   useEffect(() => {
@@ -134,12 +170,16 @@ export default function SpotClue({ deck, ids, loadRecords, random }: SpotCluePro
     if (!ready || square === null) return;
     const result = spotResult(record!.photo.id, looked, square);
     const after = spotReducer(state, { type: "picked", result });
-    // Only a whole game counts as a best.
-    if (after.phase === "answered" && after.results.length === after.order.length) {
+    if (day) {
+      // Kept after every photo, so a reload can't take a square back. Today's game is played
+      // once for the day, apart from the free game's best.
+      if (after.phase === "answered") rememberSpotDay(day, after.results);
+    } else if (after.phase === "answered" && after.results.length === after.order.length) {
+      // Only a whole game counts as a best.
       setBest(rememberSpot(spotTotals(after.results).points));
     }
     dispatch({ type: "picked", result });
-  }, [ready, square, record, looked, state]);
+  }, [ready, square, record, looked, state, day]);
 
   const next = useCallback(() => {
     setCursor(null);
@@ -170,6 +210,17 @@ export default function SpotClue({ deck, ids, loadRecords, random }: SpotCluePro
     grid.querySelector<HTMLButtonElement>(`[data-cell="${square}"]`)?.focus();
   }, [square]);
 
+  if (state.phase === "done" && day && state.results.length > 0) {
+    return (
+      <SpotDayResult
+        day={day}
+        results={settleSpot(state.results, records)}
+        records={records}
+        now={now}
+      />
+    );
+  }
+
   if (state.phase === "done") {
     return (
       <SpotSummary
@@ -195,7 +246,7 @@ export default function SpotClue({ deck, ids, loadRecords, random }: SpotCluePro
       data-phase={answered ? "revealed" : "picking"}
       data-photo={record?.photo.id}
     >
-      <h1 className="sr-only">{`Whereabout: Spot the clue, photo ${index + 1} of ${playing?.order.length ?? SPOT_PHOTOS}`}</h1>
+      <h1 className="sr-only">{`Whereabout: Spot the clue${daily ? ", today" : ""}, photo ${index + 1} of ${playing?.order.length ?? SPOT_PHOTOS}`}</h1>
 
       <header className="flex items-start justify-between gap-4 px-4 pb-2 pt-4 md:px-6">
         <div className="min-w-0">
@@ -205,10 +256,18 @@ export default function SpotClue({ deck, ids, loadRecords, random }: SpotCluePro
           >
             Whereabout
           </Link>
-          <p className="mt-1 text-sm text-chalk-dim">Spot the clue: what told Atlas?</p>
+          <p className="mt-1 text-sm text-chalk-dim">
+            {`Spot the clue${daily ? ", today" : ""}: what told Atlas?`}
+          </p>
           <p className="text-sm text-chalk-dim" aria-live="polite">
             {`Photo ${index + 1} of ${playing?.order.length ?? SPOT_PHOTOS}`}
           </p>
+          <Link
+            href={daily ? "/spot-the-clue" : "/spot-the-clue/daily"}
+            className="text-sm text-gold underline underline-offset-2 hover:brightness-110"
+          >
+            {daily ? "Free games" : "Today's game"}
+          </Link>
         </div>
         <div className="flex shrink-0 items-start gap-3">
           <GamesMenu screen="spot-the-clue" streakHref="/streak" />
@@ -218,10 +277,12 @@ export default function SpotClue({ deck, ids, loadRecords, random }: SpotCluePro
             <dd className="font-sign tabular text-3xl font-bold leading-none">
               {formatPoints(totals.points)}
             </dd>
-            <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
-              <dt>Best</dt>
-              <dd className="tabular">{formatPoints(best)}</dd>
-            </div>
+            {!daily && (
+              <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
+                <dt>Best</dt>
+                <dd className="tabular">{formatPoints(best)}</dd>
+              </div>
+            )}
           </dl>
         </div>
       </header>
@@ -469,6 +530,63 @@ function SpotCard({
   );
 }
 
+/** Each photo played, by place, with its verdict and points. */
+function SquareList({
+  results,
+  records,
+}: {
+  results: readonly SpotResult[];
+  records: ReadonlyMap<string, GameRecord>;
+}) {
+  return (
+    <ol className="mt-6 space-y-2" aria-label="Your squares">
+      {results.map((r, i) => (
+        <li
+          key={r.id}
+          className="rounded-xl border border-graticule/70 px-3 py-2 text-sm"
+          data-testid="spot-row"
+        >
+          <span className="block text-chalk">
+            {records.get(r.id)?.photo.place ?? `Photo ${i + 1}`}
+          </span>
+          <span className="block text-chalk-dim">
+            {`${spotVerdict(r)}: ${formatPoints(r.points)} points`}
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** Today's Spot the clue once its last photo is answered, on this visit or an earlier one. */
+function SpotDayResult({
+  day,
+  results,
+  records,
+  now,
+}: {
+  day: string;
+  results: readonly SpotResult[];
+  records: ReadonlyMap<string, GameRecord>;
+  now?: () => Date;
+}) {
+  const { points, hottest } = spotTotals(results);
+  return (
+    <DailyRunResult
+      game="Spot the clue"
+      day={day}
+      unit="game"
+      headline={`${formatPoints(points)} points`}
+      summary={`Out of ${formatPoints(results.length * SPOT_MAX)}. You found Atlas's most telling square on ${hottest} of ${results.length} photos.`}
+      shareText={(href) => spotDailyShare(day, results, href)}
+      freeHref="/spot-the-clue"
+      now={now}
+    >
+      <SquareList results={results} records={records} />
+    </DailyRunResult>
+  );
+}
+
 function SpotSummary({
   results,
   records,
@@ -506,22 +624,7 @@ function SpotSummary({
           <p className="mt-1 text-chalk-dim">
             {newBest ? "That's your new best!" : `Your best is ${formatPoints(best)} points.`}
           </p>
-          <ol className="mt-6 space-y-2" aria-label="Your squares">
-            {results.map((r, i) => (
-              <li
-                key={r.id}
-                className="rounded-xl border border-graticule/70 px-3 py-2 text-sm"
-                data-testid="spot-row"
-              >
-                <span className="block text-chalk">
-                  {records.get(r.id)?.photo.place ?? `Photo ${i + 1}`}
-                </span>
-                <span className="block text-chalk-dim">
-                  {`${spotVerdict(r)}: ${formatPoints(r.points)} points`}
-                </span>
-              </li>
-            ))}
-          </ol>
+          <SquareList results={results} records={records} />
         </>
       )}
       <div className="mt-8 flex flex-wrap items-center gap-4">

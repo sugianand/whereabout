@@ -3,8 +3,9 @@
  * this reads those records back and adds none of its own: the Daily Five's first score and the
  * game in progress (./dailyArchive.ts, ./saved.ts), the streak games' runs (./dailyRuns.ts)
  * and the photos and rows of How far apart?, Hot and cold, Line them up, Close-up, Which climate?,
- * What's on the ground? and Bullseye (./farDaily.ts, ./hotDaily.ts, ./lineDaily.ts,
- * ./closeDaily.ts, ./climateDaily.ts, ./groundDaily.ts, ./bullseyeDaily.ts). What a game can't read back counts as not started.
+ * What's on the ground?, Bullseye and Spot the clue (./farDaily.ts, ./hotDaily.ts,
+ * ./lineDaily.ts, ./closeDaily.ts, ./climateDaily.ts, ./groundDaily.ts, ./bullseyeDaily.ts,
+ * ./spotDaily.ts). What a game can't read back counts as not started.
  *
  * Like every share in the game, the combined line is scores and counts only, so it spoils no
  * photo. Only finished games go in it: a run still going has no result yet.
@@ -26,6 +27,8 @@ import {
 } from "./bullseye";
 import { loadBullseyeDay } from "./bullseyeDaily";
 import { loadClimateDay } from "./climateDaily";
+import { SPOT_MAX, SPOT_PHOTOS, spotTotals } from "./spotClue";
+import { loadSpotDay } from "./spotDaily";
 import { loadClueDay } from "./clueDaily";
 import { loadCloseDay } from "./closeDaily";
 import { CLOSE_PHOTOS, CLOSE_POINTS, closeTotals } from "./closeUp";
@@ -62,7 +65,8 @@ export type TodayGameId =
   | "which-climate"
   | "clue-mix"
   | "on-the-ground"
-  | "bullseye";
+  | "bullseye"
+  | "spot-the-clue";
 
 /** One daily game: where it lives, whatever the browser holds. */
 export interface TodayGameInfo {
@@ -190,6 +194,15 @@ export const TODAY_GAMES: readonly TodayGameInfo[] = [
     blurb: "Five photos: pin each and bet a ring around it, the tighter the more it pays.",
     // From the next UTC day, so a day already played in full isn't left one game short.
     since: "2026-11-21",
+  },
+  {
+    id: "spot-the-clue",
+    name: "Spot the clue",
+    href: "/spot-the-clue/daily",
+    icon: "🔍",
+    blurb: "Five photos: tap the part of each you think told Atlas most.",
+    // From the next UTC day, so a day already played in full isn't left one game short.
+    since: "2026-11-23",
   },
 ];
 
@@ -393,6 +406,20 @@ function bullseye(day: string) {
   return { status: "done" as const, line, atlas: rival, versus: called };
 }
 
+function spotTheClue(day: string) {
+  const results = loadSpotDay(day)?.results ?? [];
+  // Atlas is the answer here, not a rival, so there is no score of its own to set against yours.
+  if (results.length === 0)
+    return { status: "new" as const, line: NOT_STARTED, atlas: null, versus: null };
+  const points = formatPoints(spotTotals(results).points);
+  if (results.length < SPOT_PHOTOS) {
+    const line = `${results.length} of ${SPOT_PHOTOS} photos, ${points} points`;
+    return { status: "going" as const, line, atlas: null, versus: null };
+  }
+  const line = `${points} of ${formatPoints(SPOT_PHOTOS * SPOT_MAX)}`;
+  return { status: "done" as const, line, atlas: null, versus: null };
+}
+
 /** Every daily game dealt on `day`, with its standing in this browser. */
 export function todayGames(
   day: string,
@@ -430,6 +457,8 @@ export function todayGames(
         return { ...info, ...onTheGround(day) };
       case "bullseye":
         return { ...info, ...bullseye(day) };
+      case "spot-the-clue":
+        return { ...info, ...spotTheClue(day) };
     }
   });
 }
@@ -490,10 +519,10 @@ export function atlasDayWords(day: AtlasDay): string | null {
 
 /**
  * The daily games that can be called against Atlas: every one but the Daily Five, whose score
- * against Atlas isn't kept.
+ * against Atlas isn't kept, and Spot the clue, where Atlas is the answer rather than a rival.
  */
 export const VERSUS_GAMES: readonly TodayGameInfo[] = TODAY_GAMES.filter(
-  (g) => g.id !== "daily-five",
+  (g) => g.id !== "daily-five" && g.id !== "spot-the-clue",
 );
 
 /** How many of a day's daily games this browser finished. */

@@ -125,7 +125,12 @@ move there with the arrow keys and press G). The answer lays the real map over t
 occlusion saliency (how much greying out each patch lowered Atlas's probability for its country),
 with your square in gold and the most telling one dashed, and scores your square 1,000 times its
 share of the hottest. Five photos a game, dealt from photos whose map has a square that mattered;
-your best is kept in your browser.
+your best is kept in your browser. **Today's game** (at `/spot-the-clue/daily`, on Today from
+2026-11-23) deals everyone the same five photos on the same UTC day, one try a day. Each square is
+kept as it is locked in, so a reload picks up at the next photo and can't take one back, and a kept
+square is scored again against its photo's map rather than trusted; the share line is your points,
+how many of Atlas's most telling squares you found and a square per photo, green for spot on to red
+for cold, spoiling no place.
 **Name the country** (at `/name-country`, in the Games menu) shows one photo and four countries from
 the same continent, drawn from the countries the globe draws: tap the right one, or press 1 to 4,
 and go on until your first miss. Atlas picks too, the name it gave the most of the four, and the

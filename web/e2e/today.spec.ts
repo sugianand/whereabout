@@ -177,6 +177,9 @@ test("full days count up on a calendar that fits the screen", async ({ page }) =
       const ring = { at: { lng: 0, lat: 0 }, ring: 3, km: 100 };
       const bet = (id: string) => ({ id, you: ring, atlas: null });
       keep("whereabout:bullseye-daily", { results: ["a", "b", "c", "d", "e"].map(bet) });
+      // So is Spot the clue from 2026-11-23 on.
+      const square = (id: string) => ({ id, cell: 0, points: 0, hottest: false });
+      keep("whereabout:spot-the-clue-daily", { results: ["a", "b", "c", "d", "e"].map(square) });
     },
     { full: [before(1), before(2)], partly: before(3) },
   );

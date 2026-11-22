@@ -162,6 +162,16 @@ describe("spotReducer", () => {
     expect(spotTotals(state.results)).toEqual({ points: 1500, hottest: 1 });
   });
 
+  it("picks a game back up at the first photo not yet answered, or ends one already whole", () => {
+    const first = spotResult("a", MAP, 6);
+    const resumed = spotReducer(initialSpot, { type: "start", order: ["a", "b"], from: [first] });
+    expect(resumed).toEqual({ phase: "picking", order: ["a", "b"], results: [first] });
+    const second = spotResult("b", MAP, 4);
+    expect(
+      spotReducer(initialSpot, { type: "start", order: ["a", "b"], from: [first, second] }),
+    ).toEqual({ phase: "done", order: ["a", "b"], results: [first, second] });
+  });
+
   it("finishes at once with nothing to deal", () => {
     expect(spotReducer(initialSpot, { type: "start", order: [] })).toEqual({
       phase: "done",

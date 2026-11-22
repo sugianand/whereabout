@@ -112,7 +112,8 @@ export type SpotState =
   | { phase: "done"; order: readonly string[]; results: readonly SpotResult[] };
 
 export type SpotAction =
-  | { type: "start"; order: readonly string[] }
+  /** `from` picks up a game already under way, at the first photo it hasn't picked a square on. */
+  | { type: "start"; order: readonly string[]; from?: readonly SpotResult[] }
   | { type: "picked"; result: SpotResult }
   | { type: "next" };
 
@@ -120,10 +121,13 @@ export const initialSpot: SpotState = { phase: "idle" };
 
 export function spotReducer(state: SpotState, action: SpotAction): SpotState {
   switch (action.type) {
-    case "start":
-      return action.order.length === 0
-        ? { phase: "done", order: [], results: [] }
-        : { phase: "picking", order: action.order, results: [] };
+    case "start": {
+      const { order } = action;
+      const results = action.from ?? [];
+      return results.length >= order.length
+        ? { phase: "done", order, results }
+        : { phase: "picking", order, results };
+    }
     case "picked":
       if (state.phase !== "picking" || action.result.id !== state.order[state.results.length]) {
         return state;

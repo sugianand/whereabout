@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import type { GameRecord } from "@/lib/game/deck";
 import { BEST_SPOT_KEY, dealSpot } from "@/lib/game/spotClue";
+import { SPOT_DAILY_KEY, dailySpotOrder, loadSpotDay } from "@/lib/game/spotDaily";
 import type { AtlasLooked } from "@/lib/game/types";
 import { gameFor } from "@/test/deck";
 
@@ -151,5 +152,89 @@ describe("SpotClue", () => {
     fireEvent.click(screen.getByRole("button", { name: "Play again" }));
     await screen.findByRole("button", { name: "Lock in row 2, column 2" });
     expect(screen.getByText("3,500", { selector: "dd" })).toBeInTheDocument();
+  });
+});
+
+describe("today's Spot the clue", () => {
+  const DAY = "2026-11-23";
+  const now = () => new Date(`${DAY}T12:00:00Z`);
+  const TODAY = dailySpotOrder(IDS, DAY);
+
+  function renderDaily() {
+    const game = gameFor(RECORDS);
+    return render(
+      <SpotClue deck={game.deck} ids={IDS} loadRecords={game.loadRecords} daily now={now} />,
+    );
+  }
+
+  async function answer(n: number, hottest: boolean) {
+    await waitFor(() => expect(photoOn()).toBe(TODAY[n]));
+    if (hottest) fireEvent.click(await screen.findByRole("button", { name: "Row 3, column 1" }));
+    fireEvent.click(await screen.findByRole("button", { name: /^Lock in/ }));
+    const card = await screen.findByRole("region");
+    fireEvent.click(
+      within(card).getByRole("button", { name: n === 4 ? "See the results" : "Next photo" }),
+    );
+  }
+
+  it("deals the day's five, keeps each square, and picks up after a reload at the next photo", async () => {
+    localStorage.setItem(BEST_SPOT_KEY, "1200");
+    const { unmount } = renderDaily();
+    expect(await screen.findByText("Spot the clue, today: what told Atlas?")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Free games" })).toHaveAttribute(
+      "href",
+      "/spot-the-clue",
+    );
+    // Today's game has no best of its own.
+    expect(screen.queryByText("Best")).toBeNull();
+    await answer(0, true);
+    await answer(1, false);
+    expect(loadSpotDay(DAY)?.results.map((r) => [r.id, r.points])).toEqual([
+      [TODAY[0], 1000],
+      [TODAY[1], 500],
+    ]);
+
+    unmount();
+    renderDaily();
+    await waitFor(() => expect(photoOn()).toBe(TODAY[2]));
+    expect(screen.getByText("Photo 3 of 5")).toBeInTheDocument();
+    expect(screen.getByText("1,500", { selector: "dd" })).toBeInTheDocument();
+    await answer(2, false);
+    await answer(3, true);
+    await answer(4, false);
+
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("3,500 points");
+    expect(screen.getByText(`Spot the clue · today's game · ${DAY}`)).toBeInTheDocument();
+    expect(
+      screen.getByText(/You found Atlas's most telling square on 2 of 5 photos\./),
+    ).toBeInTheDocument();
+    expect(screen.getAllByTestId("spot-row")).toHaveLength(5);
+    expect(screen.getByRole("button", { name: "Share today's game" })).toHaveFocus();
+    expect(screen.getByRole("link", { name: "Play a free game" })).toHaveAttribute(
+      "href",
+      "/spot-the-clue",
+    );
+    // The free game's best is untouched.
+    expect(localStorage.getItem(BEST_SPOT_KEY)).toBe("1200");
+  });
+
+  it("shows a finished day's result instead of dealing it again, scored from the maps", async () => {
+    // A forged day claiming the full points on every photo, on squares worth nothing.
+    const forged = TODAY.map((id) => ({ id, cell: 0, points: 1000, hottest: false }));
+    localStorage.setItem(SPOT_DAILY_KEY, JSON.stringify({ [DAY]: { results: forged } }));
+    renderDaily();
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^0 points$/),
+    );
+    expect(screen.queryByRole("group", { name: /grid of/ })).toBeNull();
+    expect(screen.getAllByTestId("spot-row")[0]).toHaveTextContent("Cold: 0 points");
+  });
+
+  it("links to today's game from a free one", async () => {
+    await setup();
+    expect(screen.getByRole("link", { name: "Today's game" })).toHaveAttribute(
+      "href",
+      "/spot-the-clue/daily",
+    );
   });
 });

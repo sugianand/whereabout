@@ -144,3 +144,99 @@ test("on a 320px phone the photo, its grid and the answer fit without scrolling"
   expect(nextBox.y + nextBox.height).toBeLessThanOrEqual(569);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });
+
+test("today's Spot the clue deals the day's five once, resumes after a reload, and shares the points", async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+  const day = new Date().toISOString().slice(0, 10);
+
+  // From a free game to today's.
+  await page.goto("./spot-the-clue");
+  await page.getByRole("link", { name: "Today's game" }).click();
+  await expect(page).toHaveURL(/\/spot-the-clue\/daily\/?$/);
+  await expect(page.getByText("Spot the clue, today: what told Atlas?")).toBeVisible();
+  await expect(page.getByText("Best", { exact: true })).toHaveCount(0);
+
+  // Every photo on Atlas's hottest square, so the total is known: 1,000 a photo.
+  const dealt: string[] = [];
+  const answer = async (n: number) => {
+    await expect(page.getByText(`Photo ${n + 1} of 5`, { exact: true })).toBeVisible();
+    const { grid, hottest } = await mapOnScreen(page);
+    dealt.push((await page.locator("main[data-photo]").getAttribute("data-photo"))!);
+    await page.getByRole("button", { name: name(grid, hottest), exact: true }).click();
+    await page
+      .getByRole("button", { name: `Lock in ${name(grid, hottest).toLowerCase()}` })
+      .click();
+    await expect(card.getByRole("heading")).toHaveText("Spot on: 1,000 points");
+  };
+  await answer(0);
+  await card.getByRole("button", { name: "Next photo" }).click();
+  await answer(1);
+
+  // A reload can't take a square back: it picks up at the third photo, the points kept.
+  await page.reload();
+  await expect(page.getByText("Photo 3 of 5", { exact: true })).toBeVisible();
+  await expect(page.getByText("2,000", { exact: true })).toBeVisible();
+  for (let n = 2; n < 5; n++) {
+    await answer(n);
+    await card.getByRole("button", { name: n === 4 ? "See the results" : "Next photo" }).click();
+  }
+  expect(new Set(dealt).size).toBe(5);
+
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("5,000 points");
+  await expect(page.getByText(`Spot the clue · today's game · ${day}`)).toBeVisible();
+  await page.getByRole("button", { name: "Share today's game" }).click();
+  await expect(page.getByRole("status")).toHaveText("Result copied. Paste it anywhere.");
+  const sent = await page.evaluate(() => (window as unknown as { sent: string }).sent);
+  expect(sent).toContain(`Whereabout · Spot the clue · ${day}`);
+  expect(sent).toContain("🔍 5,000 of 5,000 · Atlas's clue found on 5 of 5");
+  expect(sent).toContain("🟩🟩🟩🟩🟩");
+  expect(sent).toMatch(/\/spot-the-clue\/daily\/$/);
+  // No place: the share spoils no photo.
+  const places = await page.getByTestId("spot-row").allTextContents();
+  for (const row of places) expect(sent).not.toContain(row.split(/Spot on/)[0]!.trim());
+  // The free game's best is untouched.
+  expect(await page.evaluate(() => localStorage.getItem("whereabout:spot-the-clue-best"))).toBe(
+    null,
+  );
+
+  // The day is never dealt again.
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("5,000 points");
+  await expect(page.getByRole("group", { name: /grid of/ })).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test("today's Spot the clue fits a 320px phone, its link to free games on screen", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  for (const [path, link] of [
+    ["./spot-the-clue", "Today's game"],
+    ["./spot-the-clue/daily", "Free games"],
+  ] as const) {
+    await page.goto(path);
+    const lock = page.getByRole("button", { name: /^Lock in row/ });
+    await expect(lock).toBeEnabled();
+    const linkBox = (await page.getByRole("link", { name: link }).boundingBox())!;
+    expect(linkBox.x + linkBox.width).toBeLessThanOrEqual(321);
+    const lockBox = (await lock.boundingBox())!;
+    expect(lockBox.y + lockBox.height).toBeLessThanOrEqual(569);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      320,
+    );
+  }
+});
