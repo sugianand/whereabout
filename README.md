@@ -316,7 +316,11 @@ the rounds Atlas got right of those it played, free runs and today's runs togeth
 ahead. Then **your calibration**: for each Bullseye ring, how many photos you bet it on and how
 many it held, beside the same for Atlas's rings, drawn as a bar per ring for each side, with who
 holds their rings more often; free games, friends' challenges and today's games all count, each
-bet tallied as it is placed (only counts are kept, never a photo or a pin). Then **head to head with friends**: every friend's challenge you've answered from a link,
+bet tallied as it is placed (only counts are kept, never a photo or a pin). Then **your read of
+Atlas**: over every Spot the clue square you've locked in, in free games, challenges and today's,
+how many were warm or better and how many squares they landed from Atlas's most telling on
+average, with where on the photo you look beside where Atlas's map sits, as two 3 × 3 charts of
+the photo (each square counted once as it is locked in; only counts are kept). Then **head to head with friends**: every friend's challenge you've answered from a link,
 in any game, won, lost or tied, grouped by game with each result in its own units, a link to
 play theirs again and *Send a rematch*, which sends your result on it back. It is kept only in
 your browser.

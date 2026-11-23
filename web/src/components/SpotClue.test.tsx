@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { GameRecord } from "@/lib/game/deck";
 import { BEST_SPOT_KEY, dealSpot } from "@/lib/game/spotClue";
 import { SPOT_DAILY_KEY, dailySpotOrder, loadSpotDay } from "@/lib/game/spotDaily";
+import { loadSpotRead } from "@/lib/game/spotRead";
 import type { AtlasLooked } from "@/lib/game/types";
 import { gameFor } from "@/test/deck";
 
@@ -216,6 +217,14 @@ describe("today's Spot the clue", () => {
     );
     // The free game's best is untouched.
     expect(localStorage.getItem(BEST_SPOT_KEY)).toBe("1200");
+    // Each square counted once toward your read of Atlas, the reload taking none back or twice.
+    expect(loadSpotRead()).toEqual({
+      picked: 5,
+      warm: 5,
+      away: 3,
+      you: [0, 0, 0, 0, 3, 0, 2, 0, 0],
+      atlas: [0, 0, 0, 0, 0, 0, 5, 0, 0],
+    });
   });
 
   it("shows a finished day's result instead of dealing it again, scored from the maps", async () => {
@@ -228,6 +237,8 @@ describe("today's Spot the clue", () => {
     );
     expect(screen.queryByRole("group", { name: /grid of/ })).toBeNull();
     expect(screen.getAllByTestId("spot-row")[0]).toHaveTextContent("Cold: 0 points");
+    // A day read back from storage adds nothing to your read of Atlas.
+    expect(loadSpotRead().picked).toBe(0);
   });
 
   it("links to today's game from a free one", async () => {

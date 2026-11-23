@@ -53,6 +53,7 @@ import {
   settleSpot,
   spotDailyShare,
 } from "@/lib/game/spotDaily";
+import { recordSpotRead } from "@/lib/game/spotRead";
 import type { AtlasLooked } from "@/lib/game/types";
 import { formatPoints } from "@/lib/geo";
 import { sources } from "@/lib/photoSources";
@@ -231,6 +232,8 @@ export default function SpotClue({
     if (!ready || square === null) return;
     const result = spotResult(record!.photo.id, looked, square);
     const after = spotReducer(state, { type: "picked", result });
+    // Every square counts toward your read of Atlas on Your map, whichever game it was in.
+    if (after.phase === "answered") recordSpotRead(looked, square);
     if (day) {
       // Kept after every photo, so a reload can't take a square back. Today's game is played
       // once for the day, apart from the free game's best.

@@ -145,6 +145,79 @@ test("on a 320px phone the photo, its grid and the answer fit without scrolling"
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });
 
+test("your read of Atlas on Your map counts each square picked, on a 320px phone", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto("./spot-the-clue");
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+  // A square's third of the photo (0 top left to 8 bottom right), by the square's centre.
+  const part = (grid: number, i: number) => Math.min(2, Math.floor(((i + 0.5) / grid) * 3));
+  const third = (grid: number, cell: number) =>
+    part(grid, Math.floor(cell / grid)) * 3 + part(grid, cell % grid);
+  const picked: { grid: number; cell: number; away: number }[] = [];
+
+  for (let n = 0; n < 2; n++) {
+    await expect(page.getByText(`Photo ${n + 1} of 5`, { exact: true })).toBeVisible();
+    const id = (await page.locator("main[data-photo]").getAttribute("data-photo"))!;
+    const looked = ATLAS.guesses[id]!.looked!;
+    const { grid } = await mapOnScreen(page);
+    const top = Math.max(...looked.cells);
+    const hot = looked.cells.flatMap((v, i) => (v === top ? [i] : []));
+    // The hottest square on the first photo; the bottom right corner on the second.
+    const cell = n === 0 ? hot[0]! : grid * grid - 1;
+    const away = Math.min(
+      ...hot.map((h) =>
+        Math.max(
+          Math.abs(Math.floor(h / grid) - Math.floor(cell / grid)),
+          Math.abs((h % grid) - (cell % grid)),
+        ),
+      ),
+    );
+    picked.push({ grid, cell, away });
+    await page.getByRole("button", { name: name(grid, cell), exact: true }).click();
+    await page.getByRole("button", { name: `Lock in ${name(grid, cell).toLowerCase()}` }).click();
+    await expect(card.getByRole("heading")).toBeVisible();
+    if (n === 0) await card.getByRole("button", { name: "Next photo" }).click();
+  }
+  const second =
+    ATLAS.guesses[(await page.locator("main[data-photo]").getAttribute("data-photo"))!]!.looked!;
+  const secondWarm = (1000 * second.cells.at(-1)!) / Math.max(...second.cells) >= 499.5 ? 1 : 0;
+
+  // Leave mid-game: both squares already count.
+  await page.goto("./map");
+  const section = page.getByTestId("spot-read");
+  await expect(section.getByRole("heading", { name: "Your read of Atlas" })).toBeVisible();
+  const line = page.getByTestId("spot-read-line");
+  await expect(line).toContainText(`${1 + secondWarm} of 2 squares warm or better`);
+  await expect(line).toHaveAttribute(
+    "data-away",
+    ((picked[0]!.away + picked[1]!.away) / 2).toFixed(3),
+  );
+  const you = section.getByRole("list", { name: "Where you look, by third of the photo" });
+  const youCounts = await you
+    .getByRole("listitem")
+    .evaluateAll((els) => els.map((el) => Number(el.getAttribute("data-count"))));
+  const expected = Array<number>(9).fill(0);
+  for (const p of picked) expected[third(p.grid, p.cell)]! += 1;
+  expect(youCounts).toEqual(expected);
+  // Atlas's place on each photo is counted once, the two charts side by side on the phone.
+  const atlasCounts = await section
+    .getByRole("list", { name: "Where Atlas looks, by third of the photo" })
+    .getByRole("listitem")
+    .evaluateAll((els) => els.map((el) => Number(el.getAttribute("data-count"))));
+  expect(atlasCounts.reduce((a, b) => a + b, 0)).toBe(2);
+  const youBox = (await page.getByTestId("spot-read-you").boundingBox())!;
+  const atlasBox = (await page.getByTestId("spot-read-atlas").boundingBox())!;
+  expect(atlasBox.x + atlasBox.width).toBeLessThanOrEqual(321);
+  expect(youBox.width).toBeGreaterThan(100);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+
+  await section.getByRole("link", { name: "Play Spot the clue" }).click();
+  await expect(page).toHaveURL(/\/spot-the-clue\/?$/);
+});
+
 test("today's Spot the clue deals the day's five once, resumes after a reload, and shares the points", async ({
   page,
 }) => {

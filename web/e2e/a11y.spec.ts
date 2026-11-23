@@ -224,12 +224,18 @@ for (const colorScheme of ["dark", "light"] as const) {
       await expectAccessible(page, "your calibration");
     });
 
-    // Spot the clue's answer lays Atlas's map over the photo, with the card under it.
-    test("spot the clue passes axe at its first answer", async ({ page }) => {
+    // Spot the clue's answer lays Atlas's map over the photo, with the card under it; the
+    // square then shows on Your map's read of Atlas.
+    test("spot the clue passes axe at its first answer, and Your read of Atlas after it", async ({
+      page,
+    }) => {
       await page.goto("./spot-the-clue");
       await page.getByRole("button", { name: /^Lock in row/ }).click();
       await expect(page.getByTestId("spot-atlas")).toBeVisible();
       await expectAccessible(page, "spot the clue answer");
+      await page.goto("./map");
+      await expect(page.getByTestId("spot-read-line")).toBeVisible();
+      await expectAccessible(page, "your read of atlas");
     });
   });
 }
