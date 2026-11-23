@@ -61,9 +61,14 @@ test("a wrong name lands in Countries you mix up on Your map, with a streak to p
   const played = [truth, wrong].sort().join() === "JP,KR";
   await expect(rows).toHaveCount(played ? 1 : 2);
   if (!played) {
-    await expect(rows.nth(1)).toContainText(`${countryName(truth)} and ${countryName(wrong)}`);
+    // The browser's own country names can add to Node's ("Falkland Islands (Islas Malvinas)"),
+    // and mid-sentence a name can take "the", so each name is matched from its start.
+    const name = (code: string) => countryName(code).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    await expect(rows.nth(1)).toContainText(new RegExp(`${name(truth)}[^,]* and ${name(wrong)}`));
     await expect(rows.nth(1)).toContainText(/\bonce\b/);
-    await expect(rows.nth(1).getByText(/^You said /)).toContainText(`${countryName(wrong)} for `);
+    await expect(rows.nth(1).getByText(/^You said /)).toHaveText(
+      new RegExp(`^You said (the )?${name(wrong)}[^,]* for `),
+    );
   }
 
   const first = rows.first();
