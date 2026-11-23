@@ -12,6 +12,7 @@ import { buildDeck, gameRecords } from "./deck";
 import { nameIds } from "./nameCountry";
 import { groundMap } from "./onTheGround";
 import { spotIds } from "./spotClue";
+import { trustIds } from "./trustAtlas";
 import type { AtlasData, CatalogPhoto } from "./types";
 import { climateMap } from "./whichClimate";
 
@@ -61,3 +62,9 @@ export const bundledGroundCovers = groundMap(bundledRecords.map((r) => r.photo))
  * mattered (`spotIds`). Ids only; each map arrives with its photo's record.
  */
 export const bundledSpotIds = spotIds(bundledRecords);
+
+/**
+ * The photos Trust Atlas? can deal: those Atlas named a country for (`trustIds`). Ids only; each
+ * answer arrives with its photo's record.
+ */
+export const bundledTrustIds = trustIds(bundledRecords);

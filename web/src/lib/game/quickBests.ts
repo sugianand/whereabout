@@ -4,7 +4,7 @@
  *
  * Nothing new is stored here. Each mode keeps its own best under its own key (blitz.ts,
  * streak.ts, survival.ts, furtherNorth.ts, oddOneOut.ts, howFar.ts, whichWay.ts, hotCold.ts, bullseye.ts,
- * spotClue.ts, nameCountry.ts, lineUp.ts, closeUp.ts, leftRight.ts,
+ * spotClue.ts, trustAtlas.ts, nameCountry.ts, lineUp.ts, closeUp.ts, leftRight.ts,
  * whichClimate.ts, clueMix.ts, onTheGround.ts); this only reads them back through the
  * same loaders, so a value a mode would refuse (a negative streak, junk JSON) is refused here too.
  */
@@ -28,6 +28,7 @@ import { regionSlug } from "./regions";
 import { loadBestSpot } from "./spotClue";
 import { loadBestStreak } from "./streak";
 import { loadBestSurvival, type SurvivalBest } from "./survival";
+import { TRUST_PHOTOS, loadBestTrust } from "./trustAtlas";
 import { CLIMATE_PHOTOS, loadBestClimate } from "./whichClimate";
 import { loadBestWay } from "./whichWay";
 
@@ -43,6 +44,7 @@ export const QUICK_MODES = [
   "hot-cold",
   "bullseye",
   "spot-the-clue",
+  "trust-atlas",
   "name-country",
   "line-up",
   "close-up",
@@ -80,6 +82,8 @@ export interface QuickBests {
   bullseye: number | null;
   /** The best whole game's points. */
   "spot-the-clue": number | null;
+  /** The most correct calls in a whole game. */
+  "trust-atlas": number | null;
   /** The longest run of countries named. */
   "name-country": number | null;
   /** The most photos put in place in a whole game. */
@@ -107,6 +111,7 @@ export const NO_BESTS: QuickBests = {
   "hot-cold": null,
   bullseye: null,
   "spot-the-clue": null,
+  "trust-atlas": null,
   "name-country": null,
   "line-up": null,
   "close-up": null,
@@ -147,6 +152,7 @@ export function loadQuickBests(): QuickBests {
     "hot-cold": positive(loadBestHot()),
     bullseye: positive(loadBestBullseye()),
     "spot-the-clue": positive(loadBestSpot()),
+    "trust-atlas": positive(loadBestTrust()),
     "name-country": positive(loadBestName()),
     "line-up": positive(loadBestLine()),
     "close-up": positive(loadBestClose()),
@@ -194,6 +200,10 @@ export function bestLine(mode: QuickMode, bests: QuickBests): string | null {
     case "on-the-ground": {
       const n = bests[mode];
       return n === null ? null : `Best: ${n} of ${GROUND_PHOTOS} right`;
+    }
+    case "trust-atlas": {
+      const n = bests[mode];
+      return n === null ? null : `Best: ${n} of ${TRUST_PHOTOS} called right`;
     }
     case "further-north":
     case "odd-one-out":

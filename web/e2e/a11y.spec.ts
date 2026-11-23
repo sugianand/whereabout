@@ -57,6 +57,7 @@ const FIRST_SCREENS = [
   "./hot-cold",
   "./bullseye",
   "./spot-the-clue",
+  "./trust-atlas",
   "./bullseye/daily",
   "./spot-the-clue/daily",
   "./name-country",
@@ -222,6 +223,14 @@ for (const colorScheme of ["dark", "light"] as const) {
       await page.goto("./map");
       await expect(page.getByTestId("calibration-line")).toBeVisible();
       await expectAccessible(page, "your calibration");
+    });
+
+    // Trust Atlas?'s answer card sits over the photo, the real country tagged on it.
+    test("trust atlas passes axe at its first answer", async ({ page }) => {
+      await page.goto("./trust-atlas");
+      await page.getByRole("button", { name: "Trust it: Atlas is right" }).click();
+      await expect(page.getByTestId("trust-atlas")).toBeVisible();
+      await expectAccessible(page, "trust atlas answer");
     });
 
     // Spot the clue's answer lays Atlas's map over the photo, with the card under it; the

@@ -17,6 +17,7 @@ import { BEST_SURVIVAL_KEY } from "./survival";
 import { BEST_CLIMATE_KEY } from "./whichClimate";
 import { BEST_GROUND_KEY } from "./onTheGround";
 import { BEST_SPOT_KEY } from "./spotClue";
+import { BEST_TRUST_KEY } from "./trustAtlas";
 import { BEST_WAY_KEY } from "./whichWay";
 
 afterEach(() => localStorage.clear());
@@ -38,6 +39,7 @@ describe("loadQuickBests", () => {
     localStorage.setItem(BEST_HOT_KEY, "21500");
     localStorage.setItem(BEST_BULLSEYE_KEY, "2750");
     localStorage.setItem(BEST_SPOT_KEY, "3420");
+    localStorage.setItem(BEST_TRUST_KEY, "8");
     localStorage.setItem(BEST_NAME_KEY, "7");
     localStorage.setItem(BEST_LINE_KEY, "14");
     localStorage.setItem(BEST_CLOSE_KEY, "11");
@@ -56,6 +58,7 @@ describe("loadQuickBests", () => {
       "hot-cold": 21500,
       bullseye: 2750,
       "spot-the-clue": 3420,
+      "trust-atlas": 8,
       "name-country": 7,
       "line-up": 14,
       "close-up": 11,
@@ -76,6 +79,7 @@ describe("loadQuickBests", () => {
     localStorage.setItem(BEST_GROUND_KEY, "0");
     localStorage.setItem(BEST_BULLSEYE_KEY, "1.5");
     localStorage.setItem(BEST_SPOT_KEY, "9000");
+    localStorage.setItem(BEST_TRUST_KEY, "11");
     const bests = loadQuickBests();
     expect(bests["which-climate"]).toBeNull();
     expect(bests["on-the-ground"]).toBeNull();
@@ -87,6 +91,8 @@ describe("loadQuickBests", () => {
     expect(bests.bullseye).toBeNull();
     // More than five photos can score.
     expect(bests["spot-the-clue"]).toBeNull();
+    // Only ten photos can be called.
+    expect(bests["trust-atlas"]).toBeNull();
   });
 });
 
@@ -121,6 +127,7 @@ describe("bestLine", () => {
     "hot-cold": 21500,
     bullseye: 2750,
     "spot-the-clue": 3420,
+    "trust-atlas": 8,
     "name-country": 7,
     "line-up": 14,
     "close-up": 11,
@@ -141,6 +148,7 @@ describe("bestLine", () => {
     expect(bestLine("hot-cold", bests)).toBe("Best: 21,500 points");
     expect(bestLine("bullseye", bests)).toBe("Best: 2,750 points");
     expect(bestLine("spot-the-clue", bests)).toBe("Best: 3,420 points");
+    expect(bestLine("trust-atlas", bests)).toBe("Best: 8 of 10 called right");
     expect(bestLine("name-country", bests)).toBe("Best: 7 in a row");
     expect(bestLine("line-up", bests)).toBe("Best: 14 of 20 in place");
     expect(bestLine("close-up", bests)).toBe("Best: 11 of 15 points");

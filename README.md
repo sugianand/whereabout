@@ -135,6 +135,13 @@ same five photos and carries the square you picked on each, shown on Atlas's map
 have locked in theirs. The points to beat are scored from those squares against each photo's real
 map, never read from the link, and the end screen offers *Send yours back* and a head-to-head
 picture.
+**Trust Atlas?** (at `/trust-atlas`, in the Games menu) is about the number Atlas puts on its own
+answer. Each photo comes with the country Atlas named and how sure it was, in words and on a meter:
+call whether it got it right with *Trust it* or *Doubt it* (or Y and N). The answer gives the real
+country, where it sat on Atlas's shortlist when Atlas missed, and what Atlas's own sureness made of
+the answer, since Atlas trusts itself by a fixed rule, at 50% sure or more. Ten photos a game, dealt
+from every photo Atlas named a country for, so neither always trusting nor always doubting wins;
+the end screen puts your correct calls beside Atlas's own, and your best is kept in your browser.
 **Name the country** (at `/name-country`, in the Games menu) shows one photo and four countries from
 the same continent, drawn from the countries the globe draws: tap the right one, or press 1 to 4,
 and go on until your first miss. Atlas picks too, the name it gave the most of the four, and the

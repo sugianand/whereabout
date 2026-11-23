@@ -83,6 +83,11 @@ const BLURBS: Record<QuickMode, { name: string; blurb: string }> = {
     blurb:
       "Atlas names a country: tap the part of the photo you think told it most, then see Atlas's own map of where it looked. Five photos.",
   },
+  "trust-atlas": {
+    name: "Trust Atlas?",
+    blurb:
+      "Atlas names a country and says how sure it is: call whether it got it right. Ten photos, against Atlas's own sureness.",
+  },
   "name-country": {
     name: "Name the country",
     blurb:
@@ -241,6 +246,7 @@ export default function QuickGames({
           "hot-cold",
           "bullseye",
           "spot-the-clue",
+          "trust-atlas",
           "name-country",
           "line-up",
           "close-up",

@@ -328,6 +328,32 @@ test.describe("on a keyboard", () => {
     await expect(page.getByText("Photo 2 of 5", { exact: true })).toBeVisible();
   });
 
+  test("? lists Trust Atlas?'s controls, and every one of its keys works", async ({ page }) => {
+    await page.goto("./trust-atlas");
+    const trust = page.getByRole("button", { name: "Trust it: Atlas is right" });
+    await expect(trust).toBeEnabled();
+    const sheet = await openWithKey(page, "Controls for Trust Atlas?");
+    await expectSheetLists(sheet, "trust-atlas", false);
+    // Y pressed in the sheet doesn't make a call behind it.
+    await page.keyboard.press("y");
+    await page.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+    const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
+    await expect(card).toBeHidden();
+
+    // Y trusts and N doubts; Enter moves on from the answer.
+    for (const [n, key] of keysOf("trust-atlas", "call").entries()) {
+      await expect(page.getByText(`Photo ${n + 1} of 10`, { exact: true })).toBeVisible();
+      await expect(trust).toBeEnabled();
+      await page.keyboard.press(key);
+      await expect(card).toBeVisible();
+      await expect(card.getByRole("button", { name: "Next photo" })).toBeFocused();
+      await page.keyboard.press(keysOf("trust-atlas", "next")[0]);
+      await expect(card).toBeHidden();
+    }
+    await expect(page.getByText("Photo 3 of 10", { exact: true })).toBeVisible();
+  });
+
   test("? lists Left or right?'s controls, and every one of its keys works", async ({ page }) => {
     await page.goto("./left-right");
     await expect(page.getByRole("button", { name: "Left: they drive on the left" })).toBeEnabled();
@@ -563,6 +589,7 @@ test.describe("on a touch screen", () => {
     ["on-the-ground", "./on-the-ground", "Controls for What's on the ground?"],
     ["bullseye", "./bullseye", "Controls for Bullseye"],
     ["spot-the-clue", "./spot-the-clue", "Controls for Spot the clue"],
+    ["trust-atlas", "./trust-atlas", "Controls for Trust Atlas?"],
   ] as const) {
     test(`the help button lists ${screen}'s gestures on screen`, async ({ page }) => {
       await page.goto(path);
