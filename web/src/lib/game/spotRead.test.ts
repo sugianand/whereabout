@@ -65,6 +65,7 @@ describe("addSquare", () => {
     expect(read).toEqual({
       picked: 3,
       warm: 2,
+      hottest: 1,
       away: 7,
       you: [0, 0, 2, 0, 0, 0, 1, 0, 0],
       atlas: [0, 0, 3, 0, 0, 0, 0, 0, 0],
@@ -73,6 +74,16 @@ describe("addSquare", () => {
     expect(averageAway(read)).toBeCloseTo(7 / 3);
     expect(warmRate(emptyRead())).toBeNull();
     expect(averageAway(emptyRead())).toBeNull();
+  });
+
+  it("counts every square tied for hottest as found, and a warm neighbour as not", () => {
+    const tied = map({ 0: 1, 48: 1, 1: 0.9 });
+    let read = addSquare(emptyRead(), tied, 0);
+    read = addSquare(read, tied, 48);
+    read = addSquare(read, tied, 1);
+    expect(read).toMatchObject({ picked: 3, warm: 3, hottest: 2 });
+    // On a map where nothing mattered there is no hottest square to find.
+    expect(addSquare(emptyRead(), map({}), 24).hottest).toBe(0);
   });
 
   it("puts Atlas where most of its map's importance sits, not only its hottest square", () => {
@@ -94,7 +105,7 @@ describe("keeping the read", () => {
     recordSpotRead(TOP_RIGHT, 6);
     recordSpotRead(TOP_RIGHT, 42);
     expect(JSON.parse(localStorage.getItem(SPOT_READ_KEY)!)).toMatchObject({ picked: 2, warm: 1 });
-    expect(loadSpotRead()).toMatchObject({ picked: 2, warm: 1, away: 6 });
+    expect(loadSpotRead()).toMatchObject({ picked: 2, warm: 1, hottest: 1, away: 6 });
   });
 
   it("drops junk and reads that couldn't have come from squares picked", () => {
@@ -104,6 +115,9 @@ describe("keeping the read", () => {
       null,
       "x",
       { ...good, warm: 2 }, // more warm than picked
+      { ...good, hottest: 2 }, // more of the hottest than warm squares
+      { ...good, hottest: -1 },
+      { ...good, hottest: "1" },
       { ...good, picked: -1 },
       { ...good, away: 1.5 },
       { ...good, away: 99 }, // farther than any grid allows
@@ -114,6 +128,10 @@ describe("keeping the read", () => {
     ]) {
       expect(parseSpotRead(bad)).toBeNull();
     }
+    // A read kept before the hottest were counted is taken back with none found.
+    const before: Record<string, unknown> = { ...good };
+    delete before.hottest;
+    expect(parseSpotRead(before)).toEqual({ ...good, hottest: 0 });
     localStorage.setItem(SPOT_READ_KEY, "{not json");
     expect(loadSpotRead()).toEqual(emptyRead());
   });

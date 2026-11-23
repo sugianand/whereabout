@@ -460,3 +460,55 @@ test("a Spot the clue challenge's answer card and end buttons fit a 320px phone"
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });
+
+test("Atlas's hottest square found on all five photos earns Mind reader, with every square found counted", async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+
+  await page.goto("./stamps");
+  await expect(page.getByRole("heading", { name: "Spot the clue", level: 2 })).toBeVisible();
+  const mindReader = page.getByTestId("stamp-spot-mind-reader");
+  await expect(mindReader).toHaveAttribute("data-earned", "false");
+  await expect(page.getByTestId("stamp-spot-mind-reader-progress")).toHaveText(
+    "0 of 5 hottest squares in a game",
+  );
+  await expect(page.getByTestId("stamp-spot-found-progress")).toHaveText("0 of 25 squares found");
+
+  // A whole game on Atlas's hottest square every time, by tap.
+  await page
+    .getByTestId("stamps-spot-intro")
+    .getByRole("link", { name: "Spot the clue", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/spot-the-clue\/?$/);
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+  for (let n = 0; n < 5; n++) {
+    await expect(page.getByText(`Photo ${n + 1} of 5`, { exact: true })).toBeVisible();
+    const { grid, hottest } = await mapOnScreen(page);
+    await page.getByRole("button", { name: name(grid, hottest), exact: true }).click();
+    await page
+      .getByRole("button", { name: `Lock in ${name(grid, hottest).toLowerCase()}` })
+      .click();
+    await expect(card.getByRole("heading")).toHaveText("Spot on: 1,000 points");
+    await page.keyboard.press("Enter");
+  }
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("5,000 points");
+
+  await page.goto("./stamps");
+  await expect(mindReader).toHaveAttribute("data-earned", "true");
+  await expect(page.getByTestId("stamps-standing")).toContainText("since you last looked");
+  // The running count is every hottest square found, as your read of Atlas counts them.
+  await expect(page.getByTestId("stamp-spot-found-progress")).toHaveText("5 of 25 squares found");
+
+  await page.setViewportSize({ width: 320, height: 700 });
+  await mindReader.scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  await page
+    .getByTestId("stamps-spot-intro")
+    .getByRole("link", { name: /your read of Atlas/ })
+    .click();
+  await expect(page).toHaveURL(/\/map\/?$/);
+  expect(errors).toEqual([]);
+});

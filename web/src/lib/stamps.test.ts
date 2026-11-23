@@ -20,6 +20,10 @@ import { rememberLeftRight } from "@/lib/game/leftRight";
 import { rememberGround, type GroundResult } from "@/lib/game/onTheGround";
 import { EMPTY_TALLY, recordFreeRound, type Tally } from "@/lib/game/quickRecord";
 import { rememberSideDay } from "@/lib/game/sideDaily";
+import { BEST_HOTTEST_KEY, type SpotResult } from "@/lib/game/spotClue";
+import { rememberSpotDay } from "@/lib/game/spotDaily";
+import { recordSpotRead } from "@/lib/game/spotRead";
+import type { AtlasLooked } from "@/lib/game/types";
 import { rememberClimate, type ClimateResult } from "@/lib/game/whichClimate";
 import { VERSUS_GAMES, type DayTally, type Versus } from "@/lib/game/today";
 
@@ -33,6 +37,7 @@ import {
   FULL_WEEK,
   ROAD_READER_RUN,
   STAMPS_KEY,
+  SPOT_FOUND_STAMP,
   STAMP_IDS,
   albumPageStampId,
   albumShareNeed,
@@ -44,6 +49,7 @@ import {
   keepStamps,
   loadBullseyeSources,
   loadClueSources,
+  loadSpotSources,
   loadKeptStamps,
   longestFullRun,
   nextStamp,
@@ -121,6 +127,8 @@ describe("readStamps", () => {
       "ground-ahead",
       "bullseye-five-tight",
       "bullseye-calibrated",
+      "spot-mind-reader",
+      "spot-found",
     ]);
     expect(stamps.every((s) => !s.earned)).toBe(true);
     // Every id read is one the store accepts.
@@ -709,6 +717,83 @@ describe("loadBullseyeSources", () => {
     expect(cal.you[1]).toEqual({ bet: 2, held: 1 });
     expect(cal.atlas[0]).toEqual({ bet: 1, held: 0 });
     expect(cal.atlas[1]).toEqual({ bet: 1, held: 1 });
+  });
+});
+
+describe("Spot the clue stamps", () => {
+  const spot = (bestHottest: number, found = 0) => sources({ spot: { bestHottest, found } });
+
+  it("lists both under Spot the clue, none earned in a fresh browser, with ids kept", () => {
+    const stamps = readStamps(sources()).filter((s) => s.group === "spot");
+    expect(stamps.map((s) => s.id)).toEqual(["spot-mind-reader", "spot-found"]);
+    for (const s of stamps) {
+      expect(s.earned).toBe(false);
+      expect(s.note).toBeNull();
+      expect(STAMP_IDS).toContain(s.id);
+    }
+    expect(byId(stamps, "spot-mind-reader").progress).toEqual({
+      have: 0,
+      need: 5,
+      unit: ["hottest square in a game", "hottest squares in a game"],
+    });
+    expect(byId(stamps, "spot-found").progress).toEqual({
+      have: 0,
+      need: SPOT_FOUND_STAMP,
+      unit: ["square found", "squares found"],
+    });
+  });
+
+  it("earns Mind reader on all five of Atlas's hottest found in one game, not four", () => {
+    const four = byId(readStamps(spot(4, 20)), "spot-mind-reader");
+    expect(four.earned).toBe(false);
+    expect(four.progress?.have).toBe(4);
+    expect(byId(readStamps(spot(5)), "spot-mind-reader").earned).toBe(true);
+  });
+
+  it("counts the hottest squares found toward Sharp eye, then keeps counting", () => {
+    const short = byId(readStamps(spot(0, SPOT_FOUND_STAMP - 1)), "spot-found");
+    expect(short.earned).toBe(false);
+    expect(short.progress?.have).toBe(SPOT_FOUND_STAMP - 1);
+    const done = byId(readStamps(spot(0, SPOT_FOUND_STAMP)), "spot-found");
+    expect(done.earned).toBe(true);
+    expect(done.progress).toBeNull();
+    expect(byId(readStamps(spot(0, 31)), "spot-found").note).toBe("31 found so far");
+  });
+});
+
+describe("loadSpotSources", () => {
+  beforeEach(() => localStorage.clear());
+
+  const found = (id: string, hottest: boolean): SpotResult => ({
+    id,
+    cell: 0,
+    points: hottest ? 1000 : 400,
+    hottest,
+  });
+  const day = (hot: number, of = 5) =>
+    Array.from({ length: of }, (_, i) => found(`d${i}`, i < hot));
+
+  it("is empty in a fresh browser", () => {
+    expect(loadSpotSources()).toEqual({ bestHottest: 0, found: 0 });
+  });
+
+  it("takes the most of the free games' kept hottest and a whole day's", () => {
+    localStorage.setItem(BEST_HOTTEST_KEY, "2");
+    rememberSpotDay("2026-11-09", day(4));
+    // Today's game is three photos in, all spot on: not a whole game yet.
+    rememberSpotDay(TODAY, day(3, 3));
+    expect(loadSpotSources().bestHottest).toBe(4);
+  });
+
+  it("counts every hottest square found as your read of Atlas does", () => {
+    const cells = Array<number>(49).fill(0);
+    cells[6] = 1;
+    cells[5] = 0.6;
+    const looked: AtlasLooked = { grid: 7, crop: [0, 0, 1, 1], cells };
+    recordSpotRead(looked, 6);
+    recordSpotRead(looked, 5);
+    recordSpotRead(looked, 6);
+    expect(loadSpotSources().found).toBe(2);
   });
 });
 

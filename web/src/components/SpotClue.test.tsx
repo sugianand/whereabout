@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, describe, expect, it } from "vitest";
 
 import type { GameRecord } from "@/lib/game/deck";
-import { BEST_SPOT_KEY, dealSpot } from "@/lib/game/spotClue";
+import { BEST_HOTTEST_KEY, BEST_SPOT_KEY, dealSpot } from "@/lib/game/spotClue";
 import { SPOT_DAILY_KEY, dailySpotOrder, loadSpotDay } from "@/lib/game/spotDaily";
 import { loadSpotRead } from "@/lib/game/spotRead";
 import type { AtlasLooked } from "@/lib/game/types";
@@ -147,6 +147,8 @@ describe("SpotClue", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("That's your new best!")).toBeInTheDocument();
     expect(localStorage.getItem(BEST_SPOT_KEY)).toBe("3500");
+    // Atlas's hottest found on two photos, kept for Mind reader on Stamps.
+    expect(localStorage.getItem(BEST_HOTTEST_KEY)).toBe("2");
     expect(screen.getAllByTestId("spot-row")).toHaveLength(5);
     expect(screen.getByRole("button", { name: "Play again" })).toHaveFocus();
 
@@ -215,12 +217,14 @@ describe("today's Spot the clue", () => {
       "href",
       "/spot-the-clue",
     );
-    // The free game's best is untouched.
+    // The free game's best is untouched, and so is its most hottest found: Stamps reads the day.
     expect(localStorage.getItem(BEST_SPOT_KEY)).toBe("1200");
+    expect(localStorage.getItem(BEST_HOTTEST_KEY)).toBeNull();
     // Each square counted once toward your read of Atlas, the reload taking none back or twice.
     expect(loadSpotRead()).toEqual({
       picked: 5,
       warm: 5,
+      hottest: 2,
       away: 3,
       you: [0, 0, 0, 0, 3, 0, 2, 0, 0],
       atlas: [0, 0, 0, 0, 0, 0, 5, 0, 0],
@@ -311,6 +315,7 @@ describe("a Spot the clue challenge", () => {
     );
     // A challenge's photos were picked by someone who had seen them: never a best.
     expect(localStorage.getItem(BEST_SPOT_KEY)).toBeNull();
+    expect(localStorage.getItem(BEST_HOTTEST_KEY)).toBeNull();
     expect(screen.queryByText(/new best/)).toBeNull();
     expect(screen.getByRole("button", { name: "Share head to head" })).toBeInTheDocument();
 

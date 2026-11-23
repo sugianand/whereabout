@@ -11,6 +11,9 @@
  * same place the answer card's "Atlas's clue sits mostly toward…" names. "Squares away" counts
  * diagonal steps as one, so a neighbouring square is always 1 away.
  *
+ * It also counts how many squares were one of Atlas's hottest, for the Spot the clue stamps; a read
+ * kept before that was counted reads back with none found.
+ *
  * Only counts are kept, never a photo or a square. Storage is best effort, as for the bests.
  */
 
@@ -33,6 +36,8 @@ export interface SpotRead {
   picked: number;
   /** Of those, how many were warm or better. */
   warm: number;
+  /** Of those, how many were one of Atlas's hottest (the answer card's "Spot on"). */
+  hottest: number;
   /** Squares from the nearest hottest, added over every square picked. */
   away: number;
   /** Squares picked in each third of the photo. */
@@ -42,7 +47,14 @@ export interface SpotRead {
 }
 
 export function emptyRead(): SpotRead {
-  return { picked: 0, warm: 0, away: 0, you: Array(THIRDS).fill(0), atlas: Array(THIRDS).fill(0) };
+  return {
+    picked: 0,
+    warm: 0,
+    hottest: 0,
+    away: 0,
+    you: Array(THIRDS).fill(0),
+    atlas: Array(THIRDS).fill(0),
+  };
 }
 
 /** The third of the photo (0..8) a point given as fractions across and down falls in. */
@@ -75,6 +87,7 @@ export function addSquare(read: SpotRead, looked: AtlasLooked, cell: number): Sp
   return {
     picked: read.picked + 1,
     warm: read.warm + (spotPoints(looked, cell) >= WARM_POINTS ? 1 : 0),
+    hottest: read.hottest + (hottestCells(looked).includes(cell) ? 1 : 0),
     away: read.away + squaresAway(looked, cell),
     you: read.you.map((n, i) => (i === youThird ? n + 1 : n)),
     atlas: read.atlas.map((n, i) => (i === atlasThird ? n + 1 : n)),
@@ -92,15 +105,24 @@ const sum = (xs: readonly number[]) => xs.reduce((s, n) => s + n, 0);
 /** A stored read taken back only in the shape `recordSpotRead` writes, else null. */
 export function parseSpotRead(value: unknown): SpotRead | null {
   if (typeof value !== "object" || value === null) return null;
-  const { picked, warm, away, you: rawYou, atlas: rawAtlas } = value as Record<string, unknown>;
+  const {
+    picked,
+    warm,
+    hottest = 0,
+    away,
+    you: rawYou,
+    atlas: rawAtlas,
+  } = value as Record<string, unknown>;
   if (!count(picked) || !count(warm) || !count(away) || warm > picked) return null;
+  // A read kept before the hottest were counted has none; the hottest is always warm too.
+  if (!count(hottest) || hottest > warm) return null;
   if (away > picked * MAX_AWAY) return null;
   const you = parseThirds(rawYou);
   const atlas = parseThirds(rawAtlas);
   if (!you || !atlas) return null;
   // Every square sits in one third; Atlas's map has one place only when it mattered somewhere.
   if (sum(you) !== picked || sum(atlas) > picked) return null;
-  return { picked, warm, away, you, atlas };
+  return { picked, warm, hottest, away, you, atlas };
 }
 
 function storage(): Storage | null {

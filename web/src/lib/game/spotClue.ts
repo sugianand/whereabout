@@ -25,6 +25,8 @@ export const SPOT_PHOTOS = 5;
 /** What the square that mattered most to Atlas is worth. */
 export const SPOT_MAX = 1000;
 export const BEST_SPOT_KEY = "whereabout:spot-the-clue-best";
+/** The most of Atlas's hottest squares found in one whole free game, for the Spot the clue stamps. */
+export const BEST_HOTTEST_KEY = "whereabout:spot-the-clue-hottest-best";
 
 /** True when Atlas's map can be played: well-formed, with at least one cell that mattered. */
 export function playableLooked(looked: AtlasLooked | undefined | null): looked is AtlasLooked {
@@ -205,4 +207,33 @@ export function rememberSpot(points: number): number {
     // Private mode or full storage: the game still counts for this visit.
   }
   return points;
+}
+
+/**
+ * The most of Atlas's hottest squares found in one whole free game in this browser, 0 when none is
+ * kept. Games finished before this was recorded aren't read from their best points: a square
+ * a whisker below the hottest can round to the full 1,000, so points alone can't prove it.
+ */
+export function loadBestHottest(): number {
+  try {
+    const value: unknown = JSON.parse(storage()?.getItem(BEST_HOTTEST_KEY) ?? "0");
+    return typeof value === "number" && Number.isInteger(value) && value > 0
+      ? Math.min(value, SPOT_PHOTOS)
+      : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** Keep a whole game's hottest squares found if it beats the stored most, and return the most. */
+export function rememberHottest(found: number): number {
+  const best = loadBestHottest();
+  if (!Number.isInteger(found) || found <= best) return best;
+  const next = Math.min(found, SPOT_PHOTOS);
+  try {
+    storage()?.setItem(BEST_HOTTEST_KEY, JSON.stringify(next));
+  } catch {
+    // Private mode or full storage: the game still counted on screen.
+  }
+  return next;
 }

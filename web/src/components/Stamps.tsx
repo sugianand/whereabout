@@ -13,6 +13,7 @@ import {
   keepStamps,
   loadBullseyeSources,
   loadClueSources,
+  loadSpotSources,
   nextStamp,
   readStamps,
   toGo,
@@ -130,6 +131,7 @@ export default function Stamps({
       album,
       tour: tourRoute ? { route: tourRoute, record: loadTour() } : undefined,
       bullseye: loadBullseyeSources(),
+      spot: loadSpotSources(),
     });
     const { stamps: collected, fresh } = keepStamps(stamps, today);
     // Units change only the closest pin's words, so a new stamp stays new across a switch.
@@ -252,6 +254,29 @@ export default function Stamps({
                   .
                 </p>
               )}
+              {group.id === "spot" && (
+                <p className="mt-1 text-sm text-chalk-dim" data-testid="stamps-spot-intro">
+                  From{" "}
+                  <Link
+                    href="/spot-the-clue"
+                    className="underline underline-offset-2 hover:text-chalk"
+                  >
+                    Spot the clue
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    href="/spot-the-clue/daily"
+                    className="underline underline-offset-2 hover:text-chalk"
+                  >
+                    today&apos;s Spot the clue
+                  </Link>
+                  . Every square you pick is counted in{" "}
+                  <Link href="/map" className="underline underline-offset-2 hover:text-chalk">
+                    your read of Atlas on Your map
+                  </Link>
+                  .
+                </p>
+              )}
               <ul className="mt-3 grid gap-3 sm:grid-cols-2">
                 {stamps.map((s) => (
                   <StampCard key={s.id} stamp={s} fresh={view.fresh.includes(s.id)} />
@@ -263,7 +288,7 @@ export default function Stamps({
 
       <p className="mt-10 text-sm text-chalk-dim">
         Stamps come from what you&apos;ve played in this browser: your record, your map and album,
-        the clue games, the World Tour, Bullseye and the days kept on{" "}
+        the clue games, the World Tour, Bullseye, Spot the clue and the days kept on{" "}
         <Link href="/today" className="underline underline-offset-2 hover:text-chalk">
           Today
         </Link>

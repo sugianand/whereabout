@@ -26,6 +26,9 @@
  * - Bullseye (`lib/game/bullseye.ts`): five tight rings held in one whole game, free or today's,
  *   and your rings holding their photos more often than Atlas's over at least
  *   `BULLSEYE_CALIBRATION_PHOTOS` photos, by Your calibration on Your map.
+ * - Spot the clue (`lib/game/spotClue.ts`): Mind reader for Atlas's most telling square found on
+ *   all five photos of one whole game, free or today's, and a running count of the hottest
+ *   squares found in any game toward `SPOT_FOUND_STAMP`, by your read of Atlas on Your map.
  *
  * The days every game keeps are the last `ARCHIVE_DAYS`, and the map's history is capped, so a
  * stamp could otherwise fade once its proof is gone. Each stamp is therefore written down under
@@ -54,6 +57,9 @@ import {
   type Calibration,
 } from "@/lib/game/bullseyeCalibration";
 import { loadBullseyeDays } from "@/lib/game/bullseyeDaily";
+import { SPOT_PHOTOS, loadBestHottest, spotTotals } from "@/lib/game/spotClue";
+import { loadSpotDays } from "@/lib/game/spotDaily";
+import { loadSpotRead } from "@/lib/game/spotRead";
 import {
   clueReading,
   loadQuickRecord,
@@ -112,6 +118,12 @@ export const BULLSEYE_CALIBRATION_PHOTOS = 30;
 export const BULLSEYE_STAMP_IDS = ["bullseye-five-tight", "bullseye-calibrated"] as const;
 export type BullseyeStampId = (typeof BULLSEYE_STAMP_IDS)[number];
 
+/** Atlas's hottest squares found, over every Spot the clue game, for the running-count stamp. */
+export const SPOT_FOUND_STAMP = 25;
+
+export const SPOT_STAMP_IDS = ["spot-mind-reader", "spot-found"] as const;
+export type SpotStampId = (typeof SPOT_STAMP_IDS)[number];
+
 export type StampId =
   | BadgeId
   | ContinentStampId
@@ -123,17 +135,11 @@ export type StampId =
   | AlbumPageStampId
   | TourLegStampId
   | "tour-complete"
-  | BullseyeStampId;
+  | BullseyeStampId
+  | SpotStampId;
 
 export type StampGroup =
-  | "badges"
-  | "continents"
-  | "days"
-  | "atlas"
-  | "clues"
-  | "album"
-  | "tour"
-  | "bullseye";
+  "badges" | "continents" | "days" | "atlas" | "clues" | "album" | "tour" | "bullseye" | "spot";
 
 export const STAMP_GROUPS: readonly { id: StampGroup; title: string }[] = [
   { id: "badges", title: "Badges" },
@@ -144,6 +150,7 @@ export const STAMP_GROUPS: readonly { id: StampGroup; title: string }[] = [
   { id: "album", title: "Your album" },
   { id: "tour", title: "World Tour" },
   { id: "bullseye", title: "Bullseye" },
+  { id: "spot", title: "Spot the clue" },
 ];
 
 /** How far along an unearned stamp is: `have` of `need`, counted in `unit`. */
@@ -191,6 +198,16 @@ export interface StampSources {
   tour?: { route: readonly Continent[]; record: TourRecord };
   /** What Bullseye keeps (`loadBullseyeSources`); none played if not given. */
   bullseye?: BullseyeSources;
+  /** What Spot the clue keeps (`loadSpotSources`); none played if not given. */
+  spot?: SpotSources;
+}
+
+/** What Spot the clue keeps, for its stamps. */
+export interface SpotSources {
+  /** The most of Atlas's hottest squares found in one whole game, free or today's. */
+  bestHottest: number;
+  /** Atlas's hottest squares found over every square locked in, as your read of Atlas counts. */
+  found: number;
 }
 
 /** What Bullseye keeps, for its stamps. */
@@ -270,6 +287,7 @@ export const STAMP_IDS: readonly StampId[] = [
   ...TOUR_ROUTE.map(tourLegStampId),
   "tour-complete",
   ...BULLSEYE_STAMP_IDS,
+  ...SPOT_STAMP_IDS,
 ];
 
 const KNOWN: ReadonlySet<string> = new Set(STAMP_IDS);
@@ -728,6 +746,45 @@ function bullseyeStamps({ bullseye }: StampSources): Stamp[] {
   ];
 }
 
+/**
+ * Spot the clue's stamps. Mind reader counts the most of Atlas's hottest squares found in a whole
+ * game kept; the running count is every square that was one of them, in any game, as your read
+ * of Atlas on Your map counts them.
+ */
+function spotStamps({ spot }: StampSources): Stamp[] {
+  const bestHottest = Math.min(spot?.bestHottest ?? 0, SPOT_PHOTOS);
+  const found = spot?.found ?? 0;
+  return [
+    {
+      id: "spot-mind-reader",
+      group: "spot",
+      name: "Mind reader",
+      how: `Find Atlas's most telling square on all ${SPOT_PHOTOS} photos of a Spot the clue game`,
+      icon: "🔮",
+      earned: bestHottest >= SPOT_PHOTOS,
+      progress: {
+        have: bestHottest,
+        need: SPOT_PHOTOS,
+        unit: ["hottest square in a game", "hottest squares in a game"],
+      },
+      note: null,
+    },
+    {
+      id: "spot-found",
+      group: "spot",
+      name: "Sharp eye",
+      how: `Find Atlas's most telling square ${SPOT_FOUND_STAMP} times, in any Spot the clue game`,
+      icon: "👁️",
+      earned: found >= SPOT_FOUND_STAMP,
+      progress:
+        found >= SPOT_FOUND_STAMP
+          ? null
+          : { have: found, need: SPOT_FOUND_STAMP, unit: ["square found", "squares found"] },
+      note: found >= SPOT_FOUND_STAMP ? `${found} found so far` : null,
+    },
+  ];
+}
+
 /** Every stamp as the browser's records stand, before what was kept is added in. */
 export function readStamps(sources: StampSources): Stamp[] {
   return [
@@ -739,6 +796,7 @@ export function readStamps(sources: StampSources): Stamp[] {
     ...albumStamps(sources),
     ...tourStamps(sources),
     ...bullseyeStamps(sources),
+    ...spotStamps(sources),
   ];
 }
 
@@ -753,6 +811,19 @@ export function loadBullseyeSources(): BullseyeSources {
     .filter((d) => d.results.length >= BULLSEYE_PHOTOS)
     .map((d) => tightRingsHeld(d.results));
   return { bestTight: Math.max(loadBestTight(), ...days), calibration: loadCalibration() };
+}
+
+/**
+ * What Spot the clue keeps in this browser, for `StampSources.spot`: the most of Atlas's hottest
+ * squares found in a whole free game, or in one of today's games played out, and every one found
+ * as your read of Atlas counts them. A friend's challenge counts toward the running count but not
+ * Mind reader, as it never counts toward the best either.
+ */
+export function loadSpotSources(): SpotSources {
+  const days = Object.values(loadSpotDays())
+    .filter((d) => d.results.length >= SPOT_PHOTOS)
+    .map((d) => spotTotals(d.results).hottest);
+  return { bestHottest: Math.max(loadBestHottest(), ...days), found: loadSpotRead().hottest };
 }
 
 /**

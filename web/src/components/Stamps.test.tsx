@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { BEST_TIGHT_KEY, settleBet } from "@/lib/game/bullseye";
 import { recordBullseyeRound } from "@/lib/game/bullseyeCalibration";
+import { BEST_HOTTEST_KEY } from "@/lib/game/spotClue";
+import { recordSpotRead } from "@/lib/game/spotRead";
 import { rememberClimateDay } from "@/lib/game/climateDaily";
 import { rememberGroundDay } from "@/lib/game/groundDaily";
 import { BEST_LEFT_RIGHT_KEY } from "@/lib/game/leftRight";
@@ -36,7 +38,7 @@ beforeEach(() => localStorage.clear());
 describe("Stamps", () => {
   it("shows every stamp uncollected on a first visit, with the next one up", async () => {
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
-    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^0 of 30 collected\.$/);
+    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^0 of 32 collected\.$/);
     expect(screen.getByRole("heading", { name: "Continents cleared" })).toBeInTheDocument();
     expect(screen.getByTestId("stamp-cleared-oceania")).toHaveAttribute("data-earned", "false");
     expect(screen.getByTestId("stamp-cleared-oceania-progress")).toHaveTextContent(
@@ -75,7 +77,7 @@ describe("Stamps", () => {
     );
     const { unmount } = render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
     const standing = await screen.findByTestId("stamps-standing");
-    expect(standing).toHaveTextContent("2 of 30 collected. 2 new stamps since you last looked.");
+    expect(standing).toHaveTextContent("2 of 32 collected. 2 new stamps since you last looked.");
     const oceania = screen.getByTestId("stamp-cleared-oceania");
     expect(oceania).toHaveAttribute("data-earned", "true");
     expect(within(oceania).getByText("New")).toBeInTheDocument();
@@ -96,7 +98,7 @@ describe("Stamps", () => {
     // The map forgotten, the stamp stays, no longer new.
     localStorage.removeItem(PLAYED_KEY);
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
-    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^2 of 30 collected\.$/);
+    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^2 of 32 collected\.$/);
     const kept = screen.getByTestId("stamp-cleared-oceania");
     expect(kept).toHaveAttribute("data-earned", "true");
     expect(within(kept).queryByText("New")).toBeNull();
@@ -109,7 +111,7 @@ describe("Stamps", () => {
     rememberOddDay("2026-11-10", { streak: 1, atlasRight: 2, atlasPlayed: 2, ended: "miss" });
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
     expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(
-      "1 of 30 collected. 1 new stamp since you last looked.",
+      "1 of 32 collected. 1 new stamp since you last looked.",
     );
     expect(screen.getByRole("heading", { name: "Beat Atlas" })).toBeInTheDocument();
     const won = screen.getByTestId("stamp-beat-atlas-name-country");
@@ -161,7 +163,7 @@ describe("Stamps", () => {
     );
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
     expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(
-      "4 of 30 collected. 4 new stamps since you last looked.",
+      "4 of 32 collected. 4 new stamps since you last looked.",
     );
     expect(screen.getByRole("heading", { name: "Reading the clues" })).toBeInTheDocument();
     expect(screen.getByTestId("stamp-road-reader")).toHaveAttribute("data-earned", "true");
@@ -286,6 +288,47 @@ describe("Stamps", () => {
     expect(calibrated).toHaveTextContent("Rings held so far: yours 75%, Atlas's 25%");
     expect(JSON.parse(localStorage.getItem(STAMPS_KEY)!)).toEqual({
       "bullseye-five-tight": "2026-11-10",
+    });
+  });
+  it("shows Spot the clue's stamps from the most hottest kept and every square found", async () => {
+    localStorage.setItem(BEST_HOTTEST_KEY, "4");
+    const cells = Array<number>(49).fill(0);
+    cells[6] = 1;
+    // Three squares picked, two of them Atlas's hottest.
+    for (const cell of [6, 6, 30]) recordSpotRead({ grid: 7, crop: [0, 0, 1, 1], cells }, cell);
+    render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
+    expect(await screen.findByRole("heading", { name: "Spot the clue" })).toBeInTheDocument();
+    const intro = screen.getByTestId("stamps-spot-intro");
+    expect(within(intro).getByRole("link", { name: "Spot the clue" })).toHaveAttribute(
+      "href",
+      "/spot-the-clue",
+    );
+    expect(within(intro).getByRole("link", { name: "today's Spot the clue" })).toHaveAttribute(
+      "href",
+      "/spot-the-clue/daily",
+    );
+    expect(within(intro).getByRole("link", { name: /your read of Atlas/ })).toHaveAttribute(
+      "href",
+      "/map",
+    );
+    expect(screen.getByTestId("stamp-spot-mind-reader")).toHaveAttribute("data-earned", "false");
+    expect(screen.getByTestId("stamp-spot-mind-reader-progress")).toHaveTextContent(
+      "4 of 5 hottest squares in a game",
+    );
+    expect(screen.getByTestId("stamp-spot-found-progress")).toHaveTextContent(
+      "2 of 25 squares found",
+    );
+  });
+
+  it("collects Mind reader from a whole game of five", async () => {
+    localStorage.setItem(BEST_HOTTEST_KEY, "5");
+    render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
+    expect(await screen.findByTestId("stamp-spot-mind-reader")).toHaveAttribute(
+      "data-earned",
+      "true",
+    );
+    expect(JSON.parse(localStorage.getItem(STAMPS_KEY)!)).toEqual({
+      "spot-mind-reader": "2026-11-10",
     });
   });
 });

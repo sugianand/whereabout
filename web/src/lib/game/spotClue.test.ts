@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { bundledById, bundledSpotIds } from "./bundled";
 import type { GameRecord } from "./deck";
 import {
+  BEST_HOTTEST_KEY,
   BEST_SPOT_KEY,
   SPOT_MAX,
   SPOT_PHOTOS,
@@ -12,9 +13,11 @@ import {
   hottestCells,
   hottestLine,
   initialSpot,
+  loadBestHottest,
   loadBestSpot,
   middleCell,
   playableLooked,
+  rememberHottest,
   rememberSpot,
   spotIds,
   spotPoints,
@@ -206,5 +209,41 @@ describe("the best game", () => {
     });
     expect(loadBestSpot()).toBe(0);
     expect(rememberSpot(1200)).toBe(1200);
+  });
+});
+
+describe("the most of Atlas's hottest squares found in a game", () => {
+  it("keeps the most only, at most one per photo", () => {
+    expect(loadBestHottest()).toBe(0);
+    expect(rememberHottest(3)).toBe(3);
+    expect(rememberHottest(2)).toBe(3);
+    expect(localStorage.getItem(BEST_HOTTEST_KEY)).toBe("3");
+    expect(rememberHottest(5)).toBe(5);
+    expect(rememberHottest(7)).toBe(5);
+  });
+
+  it("reads junk as none and more than a game's photos as all of them", () => {
+    for (const raw of ["{", "-1", "1.5", '"4"', "null"]) {
+      localStorage.setItem(BEST_HOTTEST_KEY, raw);
+      expect(loadBestHottest()).toBe(0);
+    }
+    localStorage.setItem(BEST_HOTTEST_KEY, "9");
+    expect(loadBestHottest()).toBe(SPOT_PHOTOS);
+  });
+
+  it("doesn't read a perfect best kept before as all five, as points can't prove it", () => {
+    localStorage.setItem(BEST_SPOT_KEY, "5000");
+    expect(loadBestHottest()).toBe(0);
+  });
+
+  it("still plays when storage is blocked", () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    expect(loadBestHottest()).toBe(0);
+    expect(rememberHottest(4)).toBe(4);
   });
 });

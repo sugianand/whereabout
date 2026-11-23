@@ -27,6 +27,7 @@ import {
   loadBestSpot,
   middleCell,
   playableLooked,
+  rememberHottest,
   rememberSpot,
   spotReducer,
   spotResult,
@@ -245,7 +246,10 @@ export default function SpotClue({
     ) {
       // Only a whole game counts as a best, and never a challenge: its photos were picked by
       // someone who had seen them.
-      setBest(rememberSpot(spotTotals(after.results).points));
+      const totals = spotTotals(after.results);
+      setBest(rememberSpot(totals.points));
+      // So do Atlas's hottest squares found, for Mind reader; today's are read from its kept days.
+      rememberHottest(totals.hottest);
     }
     dispatch({ type: "picked", result });
   }, [ready, square, record, looked, state, day, challenge]);
