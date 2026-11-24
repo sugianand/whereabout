@@ -251,3 +251,120 @@ describe("today's Trust Atlas?", () => {
     );
   });
 });
+
+function useClipboard() {
+  const sent = { text: "" };
+  Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+  Object.defineProperty(navigator, "clipboard", {
+    value: { writeText: async (t: string) => void (sent.text = t) },
+    configurable: true,
+  });
+  return sent;
+}
+
+describe("a Trust Atlas? challenge", () => {
+  // The friend played t0 to t9 in that order and trusted Atlas on every one: right on the five
+  // even photos, where Atlas named France, and wrong on the five odd ones: 5 to beat.
+  const LINKED = IDS.slice(0, TRUST_PHOTOS);
+  const FRIEND = `${LINKED.join(".")}_tttttttttt`;
+
+  afterEach(() => window.history.replaceState(null, "", "/"));
+
+  it("deals the friend's ten, shows their call once yours is in, and sends yours back", async () => {
+    const sent = useClipboard();
+    window.history.replaceState(null, "", `/trust-atlas?challenge=${FRIEND}`);
+    await setup();
+    // Every record arrives up front, so the friend's calls are judged before the first photo.
+    await waitFor(() => expect(screen.getByTestId("trust-challenge")).toHaveTextContent("5"));
+    expect(screen.queryByText("Best")).toBeNull();
+    for (const [i, id] of LINKED.entries()) {
+      await waitFor(() => expect(photoOn()).toBe(id));
+      await waitEnabled();
+      expect(screen.getByTestId("trust-friend-score")).toHaveTextContent(String(Math.ceil(i / 2)));
+      // The friend's call stays hidden until yours is made.
+      expect(screen.queryByTestId("trust-friend-line")).toBeNull();
+      // You: the right call on every photo but the last.
+      const right = atlasRight(id) !== (i === 9);
+      fireEvent.keyDown(window, { key: right ? "y" : "n" });
+      const card = await screen.findByRole("region");
+      expect(within(card).getByTestId("trust-friend-line")).toHaveTextContent(
+        atlasRight(id)
+          ? "Friend: Your friend trusted it too: called it."
+          : i === 9
+            ? "Friend: Your friend trusted it too: missed it."
+            : "Friend: Your friend trusted it: missed it.",
+      );
+      fireEvent.click(
+        within(card).getByRole("button", { name: i === 9 ? "See the results" : "Next photo" }),
+      );
+    }
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent(
+      "9 of 10 called right",
+    );
+    expect(screen.getByTestId("trust-challenge-line")).toHaveTextContent(
+      "You beat your friend's 5 of 10 by 4.",
+    );
+    expect(screen.getAllByTestId("trust-row")[1]).toHaveTextContent(
+      "You doubted it: called it.Friend: trusted it, missed it.",
+    );
+    // A challenge's photos were picked by someone who had seen them: never a best.
+    expect(localStorage.getItem(BEST_TRUST_KEY)).toBeNull();
+    expect(screen.queryByText(/new best/)).toBeNull();
+    expect(screen.getByRole("button", { name: "Share head to head" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Send yours back" }));
+    await waitFor(() => expect(sent.text).not.toBe(""));
+    expect(sent.text.split("\n")).toEqual([
+      "Whereabout · Trust Atlas?: 9 of 10 called right. Atlas's own sureness: 10 of 10.",
+      "That beats your 5. Your turn to read Atlas.",
+      // Trust on the even photos, doubt on the odd, and the last one trusted wrongly.
+      `http://localhost:3000/trust-atlas?challenge=${LINKED.join(".")}_tdtdtdtdtt`,
+    ]);
+    for (const id of LINKED) expect(sent.text).not.toContain(byId.get(id)!.photo.place);
+    expect(sent.text).not.toContain("France");
+
+    fireEvent.click(screen.getByRole("button", { name: "Play a fresh game" }));
+    await waitFor(() => expect(screen.queryByTestId("trust-challenge")).toBeNull());
+    expect(window.location.search).toBe("");
+  });
+
+  it.each([
+    [
+      `${IDS.slice(0, 9).join(".")}_ttttttttt`,
+      "That challenge link was cut short, so here's a fresh game instead.",
+    ],
+    [
+      `${IDS.slice(0, 9).join(".")}.zz_tttttttttt`,
+      "That challenge's photos aren't in the game any more, so here's a fresh game instead.",
+    ],
+  ])("sets the link %s aside for a fresh game", async (value, notice) => {
+    window.history.replaceState(null, "", `/trust-atlas?challenge=${value}`);
+    await setup();
+    expect(await screen.findByText(notice)).toBeInTheDocument();
+    expect(screen.queryByTestId("trust-challenge")).toBeNull();
+    expect(window.location.search).toBe("");
+    expect(photoOn()).toBe(ORDER[0]);
+  });
+
+  it("offers a whole free game to a friend, with no head to head", async () => {
+    const sent = useClipboard();
+    await setup();
+    for (let n = 0; n < TRUST_PHOTOS; n++) {
+      await waitFor(() => expect(photoOn()).toBe(ORDER[n]));
+      await waitEnabled();
+      fireEvent.keyDown(window, { key: "y" });
+      const card = await screen.findByRole("region");
+      expect(within(card).queryByTestId("trust-friend-line")).toBeNull();
+      fireEvent.click(
+        within(card).getByRole("button", {
+          name: n === TRUST_PHOTOS - 1 ? "See the results" : "Next photo",
+        }),
+      );
+    }
+    fireEvent.click(await screen.findByRole("button", { name: "Challenge a friend" }));
+    await waitFor(() => expect(sent.text).not.toBe(""));
+    expect(sent.text).toContain(`?challenge=${ORDER.slice(0, TRUST_PHOTOS).join(".")}_tttttttttt`);
+    expect(sent.text).toContain("Same ten photos: can you tell when Atlas is right?");
+    expect(screen.queryByRole("button", { name: "Share head to head" })).toBeNull();
+  });
+});

@@ -240,3 +240,151 @@ test("today's Trust Atlas? fits a 320px phone, its link to free games on screen"
     );
   }
 });
+
+test("a Trust Atlas? challenge deals a friend the same ten, with the sender's call shown after theirs", async ({
+  page,
+}) => {
+  test.setTimeout(240_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  const sent = () => page.evaluate(() => (window as unknown as { sent: string }).sent);
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+  const trust = page.getByRole("button", { name: "Trust it: Atlas is right" });
+
+  // The sender makes the right call on every photo: ten to beat.
+  await page.goto("./trust-atlas");
+  const game: string[] = [];
+  const calls: string[] = [];
+  for (let n = 0; n < 10; n++) {
+    await expect(page.getByText(`Photo ${n + 1} of 10`, { exact: true })).toBeVisible();
+    await expect(trust).toBeEnabled();
+    const { right } = await atlasRightOnScreen(page);
+    game.push((await page.locator("main[data-photo]").getAttribute("data-photo"))!);
+    calls.push(right ? "t" : "d");
+    await page.keyboard.press(right ? "y" : "n");
+    await expect(card.getByRole("heading")).toHaveText("Called it");
+    await expect(card.getByTestId("trust-friend-line")).toHaveCount(0);
+    await page.keyboard.press("Enter");
+  }
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("10 of 10 called right");
+  await page.getByRole("button", { name: "Challenge a friend" }).click();
+  await expect(page.getByText(/^Challenge (sent|link copied)/)).toBeVisible();
+  const message = await sent();
+  expect(message.split("\n")[0]).toMatch(
+    /^Whereabout · Trust Atlas\?: 10 of 10 called right\. Atlas's own sureness: \d+ of 10\.$/,
+  );
+  const link = message.split("\n").at(-1)!;
+  expect(link).toMatch(
+    new RegExp(`/whereabout/trust-atlas/?\\?challenge=${game.join("\\.")}_${calls.join("")}$`),
+  );
+
+  // The friend, with nothing kept, gets the same ten and trusts Atlas every time.
+  await page.evaluate(() => localStorage.clear());
+  await page.goto(link);
+  await expect(page.getByTestId("trust-challenge")).toHaveText("10");
+  await expect(page.getByText("Best", { exact: true })).toHaveCount(0);
+  let mine = 0;
+  for (let n = 0; n < 10; n++) {
+    await expect(page.locator("main[data-photo]")).toHaveAttribute("data-photo", game[n]!);
+    await expect(page.getByTestId("trust-friend-score")).toHaveText(String(n));
+    await expect(trust).toBeEnabled();
+    await expect(card).toHaveCount(0);
+    await trust.click();
+    const right = calls[n] === "t";
+    if (right) mine++;
+    await expect(card.getByTestId("trust-friend-line")).toHaveText(
+      right
+        ? "Friend: Your friend trusted it too: called it."
+        : "Friend: Your friend doubted it: called it.",
+    );
+    await page.keyboard.press("Enter");
+  }
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(`${mine} of 10 called right`);
+  await expect(page.getByTestId("trust-challenge-line")).toHaveText(
+    mine === 10
+      ? "A dead heat: you both called 10 of 10 right."
+      : `Your friend's 10 of 10 wins, by ${10 - mine}.`,
+  );
+  await expect(page.getByTestId("trust-row")).toHaveCount(10);
+  await expect(page.getByTestId("trust-row").first()).toContainText("Friend: ");
+  expect(await page.evaluate(() => localStorage.getItem("whereabout:trust-atlas-best"))).toBeNull();
+
+  await page.getByRole("button", { name: "Send yours back" }).click();
+  await expect(page.getByText(/^Challenge (sent|link copied)/)).toBeVisible();
+  const reply = await sent();
+  expect(reply.split("\n").at(-1)).toMatch(
+    new RegExp(`\\?challenge=${game.join("\\.")}_tttttttttt$`),
+  );
+
+  // Head to head: both games as a 1080px picture, saved, with the reply link copied.
+  await page.evaluate(() => ((window as unknown as { sent: string }).sent = ""));
+  const picture = page.getByRole("button", { name: "Share head to head" });
+  const [download] = await Promise.all([page.waitForEvent("download"), picture.click()]);
+  expect(download.suggestedFilename()).toBe("whereabout-trust-atlas-head-to-head.png");
+  const png = readFileSync((await download.path())!);
+  expect(png.subarray(1, 4).toString()).toBe("PNG");
+  expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1080, 1080]);
+  expect(await sent()).toBe(reply);
+  const kept = await page.evaluate(() => localStorage.getItem("whereabout:head-to-head"));
+  expect(JSON.parse(kept!)).toEqual([expect.objectContaining({ game: "Trust Atlas?" })]);
+
+  // A fresh game drops the link.
+  await page.getByRole("button", { name: "Play a fresh game" }).click();
+  await expect(page.getByText("Photo 1 of 10", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("trust-challenge")).toHaveCount(0);
+  expect(new URL(page.url()).search).toBe("");
+  expect(errors).toEqual([]);
+});
+
+test("a broken Trust Atlas? challenge says so and deals a fresh game", async ({ page }) => {
+  await page.goto("./trust-atlas?challenge=wm001_t");
+  await expect(page.getByText(/That challenge link was cut short/)).toBeVisible();
+  await expect(page.getByTestId("trust-challenge")).toHaveCount(0);
+  await expect(page.getByText("Photo 1 of 10", { exact: true })).toBeVisible();
+  expect(new URL(page.url()).search).toBe("");
+});
+
+test("a Trust Atlas? challenge's answer card and end buttons fit a 320px phone", async ({
+  page,
+}) => {
+  test.skip((page.viewportSize()?.width ?? 1000) >= 768, "a phone layout check");
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 320, height: 568 });
+  const ids = CATALOG.map((p) => p.id)
+    .filter((id) => ATLAS.guesses[id]?.topCountries?.length)
+    .slice(0, 10);
+  await page.goto(`./trust-atlas?challenge=${ids.join(".")}_tdtdtdtdtd`);
+  await expect(page.getByTestId("trust-challenge")).toHaveText(/^\d+$/);
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+  const games = (await page.getByRole("button", { name: "Games" }).boundingBox())!;
+  expect(games.x + games.width).toBeLessThanOrEqual(321);
+  for (let n = 0; n < 10; n++) {
+    await expect(page.getByRole("button", { name: "Doubt it: Atlas is wrong" })).toBeEnabled();
+    await page.keyboard.press("n");
+    await expect(card.getByTestId("trust-friend-line")).toBeVisible();
+    const next = card.getByRole("button", { name: n === 9 ? "See the results" : "Next photo" });
+    const box = (await next.boundingBox())!;
+    expect(box.y + box.height).toBeLessThanOrEqual(569);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      320,
+    );
+    await page.keyboard.press("Enter");
+  }
+  for (const label of ["Play a fresh game", "Send yours back", "Share head to head"]) {
+    const button = page.getByRole("button", { name: label });
+    await button.scrollIntoViewIfNeeded();
+    const box = (await button.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(321);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+});

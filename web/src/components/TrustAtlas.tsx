@@ -31,11 +31,25 @@ import {
   settleTrust,
   trustDailyShare,
 } from "@/lib/game/trustDaily";
+import {
+  TRUST_CHALLENGE_PARAM,
+  parseTrustChallenge,
+  trustChallengeLine,
+  trustChallengeScore,
+  trustChallengeText,
+  trustFriendLine,
+  trustFriendResult,
+  trustFriendResults,
+  trustHeadToHead,
+  type TrustChallenge,
+} from "@/lib/game/trustChallenge";
 import { placeholderUrl, sources } from "@/lib/photoSources";
+import { sendShare, type ShareOutcome } from "@/lib/share";
 
 import ControlsHelp from "./ControlsHelp";
 import { DailyRunResult } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
+import { HeadToHeadButton } from "./HeadToHeadButton";
 
 type TrustAtlasProps = {
   deck: Deck;
@@ -55,6 +69,27 @@ type TrustAtlasProps = {
 };
 
 const CALL_KEYS: Record<string, TrustCall> = { y: "trust", n: "doubt" };
+
+/** Why a challenge link was set aside for a fresh game. */
+export const TRUST_CHALLENGE_NOTICE = {
+  malformed: "That challenge link was cut short, so here's a fresh game instead.",
+  missing: "That challenge's photos aren't in the game any more, so here's a fresh game instead.",
+} as const;
+
+/** Take the challenge out of the address, so a reload deals a fresh game, not the old link. */
+function dropChallengeParam() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has(TRUST_CHALLENGE_PARAM)) return;
+  url.searchParams.delete(TRUST_CHALLENGE_PARAM);
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+const CHALLENGE_NOTE: Record<ShareOutcome, string> = {
+  shared: "Challenge sent.",
+  copied: "Challenge link copied. Whoever opens it plays these ten photos, in the same order.",
+  cancelled: "",
+  failed: "Couldn't copy the link. Your browser blocked the clipboard.",
+};
 
 function ordinal(n: number): string {
   return n === 2 ? "2nd" : n === 3 ? "3rd" : `${n}th`;
@@ -81,28 +116,48 @@ export default function TrustAtlas({
   const [error, setError] = useState<string | null>(null);
   // The day today's game was dealt for, kept when the clock passes midnight mid-game.
   const [day, setDay] = useState<string | null>(null);
+  // A friend's challenge this game answers (src/lib/game/trustChallenge.ts): their ten photos and
+  // the call they made on each, shown once you have made yours.
+  const [challenge, setChallenge] = useState<TrustChallenge | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  const start = useCallback(() => {
-    if (daily) {
-      const today = runToday(now?.());
-      setDay(today);
-      dispatch({
-        type: "start",
-        order: dailyTrustOrder(ids, today),
-        from: loadTrustDay(today)?.results,
-      });
-      return;
-    }
-    const stored = loadBestTrust();
-    setBest(stored);
-    setBestBeforeGame(stored);
-    const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
-    dispatch({ type: "start", order: dealTrust(ids, seed) });
-  }, [daily, ids, now, random]);
+  /** Deal a game; `fromLink` takes up a challenge the address carries, as the page opens. */
+  const start = useCallback(
+    (fromLink = false) => {
+      if (daily) {
+        const today = runToday(now?.());
+        setDay(today);
+        dispatch({
+          type: "start",
+          order: dailyTrustOrder(ids, today),
+          from: loadTrustDay(today)?.results,
+        });
+        return;
+      }
+      const stored = loadBestTrust();
+      setBest(stored);
+      setBestBeforeGame(stored);
+      const value = fromLink
+        ? new URLSearchParams(window.location.search).get(TRUST_CHALLENGE_PARAM)
+        : null;
+      const linked = value === null ? null : parseTrustChallenge(value, ids);
+      setNotice(linked && !linked.ok ? TRUST_CHALLENGE_NOTICE[linked.reason] : null);
+      if (linked?.ok) {
+        setChallenge(linked.challenge);
+        dispatch({ type: "start", order: linked.challenge.ids });
+        return;
+      }
+      setChallenge(null);
+      dropChallengeParam();
+      const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
+      dispatch({ type: "start", order: dealTrust(ids, seed) });
+    },
+    [daily, ids, now, random],
+  );
 
   // The game is dealt in the browser after hydration, never at build time.
   useEffect(() => {
-    const id = requestAnimationFrame(() => start());
+    const id = requestAnimationFrame(() => start(true));
     return () => cancelAnimationFrame(id);
   }, [start]);
 
@@ -113,11 +168,19 @@ export default function TrustAtlas({
 
   const playing = state.phase === "calling" || state.phase === "answered" ? state : null;
   const index = playing ? playing.results.length - (playing.phase === "answered" ? 1 : 0) : 0;
-  // The summary names every photo played, so it needs them all.
+  // The summary names every photo played, so it needs them all. A challenge needs every record
+  // from the start, to judge the friend's calls and say the calls to beat.
   const over = state.phase === "done" ? state.results : null;
   const wanted = useMemo(
-    () => (playing ? playing.order.slice(index, index + 2) : over ? over.map((r) => r.id) : []),
-    [playing, index, over],
+    () =>
+      playing
+        ? challenge
+          ? [...playing.order]
+          : playing.order.slice(index, index + 2)
+        : over
+          ? over.map((r) => r.id)
+          : [],
+    [playing, index, over, challenge],
   );
   const missing = wanted.filter((id) => !records.has(id)).join(",");
 
@@ -160,13 +223,18 @@ export default function TrustAtlas({
         // Kept after every photo, so a reload can't take a call back. Today's game is played
         // once for the day, apart from the free game's best.
         if (after.phase === "answered") rememberTrustDay(day, after.results);
-      } else if (after.phase === "answered" && after.results.length === after.order.length) {
-        // Only a whole game counts as a best.
+      } else if (
+        !challenge &&
+        after.phase === "answered" &&
+        after.results.length === after.order.length
+      ) {
+        // Only a whole game counts as a best, and never a challenge: its photos were picked by
+        // the friend, not dealt.
         setBest(rememberTrust(trustTotals(after.results).correct));
       }
       dispatch({ type: "called", result });
     },
-    [ready, record, state, day],
+    [ready, record, state, day, challenge],
   );
 
   // Y trusts and N doubts, wherever focus is but a text field.
@@ -200,8 +268,9 @@ export default function TrustAtlas({
         results={state.results}
         records={records}
         best={best}
-        newBest={trustTotals(state.results).correct > bestBeforeGame}
-        onAgain={start}
+        newBest={!challenge && trustTotals(state.results).correct > bestBeforeGame}
+        challenge={challenge}
+        onAgain={() => start()}
       />
     );
   }
@@ -211,6 +280,9 @@ export default function TrustAtlas({
   const answered = state.phase === "answered" ? results[results.length - 1] : null;
   const last = playing !== null && results.length === playing.order.length;
   const total = playing?.order.length ?? TRUST_PHOTOS;
+  const toBeat = challenge ? trustChallengeScore(challenge, records) : null;
+  const friendSoFar = challenge ? trustChallengeScore(challenge, records, results.length) : null;
+  const friendHere = challenge && answered ? trustFriendResult(challenge, index, records) : null;
 
   return (
     <main
@@ -247,7 +319,25 @@ export default function TrustAtlas({
           <dl className="text-right">
             <dt className="text-sm text-chalk-dim">Called right</dt>
             <dd className="font-sign tabular text-3xl font-bold leading-none">{totals.correct}</dd>
-            {!daily && (
+            {challenge && (
+              <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
+                <dt>Friend</dt>
+                <dd className="tabular text-flare" data-testid="trust-friend-score">
+                  {friendSoFar ?? "…"}
+                </dd>
+              </div>
+            )}
+            {challenge && (
+              <div className="flex justify-end gap-1.5 text-sm text-chalk-dim">
+                <dt>
+                  <span className="sr-only">A friend&apos;s challenge: calls right </span>To beat
+                </dt>
+                <dd className="tabular" data-testid="trust-challenge">
+                  {toBeat ?? "…"}
+                </dd>
+              </div>
+            )}
+            {!daily && !challenge && (
               <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
                 <dt>Best</dt>
                 <dd className="tabular">{best}</dd>
@@ -268,6 +358,12 @@ export default function TrustAtlas({
         </div>
       )}
 
+      {notice && !answered && results.length === 0 && (
+        <p role="status" className="px-4 pb-3 text-center text-sm text-chalk-dim">
+          {notice}
+        </p>
+      )}
+
       {error && (
         <p role="alert" className="absolute inset-x-4 bottom-4 text-center text-sm text-flare">
           {error}
@@ -282,6 +378,7 @@ export default function TrustAtlas({
             record={record}
             p={pick.p}
             tally={[totals.correct, totals.atlasCorrect, results.length]}
+            friend={friendHere}
             onNext={() => dispatch({ type: "next" })}
             nextLabel={last ? "See the results" : "Next photo"}
           />
@@ -398,6 +495,7 @@ function TrustCard({
   record,
   p,
   tally,
+  friend,
   onNext,
   nextLabel,
 }: {
@@ -406,6 +504,8 @@ function TrustCard({
   p: number;
   /** Your correct calls, Atlas's own correct calls, and photos called so far. */
   tally: readonly [number, number, number];
+  /** On a friend's challenge: their call on this photo, judged on the same country. */
+  friend: TrustResult | null;
   onNext: () => void;
   nextLabel: string;
 }) {
@@ -438,6 +538,15 @@ function TrustCard({
         {truthLine}
       </p>
       <p className="text-sm text-chalk-dim">{photo.place}</p>
+      {friend && (
+        <p
+          className={`mt-1 text-sm ${friend.correct ? "text-chalk" : "text-chalk-dim"}`}
+          data-testid="trust-friend-line"
+        >
+          <span className="text-flare">Friend: </span>
+          {trustFriendLine(result, friend)}
+        </p>
+      )}
       <p className="mt-2 text-sm text-chalk-dim" data-testid="trust-atlas">
         {`${atlasCallLine(result, p)} So far: you ${yours} of ${n}, Atlas's own calls ${atlasOwn} of ${n}.`}
       </p>
@@ -467,9 +576,12 @@ function TrustCard({
 function CallList({
   results,
   records,
+  friend,
 }: {
   results: readonly TrustResult[];
   records: ReadonlyMap<string, GameRecord>;
+  /** On a friend's challenge: their calls, judged, listed under yours. */
+  friend?: readonly TrustResult[] | null;
 }) {
   return (
     <ol className="mt-6 space-y-2" aria-label="Your calls">
@@ -489,6 +601,12 @@ function CallList({
                 : "") +
                 `You ${r.call === "trust" ? "trusted" : "doubted"} it: ${r.correct ? "called it" : "missed it"}.`}
             </span>
+            {friend?.[i] && (
+              <span className="block text-chalk-dim">
+                <span className="text-flare">Friend</span>
+                {`: ${friend[i]!.call === "trust" ? "trusted" : "doubted"} it, ${friend[i]!.correct ? "called it" : "missed it"}.`}
+              </span>
+            )}
           </li>
         );
       })}
@@ -530,16 +648,21 @@ function TrustSummary({
   records,
   best,
   newBest,
+  challenge,
   onAgain,
 }: {
   results: readonly TrustResult[];
   records: ReadonlyMap<string, GameRecord>;
   best: number;
   newBest: boolean;
+  /** The friend's challenge this game answered, if it was one. */
+  challenge: TrustChallenge | null;
   onAgain: () => void;
 }) {
   const none = results.length === 0;
   const { correct, atlasRight } = trustTotals(results);
+  // The friend's calls, judged once every photo's record is in.
+  const theirs = challenge ? trustFriendResults(challenge, records) : null;
   const againRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     againRef.current?.focus({ preventScroll: true });
@@ -559,10 +682,16 @@ function TrustSummary({
           <p className="mt-4 text-lg text-chalk" data-testid="trust-end">
             {`Atlas was right on ${atlasRight} of ${results.length}. ${trustEndLine(results)}`}
           </p>
-          <p className="mt-1 text-chalk-dim">
-            {newBest ? "That's your new best!" : `Your best is ${best} of ${TRUST_PHOTOS}.`}
-          </p>
-          <CallList results={results} records={records} />
+          {challenge ? (
+            <p className="mt-2 text-chalk" data-testid="trust-challenge-line">
+              {theirs ? trustChallengeLine(results, theirs) : "Judging your friend's calls…"}
+            </p>
+          ) : (
+            <p className="mt-1 text-chalk-dim">
+              {newBest ? "That's your new best!" : `Your best is ${best} of ${TRUST_PHOTOS}.`}
+            </p>
+          )}
+          <CallList results={results} records={records} friend={theirs} />
         </>
       )}
       <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -573,13 +702,59 @@ function TrustSummary({
             onClick={onAgain}
             className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
           >
-            Play again
+            {challenge ? "Play a fresh game" : "Play again"}
           </button>
+        )}
+        {results.length === TRUST_PHOTOS && (!challenge || theirs) && (
+          <ChallengeButton results={results} answering={challenge ? theirs : null} />
         )}
         <Link href="/" className="text-chalk-dim underline underline-offset-2 hover:text-chalk">
           Back to the main game
         </Link>
       </div>
     </main>
+  );
+}
+
+/**
+ * Challenge a friend from a whole free game (src/lib/game/trustChallenge.ts): a link to the same
+ * ten photos with your call on each. Answering a challenge, it sends one back, with the
+ * head-to-head picture beside it.
+ */
+function ChallengeButton({
+  results,
+  answering,
+}: {
+  results: readonly TrustResult[];
+  /** The friend's calls, judged, when this game answered their challenge. */
+  answering: readonly TrustResult[] | null;
+}) {
+  const [sent, setSent] = useState("");
+  const text = () => trustChallengeText(results, window.location.href, answering ?? undefined);
+  async function send() {
+    setSent(CHALLENGE_NOTE[await sendShare(text(), navigator)]);
+  }
+  return (
+    <span className="flex min-w-0 flex-col">
+      <span className="flex flex-wrap gap-x-3 gap-y-2">
+        <button
+          type="button"
+          onClick={send}
+          className="rounded-full border-2 border-gold px-5 py-2.5 font-semibold text-gold transition hover:bg-gold/10"
+        >
+          {answering ? "Send yours back" : "Challenge a friend"}
+        </button>
+        {answering && (
+          <HeadToHeadButton
+            headToHead={trustHeadToHead(results, answering, window.location.href)}
+            replyText={text}
+            onNote={setSent}
+          />
+        )}
+      </span>
+      <span role="status" className={sent ? "mt-1 text-xs text-chalk-dim" : "sr-only"}>
+        {sent}
+      </span>
+    </span>
   );
 }

@@ -147,6 +147,10 @@ photos on the same UTC day, one try a day. Each call is kept as it is made, so a
 the next photo and can't take one back, and a kept call is judged again on its photo rather than
 trusted; Today sets your calls against Atlas's own sureness, for a *Beat Atlas* stamp. The share
 line is your calls right beside Atlas's own and a square per photo, spoiling no place or country.
+A whole free game can **challenge a friend**: the link deals them the same ten photos and carries
+your trust or doubt on each, shown on their answer card once they have made their own call. Whether
+each of your calls was right is judged on the photo's real country, never read from the link, and
+the end screen offers *Send yours back* and a head-to-head picture.
 **Name the country** (at `/name-country`, in the Games menu) shows one photo and four countries from
 the same continent, drawn from the countries the globe draws: tap the right one, or press 1 to 4,
 and go on until your first miss. Atlas picks too, the name it gave the most of the four, and the
