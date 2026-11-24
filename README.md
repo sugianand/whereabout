@@ -142,6 +142,11 @@ country, where it sat on Atlas's shortlist when Atlas missed, and what Atlas's o
 the answer, since Atlas trusts itself by a fixed rule, at 50% sure or more. Ten photos a game, dealt
 from every photo Atlas named a country for, so neither always trusting nor always doubting wins;
 the end screen puts your correct calls beside Atlas's own, and your best is kept in your browser.
+**Today's game** (at `/trust-atlas/daily`, on Today from 2026-11-25) deals everyone the same ten
+photos on the same UTC day, one try a day. Each call is kept as it is made, so a reload picks up at
+the next photo and can't take one back, and a kept call is judged again on its photo rather than
+trusted; Today sets your calls against Atlas's own sureness, for a *Beat Atlas* stamp. The share
+line is your calls right beside Atlas's own and a square per photo, spoiling no place or country.
 **Name the country** (at `/name-country`, in the Games menu) shows one photo and four countries from
 the same continent, drawn from the countries the globe draws: tap the right one, or press 1 to 4,
 and go on until your first miss. Atlas picks too, the name it gave the most of the four, and the

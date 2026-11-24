@@ -104,7 +104,7 @@ export type TrustState =
   | { phase: "done"; order: readonly string[]; results: readonly TrustResult[] };
 
 export type TrustAction =
-  | { type: "start"; order: readonly string[] }
+  | { type: "start"; order: readonly string[]; from?: readonly TrustResult[] }
   | { type: "called"; result: TrustResult }
   | { type: "next" };
 
@@ -112,10 +112,14 @@ export const initialTrust: TrustState = { phase: "idle" };
 
 export function trustReducer(state: TrustState, action: TrustAction): TrustState {
   switch (action.type) {
-    case "start":
-      return action.order.length === 0
-        ? { phase: "done", order: action.order, results: [] }
-        : { phase: "calling", order: action.order, results: [] };
+    case "start": {
+      // `from` picks a game back up: today's calls kept before a reload.
+      const { order } = action;
+      const results = action.from ?? [];
+      return results.length >= order.length
+        ? { phase: "done", order, results }
+        : { phase: "calling", order, results };
+    }
     case "called":
       if (state.phase !== "calling" || action.result.id !== state.order[state.results.length]) {
         return state;

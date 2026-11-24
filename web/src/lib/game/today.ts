@@ -3,9 +3,9 @@
  * this reads those records back and adds none of its own: the Daily Five's first score and the
  * game in progress (./dailyArchive.ts, ./saved.ts), the streak games' runs (./dailyRuns.ts)
  * and the photos and rows of How far apart?, Hot and cold, Line them up, Close-up, Which climate?,
- * What's on the ground?, Bullseye and Spot the clue (./farDaily.ts, ./hotDaily.ts,
+ * What's on the ground?, Bullseye, Spot the clue and Trust Atlas? (./farDaily.ts, ./hotDaily.ts,
  * ./lineDaily.ts, ./closeDaily.ts, ./climateDaily.ts, ./groundDaily.ts, ./bullseyeDaily.ts,
- * ./spotDaily.ts). What a game can't read back counts as not started.
+ * ./spotDaily.ts, ./trustDaily.ts). What a game can't read back counts as not started.
  *
  * Like every share in the game, the combined line is scores and counts only, so it spoils no
  * photo. Only finished games go in it: a run still going has no result yet.
@@ -29,6 +29,8 @@ import { loadBullseyeDay } from "./bullseyeDaily";
 import { loadClimateDay } from "./climateDaily";
 import { SPOT_MAX, SPOT_PHOTOS, spotTotals } from "./spotClue";
 import { loadSpotDay } from "./spotDaily";
+import { TRUST_PHOTOS, trustTotals } from "./trustAtlas";
+import { loadTrustDay } from "./trustDaily";
 import { loadClueDay } from "./clueDaily";
 import { loadCloseDay } from "./closeDaily";
 import { CLOSE_PHOTOS, CLOSE_POINTS, closeTotals } from "./closeUp";
@@ -66,7 +68,8 @@ export type TodayGameId =
   | "clue-mix"
   | "on-the-ground"
   | "bullseye"
-  | "spot-the-clue";
+  | "spot-the-clue"
+  | "trust-atlas";
 
 /** One daily game: where it lives, whatever the browser holds. */
 export interface TodayGameInfo {
@@ -203,6 +206,15 @@ export const TODAY_GAMES: readonly TodayGameInfo[] = [
     blurb: "Five photos: tap the part of each you think told Atlas most.",
     // From the next UTC day, so a day already played in full isn't left one game short.
     since: "2026-11-23",
+  },
+  {
+    id: "trust-atlas",
+    name: "Trust Atlas?",
+    href: "/trust-atlas/daily",
+    icon: "🤔",
+    blurb: "Ten photos: Atlas names a country and how sure it is. Trust it or doubt it.",
+    // From the next UTC day, so a day already played in full isn't left one game short.
+    since: "2026-11-25",
   },
 ];
 
@@ -420,6 +432,17 @@ function spotTheClue(day: string) {
   return { status: "done" as const, line, atlas: null, versus: null };
 }
 
+function trustAtlas(day: string) {
+  const results = loadTrustDay(day)?.results ?? [];
+  const { correct, atlasCorrect } = trustTotals(results);
+  // Atlas's own sureness makes a call on every photo, so it always has a tally to set beside yours.
+  return photoCalls(results, TRUST_PHOTOS, {
+    right: correct,
+    atlasRight: atlasCorrect,
+    atlasRead: results.length,
+  });
+}
+
 /** Every daily game dealt on `day`, with its standing in this browser. */
 export function todayGames(
   day: string,
@@ -459,6 +482,8 @@ export function todayGames(
         return { ...info, ...bullseye(day) };
       case "spot-the-clue":
         return { ...info, ...spotTheClue(day) };
+      case "trust-atlas":
+        return { ...info, ...trustAtlas(day) };
     }
   });
 }

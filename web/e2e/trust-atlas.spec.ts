@@ -142,3 +142,101 @@ test("on a 320px phone the photo, the calls and the answer fit without scrolling
   expect(nextBox.y + nextBox.height).toBeLessThanOrEqual(569);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });
+
+test("today's Trust Atlas? deals the day's ten once, resumes after a reload, and shares the calls", async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+  const day = new Date().toISOString().slice(0, 10);
+
+  // From a free game to today's.
+  await page.goto("./trust-atlas");
+  await page.getByRole("link", { name: "Today's game" }).click();
+  await expect(page).toHaveURL(/\/trust-atlas\/daily\/?$/);
+  await expect(page.getByText("Trust Atlas? Today: Is its answer right?")).toBeVisible();
+  await expect(page.getByText("Best", { exact: true })).toHaveCount(0);
+
+  // Every photo called right, so the total is known: ten of ten. Atlas's own count comes from
+  // the shipped data, by its rule of trusting itself at 50% sure or more.
+  const dealt: string[] = [];
+  let atlasOwn = 0;
+  const callRight = async (n: number) => {
+    await expect(page.getByText(`Photo ${n + 1} of 10`, { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Trust it: Atlas is right" })).toBeEnabled();
+    const { right } = await atlasRightOnScreen(page);
+    const id = (await page.locator("main[data-photo]").getAttribute("data-photo"))!;
+    dealt.push(id);
+    if (ATLAS.guesses[id]!.topCountries[0]!.p >= 0.5 === right) atlasOwn++;
+    await page.keyboard.press(right ? "y" : "n");
+    await expect(card.getByRole("heading")).toHaveText("Called it");
+  };
+  await callRight(0);
+  await card.getByRole("button", { name: "Next photo" }).click();
+  await callRight(1);
+
+  // A reload can't take a call back: it picks up at the third photo, the calls kept.
+  await page.reload();
+  await expect(page.getByText("Photo 3 of 10", { exact: true })).toBeVisible();
+  await expect(page.locator("dd", { hasText: /^2$/ })).toBeVisible();
+  for (let n = 2; n < 10; n++) {
+    await callRight(n);
+    await card.getByRole("button", { name: n === 9 ? "See the results" : "Next photo" }).click();
+  }
+  expect(new Set(dealt).size).toBe(10);
+
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("10 of 10 called right");
+  await expect(page.getByText(`Trust Atlas? · today's game · ${day}`)).toBeVisible();
+  await page.getByRole("button", { name: "Share today's game" }).click();
+  await expect(page.getByRole("status")).toHaveText("Result copied. Paste it anywhere.");
+  const sent = await page.evaluate(() => (window as unknown as { sent: string }).sent);
+  expect(sent).toContain(`Whereabout · Trust Atlas? · ${day}`);
+  expect(sent).toContain(`🤔 10 of 10 called right · Atlas's own sureness ${atlasOwn} of 10`);
+  expect(sent).toContain("🟩".repeat(10));
+  expect(sent).toMatch(/\/trust-atlas\/daily\/$/);
+  // No place: the share spoils no photo.
+  for (const row of await page.getByTestId("trust-row").allTextContents()) {
+    expect(sent).not.toContain(row.split("Atlas said")[0]!.trim());
+  }
+  // The free game's best is untouched.
+  expect(await page.evaluate(() => localStorage.getItem("whereabout:trust-atlas-best"))).toBe(null);
+
+  // The day is never dealt again.
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("10 of 10 called right");
+  await expect(page.getByRole("button", { name: "Trust it: Atlas is right" })).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test("today's Trust Atlas? fits a 320px phone, its link to free games on screen", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  for (const [path, link] of [
+    ["./trust-atlas", "Today's game"],
+    ["./trust-atlas/daily", "Free games"],
+  ] as const) {
+    await page.goto(path);
+    const doubt = page.getByRole("button", { name: "Doubt it: Atlas is wrong" });
+    await expect(doubt).toBeEnabled();
+    const linkBox = (await page.getByRole("link", { name: link }).boundingBox())!;
+    expect(linkBox.x + linkBox.width).toBeLessThanOrEqual(321);
+    const box = (await doubt.boundingBox())!;
+    expect(box.y + box.height).toBeLessThanOrEqual(569);
+    expect((await page.getByTestId("trust-photo").boundingBox())!.height).toBeGreaterThan(120);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      320,
+    );
+  }
+});

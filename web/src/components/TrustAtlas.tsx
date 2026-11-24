@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "r
 
 import { isShortcut } from "@/lib/controls";
 import { countryName } from "@/lib/countries";
+import { runToday } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import {
   TRUST_PHOTOS,
@@ -23,9 +24,17 @@ import {
   type TrustCall,
   type TrustResult,
 } from "@/lib/game/trustAtlas";
+import {
+  dailyTrustOrder,
+  loadTrustDay,
+  rememberTrustDay,
+  settleTrust,
+  trustDailyShare,
+} from "@/lib/game/trustDaily";
 import { placeholderUrl, sources } from "@/lib/photoSources";
 
 import ControlsHelp from "./ControlsHelp";
+import { DailyRunResult } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
 
 type TrustAtlasProps = {
@@ -36,6 +45,13 @@ type TrustAtlasProps = {
   loadRecords?: (ids: string[]) => Promise<GameRecord[]>;
   /** For tests: the randomness that picks each game's seed. */
   random?: () => number;
+  /**
+   * Today's game (src/lib/game/trustDaily.ts): the day's ten photos, one try a day, picked back
+   * up after a reload at the first photo not yet called.
+   */
+  daily?: boolean;
+  /** For tests: the clock that picks today's game. */
+  now?: () => Date;
 };
 
 const CALL_KEYS: Record<string, TrustCall> = { y: "trust", n: "doubt" };
@@ -50,20 +66,39 @@ function ordinal(n: number): string {
  * where that country sat on Atlas's shortlist, and what Atlas's own sureness made of the answer.
  * Ten photos, the best kept in this browser.
  */
-export default function TrustAtlas({ deck, ids, loadRecords, random }: TrustAtlasProps) {
+export default function TrustAtlas({
+  deck,
+  ids,
+  loadRecords,
+  random,
+  daily = false,
+  now,
+}: TrustAtlasProps) {
   const [state, dispatch] = useReducer(trustReducer, initialTrust);
   const [best, setBest] = useState(0);
   const [bestBeforeGame, setBestBeforeGame] = useState(0);
   const [records, setRecords] = useState<ReadonlyMap<string, GameRecord>>(() => new Map());
   const [error, setError] = useState<string | null>(null);
+  // The day today's game was dealt for, kept when the clock passes midnight mid-game.
+  const [day, setDay] = useState<string | null>(null);
 
   const start = useCallback(() => {
+    if (daily) {
+      const today = runToday(now?.());
+      setDay(today);
+      dispatch({
+        type: "start",
+        order: dailyTrustOrder(ids, today),
+        from: loadTrustDay(today)?.results,
+      });
+      return;
+    }
     const stored = loadBestTrust();
     setBest(stored);
     setBestBeforeGame(stored);
     const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
     dispatch({ type: "start", order: dealTrust(ids, seed) });
-  }, [ids, random]);
+  }, [daily, ids, now, random]);
 
   // The game is dealt in the browser after hydration, never at build time.
   useEffect(() => {
@@ -121,13 +156,17 @@ export default function TrustAtlas({ deck, ids, loadRecords, random }: TrustAtla
       const result = trustResult(record!, which);
       if (!result) return;
       const after = trustReducer(state, { type: "called", result });
-      // Only a whole game counts as a best.
-      if (after.phase === "answered" && after.results.length === after.order.length) {
+      if (day) {
+        // Kept after every photo, so a reload can't take a call back. Today's game is played
+        // once for the day, apart from the free game's best.
+        if (after.phase === "answered") rememberTrustDay(day, after.results);
+      } else if (after.phase === "answered" && after.results.length === after.order.length) {
+        // Only a whole game counts as a best.
         setBest(rememberTrust(trustTotals(after.results).correct));
       }
       dispatch({ type: "called", result });
     },
-    [ready, record, state],
+    [ready, record, state, day],
   );
 
   // Y trusts and N doubts, wherever focus is but a text field.
@@ -143,6 +182,17 @@ export default function TrustAtlas({ deck, ids, loadRecords, random }: TrustAtla
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [ready, call]);
+
+  if (state.phase === "done" && day && state.results.length > 0) {
+    return (
+      <TrustDayResult
+        day={day}
+        results={settleTrust(state.results, records)}
+        records={records}
+        now={now}
+      />
+    );
+  }
 
   if (state.phase === "done") {
     return (
@@ -168,7 +218,7 @@ export default function TrustAtlas({ deck, ids, loadRecords, random }: TrustAtla
       data-phase={answered ? "revealed" : "calling"}
       data-photo={record?.photo.id}
     >
-      <h1 className="sr-only">{`Whereabout: Trust Atlas?, photo ${index + 1} of ${total}`}</h1>
+      <h1 className="sr-only">{`Whereabout: Trust Atlas?${daily ? ", today" : ""}, photo ${index + 1} of ${total}`}</h1>
 
       <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 px-4 pb-2 pt-4 md:px-6">
         <div className="min-w-0">
@@ -178,10 +228,18 @@ export default function TrustAtlas({ deck, ids, loadRecords, random }: TrustAtla
           >
             Whereabout
           </Link>
-          <p className="mt-1 text-sm text-chalk-dim">Trust Atlas? Is its answer right?</p>
+          <p className="mt-1 text-sm text-chalk-dim">
+            {`Trust Atlas?${daily ? " Today:" : ""} Is its answer right?`}
+          </p>
           <p className="text-sm text-chalk-dim" aria-live="polite">
             {`Photo ${index + 1} of ${total}`}
           </p>
+          <Link
+            href={daily ? "/trust-atlas" : "/trust-atlas/daily"}
+            className="text-sm text-gold underline underline-offset-2 hover:brightness-110"
+          >
+            {daily ? "Free games" : "Today's game"}
+          </Link>
         </div>
         <div className="flex shrink-0 items-start gap-3">
           <GamesMenu screen="trust-atlas" streakHref="/streak" />
@@ -189,10 +247,12 @@ export default function TrustAtlas({ deck, ids, loadRecords, random }: TrustAtla
           <dl className="text-right">
             <dt className="text-sm text-chalk-dim">Called right</dt>
             <dd className="font-sign tabular text-3xl font-bold leading-none">{totals.correct}</dd>
-            <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
-              <dt>Best</dt>
-              <dd className="tabular">{best}</dd>
-            </div>
+            {!daily && (
+              <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
+                <dt>Best</dt>
+                <dd className="tabular">{best}</dd>
+              </div>
+            )}
           </dl>
         </div>
       </header>
@@ -403,6 +463,68 @@ function TrustCard({
   );
 }
 
+/** Each photo called, by place, with Atlas's answer and your call. */
+function CallList({
+  results,
+  records,
+}: {
+  results: readonly TrustResult[];
+  records: ReadonlyMap<string, GameRecord>;
+}) {
+  return (
+    <ol className="mt-6 space-y-2" aria-label="Your calls">
+      {results.map((r, i) => {
+        const rec = records.get(r.id);
+        const pick = atlasPick(rec?.atlas);
+        return (
+          <li
+            key={r.id}
+            className="rounded-xl border border-graticule/70 px-3 py-2 text-sm"
+            data-testid="trust-row"
+          >
+            <span className="block text-chalk">{rec?.photo.place ?? `Photo ${i + 1}`}</span>
+            <span className="block text-chalk-dim">
+              {(pick
+                ? `Atlas said ${countryName(pick.country)}, ${percent(pick.p)} sure, ${r.atlasRight ? "right" : "wrong"}. `
+                : "") +
+                `You ${r.call === "trust" ? "trusted" : "doubted"} it: ${r.correct ? "called it" : "missed it"}.`}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/** Today's Trust Atlas? once its last photo is called, on this visit or an earlier one. */
+function TrustDayResult({
+  day,
+  results,
+  records,
+  now,
+}: {
+  day: string;
+  results: readonly TrustResult[];
+  records: ReadonlyMap<string, GameRecord>;
+  now?: () => Date;
+}) {
+  const { correct, atlasRight } = trustTotals(results);
+  return (
+    <DailyRunResult
+      game="Trust Atlas?"
+      day={day}
+      unit="game"
+      headline={`${correct} of ${results.length} called right`}
+      summary={`Atlas was right on ${atlasRight} of ${results.length}. ${trustEndLine(results)}`}
+      shareText={(href) => trustDailyShare(day, results, href)}
+      freeHref="/trust-atlas"
+      now={now}
+    >
+      <CallList results={results} records={records} />
+    </DailyRunResult>
+  );
+}
+
 function TrustSummary({
   results,
   records,
@@ -440,27 +562,7 @@ function TrustSummary({
           <p className="mt-1 text-chalk-dim">
             {newBest ? "That's your new best!" : `Your best is ${best} of ${TRUST_PHOTOS}.`}
           </p>
-          <ol className="mt-6 space-y-2" aria-label="Your calls">
-            {results.map((r, i) => {
-              const rec = records.get(r.id);
-              const pick = atlasPick(rec?.atlas);
-              return (
-                <li
-                  key={r.id}
-                  className="rounded-xl border border-graticule/70 px-3 py-2 text-sm"
-                  data-testid="trust-row"
-                >
-                  <span className="block text-chalk">{rec?.photo.place ?? `Photo ${i + 1}`}</span>
-                  <span className="block text-chalk-dim">
-                    {(pick
-                      ? `Atlas said ${countryName(pick.country)}, ${percent(pick.p)} sure, ${r.atlasRight ? "right" : "wrong"}. `
-                      : "") +
-                      `You ${r.call === "trust" ? "trusted" : "doubted"} it: ${r.correct ? "called it" : "missed it"}.`}
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
+          <CallList results={results} records={records} />
         </>
       )}
       <div className="mt-8 flex flex-wrap items-center gap-4">

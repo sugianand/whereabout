@@ -1,8 +1,9 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import type { GameRecord } from "@/lib/game/deck";
 import { BEST_TRUST_KEY, TRUST_PHOTOS, dealTrust } from "@/lib/game/trustAtlas";
+import { TRUST_DAILY_KEY, dailyTrustOrder, loadTrustDay } from "@/lib/game/trustDaily";
 import { gameFor } from "@/test/deck";
 
 import TrustAtlas from "./TrustAtlas";
@@ -143,5 +144,110 @@ describe("TrustAtlas", () => {
     expect(
       await screen.findByRole("heading", { name: "No photos to play yet" }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("today's Trust Atlas?", () => {
+  const DAY = "2026-11-25";
+  const now = () => new Date(`${DAY}T12:00:00Z`);
+  const TODAY = dailyTrustOrder(IDS, DAY);
+
+  function renderDaily() {
+    const game = gameFor(RECORDS);
+    return render(
+      <TrustAtlas deck={game.deck} ids={IDS} loadRecords={game.loadRecords} daily now={now} />,
+    );
+  }
+
+  /** Call photo `n` of today's game: rightly when `right`, else the wrong way. */
+  async function call(n: number, right: boolean) {
+    await waitFor(() => expect(photoOn()).toBe(TODAY[n]));
+    await waitEnabled();
+    const trust = atlasRight(TODAY[n]!) === right;
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: trust ? "Trust it: Atlas is right" : "Doubt it: Atlas is wrong",
+      }),
+    );
+    const card = await screen.findByRole("region");
+    fireEvent.click(
+      within(card).getByRole("button", {
+        name: n === TRUST_PHOTOS - 1 ? "See the results" : "Next photo",
+      }),
+    );
+  }
+
+  it("deals the day's ten, keeps each call, and picks up after a reload at the next photo", async () => {
+    localStorage.setItem(BEST_TRUST_KEY, "4");
+    const { unmount } = renderDaily();
+    expect(await screen.findByText("Trust Atlas? Today: Is its answer right?")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Free games" })).toHaveAttribute(
+      "href",
+      "/trust-atlas",
+    );
+    // Today's game has no best of its own.
+    expect(screen.queryByText("Best")).toBeNull();
+    await call(0, true);
+    await call(1, false);
+    expect(loadTrustDay(DAY)?.results.map((r) => [r.id, r.correct])).toEqual([
+      [TODAY[0], true],
+      [TODAY[1], false],
+    ]);
+
+    unmount();
+    renderDaily();
+    await waitFor(() => expect(photoOn()).toBe(TODAY[2]));
+    expect(screen.getByText("Photo 3 of 10")).toBeInTheDocument();
+    expect(screen.getByText("1", { selector: "dd" })).toBeInTheDocument();
+    for (let n = 2; n < TRUST_PHOTOS; n++) await call(n, n !== 5);
+
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent(
+      "8 of 10 called right",
+    );
+    expect(screen.getByText(`Trust Atlas? · today's game · ${DAY}`)).toBeInTheDocument();
+    // Every photo here is in France, and Atlas's own sureness calls every one of them right.
+    const right = TODAY.filter(atlasRight).length;
+    expect(
+      screen.getByText(
+        new RegExp(`^Atlas was right on ${right} of 10\\. Atlas.s own sureness called it better`),
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getAllByTestId("trust-row")).toHaveLength(TRUST_PHOTOS);
+    expect(screen.getByRole("button", { name: "Share today's game" })).toHaveFocus();
+    expect(screen.getByRole("link", { name: "Play a free game" })).toHaveAttribute(
+      "href",
+      "/trust-atlas",
+    );
+    // The free game's best is untouched.
+    expect(localStorage.getItem(BEST_TRUST_KEY)).toBe("4");
+  });
+
+  it("shows a finished day's result instead of dealing it again, judged on the photos", async () => {
+    // A forged day: each call claims Atlas was wrong and was rightly doubted, whatever the photo.
+    const forged = TODAY.map((id) => ({
+      id,
+      call: "doubt",
+      atlasRight: false,
+      correct: true,
+      atlasCall: "doubt",
+      atlasCorrect: true,
+    }));
+    localStorage.setItem(TRUST_DAILY_KEY, JSON.stringify({ [DAY]: { results: forged } }));
+    renderDaily();
+    const wrong = TODAY.filter((id) => !atlasRight(id)).length;
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+        `${wrong} of 10 called right`,
+      ),
+    );
+    expect(screen.queryByRole("button", { name: "Trust it: Atlas is right" })).toBeNull();
+  });
+
+  it("links to today's game from a free one", async () => {
+    await setup();
+    expect(screen.getByRole("link", { name: "Today's game" })).toHaveAttribute(
+      "href",
+      "/trust-atlas/daily",
+    );
   });
 });

@@ -180,6 +180,22 @@ describe("the reducer", () => {
     });
   });
 
+  it("picks a kept game back up at the next photo, or ends it when all were called", () => {
+    const s = trustReducer(initialTrust, {
+      type: "start",
+      order: ["a", "b"],
+      from: [result("a", true)],
+    });
+    expect(s).toEqual({ phase: "calling", order: ["a", "b"], results: [result("a", true)] });
+    expect(trustReducer(s, { type: "called", result: result("a", false) })).toBe(s);
+    const done = [result("a", true), result("b", false)];
+    expect(trustReducer(initialTrust, { type: "start", order: ["a", "b"], from: done })).toEqual({
+      phase: "done",
+      order: ["a", "b"],
+      results: done,
+    });
+  });
+
   it("ends at once with nothing to deal", () => {
     expect(trustReducer(initialTrust, { type: "start", order: [] })).toEqual({
       phase: "done",

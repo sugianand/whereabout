@@ -180,6 +180,17 @@ test("full days count up on a calendar that fits the screen", async ({ page }) =
       // So is Spot the clue from 2026-11-23 on.
       const square = (id: string) => ({ id, cell: 0, points: 0, hottest: false });
       keep("whereabout:spot-the-clue-daily", { results: ["a", "b", "c", "d", "e"].map(square) });
+      // And Trust Atlas? from 2026-11-25 on.
+      const trusted = (id: string) => ({
+        id,
+        call: "trust",
+        atlasRight: true,
+        correct: true,
+        atlasCall: "trust",
+        atlasCorrect: true,
+      });
+      const tenIds = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"];
+      keep("whereabout:trust-atlas-daily", { results: tenIds.map(trusted) });
     },
     { full: [before(1), before(2)], partly: before(3) },
   );

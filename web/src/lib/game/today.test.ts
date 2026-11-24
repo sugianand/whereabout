@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { bet, type BullseyeRound } from "./bullseye";
 import { rememberBullseyeDay } from "./bullseyeDaily";
+import type { TrustResult } from "./trustAtlas";
+import { rememberTrustDay } from "./trustDaily";
 import { rememberClimateDay } from "./climateDaily";
 import { rememberClueDay } from "./clueDaily";
 import { rememberCloseDay } from "./closeDaily";
@@ -314,6 +316,24 @@ const SPOT_GAME: SpotResult[] = [
   { id: "e", cell: 48, points: 0, hottest: false },
 ];
 
+/**
+ * A whole Trust Atlas? game: you call seven of ten right, Atlas's own sureness six (it trusted
+ * itself on the first six photos, where it was right on the first four).
+ */
+const TRUST_GAME: TrustResult[] = Array.from({ length: 10 }, (_, i) => {
+  const atlasRight = i < 4 || i >= 8;
+  const call = i < 7 === atlasRight ? "trust" : "doubt";
+  const atlasCall = i < 6 ? "trust" : "doubt";
+  return {
+    id: `t${i}`,
+    call,
+    atlasRight,
+    correct: (call === "trust") === atlasRight,
+    atlasCall,
+    atlasCorrect: (atlasCall === "trust") === atlasRight,
+  };
+});
+
 /** Finish one game joined later on `day`, as it writes its own store. */
 const finishJoined: Partial<Record<TodayGameId, (day: string) => void>> = {
   "line-up": (day) => rememberLineDay(day, { results: Array<RowResult>(5).fill(ROW) }),
@@ -330,6 +350,7 @@ const finishJoined: Partial<Record<TodayGameId, (day: string) => void>> = {
   "on-the-ground": (day) => rememberGroundDay(day, GROUND_GAME),
   bullseye: (day) => rememberBullseyeDay(day, BULLSEYE_GAME),
   "spot-the-clue": (day) => rememberSpotDay(day, SPOT_GAME),
+  "trust-atlas": (day) => rememberTrustDay(day, TRUST_GAME),
 };
 
 /** Every daily game finished on `day` but `except`, each as it writes its own store. */
@@ -586,6 +607,39 @@ describe("today's Spot the clue on Today", () => {
   it("has no Beat Atlas game of its own", () => {
     expect(VERSUS_GAMES.some((g) => g.id === "spot-the-clue")).toBe(false);
     expect(VERSUS_GAMES.some((g) => g.id === "bullseye")).toBe(true);
+  });
+});
+
+describe("today's Trust Atlas? on Today", () => {
+  const DAY_IN = "2026-11-25";
+  const AT = new Date(`${DAY_IN}T12:00:00Z`);
+  const game = () => todayGames(DAY_IN, IDS, AT).find((g) => g.id === "trust-atlas")!;
+
+  it("reads the calls as they are kept, and calls the game against Atlas's own sureness", () => {
+    expect(todayGames("2026-11-24", IDS, AT).some((g) => g.id === "trust-atlas")).toBe(false);
+    expect(game()).toMatchObject({
+      status: "new",
+      line: "Not started",
+      href: "/trust-atlas/daily",
+    });
+    rememberTrustDay(DAY_IN, TRUST_GAME.slice(0, 5));
+    expect(game()).toMatchObject({
+      status: "going",
+      line: "5 of 10 photos, 5 right",
+      atlas: "4 of 5",
+      versus: null,
+    });
+    finishJoined["trust-atlas"]!(DAY_IN);
+    expect(game()).toMatchObject({
+      status: "done",
+      line: "7 of 10 right",
+      atlas: "6 of 10",
+      versus: { you: 7, atlas: 6, unit: "right", call: "you" },
+    });
+  });
+
+  it("has a Beat Atlas game of its own", () => {
+    expect(VERSUS_GAMES.some((g) => g.id === "trust-atlas")).toBe(true);
   });
 });
 
