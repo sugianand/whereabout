@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { GameRecord } from "@/lib/game/deck";
 import { BEST_TRUST_KEY, TRUST_PHOTOS, dealTrust } from "@/lib/game/trustAtlas";
 import { TRUST_DAILY_KEY, dailyTrustOrder, loadTrustDay } from "@/lib/game/trustDaily";
+import { loadTrustRead, trustReadTotals } from "@/lib/game/trustRead";
 import { gameFor } from "@/test/deck";
 
 import TrustAtlas from "./TrustAtlas";
@@ -94,6 +95,14 @@ describe("TrustAtlas", () => {
       `${atlasRight(id) ? "At 82% sure, Atlas trusted its answer" : "At only 30% sure, Atlas doubted its answer"}, and that call was right. So far: you ${atlasRight(id) ? 1 : 0} of 1, Atlas's own calls 1 of 1.`,
     );
     expect(screen.getByRole("button", { name: "Next photo" })).toHaveFocus();
+    // Your trust counts the call in its band: 82% is high, 30% middling.
+    const read = loadTrustRead();
+    expect(atlasRight(id) ? read[2] : read[1]).toEqual({
+      photos: 1,
+      right: atlasRight(id) ? 1 : 0,
+      trusted: atlasRight(id) ? 1 : 0,
+      doubted: 0,
+    });
   });
 
   it("plays ten photos by key, Y and N, into the results, and keeps the best", async () => {
@@ -193,6 +202,7 @@ describe("today's Trust Atlas?", () => {
       [TODAY[0], true],
       [TODAY[1], false],
     ]);
+    expect(trustReadTotals(loadTrustRead())).toEqual({ photos: 2, you: 1, rule: 2 });
 
     unmount();
     renderDaily();
@@ -220,6 +230,8 @@ describe("today's Trust Atlas?", () => {
     );
     // The free game's best is untouched.
     expect(localStorage.getItem(BEST_TRUST_KEY)).toBe("4");
+    // Your trust counted each call once, the reload adding none.
+    expect(trustReadTotals(loadTrustRead())).toEqual({ photos: 10, you: 8, rule: 10 });
   });
 
   it("shows a finished day's result instead of dealing it again, judged on the photos", async () => {
@@ -241,6 +253,8 @@ describe("today's Trust Atlas?", () => {
       ),
     );
     expect(screen.queryByRole("button", { name: "Trust it: Atlas is right" })).toBeNull();
+    // A kept day is never read into Your trust.
+    expect(trustReadTotals(loadTrustRead()).photos).toBe(0);
   });
 
   it("links to today's game from a free one", async () => {

@@ -4,8 +4,9 @@ import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 const PHOTO = readFileSync(resolve(process.cwd(), "e2e/fixtures/photo.png"));
-const ATLAS: { guesses: Record<string, { topCountries: { country: string; p: number }[] }> } =
-  JSON.parse(readFileSync(resolve(process.cwd(), "src/data/atlas.json"), "utf8"));
+const ATLAS: {
+  guesses: Record<string, { confidence?: number; topCountries: { country: string; p: number }[] }>;
+} = JSON.parse(readFileSync(resolve(process.cwd(), "src/data/atlas.json"), "utf8"));
 const CATALOG: { id: string; country: string }[] = JSON.parse(
   readFileSync(resolve(process.cwd(), "src/data/photos.json"), "utf8"),
 );
@@ -111,6 +112,74 @@ test("Trust Atlas? judges each call on the real country, by tap and by key, and 
   );
   await expect(page.getByRole("dialog").getByText("Playing now")).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+test("your calls show on Your map's trust, by how sure Atlas was, beside its own rule", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto("./trust-atlas");
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+  const trust = page.getByRole("button", { name: "Trust it: Atlas is right" });
+  const bands = ["low", "middling", "high"] as const;
+  const expected = new Map(bands.map((b) => [b, { photos: 0, you: 0, rule: 0, right: 0 }]));
+  for (let n = 0; n < 3; n++) {
+    await expect(page.getByText(`Photo ${n + 1} of 10`, { exact: true })).toBeVisible();
+    await expect(trust).toBeEnabled();
+    const id = (await page.locator("main[data-photo]").getAttribute("data-photo"))!;
+    const guess = ATLAS.guesses[id]!;
+    const p = guess.confidence ?? guess.topCountries[0]!.p;
+    const right = guess.topCountries[0]!.country === COUNTRY.get(id);
+    // Trust the first two, doubt the third.
+    const call = n < 2 ? "trust" : "doubt";
+    await page.keyboard.press(call === "trust" ? "y" : "n");
+    await expect(card.getByRole("heading")).toBeVisible();
+    const t = expected.get(p < 0.25 ? "low" : p < 0.5 ? "middling" : "high")!;
+    t.photos++;
+    if (right) t.right++;
+    if ((call === "trust") === right) t.you++;
+    if (p >= 0.5 === right) t.rule++;
+    if (n < 2) await card.getByRole("button", { name: "Next photo" }).click();
+  }
+
+  // Leave mid-game: all three calls already count.
+  await page.goto("./map");
+  const section = page.getByTestId("trust-read");
+  await expect(section.getByRole("heading", { name: "Your trust" })).toBeVisible();
+  const you = [...expected.values()].reduce((s, t) => s + t.you, 0);
+  const rule = [...expected.values()].reduce((s, t) => s + t.rule, 0);
+  await expect(page.getByTestId("trust-read-line")).toContainText(
+    `You called ${you} of 3 photos right`,
+  );
+  await expect(page.getByTestId("trust-read-line")).toContainText(
+    `Atlas's own rule called ${rule} (`,
+  );
+  for (const b of bands) {
+    const t = expected.get(b)!;
+    await expect(page.getByTestId(`trust-read-${b}`)).toHaveAttribute(
+      "data-right",
+      String(t.right),
+    );
+    await expect(page.getByTestId(`trust-read-${b}-you`)).toHaveAttribute(
+      "data-correct",
+      String(t.you),
+    );
+    await expect(page.getByTestId(`trust-read-${b}-atlas`)).toHaveAttribute(
+      "data-correct",
+      String(t.rule),
+    );
+    await expect(page.getByTestId(`trust-read-${b}-you`)).toHaveAttribute(
+      "data-photos",
+      String(t.photos),
+    );
+  }
+  const box = (await page.getByTestId("trust-read-high").boundingBox())!;
+  expect(box.x + box.width).toBeLessThanOrEqual(321);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+
+  await section.getByRole("link", { name: "Play Trust Atlas?" }).click();
+  await expect(page).toHaveURL(/\/trust-atlas\/?$/);
 });
 
 test("on a 320px phone the photo, the calls and the answer fit without scrolling", async ({

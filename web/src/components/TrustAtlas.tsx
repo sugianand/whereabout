@@ -43,6 +43,7 @@ import {
   trustHeadToHead,
   type TrustChallenge,
 } from "@/lib/game/trustChallenge";
+import { recordTrustRead } from "@/lib/game/trustRead";
 import { placeholderUrl, sources } from "@/lib/photoSources";
 import { sendShare, type ShareOutcome } from "@/lib/share";
 
@@ -219,6 +220,8 @@ export default function TrustAtlas({
       const result = trustResult(record!, which);
       if (!result) return;
       const after = trustReducer(state, { type: "called", result });
+      // Your trust on Your map counts every call once, as it is made, in every kind of game.
+      if (after.phase === "answered") recordTrustRead(result, pick!.p);
       if (day) {
         // Kept after every photo, so a reload can't take a call back. Today's game is played
         // once for the day, apart from the free game's best.
@@ -234,7 +237,7 @@ export default function TrustAtlas({
       }
       dispatch({ type: "called", result });
     },
-    [ready, record, state, day, challenge],
+    [ready, record, pick, state, day, challenge],
   );
 
   // Y trusts and N doubts, wherever focus is but a text field.

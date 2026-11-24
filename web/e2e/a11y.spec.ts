@@ -227,11 +227,16 @@ for (const colorScheme of ["dark", "light"] as const) {
     });
 
     // Trust Atlas?'s answer card sits over the photo, the real country tagged on it.
-    test("trust atlas passes axe at its first answer", async ({ page }) => {
+    test("trust atlas passes axe at its first answer, and Your trust after it", async ({
+      page,
+    }) => {
       await page.goto("./trust-atlas");
       await page.getByRole("button", { name: "Trust it: Atlas is right" }).click();
       await expect(page.getByTestId("trust-atlas")).toBeVisible();
       await expectAccessible(page, "trust atlas answer");
+      await page.goto("./map");
+      await expect(page.getByTestId("trust-read-line")).toBeVisible();
+      await expectAccessible(page, "your trust");
     });
 
     // Spot the clue's answer lays Atlas's map over the photo, with the card under it; the

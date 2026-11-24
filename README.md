@@ -338,7 +338,11 @@ bet tallied as it is placed (only counts are kept, never a photo or a pin). Then
 Atlas**: over every Spot the clue square you've locked in, in free games, challenges and today's,
 how many were warm or better and how many squares they landed from Atlas's most telling on
 average, with where on the photo you look beside where Atlas's map sits, as two 3 × 3 charts of
-the photo (each square counted once as it is locked in; only counts are kept). Then **head to head with friends**: every friend's challenge you've answered from a link,
+the photo (each square counted once as it is locked in; only counts are kept). Then **your
+trust**: over every Trust Atlas? call, how many you called right at each band of Atlas's sureness
+(under 25%, 25% to 50%, 50% or more), trusting it when its country was right and doubting it when
+it wasn't, beside how Atlas's own rule (trust from 50%) did on the same photos, with who called more
+right; each call counted once as it is made, in every kind of game (only counts are kept). Then **head to head with friends**: every friend's challenge you've answered from a link,
 in any game, won, lost or tied, grouped by game with each result in its own units, a link to
 play theirs again and *Send a rematch*, which sends your result on it back. It is kept only in
 your browser.
