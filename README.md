@@ -265,7 +265,9 @@ the legs left, from the record `/tour` reads, and two for Bullseye: five 250 km 
 whole free or daily game, and your rings holding more often than Atlas's over at least 30 photos
 it bet on beside you, by Your calibration, and two for Spot the clue: Mind reader for Atlas's
 most telling square found on all five photos of one whole free or daily game, and Sharp eye for
-finding it 25 times in any game, by your read of Atlas. Each says how it's earned and how close you are (for
+finding it 25 times in any game, by your read of Atlas, and two for Trust Atlas?: Lie detector
+for all ten calls right in one whole free or daily game, and Second opinion for calling more
+photos right than Atlas's own sureness over at least 50 photos, by your trust on Your map. Each says how it's earned and how close you are (for
 Atlas, your nearest miss on the days kept; for a leg not yet cleared, your best game there against
 Atlas), the one nearest to done is named next, and a stamp once collected stays.
 

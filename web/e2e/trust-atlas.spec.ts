@@ -457,3 +457,63 @@ test("a Trust Atlas? challenge's answer card and end buttons fit a 320px phone",
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });
+
+test("every call right in one game earns Lie detector, with every call counted toward Second opinion", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+
+  await page.goto("./stamps");
+  await expect(page.getByRole("heading", { name: "Trust Atlas?", level: 2 })).toBeVisible();
+  const lieDetector = page.getByTestId("stamp-trust-lie-detector");
+  await expect(lieDetector).toHaveAttribute("data-earned", "false");
+  await expect(page.getByTestId("stamp-trust-lie-detector-progress")).toHaveText(
+    "0 of 10 calls right in a game",
+  );
+  await expect(page.getByTestId("stamp-trust-second-opinion-progress")).toHaveText(
+    "0 of 50 photos called",
+  );
+
+  // A whole game of right calls, judged from the shipped data, by key.
+  await page
+    .getByTestId("stamps-trust-intro")
+    .getByRole("link", { name: "Trust Atlas?", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/trust-atlas\/?$/);
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+  let rule = 0;
+  for (let n = 0; n < 10; n++) {
+    await expect(page.getByText(`Photo ${n + 1} of 10`, { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Trust it: Atlas is right" })).toBeEnabled();
+    const { right, sure } = await atlasRightOnScreen(page);
+    // Atlas's own rule trusts itself from 50% sure.
+    if (right === sure >= 50) rule++;
+    await page.keyboard.press(right ? "y" : "n");
+    await expect(card.getByRole("heading")).toHaveText("Called it");
+    await page.keyboard.press("Enter");
+  }
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("10 of 10 called right");
+
+  await page.goto("./stamps");
+  await expect(lieDetector).toHaveAttribute("data-earned", "true");
+  await expect(page.getByTestId("stamps-standing")).toContainText("since you last looked");
+  // Every call counts toward Second opinion, as your trust on Your map counts them.
+  await expect(page.getByTestId("stamp-trust-second-opinion-progress")).toHaveText(
+    "10 of 50 photos called",
+  );
+  await expect(page.getByTestId("stamp-trust-second-opinion")).toContainText(
+    `Calls right so far: yours 10, Atlas's own rule ${rule}`,
+  );
+
+  await page.setViewportSize({ width: 320, height: 700 });
+  await lieDetector.scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  await page
+    .getByTestId("stamps-trust-intro")
+    .getByRole("link", { name: /your trust on Your map/ })
+    .click();
+  await expect(page).toHaveURL(/\/map\/?$/);
+  expect(errors).toEqual([]);
+});

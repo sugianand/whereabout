@@ -29,6 +29,9 @@
  * - Spot the clue (`lib/game/spotClue.ts`): Mind reader for Atlas's most telling square found on
  *   all five photos of one whole game, free or today's, and a running count of the hottest
  *   squares found in any game toward `SPOT_FOUND_STAMP`, by your read of Atlas on Your map.
+ * - Trust Atlas? (`lib/game/trustAtlas.ts`): Lie detector for every call right in one whole game,
+ *   free or today's, and calling more right than Atlas's own rule over at least
+ *   `TRUST_READ_PHOTOS` photos, by your trust on Your map.
  *
  * The days every game keeps are the last `ARCHIVE_DAYS`, and the map's history is capped, so a
  * stamp could otherwise fade once its proof is gone. Each stamp is therefore written down under
@@ -60,6 +63,15 @@ import { loadBullseyeDays } from "@/lib/game/bullseyeDaily";
 import { SPOT_PHOTOS, loadBestHottest, spotTotals } from "@/lib/game/spotClue";
 import { loadSpotDays } from "@/lib/game/spotDaily";
 import { loadSpotRead } from "@/lib/game/spotRead";
+import { TRUST_PHOTOS, loadBestTrust, trustTotals } from "@/lib/game/trustAtlas";
+import { loadTrustDays } from "@/lib/game/trustDaily";
+import {
+  emptyTrustRead,
+  loadTrustRead,
+  trustReadLeader,
+  trustReadTotals,
+  type TrustRead,
+} from "@/lib/game/trustRead";
 import {
   clueReading,
   loadQuickRecord,
@@ -124,6 +136,12 @@ export const SPOT_FOUND_STAMP = 25;
 export const SPOT_STAMP_IDS = ["spot-mind-reader", "spot-found"] as const;
 export type SpotStampId = (typeof SPOT_STAMP_IDS)[number];
 
+/** Photos called in Trust Atlas? before calling more right than Atlas's own rule earns a stamp. */
+export const TRUST_READ_PHOTOS = 50;
+
+export const TRUST_STAMP_IDS = ["trust-lie-detector", "trust-second-opinion"] as const;
+export type TrustStampId = (typeof TRUST_STAMP_IDS)[number];
+
 export type StampId =
   | BadgeId
   | ContinentStampId
@@ -136,10 +154,20 @@ export type StampId =
   | TourLegStampId
   | "tour-complete"
   | BullseyeStampId
-  | SpotStampId;
+  | SpotStampId
+  | TrustStampId;
 
 export type StampGroup =
-  "badges" | "continents" | "days" | "atlas" | "clues" | "album" | "tour" | "bullseye" | "spot";
+  | "badges"
+  | "continents"
+  | "days"
+  | "atlas"
+  | "clues"
+  | "album"
+  | "tour"
+  | "bullseye"
+  | "spot"
+  | "trust";
 
 export const STAMP_GROUPS: readonly { id: StampGroup; title: string }[] = [
   { id: "badges", title: "Badges" },
@@ -151,6 +179,7 @@ export const STAMP_GROUPS: readonly { id: StampGroup; title: string }[] = [
   { id: "tour", title: "World Tour" },
   { id: "bullseye", title: "Bullseye" },
   { id: "spot", title: "Spot the clue" },
+  { id: "trust", title: "Trust Atlas?" },
 ];
 
 /** How far along an unearned stamp is: `have` of `need`, counted in `unit`. */
@@ -200,6 +229,16 @@ export interface StampSources {
   bullseye?: BullseyeSources;
   /** What Spot the clue keeps (`loadSpotSources`); none played if not given. */
   spot?: SpotSources;
+  /** What Trust Atlas? keeps (`loadTrustSources`); none played if not given. */
+  trust?: TrustSources;
+}
+
+/** What Trust Atlas? keeps, for its stamps. */
+export interface TrustSources {
+  /** The most calls right in one whole game, free or today's. */
+  bestCorrect: number;
+  /** Every call kept, by Atlas's sureness, as your trust on Your map reads it. */
+  read: TrustRead;
 }
 
 /** What Spot the clue keeps, for its stamps. */
@@ -288,6 +327,7 @@ export const STAMP_IDS: readonly StampId[] = [
   "tour-complete",
   ...BULLSEYE_STAMP_IDS,
   ...SPOT_STAMP_IDS,
+  ...TRUST_STAMP_IDS,
 ];
 
 const KNOWN: ReadonlySet<string> = new Set(STAMP_IDS);
@@ -785,6 +825,53 @@ function spotStamps({ spot }: StampSources): Stamp[] {
   ];
 }
 
+/**
+ * Trust Atlas?'s stamps. Lie detector counts the most calls right in a whole game kept; Second
+ * opinion compares your calls with Atlas's own rule on the same photos, by `trustReadLeader`, so
+ * the stamp and your trust on Your map always agree.
+ */
+function trustStamps({ trust }: StampSources): Stamp[] {
+  const bestCorrect = Math.min(trust?.bestCorrect ?? 0, TRUST_PHOTOS);
+  const read = trust?.read ?? emptyTrustRead();
+  const { photos, you, rule } = trustReadTotals(read);
+  const enough = photos >= TRUST_READ_PHOTOS;
+  const leader = trustReadLeader(read);
+  const ahead = enough && leader === "you";
+  const counts = `yours ${you}, Atlas's own rule ${rule}`;
+  let note: string | null = null;
+  if (ahead) note = `Calls right over ${photos} photos: ${counts}`;
+  else if (enough) note = `Calls right over ${photos} photos: ${counts}. Call on to pull ahead.`;
+  else if (leader !== null) note = `Calls right so far: ${counts}`;
+  return [
+    {
+      id: "trust-lie-detector",
+      group: "trust",
+      name: "Lie detector",
+      how: `Call all ${TRUST_PHOTOS} photos of a Trust Atlas? game right`,
+      icon: "🕵️",
+      earned: bestCorrect >= TRUST_PHOTOS,
+      progress: {
+        have: bestCorrect,
+        need: TRUST_PHOTOS,
+        unit: ["call right in a game", "calls right in a game"],
+      },
+      note: null,
+    },
+    {
+      id: "trust-second-opinion",
+      group: "trust",
+      name: "Second opinion",
+      how: `Call more Trust Atlas? photos right than Atlas's own sureness does, over at least ${TRUST_READ_PHOTOS} photos`,
+      icon: "🧐",
+      earned: ahead,
+      progress: enough
+        ? null
+        : { have: photos, need: TRUST_READ_PHOTOS, unit: ["photo called", "photos called"] },
+      note,
+    },
+  ];
+}
+
 /** Every stamp as the browser's records stand, before what was kept is added in. */
 export function readStamps(sources: StampSources): Stamp[] {
   return [
@@ -797,6 +884,7 @@ export function readStamps(sources: StampSources): Stamp[] {
     ...tourStamps(sources),
     ...bullseyeStamps(sources),
     ...spotStamps(sources),
+    ...trustStamps(sources),
   ];
 }
 
@@ -824,6 +912,19 @@ export function loadSpotSources(): SpotSources {
     .filter((d) => d.results.length >= SPOT_PHOTOS)
     .map((d) => spotTotals(d.results).hottest);
   return { bestHottest: Math.max(loadBestHottest(), ...days), found: loadSpotRead().hottest };
+}
+
+/**
+ * What Trust Atlas? keeps in this browser, for `StampSources.trust`: the most calls right in a
+ * whole free game, or in one of today's games played out, and every call as your trust on Your
+ * map counts them. A friend's challenge counts toward the calls but not Lie detector, as it
+ * never counts toward the best either.
+ */
+export function loadTrustSources(): TrustSources {
+  const days = Object.values(loadTrustDays())
+    .filter((d) => d.results.length >= TRUST_PHOTOS)
+    .map((d) => trustTotals(d.results).correct);
+  return { bestCorrect: Math.max(loadBestTrust(), ...days), read: loadTrustRead() };
 }
 
 /**

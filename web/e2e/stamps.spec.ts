@@ -84,12 +84,12 @@ test("stamps come from what the browser keeps, are marked new once, and fit a 32
       // So is Spot the clue from 2026-11-23 on.
       const square = (id: string) => ({ id, cell: 0, points: 0, hottest: false });
       keep("whereabout:spot-the-clue-daily", { results: ["a", "b", "c", "d", "e"].map(square) });
-      // And Trust Atlas? from 2026-11-25 on.
-      const trusted = (id: string) => ({
+      // And Trust Atlas? from 2026-11-25 on; one doubted right answer keeps Lie detector out.
+      const trusted = (id: string, i: number) => ({
         id,
-        call: "trust",
+        call: i === 0 ? "doubt" : "trust",
         atlasRight: true,
-        correct: true,
+        correct: i !== 0,
         atlasCall: "trust",
         atlasCorrect: true,
       });

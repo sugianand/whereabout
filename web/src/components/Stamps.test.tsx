@@ -5,6 +5,8 @@ import { BEST_TIGHT_KEY, settleBet } from "@/lib/game/bullseye";
 import { recordBullseyeRound } from "@/lib/game/bullseyeCalibration";
 import { BEST_HOTTEST_KEY } from "@/lib/game/spotClue";
 import { recordSpotRead } from "@/lib/game/spotRead";
+import { BEST_TRUST_KEY, type TrustResult } from "@/lib/game/trustAtlas";
+import { recordTrustRead } from "@/lib/game/trustRead";
 import { rememberClimateDay } from "@/lib/game/climateDaily";
 import { rememberGroundDay } from "@/lib/game/groundDaily";
 import { BEST_LEFT_RIGHT_KEY } from "@/lib/game/leftRight";
@@ -38,7 +40,7 @@ beforeEach(() => localStorage.clear());
 describe("Stamps", () => {
   it("shows every stamp uncollected on a first visit, with the next one up", async () => {
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
-    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^0 of 33 collected\.$/);
+    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^0 of 35 collected\.$/);
     expect(screen.getByRole("heading", { name: "Continents cleared" })).toBeInTheDocument();
     expect(screen.getByTestId("stamp-cleared-oceania")).toHaveAttribute("data-earned", "false");
     expect(screen.getByTestId("stamp-cleared-oceania-progress")).toHaveTextContent(
@@ -77,7 +79,7 @@ describe("Stamps", () => {
     );
     const { unmount } = render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
     const standing = await screen.findByTestId("stamps-standing");
-    expect(standing).toHaveTextContent("2 of 33 collected. 2 new stamps since you last looked.");
+    expect(standing).toHaveTextContent("2 of 35 collected. 2 new stamps since you last looked.");
     const oceania = screen.getByTestId("stamp-cleared-oceania");
     expect(oceania).toHaveAttribute("data-earned", "true");
     expect(within(oceania).getByText("New")).toBeInTheDocument();
@@ -98,7 +100,7 @@ describe("Stamps", () => {
     // The map forgotten, the stamp stays, no longer new.
     localStorage.removeItem(PLAYED_KEY);
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
-    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^2 of 33 collected\.$/);
+    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^2 of 35 collected\.$/);
     const kept = screen.getByTestId("stamp-cleared-oceania");
     expect(kept).toHaveAttribute("data-earned", "true");
     expect(within(kept).queryByText("New")).toBeNull();
@@ -111,7 +113,7 @@ describe("Stamps", () => {
     rememberOddDay("2026-11-10", { streak: 1, atlasRight: 2, atlasPlayed: 2, ended: "miss" });
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
     expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(
-      "1 of 33 collected. 1 new stamp since you last looked.",
+      "1 of 35 collected. 1 new stamp since you last looked.",
     );
     expect(screen.getByRole("heading", { name: "Beat Atlas" })).toBeInTheDocument();
     const won = screen.getByTestId("stamp-beat-atlas-name-country");
@@ -163,7 +165,7 @@ describe("Stamps", () => {
     );
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
     expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(
-      "4 of 33 collected. 4 new stamps since you last looked.",
+      "4 of 35 collected. 4 new stamps since you last looked.",
     );
     expect(screen.getByRole("heading", { name: "Reading the clues" })).toBeInTheDocument();
     expect(screen.getByTestId("stamp-road-reader")).toHaveAttribute("data-earned", "true");
@@ -329,6 +331,59 @@ describe("Stamps", () => {
     );
     expect(JSON.parse(localStorage.getItem(STAMPS_KEY)!)).toEqual({
       "spot-mind-reader": "2026-11-10",
+    });
+  });
+
+  it("shows Trust Atlas?'s stamps from the best kept and every call on Your map", async () => {
+    localStorage.setItem(BEST_TRUST_KEY, "7");
+    // Three calls at 30% sure, Atlas wrong on all: its rule doubts them, as do you twice.
+    const call = (id: string, c: "trust" | "doubt"): TrustResult => ({
+      id,
+      call: c,
+      atlasRight: false,
+      correct: c === "doubt",
+      atlasCall: "doubt",
+      atlasCorrect: true,
+    });
+    recordTrustRead(call("a", "doubt"), 0.3);
+    recordTrustRead(call("b", "doubt"), 0.3);
+    recordTrustRead(call("c", "trust"), 0.3);
+    render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
+    expect(await screen.findByRole("heading", { name: "Trust Atlas?" })).toBeInTheDocument();
+    const intro = screen.getByTestId("stamps-trust-intro");
+    expect(within(intro).getByRole("link", { name: "Trust Atlas?" })).toHaveAttribute(
+      "href",
+      "/trust-atlas",
+    );
+    expect(within(intro).getByRole("link", { name: "today's Trust Atlas?" })).toHaveAttribute(
+      "href",
+      "/trust-atlas/daily",
+    );
+    expect(within(intro).getByRole("link", { name: /your trust on Your map/ })).toHaveAttribute(
+      "href",
+      "/map",
+    );
+    expect(screen.getByTestId("stamp-trust-lie-detector")).toHaveAttribute("data-earned", "false");
+    expect(screen.getByTestId("stamp-trust-lie-detector-progress")).toHaveTextContent(
+      "7 of 10 calls right in a game",
+    );
+    expect(screen.getByTestId("stamp-trust-second-opinion-progress")).toHaveTextContent(
+      "3 of 50 photos called",
+    );
+    expect(screen.getByTestId("stamp-trust-second-opinion")).toHaveTextContent(
+      "Calls right so far: yours 2, Atlas's own rule 3",
+    );
+  });
+
+  it("collects Lie detector from a whole game of ten right", async () => {
+    localStorage.setItem(BEST_TRUST_KEY, "10");
+    render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
+    expect(await screen.findByTestId("stamp-trust-lie-detector")).toHaveAttribute(
+      "data-earned",
+      "true",
+    );
+    expect(JSON.parse(localStorage.getItem(STAMPS_KEY)!)).toEqual({
+      "trust-lie-detector": "2026-11-10",
     });
   });
 });

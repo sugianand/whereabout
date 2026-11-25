@@ -23,6 +23,9 @@ import { rememberSideDay } from "@/lib/game/sideDaily";
 import { BEST_HOTTEST_KEY, type SpotResult } from "@/lib/game/spotClue";
 import { rememberSpotDay } from "@/lib/game/spotDaily";
 import { recordSpotRead } from "@/lib/game/spotRead";
+import { BEST_TRUST_KEY, rightCall, type TrustCall, type TrustResult } from "@/lib/game/trustAtlas";
+import { rememberTrustDay } from "@/lib/game/trustDaily";
+import { addCall, emptyTrustRead, recordTrustRead, type TrustRead } from "@/lib/game/trustRead";
 import type { AtlasLooked } from "@/lib/game/types";
 import { rememberClimate, type ClimateResult } from "@/lib/game/whichClimate";
 import { VERSUS_GAMES, type DayTally, type Versus } from "@/lib/game/today";
@@ -38,6 +41,7 @@ import {
   ROAD_READER_RUN,
   STAMPS_KEY,
   SPOT_FOUND_STAMP,
+  TRUST_READ_PHOTOS,
   STAMP_IDS,
   albumPageStampId,
   albumShareNeed,
@@ -50,6 +54,7 @@ import {
   loadBullseyeSources,
   loadClueSources,
   loadSpotSources,
+  loadTrustSources,
   loadKeptStamps,
   longestFullRun,
   nextStamp,
@@ -130,6 +135,8 @@ describe("readStamps", () => {
       "bullseye-calibrated",
       "spot-mind-reader",
       "spot-found",
+      "trust-lie-detector",
+      "trust-second-opinion",
     ]);
     expect(stamps.every((s) => !s.earned)).toBe(true);
     // Every id read is one the store accepts.
@@ -795,6 +802,122 @@ describe("loadSpotSources", () => {
     recordSpotRead(looked, 5);
     recordSpotRead(looked, 6);
     expect(loadSpotSources().found).toBe(2);
+  });
+});
+
+/** A call on a photo Atlas got right or wrong, judged by the game's own rule. */
+function trustCall(id: string, atlasRight: boolean, call: TrustCall, p = 0.4): TrustResult {
+  const right = rightCall(atlasRight);
+  const own: TrustCall = p >= 0.5 ? "trust" : "doubt";
+  return {
+    id,
+    call,
+    atlasRight,
+    correct: call === right,
+    atlasCall: own,
+    atlasCorrect: own === right,
+  };
+}
+
+/** A read of `n` calls at sureness `p`, Atlas right on `right` of them, you correct on `mine`. */
+function trustRead(n: number, p: number, right: number, mine: number): TrustRead {
+  let read = emptyTrustRead();
+  for (let i = 0; i < n; i++) {
+    const atlasRight = i < right;
+    const correct = i < mine;
+    const call: TrustCall = correct === atlasRight ? "trust" : "doubt";
+    read = addCall(read, trustCall(`t${i}`, atlasRight, call, p), p);
+  }
+  return read;
+}
+
+describe("Trust Atlas? stamps", () => {
+  const trust = (bestCorrect: number, read: TrustRead = emptyTrustRead()) =>
+    sources({ trust: { bestCorrect, read } });
+
+  it("lists both under Trust Atlas?, none earned in a fresh browser, with ids kept", () => {
+    const stamps = readStamps(sources()).filter((s) => s.group === "trust");
+    expect(stamps.map((s) => s.id)).toEqual(["trust-lie-detector", "trust-second-opinion"]);
+    for (const s of stamps) {
+      expect(s.earned).toBe(false);
+      expect(s.note).toBeNull();
+      expect(STAMP_IDS).toContain(s.id);
+    }
+    expect(byId(stamps, "trust-lie-detector").progress).toEqual({
+      have: 0,
+      need: 10,
+      unit: ["call right in a game", "calls right in a game"],
+    });
+    expect(byId(stamps, "trust-second-opinion").progress).toEqual({
+      have: 0,
+      need: TRUST_READ_PHOTOS,
+      unit: ["photo called", "photos called"],
+    });
+  });
+
+  it("earns Lie detector on all ten calls right in one game, not nine", () => {
+    const nine = byId(readStamps(trust(9)), "trust-lie-detector");
+    expect(nine.earned).toBe(false);
+    expect(nine.progress?.have).toBe(9);
+    expect(byId(readStamps(trust(10)), "trust-lie-detector").earned).toBe(true);
+    // A forged best past ten reads as ten, never more.
+    expect(byId(readStamps(trust(14)), "trust-lie-detector").progress?.have).toBe(10);
+  });
+
+  it("counts photos toward Second opinion, noting both sides' calls so far", () => {
+    // 40% sure, so Atlas's rule doubts all of them: right on the 30 it got wrong.
+    const short = byId(readStamps(trust(0, trustRead(49, 0.4, 19, 45))), "trust-second-opinion");
+    expect(short.earned).toBe(false);
+    expect(short.progress?.have).toBe(49);
+    expect(short.note).toBe("Calls right so far: yours 45, Atlas's own rule 30");
+  });
+
+  it("earns Second opinion past 50 photos only when you call more right than the rule", () => {
+    const ahead = byId(readStamps(trust(0, trustRead(50, 0.4, 20, 31))), "trust-second-opinion");
+    expect(ahead.earned).toBe(true);
+    expect(ahead.progress).toBeNull();
+    expect(ahead.note).toBe("Calls right over 50 photos: yours 31, Atlas's own rule 30");
+
+    // Level with the rule is not ahead of it.
+    const level = byId(readStamps(trust(0, trustRead(50, 0.4, 20, 30))), "trust-second-opinion");
+    expect(level.earned).toBe(false);
+    expect(level.progress).toBeNull();
+    expect(level.note).toBe(
+      "Calls right over 50 photos: yours 30, Atlas's own rule 30. Call on to pull ahead.",
+    );
+
+    // 80% sure: the rule trusts every answer, right on the 45 Atlas got right.
+    const behind = byId(readStamps(trust(0, trustRead(60, 0.8, 45, 40))), "trust-second-opinion");
+    expect(behind.earned).toBe(false);
+    expect(behind.note).toBe(
+      "Calls right over 60 photos: yours 40, Atlas's own rule 45. Call on to pull ahead.",
+    );
+  });
+});
+
+describe("loadTrustSources", () => {
+  beforeEach(() => localStorage.clear());
+
+  const day = (right: number, of = 10) =>
+    Array.from({ length: of }, (_, i) => trustCall(`d${i}`, true, i < right ? "trust" : "doubt"));
+
+  it("is empty in a fresh browser", () => {
+    expect(loadTrustSources()).toEqual({ bestCorrect: 0, read: emptyTrustRead() });
+  });
+
+  it("takes the most of the free games' best and a whole day's calls right", () => {
+    localStorage.setItem(BEST_TRUST_KEY, "6");
+    rememberTrustDay("2026-11-09", day(8));
+    // Today's game is five photos in, all right: not a whole game yet.
+    rememberTrustDay(TODAY, day(5, 5));
+    expect(loadTrustSources().bestCorrect).toBe(8);
+  });
+
+  it("reads every call as your trust on Your map keeps them", () => {
+    recordTrustRead(trustCall("a", true, "trust", 0.7), 0.7);
+    recordTrustRead(trustCall("b", false, "doubt", 0.1), 0.1);
+    const { read } = loadTrustSources();
+    expect(read.map((t) => t.photos)).toEqual([1, 0, 1]);
   });
 });
 
