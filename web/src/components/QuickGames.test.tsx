@@ -61,6 +61,10 @@ describe("QuickGames", () => {
       "href",
       "/trust-atlas",
     );
+    expect(screen.getByRole("link", { name: /^Which fooled Atlas\?/ })).toHaveAttribute(
+      "href",
+      "/fooled-atlas",
+    );
     expect(screen.getByRole("link", { name: /^Name the country/ })).toHaveAttribute(
       "href",
       "/name-country",

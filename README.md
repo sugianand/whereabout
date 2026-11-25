@@ -151,6 +151,14 @@ A whole free game can **challenge a friend**: the link deals them the same ten p
 your trust or doubt on each, shown on their answer card once they have made their own call. Whether
 each of your calls was right is judged on the photo's real country, never read from the link, and
 the end screen offers *Send yours back* and a head-to-head picture.
+**Which fooled Atlas?** (at `/fooled-atlas`, in the Games menu) shows two photos side by side:
+pick the one Atlas placed further from where it was taken (tap it, or press 1 or 2). The answer
+tags each photo with how far off Atlas's pin landed and draws both misses on a scale from spot on
+to the other side of the world; misses under one and a half times apart, or both under 25 km, are
+too close to call and either pick counts. A right pick keeps the second photo beside a new one,
+and the first wrong pick ends the run. Atlas plays along by its own sureness, picking the photo it
+was less sure of, so each pair also asks whether Atlas knows when it is lost. Your best run is kept
+in your browser and shown in the Games menu.
 **Name the country** (at `/name-country`, in the Games menu) shows one photo and four countries from
 the same continent, drawn from the countries the globe draws: tap the right one, or press 1 to 4,
 and go on until your first miss. Atlas picks too, the name it gave the most of the four, and the

@@ -9,6 +9,7 @@ import catalog from "@/data/photos.json";
 
 import { continentMap } from "./clueMix";
 import { buildDeck, gameRecords } from "./deck";
+import { fooledIds } from "./fooledAtlas";
 import { nameIds } from "./nameCountry";
 import { groundMap } from "./onTheGround";
 import { spotIds } from "./spotClue";
@@ -68,3 +69,9 @@ export const bundledSpotIds = spotIds(bundledRecords);
  * answer arrives with its photo's record.
  */
 export const bundledTrustIds = trustIds(bundledRecords);
+
+/**
+ * The photos Which fooled Atlas? can deal: those Atlas pinned (`fooledIds`). Ids only; how far
+ * off Atlas was arrives with each photo's record, so the page never carries the answers.
+ */
+export const bundledFooledIds = fooledIds(bundledRecords);

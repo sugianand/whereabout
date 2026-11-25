@@ -38,6 +38,7 @@ export type HelpScreen =
   | "bullseye"
   | "spot-the-clue"
   | "trust-atlas"
+  | "fooled-atlas"
   | "name-country"
   | "line-up"
   | "close-up"
@@ -365,6 +366,28 @@ export const CONTROLS: Record<HelpScreen, readonly ControlGroup[]> = {
       ],
     },
   ],
+  "fooled-atlas": [
+    {
+      title: "Which fooled Atlas?",
+      controls: [
+        {
+          id: "pick",
+          does: "Pick the photo Atlas placed further from home",
+          keys: [k("1"), k("2")],
+          mouse: "Click a photo",
+          touch: "Tap a photo",
+        },
+        {
+          id: "next",
+          does: "Next pair, from the answer",
+          keys: [k("Enter")],
+          mouse: "Next pair",
+          touch: "Next pair",
+        },
+        HELP,
+      ],
+    },
+  ],
   "name-country": [
     PHOTO_CONTROLS,
     {
@@ -554,6 +577,7 @@ export const SCREEN_TITLES: Record<HelpScreen, string> = {
   bullseye: "Controls for Bullseye",
   "spot-the-clue": "Controls for Spot the clue",
   "trust-atlas": "Controls for Trust Atlas?",
+  "fooled-atlas": "Controls for Which fooled Atlas?",
   "name-country": "Controls for Name the country",
   "line-up": "Controls for Line them up",
   "close-up": "Controls for Close-up",

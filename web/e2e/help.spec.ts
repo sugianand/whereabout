@@ -354,6 +354,32 @@ test.describe("on a keyboard", () => {
     await expect(page.getByText("Photo 3 of 10", { exact: true })).toBeVisible();
   });
 
+  test("? lists Which fooled Atlas?'s controls, and every one of its keys works", async ({
+    page,
+  }) => {
+    await page.goto("./fooled-atlas");
+    const first = page.getByRole("button", { name: "Photo 1 fooled Atlas" });
+    await expect(first).toBeEnabled();
+    const sheet = await openWithKey(page, "Controls for Which fooled Atlas?");
+    await expectSheetLists(sheet, "fooled-atlas", false);
+    // 1 pressed in the sheet doesn't pick a photo behind it.
+    await page.keyboard.press("1");
+    await page.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+    const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
+    await expect(card).toBeHidden();
+
+    // 1 or 2 picks a photo; Enter moves on from the answer, unless the pick ended the run.
+    await page.keyboard.press(keysOf("fooled-atlas", "pick")[0]);
+    await expect(card).toBeVisible();
+    await expect(card.getByRole("button", { name: /^(Next pair|Start a new run)$/ })).toBeFocused();
+    await page.keyboard.press(keysOf("fooled-atlas", "next")[0]);
+    await expect(card).toBeHidden();
+    await expect(first).toBeEnabled();
+    await page.keyboard.press(keysOf("fooled-atlas", "pick")[1]);
+    await expect(card).toBeVisible();
+  });
+
   test("? lists Left or right?'s controls, and every one of its keys works", async ({ page }) => {
     await page.goto("./left-right");
     await expect(page.getByRole("button", { name: "Left: they drive on the left" })).toBeEnabled();
@@ -590,6 +616,7 @@ test.describe("on a touch screen", () => {
     ["bullseye", "./bullseye", "Controls for Bullseye"],
     ["spot-the-clue", "./spot-the-clue", "Controls for Spot the clue"],
     ["trust-atlas", "./trust-atlas", "Controls for Trust Atlas?"],
+    ["fooled-atlas", "./fooled-atlas", "Controls for Which fooled Atlas?"],
   ] as const) {
     test(`the help button lists ${screen}'s gestures on screen`, async ({ page }) => {
       await page.goto(path);

@@ -58,6 +58,7 @@ const FIRST_SCREENS = [
   "./bullseye",
   "./spot-the-clue",
   "./trust-atlas",
+  "./fooled-atlas",
   "./bullseye/daily",
   "./spot-the-clue/daily",
   "./trust-atlas/daily",
@@ -224,6 +225,14 @@ for (const colorScheme of ["dark", "light"] as const) {
       await page.goto("./map");
       await expect(page.getByTestId("calibration-line")).toBeVisible();
       await expectAccessible(page, "your calibration");
+    });
+
+    // Which fooled Atlas?'s answer card sits over both photos, each tagged with Atlas's miss.
+    test("which fooled atlas passes axe at its first answer", async ({ page }) => {
+      await page.goto("./fooled-atlas");
+      await page.getByRole("button", { name: "Photo 1 fooled Atlas" }).click();
+      await expect(page.getByTestId("fooled-photo-1")).toContainText("Atlas off by");
+      await expectAccessible(page, "which fooled atlas answer");
     });
 
     // Trust Atlas?'s answer card sits over the photo, the real country tagged on it.
