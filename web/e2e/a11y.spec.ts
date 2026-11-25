@@ -62,6 +62,7 @@ const FIRST_SCREENS = [
   "./bullseye/daily",
   "./spot-the-clue/daily",
   "./trust-atlas/daily",
+  "./fooled-atlas/daily",
   "./name-country",
   "./line-up",
   "./close-up",

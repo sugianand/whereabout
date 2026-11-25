@@ -158,7 +158,11 @@ to the other side of the world; misses under one and a half times apart, or both
 too close to call and either pick counts. A right pick keeps the second photo beside a new one,
 and the first wrong pick ends the run. Atlas plays along by its own sureness, picking the photo it
 was less sure of, so each pair also asks whether Atlas knows when it is lost. Your best run is kept
-in your browser and shown in the Games menu.
+in your browser and shown in the Games menu. **Today's run** (at `/fooled-atlas/daily`, on Today
+from 2026-11-26) deals everyone the same pairs on the same UTC day, one try a day: the run is kept
+after every pick, so a reload picks up at the same pair and a finished day shows its result instead
+of dealing it again. Today sets your streak against Atlas's own picks, for a *Beat Atlas* stamp,
+and the share line is the streak as a square per pair beside Atlas's tally, naming no place.
 **Name the country** (at `/name-country`, in the Games menu) shows one photo and four countries from
 the same continent, drawn from the countries the globe draws: tap the right one, or press 1 to 4,
 and go on until your first miss. Atlas picks too, the name it gave the most of the four, and the

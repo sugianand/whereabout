@@ -125,6 +125,7 @@ describe("readStamps", () => {
       "beat-atlas-on-the-ground",
       "beat-atlas-bullseye",
       "beat-atlas-trust-atlas",
+      "beat-atlas-fooled-atlas",
       "road-reader",
       "climate-reader",
       "ground-reader",

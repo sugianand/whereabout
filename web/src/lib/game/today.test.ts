@@ -10,6 +10,7 @@ import { rememberCloseDay } from "./closeDaily";
 import { type CloseResult } from "./closeUp";
 import { ARCHIVE_DAYS, DAILY_SCORES_KEY, daysBefore } from "./dailyArchive";
 import { rememberFarDay } from "./farDaily";
+import { rememberFooledDay } from "./fooledDaily";
 import { rememberGroundDay } from "./groundDaily";
 import { hotAtlas, hotPin, hotRound } from "./hotCold";
 import { rememberHotDay } from "./hotDaily";
@@ -351,6 +352,8 @@ const finishJoined: Partial<Record<TodayGameId, (day: string) => void>> = {
   bullseye: (day) => rememberBullseyeDay(day, BULLSEYE_GAME),
   "spot-the-clue": (day) => rememberSpotDay(day, SPOT_GAME),
   "trust-atlas": (day) => rememberTrustDay(day, TRUST_GAME),
+  "fooled-atlas": (day) =>
+    rememberFooledDay(day, { streak: 3, atlasRight: 2, atlasPlayed: 4, ended: "miss" }),
 };
 
 /** Every daily game finished on `day` but `except`, each as it writes its own store. */
@@ -640,6 +643,40 @@ describe("today's Trust Atlas? on Today", () => {
 
   it("has a Beat Atlas game of its own", () => {
     expect(VERSUS_GAMES.some((g) => g.id === "trust-atlas")).toBe(true);
+  });
+});
+
+describe("today's Which fooled Atlas? on Today", () => {
+  const DAY_IN = "2026-11-26";
+  const AT = new Date(`${DAY_IN}T12:00:00Z`);
+  const game = () => todayGames(DAY_IN, IDS, AT).find((g) => g.id === "fooled-atlas")!;
+
+  it("reads the run as it is kept, and calls it against Atlas's own pick", () => {
+    expect(todayGames("2026-11-25", IDS, AT).some((g) => g.id === "fooled-atlas")).toBe(false);
+    expect(game()).toMatchObject({
+      status: "new",
+      line: "Not started",
+      href: "/fooled-atlas/daily",
+    });
+    rememberFooledDay(DAY_IN, { streak: 2, atlasRight: 1, atlasPlayed: 2, ended: null });
+    expect(game()).toMatchObject({
+      status: "going",
+      line: "2 pairs in a row so far",
+      atlas: "1 of 2",
+      versus: null,
+    });
+    // Three right and the miss: four pairs, all of them played by Atlas too.
+    finishJoined["fooled-atlas"]!(DAY_IN);
+    expect(game()).toMatchObject({
+      status: "done",
+      line: "3 pairs in a row",
+      atlas: "2 of 4",
+      versus: { you: 3, atlas: 2, unit: "right", call: "you" },
+    });
+  });
+
+  it("has a Beat Atlas game of its own", () => {
+    expect(VERSUS_GAMES.some((g) => g.id === "fooled-atlas")).toBe(true);
   });
 });
 

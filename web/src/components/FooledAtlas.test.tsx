@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GameRecord } from "@/lib/game/deck";
 import { BEST_FOOLED_KEY } from "@/lib/game/fooledAtlas";
+import { FOOLED_DAILY_KEY, dailyFooledOrder } from "@/lib/game/fooledDaily";
 import type { CatalogPhoto } from "@/lib/game/types";
 import { gameFor } from "@/test/deck";
 
@@ -120,5 +121,121 @@ describe("FooledAtlas", () => {
   it("says so when there are too few photos to deal", async () => {
     await setup(["q1"]);
     expect(await screen.findByRole("heading", { name: "No photos to play yet" })).toBeVisible();
+  });
+});
+
+describe("FooledAtlas, today's run", () => {
+  // Misses at least twice apart, so no pair is a dead heat whatever order the day deals.
+  const MISSES: Record<string, number> = { d1: 1, d2: 3, d3: 9, d4: 27, d5: 81 };
+  const DAILY = Object.entries(MISSES).map(([id, deg]) => record(id, deg, deg / 100));
+  const DAY = "2026-11-26";
+  const now = () => new Date(`${DAY}T18:48:00Z`);
+  const order = dailyFooledOrder(Object.keys(MISSES), DAY);
+  /** The photo (1 or 2) Atlas really missed by more in the pair starting at `index`. */
+  const fooled = (index: number) => (MISSES[order[index]] > MISSES[order[index + 1]] ? 1 : 2);
+
+  function play() {
+    const game = gameFor(DAILY);
+    return render(
+      <FooledAtlas
+        deck={game.deck}
+        ids={Object.keys(MISSES)}
+        loadRecords={game.loadRecords}
+        daily
+        now={now}
+      />,
+    );
+  }
+
+  it("deals the day's order, picks the run back up after a reload, and ends on a miss", async () => {
+    const first = play();
+    await waitFor(() => expect(pickButton(1)).toBeEnabled());
+    expect(screen.getByTestId("fooled-photo-1")).toHaveAttribute("data-photo", order[0]);
+    expect(screen.getByTestId("fooled-photo-2")).toHaveAttribute("data-photo", order[1]);
+    expect(screen.getByText(/today's run \(2026-11-26\)/)).toBeInTheDocument();
+    expect(screen.queryByText("Best")).toBeNull();
+    expect(screen.getByRole("link", { name: "Free runs" })).toHaveAttribute(
+      "href",
+      "/fooled-atlas",
+    );
+    fireEvent.click(pickButton(fooled(0)));
+    await screen.findByRole("button", { name: "Next pair" });
+    first.unmount();
+
+    // A reload carries on at the next pair, with the streak so far: no fresh start.
+    play();
+    await waitFor(() => expect(pickButton(1)).toBeEnabled());
+    expect(screen.getByTestId("fooled-photo-1")).toHaveAttribute("data-photo", order[1]);
+    expect(screen.getByTestId("fooled-photo-2")).toHaveAttribute("data-photo", order[2]);
+    expect(streak()).toHaveTextContent("1");
+
+    fireEvent.click(pickButton(fooled(1) === 1 ? 2 : 1));
+    const card = await screen.findByRole("region");
+    expect(within(card).getByRole("heading")).toHaveTextContent("Wrong");
+    expect(card).toHaveTextContent("Today's run is over: 1 pair in a row.");
+    expect(within(card).queryByRole("button", { name: "Start a new run" })).toBeNull();
+    expect(within(card).getByRole("link", { name: "Play a free run" })).toHaveAttribute(
+      "href",
+      "/fooled-atlas",
+    );
+    // Sureness rises with the miss here, so Atlas's own pick (the less sure photo) is always
+    // the one it missed by less: wrong on both pairs.
+    expect(JSON.parse(localStorage.getItem(FOOLED_DAILY_KEY)!)).toEqual({
+      [DAY]: { streak: 1, atlasRight: 0, atlasPlayed: 2, ended: "miss" },
+    });
+    // Today's run keeps its own result, apart from the free runs' best.
+    expect(localStorage.getItem(BEST_FOOLED_KEY)).toBeNull();
+
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    fireEvent.click(within(card).getByRole("button", { name: "Share today's run" }));
+    expect(await within(card).findByText("Result copied. Paste it anywhere.")).toBeVisible();
+    const shared = writeText.mock.calls[0][0] as string;
+    expect(shared).toMatch(
+      /^Whereabout · Which fooled Atlas\? · 2026-11-26\n🤖 1 pair in a row\n🟩🟥\nAtlas's own pick: 0 of 2\n/,
+    );
+    expect(shared).not.toMatch(/Place d/);
+  });
+
+  it("shows the day's result instead of dealing it again once it has ended", async () => {
+    localStorage.setItem(
+      FOOLED_DAILY_KEY,
+      JSON.stringify({ [DAY]: { streak: 3, atlasRight: 2, atlasPlayed: 4, ended: "miss" } }),
+    );
+    play();
+    expect(await screen.findByRole("heading", { name: "3 pairs in a row" })).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Atlas's own pick got 2 of the 4 pairs it played\. The next run is dealt in 5h 12m\./,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Share today's run" })).toHaveFocus();
+    expect(screen.queryByRole("button", { name: /fooled Atlas$/ })).toBeNull();
+  });
+
+  it("shows the day's result once every photo is called", async () => {
+    // Four right of five photos leaves one pair: the last right pick clears the day.
+    localStorage.setItem(
+      FOOLED_DAILY_KEY,
+      JSON.stringify({ [DAY]: { streak: 3, atlasRight: 0, atlasPlayed: 3, ended: null } }),
+    );
+    play();
+    await waitFor(() => expect(pickButton(1)).toBeEnabled());
+    expect(screen.getByTestId("fooled-photo-1")).toHaveAttribute("data-photo", order[3]);
+    fireEvent.click(pickButton(fooled(3)));
+    expect(JSON.parse(localStorage.getItem(FOOLED_DAILY_KEY)!)[DAY]).toEqual({
+      streak: 4,
+      atlasRight: 0,
+      atlasPlayed: 4,
+      ended: "cleared",
+    });
+  });
+
+  it("links free runs to today's run", async () => {
+    await setup();
+    expect(await screen.findByRole("link", { name: "Today's run" })).toHaveAttribute(
+      "href",
+      "/fooled-atlas/daily",
+    );
   });
 });

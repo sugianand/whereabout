@@ -107,7 +107,12 @@ export type FooledState =
     });
 
 export type FooledAction =
-  | { type: "start"; order: readonly string[] }
+  | {
+      type: "start";
+      order: readonly string[];
+      /** A run picked back up where it was left (today's run): the pair after `streak` right. */
+      from?: { streak: number; atlasRight: number; atlasPlayed: number };
+    }
   | {
       type: "picked";
       side: Side;
@@ -125,8 +130,11 @@ export const initialFooled: FooledState = { phase: "idle" };
 export function fooledReducer(state: FooledState, action: FooledAction): FooledState {
   switch (action.type) {
     case "start": {
-      const run: Run = { order: action.order, index: 0, streak: 0, atlasRight: 0, atlasPlayed: 0 };
-      return action.order.length < 2 ? { phase: "cleared", ...run } : { phase: "picking", ...run };
+      const blank: Run = { order: action.order, index: 0, streak: 0, atlasRight: 0, atlasPlayed: 0 };
+      const run: Run = action.from ? { ...blank, ...action.from, index: action.from.streak } : blank;
+      return run.index + 1 >= action.order.length
+        ? { phase: "cleared", ...run }
+        : { phase: "picking", ...run };
     }
     case "picked": {
       if (state.phase !== "picking") return state;

@@ -5,7 +5,7 @@
  * and the photos and rows of How far apart?, Hot and cold, Line them up, Close-up, Which climate?,
  * What's on the ground?, Bullseye, Spot the clue and Trust Atlas? (./farDaily.ts, ./hotDaily.ts,
  * ./lineDaily.ts, ./closeDaily.ts, ./climateDaily.ts, ./groundDaily.ts, ./bullseyeDaily.ts,
- * ./spotDaily.ts, ./trustDaily.ts). What a game can't read back counts as not started.
+ * ./spotDaily.ts, ./trustDaily.ts). Which fooled Atlas? is a streak game too (./fooledDaily.ts). What a game can't read back counts as not started.
  *
  * Like every share in the game, the combined line is scores and counts only, so it spoils no
  * photo. Only finished games go in it: a run still going has no result yet.
@@ -37,6 +37,7 @@ import { CLOSE_PHOTOS, CLOSE_POINTS, closeTotals } from "./closeUp";
 import { ARCHIVE_DAYS, archiveDays, loadDailyScores } from "./dailyArchive";
 import { dailyRunUrl, type DailyRun } from "./dailyRuns";
 import { loadFarDay } from "./farDaily";
+import { loadFooledDay } from "./fooledDaily";
 import { loadGroundDay } from "./groundDaily";
 import { HOT_PHOTOS, PHOTO_POINTS, atlasTotal as hotAtlasTotal, hotTotal } from "./hotCold";
 import { loadHotDay } from "./hotDaily";
@@ -69,7 +70,8 @@ export type TodayGameId =
   | "on-the-ground"
   | "bullseye"
   | "spot-the-clue"
-  | "trust-atlas";
+  | "trust-atlas"
+  | "fooled-atlas";
 
 /** One daily game: where it lives, whatever the browser holds. */
 export interface TodayGameInfo {
@@ -215,6 +217,15 @@ export const TODAY_GAMES: readonly TodayGameInfo[] = [
     blurb: "Ten photos: Atlas names a country and how sure it is. Trust it or doubt it.",
     // From the next UTC day, so a day already played in full isn't left one game short.
     since: "2026-11-25",
+  },
+  {
+    id: "fooled-atlas",
+    name: "Which fooled Atlas?",
+    href: "/fooled-atlas/daily",
+    icon: "🤖",
+    blurb: "Two photos: pick the one Atlas placed further from home, until your first miss.",
+    // From the next UTC day, so a day already played in full isn't left one game short.
+    since: "2026-11-26",
   },
 ];
 
@@ -484,6 +495,8 @@ export function todayGames(
         return { ...info, ...spotTheClue(day) };
       case "trust-atlas":
         return { ...info, ...trustAtlas(day) };
+      case "fooled-atlas":
+        return { ...info, ...streakGame(loadFooledDay(day), "pair") };
     }
   });
 }

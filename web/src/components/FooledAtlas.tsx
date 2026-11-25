@@ -20,12 +20,21 @@ import {
   type FooledVerdict,
   type Side,
 } from "@/lib/game/fooledAtlas";
+import {
+  dailyFooledOrder,
+  fooledDailyShare,
+  fooledToday,
+  loadFooledDay,
+  rememberFooledDay,
+  type FooledDay,
+} from "@/lib/game/fooledDaily";
 import { formatDistance } from "@/lib/geo";
 import { placeholderUrl, sources } from "@/lib/photoSources";
 import type { Units } from "@/lib/units";
 import { useUnits } from "@/lib/useUnits";
 
 import ControlsHelp from "./ControlsHelp";
+import { DailyRunResult, ShareDay } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
 import UnitsSwitch from "./UnitsSwitch";
 
@@ -37,6 +46,13 @@ type FooledAtlasProps = {
   loadRecords?: (ids: string[]) => Promise<GameRecord[]>;
   /** For tests: the randomness that shuffles each run. */
   random?: () => number;
+  /**
+   * Today's run (src/lib/game/fooledDaily.ts): dealt from the UTC date, one try a day, picked
+   * back up where it was left, with a share line at the end. Off, every run is a fresh shuffle.
+   */
+  daily?: boolean;
+  /** For tests: the clock that picks today's run. */
+  now?: () => Date;
 };
 
 const SIDES: readonly Side[] = ["a", "b"];
@@ -54,7 +70,14 @@ const percent = (p: number) => `${Math.round(p * 100)}%`;
  * further from where it was taken. A right pick keeps the second photo and deals a new one beside
  * it; the first wrong pick ends the run.
  */
-export default function FooledAtlas({ deck, ids, loadRecords, random }: FooledAtlasProps) {
+export default function FooledAtlas({
+  deck,
+  ids,
+  loadRecords,
+  random,
+  daily = false,
+  now,
+}: FooledAtlasProps) {
   const [state, dispatch] = useReducer(fooledReducer, initialFooled);
   const [best, setBest] = useState(0);
   // The best before this run, so the end card can say when it was beaten.
@@ -62,14 +85,38 @@ export default function FooledAtlas({ deck, ids, loadRecords, random }: FooledAt
   const [records, setRecords] = useState<ReadonlyMap<string, GameRecord>>(() => new Map());
   const [error, setError] = useState<string | null>(null);
   const units = useUnits();
+  // Today's run: the day it was dealt for (kept when the clock passes midnight mid-run) and,
+  // once it has ended, how it went, which shows instead of the game.
+  const [day, setDay] = useState<string | null>(null);
+  const [dayDone, setDayDone] = useState<FooledDay | null>(null);
 
   const start = useCallback(() => {
+    if (daily) {
+      const today = fooledToday(now?.());
+      const kept = loadFooledDay(today);
+      setDay(today);
+      if (kept?.ended) {
+        setDayDone(kept);
+        return;
+      }
+      const { streak, atlasRight, atlasPlayed } = kept ?? {
+        streak: 0,
+        atlasRight: 0,
+        atlasPlayed: 0,
+      };
+      dispatch({
+        type: "start",
+        order: dailyFooledOrder(ids, today),
+        from: { streak, atlasRight, atlasPlayed },
+      });
+      return;
+    }
     const stored = loadBestFooled();
     setBest(stored);
     setBestBeforeRun(stored);
     const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
     dispatch({ type: "start", order: seededShuffle(ids, seed) });
-  }, [ids, random]);
+  }, [ids, random, daily, now]);
 
   // The order is shuffled in the browser after hydration, never at build time.
   useEffect(() => {
@@ -135,12 +182,23 @@ export default function FooledAtlas({ deck, ids, loadRecords, random }: FooledAt
         sureB: atlasSureness(recB),
       } as const;
       const after = fooledReducer(state, action);
-      // Keep the streak as the best after every right pick, so leaving mid-run keeps it.
-      if (after.phase === "answered" && after.verdict.correct)
+      if (after.phase === "answered" && day) {
+        // Today's run is kept after every pick, so a reload resumes it and never deals it again.
+        // It is a day's result, apart from the free runs' best.
+        const cleared = after.verdict.correct && after.index + 2 >= after.order.length;
+        rememberFooledDay(day, {
+          streak: after.streak,
+          atlasRight: after.atlasRight,
+          atlasPlayed: after.atlasPlayed,
+          ended: !after.verdict.correct ? "miss" : cleared ? "cleared" : null,
+        });
+      } else if (after.phase === "answered" && after.verdict.correct) {
+        // Keep the streak as the best after every right pick, so leaving mid-run keeps it.
         setBest(rememberFooled(after.streak));
+      }
       dispatch(action);
     },
-    [state, recA, recB, missA, missB],
+    [state, recA, recB, missA, missB, day],
   );
 
   // 1 and 2 pick a photo from the keyboard.
@@ -156,6 +214,19 @@ export default function FooledAtlas({ deck, ids, loadRecords, random }: FooledAt
   }, [ready, choose]);
 
   const streak = state.phase === "idle" ? 0 : state.streak;
+
+  if (dayDone && day) return <FooledDayResult day={day} entry={dayDone} now={now} />;
+
+  if (state.phase === "cleared" && day && state.order.length >= 2) {
+    const { streak: cleared, atlasRight, atlasPlayed } = state;
+    return (
+      <FooledDayResult
+        day={day}
+        entry={{ streak: cleared, atlasRight, atlasPlayed, ended: "cleared" }}
+        now={now}
+      />
+    );
+  }
 
   if (state.phase === "cleared") {
     const none = state.order.length < 2;
@@ -204,8 +275,16 @@ export default function FooledAtlas({ deck, ids, loadRecords, random }: FooledAt
             Whereabout
           </Link>
           <p className="mt-1 text-sm text-chalk-dim">
-            Which fooled Atlas? Pick the photo Atlas placed further from home.
+            {day
+              ? `Which fooled Atlas?, today's run (${day}): pick the photo Atlas placed further from home.`
+              : "Which fooled Atlas? Pick the photo Atlas placed further from home."}
           </p>
+          <Link
+            href={daily ? "/fooled-atlas" : "/fooled-atlas/daily"}
+            className="mt-0.5 inline-block text-sm text-gold underline underline-offset-2 hover:brightness-110"
+          >
+            {daily ? "Free runs" : "Today's run"}
+          </Link>
         </div>
         <div className="flex shrink-0 items-start gap-3">
           <GamesMenu screen="fooled-atlas" streakHref="/streak" />
@@ -215,10 +294,12 @@ export default function FooledAtlas({ deck, ids, loadRecords, random }: FooledAt
             <dd className="font-sign tabular text-3xl font-bold leading-none" aria-live="polite">
               {streak}
             </dd>
-            <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
-              <dt>Best</dt>
-              <dd className="tabular">{best}</dd>
-            </div>
+            {!daily && (
+              <div className="mt-1 flex justify-end gap-1.5 text-sm text-chalk-dim">
+                <dt>Best</dt>
+                <dd className="tabular">{best}</dd>
+              </div>
+            )}
           </dl>
         </div>
       </header>
@@ -259,6 +340,7 @@ export default function FooledAtlas({ deck, ids, loadRecords, random }: FooledAt
             over={over}
             best={best}
             newBest={over && answered.streak > bestBeforeRun}
+            daily={day}
             onNext={over ? () => start() : () => dispatch({ type: "next" })}
           />
         </div>
@@ -402,6 +484,7 @@ function FooledCard({
   over,
   best,
   newBest,
+  daily,
   onNext,
 }: {
   verdict: FooledVerdict;
@@ -415,6 +498,8 @@ function FooledCard({
   over: boolean;
   best: number;
   newBest: boolean;
+  /** Today's run's day, when this is it: its end shares the day instead of starting again. */
+  daily: string | null;
   onNext: () => void;
 }) {
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -454,22 +539,58 @@ function FooledCard({
           {`Atlas this run: ${atlasRight} of ${pairs(atlasPlayed)}.`}
         </p>
       )}
-      {over && (
+      {over && daily && (
+        <p className="mt-2 text-chalk">{`Today's run is over: ${pairs(streak)} in a row.`}</p>
+      )}
+      {over && !daily && (
         <p className="mt-2 text-chalk">
           {`Run over: ${pairs(streak)} in a row. `}
           {newBest ? "That's your new best!" : best > 0 ? `Your best is ${pairs(best)}.` : ""}
         </p>
       )}
-      <div className="mt-3">
-        <button
-          ref={nextRef}
-          type="button"
-          onClick={onNext}
-          className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
-        >
-          {over ? "Start a new run" : "Next pair"}
-        </button>
-      </div>
+      {over && daily ? (
+        <ShareDay
+          shareText={(href) =>
+            fooledDailyShare(daily, { streak, atlasRight, atlasPlayed, ended: "miss" }, href)
+          }
+          freeHref="/fooled-atlas"
+          focus
+        />
+      ) : (
+        <div className="mt-3">
+          <button
+            ref={nextRef}
+            type="button"
+            onClick={onNext}
+            className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
+          >
+            {over ? "Start a new run" : "Next pair"}
+          </button>
+        </div>
+      )}
     </section>
+  );
+}
+
+/** Today's Which fooled Atlas? once it has ended. */
+function FooledDayResult({ day, entry, now }: { day: string; entry: FooledDay; now?: () => Date }) {
+  const cleared = entry.ended === "cleared";
+  return (
+    <DailyRunResult
+      game="Which fooled Atlas?"
+      day={day}
+      headline={cleared ? "You called every pair" : `${pairs(entry.streak)} in a row`}
+      summary={
+        (cleared
+          ? `${pairs(entry.streak)} in a row, every photo Atlas has pinned.`
+          : "That's today's run played.") +
+        (entry.atlasPlayed > 0
+          ? ` Atlas's own pick got ${entry.atlasRight} of the ${pairs(entry.atlasPlayed)} it played.`
+          : "")
+      }
+      shareText={(href) => fooledDailyShare(day, entry, href)}
+      freeHref="/fooled-atlas"
+      now={now}
+    />
   );
 }

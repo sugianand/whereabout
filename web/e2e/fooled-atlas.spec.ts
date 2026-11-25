@@ -80,7 +80,7 @@ test("Which fooled Atlas? judges each pair on Atlas's real misses, ends on a wro
     await expect(card.getByRole("heading")).toHaveText(fooled ? "Right" : "Too close to call");
     await expect(card).toContainText(/Atlas this run: \d+ of \d+ pairs?\./);
     // The misses show only now, on both photos.
-    await expect(page.getByTestId("fooled-photo-1")).toContainText(/Atlas off by [\d,]+ (km|mi)/);
+    await expect(page.getByTestId("fooled-photo-1")).toContainText(/Atlas off by [\d.,]+ (km|mi)/);
     const box = (await card.boundingBox())!;
     expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
     expect(box.y + box.height).toBeLessThanOrEqual(height + 1);

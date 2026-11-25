@@ -95,6 +95,8 @@ test("stamps come from what the browser keeps, are marked new once, and fit a 32
       });
       const tenIds = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"];
       keep("whereabout:trust-atlas-daily", { results: tenIds.map(trusted) });
+      // And Which fooled Atlas? from 2026-11-26 on.
+      keep("whereabout:fooled-atlas-daily", run);
     },
     { played: [pin("p1", "AU", 900), pin("p2", "NZ", 120), pin("p3", "PF", 3000)], day: yesterday },
   );

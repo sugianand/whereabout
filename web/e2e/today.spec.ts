@@ -191,6 +191,8 @@ test("full days count up on a calendar that fits the screen", async ({ page }) =
       });
       const tenIds = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"];
       keep("whereabout:trust-atlas-daily", { results: tenIds.map(trusted) });
+      // And Which fooled Atlas? from 2026-11-26 on.
+      keep("whereabout:fooled-atlas-daily", run);
     },
     { full: [before(1), before(2)], partly: before(3) },
   );
