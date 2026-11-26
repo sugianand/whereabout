@@ -163,6 +163,11 @@ from 2026-11-26) deals everyone the same pairs on the same UTC day, one try a da
 after every pick, so a reload picks up at the same pair and a finished day shows its result instead
 of dealing it again. Today sets your streak against Atlas's own picks, for a *Beat Atlas* stamp,
 and the share line is the streak as a square per pair beside Atlas's tally, naming no place.
+After a free run, *Challenge a friend* sends a link to the same photos in the same order with your
+run to beat and Atlas's tally beside it; on the pair that ended your run the friend sees which photo
+you picked once they have, a friend who gets past it plays on through the rest of the photos Atlas
+pinned, and the end offers *Send yours back* and a head-to-head picture. A challenge never counts
+toward your best.
 **Name the country** (at `/name-country`, in the Games menu) shows one photo and four countries from
 the same continent, drawn from the countries the globe draws: tap the right one, or press 1 to 4,
 and go on until your first miss. Atlas picks too, the name it gave the most of the four, and the

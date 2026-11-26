@@ -21,6 +21,18 @@ import {
   type Side,
 } from "@/lib/game/fooledAtlas";
 import {
+  FOOLED_CHALLENGE_PARAM,
+  fooledChallengeLine,
+  fooledChallengeOrder,
+  fooledChallengeText,
+  fooledHeadToHead,
+  friendMissPick,
+  isFooledFriendMiss,
+  parseFooledChallenge,
+  type FooledChallenge,
+  type FooledRun,
+} from "@/lib/game/fooledChallenge";
+import {
   dailyFooledOrder,
   fooledDailyShare,
   fooledToday,
@@ -30,12 +42,14 @@ import {
 } from "@/lib/game/fooledDaily";
 import { formatDistance } from "@/lib/geo";
 import { placeholderUrl, sources } from "@/lib/photoSources";
+import { sendShare, type ShareOutcome } from "@/lib/share";
 import type { Units } from "@/lib/units";
 import { useUnits } from "@/lib/useUnits";
 
 import ControlsHelp from "./ControlsHelp";
 import { DailyRunResult, ShareDay } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
+import { HeadToHeadButton } from "./HeadToHeadButton";
 import UnitsSwitch from "./UnitsSwitch";
 
 type FooledAtlasProps = {
@@ -65,6 +79,27 @@ function pairs(n: number): string {
 
 const percent = (p: number) => `${Math.round(p * 100)}%`;
 
+/** Why a challenge link was set aside for a fresh run. */
+export const FOOLED_CHALLENGE_NOTICE = {
+  malformed: "That challenge link was cut short, so here's a fresh run instead.",
+  missing: "That challenge's photos aren't in the game any more, so here's a fresh run instead.",
+} as const;
+
+/** Take the challenge out of the address, so a reload deals a fresh run, not the old link. */
+function dropChallengeParam() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has(FOOLED_CHALLENGE_PARAM)) return;
+  url.searchParams.delete(FOOLED_CHALLENGE_PARAM);
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+const CHALLENGE_NOTE: Record<ShareOutcome, string> = {
+  shared: "Challenge sent.",
+  copied: "Challenge link copied. Whoever opens it plays these pairs, in the same order.",
+  cancelled: "",
+  failed: "Couldn't copy the link. Your browser blocked the clipboard.",
+};
+
 /**
  * Which fooled Atlas? (src/lib/game/fooledAtlas.ts): two photos, pick the one Atlas placed
  * further from where it was taken. A right pick keeps the second photo and deals a new one beside
@@ -89,38 +124,61 @@ export default function FooledAtlas({
   // once it has ended, how it went, which shows instead of the game.
   const [day, setDay] = useState<string | null>(null);
   const [dayDone, setDayDone] = useState<FooledDay | null>(null);
+  // A free run's seed, for the challenge link its end can send.
+  const [seed, setSeed] = useState(0);
+  // A friend's challenge this run answers: their photos, and the run to beat.
+  const [challenge, setChallenge] = useState<FooledChallenge | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  const start = useCallback(() => {
-    if (daily) {
-      const today = fooledToday(now?.());
-      const kept = loadFooledDay(today);
-      setDay(today);
-      if (kept?.ended) {
-        setDayDone(kept);
+  /** Deal a run; `fromLink` takes up a challenge the address carries, as the page opens. */
+  const start = useCallback(
+    (fromLink = false) => {
+      if (daily) {
+        const today = fooledToday(now?.());
+        const kept = loadFooledDay(today);
+        setDay(today);
+        if (kept?.ended) {
+          setDayDone(kept);
+          return;
+        }
+        const { streak, atlasRight, atlasPlayed } = kept ?? {
+          streak: 0,
+          atlasRight: 0,
+          atlasPlayed: 0,
+        };
+        dispatch({
+          type: "start",
+          order: dailyFooledOrder(ids, today),
+          from: { streak, atlasRight, atlasPlayed },
+        });
         return;
       }
-      const { streak, atlasRight, atlasPlayed } = kept ?? {
-        streak: 0,
-        atlasRight: 0,
-        atlasPlayed: 0,
-      };
-      dispatch({
-        type: "start",
-        order: dailyFooledOrder(ids, today),
-        from: { streak, atlasRight, atlasPlayed },
-      });
-      return;
-    }
-    const stored = loadBestFooled();
-    setBest(stored);
-    setBestBeforeRun(stored);
-    const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
-    dispatch({ type: "start", order: seededShuffle(ids, seed) });
-  }, [ids, random, daily, now]);
+      const stored = loadBestFooled();
+      setBest(stored);
+      setBestBeforeRun(stored);
+      const value = fromLink
+        ? new URLSearchParams(window.location.search).get(FOOLED_CHALLENGE_PARAM)
+        : null;
+      const linked = value === null ? null : parseFooledChallenge(value, ids);
+      setNotice(linked && !linked.ok ? FOOLED_CHALLENGE_NOTICE[linked.reason] : null);
+      if (linked?.ok) {
+        setChallenge(linked.challenge);
+        setSeed(linked.challenge.seed);
+        dispatch({ type: "start", order: fooledChallengeOrder(linked.challenge, ids) });
+        return;
+      }
+      setChallenge(null);
+      dropChallengeParam();
+      const fresh = Math.floor((random ?? Math.random)() * 2 ** 32);
+      setSeed(fresh);
+      dispatch({ type: "start", order: seededShuffle(ids, fresh) });
+    },
+    [ids, random, daily, now],
+  );
 
   // The order is shuffled in the browser after hydration, never at build time.
   useEffect(() => {
-    const id = requestAnimationFrame(() => start());
+    const id = requestAnimationFrame(() => start(true));
     return () => cancelAnimationFrame(id);
   }, [start]);
 
@@ -192,13 +250,14 @@ export default function FooledAtlas({
           atlasPlayed: after.atlasPlayed,
           ended: !after.verdict.correct ? "miss" : cleared ? "cleared" : null,
         });
-      } else if (after.phase === "answered" && after.verdict.correct) {
-        // Keep the streak as the best after every right pick, so leaving mid-run keeps it.
+      } else if (after.phase === "answered" && after.verdict.correct && !challenge) {
+        // Keep the streak as the best after every right pick, so leaving mid-run keeps it. A
+        // challenge's photos may have been seen before, so it is played for the friend only.
         setBest(rememberFooled(after.streak));
       }
       dispatch(action);
     },
-    [state, recA, recB, missA, missB, day],
+    [state, recA, recB, missA, missB, day, challenge],
   );
 
   // 1 and 2 pick a photo from the keyboard.
@@ -214,6 +273,20 @@ export default function FooledAtlas({
   }, [ready, choose]);
 
   const streak = state.phase === "idle" ? 0 : state.streak;
+  // On the pair that ended the friend's run: they picked the photo Atlas missed by less.
+  const friendMiss =
+    challenge !== null && playing !== null && isFooledFriendMiss(playing.index, challenge);
+  const runOf = (
+    s: { order: readonly string[]; streak: number; atlasRight: number; atlasPlayed: number },
+    index: number,
+  ): FooledRun => ({
+    order: s.order,
+    index,
+    seed,
+    streak: s.streak,
+    atlasRight: s.atlasRight,
+    atlasPlayed: s.atlasPlayed,
+  });
 
   if (dayDone && day) return <FooledDayResult day={day} entry={dayDone} now={now} />;
 
@@ -241,6 +314,9 @@ export default function FooledAtlas({
             ? "Which fooled Atlas? needs at least two photos Atlas has pinned."
             : `${pairs(state.streak)} in a row, every photo Atlas has pinned. Atlas's own pick got ${state.atlasRight} of ${pairs(state.atlasPlayed)}.`}
         </p>
+        {!none && challenge && (
+          <p className="mt-2 text-chalk">{fooledChallengeLine(state.streak, challenge)}</p>
+        )}
         <div className="mt-8 flex flex-wrap items-center gap-4">
           {!none && (
             <button
@@ -251,6 +327,7 @@ export default function FooledAtlas({
               Play again
             </button>
           )}
+          {!none && <ChallengeButton run={runOf(state, state.index - 1)} answering={challenge} />}
           <Link href="/" className="text-chalk-dim underline underline-offset-2 hover:text-chalk">
             Back to the main game
           </Link>
@@ -277,7 +354,9 @@ export default function FooledAtlas({
           <p className="mt-1 text-sm text-chalk-dim">
             {day
               ? `Which fooled Atlas?, today's run (${day}): pick the photo Atlas placed further from home.`
-              : "Which fooled Atlas? Pick the photo Atlas placed further from home."}
+              : challenge
+                ? `A friend's challenge: ${pairs(challenge.streak)} in a row to beat`
+                : "Which fooled Atlas? Pick the photo Atlas placed further from home."}
           </p>
           <Link
             href={daily ? "/fooled-atlas" : "/fooled-atlas/daily"}
@@ -314,10 +393,19 @@ export default function FooledAtlas({
             units={units}
             ready={ready}
             verdict={answered?.verdict ?? null}
+            friendPick={
+              friendMiss && answered !== null && friendMissPick(answered.verdict.fooled) === side
+            }
             onPick={choose}
           />
         ))}
       </div>
+
+      {notice && state.phase === "picking" && streak === 0 && (
+        <p role="status" className="px-4 pb-2 text-center text-sm text-chalk-dim">
+          {notice}
+        </p>
+      )}
 
       {error && (
         <p role="alert" className="absolute inset-x-4 bottom-4 text-center text-sm text-flare">
@@ -341,6 +429,9 @@ export default function FooledAtlas({
             best={best}
             newBest={over && answered.streak > bestBeforeRun}
             daily={day}
+            run={runOf(answered, answered.index)}
+            challenge={challenge}
+            friendMiss={friendMiss}
             onNext={over ? () => start() : () => dispatch({ type: "next" })}
           />
         </div>
@@ -356,6 +447,7 @@ function PhotoChoice({
   units,
   ready,
   verdict,
+  friendPick,
   onPick,
 }: {
   side: Side;
@@ -364,6 +456,8 @@ function PhotoChoice({
   units: Units;
   ready: boolean;
   verdict: FooledVerdict | null;
+  /** The friend whose challenge this is picked this photo, and it ended their run. */
+  friendPick: boolean;
   onPick: (side: Side) => void;
 }) {
   const n = number(side);
@@ -405,6 +499,11 @@ function PhotoChoice({
       </span>
       {verdict && photo && missKm !== null ? (
         <div className="absolute inset-x-2 top-2 ml-9 flex flex-wrap items-center justify-end gap-1.5 text-right">
+          {friendPick && (
+            <span className="rounded-full border border-flare bg-ocean-deep/85 px-2.5 py-0.5 text-sm font-semibold text-flare">
+              Friend&apos;s pick
+            </span>
+          )}
           {fooled && (
             <span className="rounded-full bg-gold px-2.5 py-0.5 text-sm font-semibold text-ocean-deep">
               {verdict.tie ? "Fooled it by a hair" : "Fooled Atlas"}
@@ -485,6 +584,9 @@ function FooledCard({
   best,
   newBest,
   daily,
+  run,
+  challenge,
+  friendMiss,
   onNext,
 }: {
   verdict: FooledVerdict;
@@ -500,6 +602,12 @@ function FooledCard({
   newBest: boolean;
   /** Today's run's day, when this is it: its end shares the day instead of starting again. */
   daily: string | null;
+  /** The run as it stands, for the challenge link its end can send. */
+  run: FooledRun;
+  /** The friend's challenge this run answers, if it is one. */
+  challenge: FooledChallenge | null;
+  /** True on the pair that ended the friend's run. */
+  friendMiss: boolean;
   onNext: () => void;
 }) {
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -539,13 +647,29 @@ function FooledCard({
           {`Atlas this run: ${atlasRight} of ${pairs(atlasPlayed)}.`}
         </p>
       )}
+      {friendMiss && (
+        <p className="mt-2 text-sm text-chalk">
+          {`Your friend's run ended here: they picked photo ${number(friendMissPick(verdict.fooled))}.`}
+        </p>
+      )}
+      {challenge && verdict.correct && streak === challenge.streak + 1 && (
+        <p className="mt-2 font-semibold text-sonar">
+          {`That beats your friend's ${challenge.streak} in a row!`}
+        </p>
+      )}
       {over && daily && (
         <p className="mt-2 text-chalk">{`Today's run is over: ${pairs(streak)} in a row.`}</p>
       )}
       {over && !daily && (
         <p className="mt-2 text-chalk">
           {`Run over: ${pairs(streak)} in a row. `}
-          {newBest ? "That's your new best!" : best > 0 ? `Your best is ${pairs(best)}.` : ""}
+          {challenge
+            ? fooledChallengeLine(streak, challenge)
+            : newBest
+              ? "That's your new best!"
+              : best > 0
+                ? `Your best is ${pairs(best)}.`
+                : ""}
         </p>
       )}
       {over && daily ? (
@@ -557,18 +681,60 @@ function FooledCard({
           focus
         />
       ) : (
-        <div className="mt-3">
+        <div className="mt-3 flex flex-wrap items-start gap-x-3 gap-y-2">
           <button
             ref={nextRef}
             type="button"
             onClick={onNext}
-            className="rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
+            className="shrink-0 rounded-full bg-gold px-6 py-3 font-semibold text-ocean-deep transition hover:brightness-110"
           >
-            {over ? "Start a new run" : "Next pair"}
+            {over ? (challenge ? "Play a fresh run" : "Start a new run") : "Next pair"}
           </button>
+          {over && <ChallengeButton run={run} answering={challenge} />}
         </div>
       )}
     </section>
+  );
+}
+
+/**
+ * Challenge a friend from a finished run (src/lib/game/fooledChallenge.ts): a link to the same
+ * photos in the same order, and the run to beat. Answering a challenge, it sends one back.
+ */
+function ChallengeButton({
+  run,
+  answering,
+}: {
+  run: FooledRun;
+  answering: FooledChallenge | null;
+}) {
+  const [sent, setSent] = useState("");
+  async function send() {
+    const text = fooledChallengeText(run, window.location.href, answering ?? undefined);
+    setSent(CHALLENGE_NOTE[await sendShare(text, navigator)]);
+  }
+  return (
+    <span className="flex min-w-0 flex-col">
+      <span className="flex flex-wrap gap-x-3 gap-y-2">
+        <button
+          type="button"
+          onClick={send}
+          className="rounded-full border-2 border-gold px-5 py-2.5 font-semibold text-gold transition hover:bg-gold/10"
+        >
+          {answering ? "Send yours back" : "Challenge a friend"}
+        </button>
+        {answering && (
+          <HeadToHeadButton
+            headToHead={fooledHeadToHead(run, answering, window.location.href)}
+            replyText={() => fooledChallengeText(run, window.location.href, answering)}
+            onNote={setSent}
+          />
+        )}
+      </span>
+      <span role="status" className={sent ? "mt-1 text-xs text-chalk-dim" : "sr-only"}>
+        {sent}
+      </span>
+    </span>
   );
 }
 
