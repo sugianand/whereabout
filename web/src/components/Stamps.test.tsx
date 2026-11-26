@@ -7,6 +7,9 @@ import { BEST_HOTTEST_KEY } from "@/lib/game/spotClue";
 import { recordSpotRead } from "@/lib/game/spotRead";
 import { BEST_TRUST_KEY, type TrustResult } from "@/lib/game/trustAtlas";
 import { recordTrustRead } from "@/lib/game/trustRead";
+import { BEST_FOOLED_KEY, judgeFooled } from "@/lib/game/fooledAtlas";
+import { rememberFooledDay } from "@/lib/game/fooledDaily";
+import { recordFooledRead } from "@/lib/game/fooledRead";
 import { rememberClimateDay } from "@/lib/game/climateDaily";
 import { rememberGroundDay } from "@/lib/game/groundDaily";
 import { BEST_LEFT_RIGHT_KEY } from "@/lib/game/leftRight";
@@ -40,7 +43,7 @@ beforeEach(() => localStorage.clear());
 describe("Stamps", () => {
   it("shows every stamp uncollected on a first visit, with the next one up", async () => {
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
-    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^0 of 36 collected\.$/);
+    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^0 of 38 collected\.$/);
     expect(screen.getByRole("heading", { name: "Continents cleared" })).toBeInTheDocument();
     expect(screen.getByTestId("stamp-cleared-oceania")).toHaveAttribute("data-earned", "false");
     expect(screen.getByTestId("stamp-cleared-oceania-progress")).toHaveTextContent(
@@ -79,7 +82,7 @@ describe("Stamps", () => {
     );
     const { unmount } = render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
     const standing = await screen.findByTestId("stamps-standing");
-    expect(standing).toHaveTextContent("2 of 36 collected. 2 new stamps since you last looked.");
+    expect(standing).toHaveTextContent("2 of 38 collected. 2 new stamps since you last looked.");
     const oceania = screen.getByTestId("stamp-cleared-oceania");
     expect(oceania).toHaveAttribute("data-earned", "true");
     expect(within(oceania).getByText("New")).toBeInTheDocument();
@@ -100,7 +103,7 @@ describe("Stamps", () => {
     // The map forgotten, the stamp stays, no longer new.
     localStorage.removeItem(PLAYED_KEY);
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
-    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^2 of 36 collected\.$/);
+    expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(/^2 of 38 collected\.$/);
     const kept = screen.getByTestId("stamp-cleared-oceania");
     expect(kept).toHaveAttribute("data-earned", "true");
     expect(within(kept).queryByText("New")).toBeNull();
@@ -113,7 +116,7 @@ describe("Stamps", () => {
     rememberOddDay("2026-11-10", { streak: 1, atlasRight: 2, atlasPlayed: 2, ended: "miss" });
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
     expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(
-      "1 of 36 collected. 1 new stamp since you last looked.",
+      "1 of 38 collected. 1 new stamp since you last looked.",
     );
     expect(screen.getByRole("heading", { name: "Beat Atlas" })).toBeInTheDocument();
     const won = screen.getByTestId("stamp-beat-atlas-name-country");
@@ -165,7 +168,7 @@ describe("Stamps", () => {
     );
     render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
     expect(await screen.findByTestId("stamps-standing")).toHaveTextContent(
-      "4 of 36 collected. 4 new stamps since you last looked.",
+      "4 of 38 collected. 4 new stamps since you last looked.",
     );
     expect(screen.getByRole("heading", { name: "Reading the clues" })).toBeInTheDocument();
     expect(screen.getByTestId("stamp-road-reader")).toHaveAttribute("data-earned", "true");
@@ -384,6 +387,49 @@ describe("Stamps", () => {
     );
     expect(JSON.parse(localStorage.getItem(STAMPS_KEY)!)).toEqual({
       "trust-lie-detector": "2026-11-10",
+    });
+  });
+
+  it("shows Which fooled Atlas?'s stamps from the best run kept and every pair on Your map", async () => {
+    localStorage.setItem(BEST_FOOLED_KEY, "6");
+    // Two pairs far apart: you pick both right, Atlas's sureness one.
+    recordFooledRead(judgeFooled("b", 5, 200), judgeFooled("b", 5, 200), 5, 200);
+    recordFooledRead(judgeFooled("b", 5, 200), judgeFooled("a", 5, 200), 5, 200);
+    render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
+    expect(await screen.findByRole("heading", { name: "Which fooled Atlas?" })).toBeInTheDocument();
+    const intro = screen.getByTestId("stamps-fooled-intro");
+    expect(within(intro).getByRole("link", { name: "Which fooled Atlas?" })).toHaveAttribute(
+      "href",
+      "/fooled-atlas",
+    );
+    expect(within(intro).getByRole("link", { name: "today's run" })).toHaveAttribute(
+      "href",
+      "/fooled-atlas/daily",
+    );
+    expect(
+      within(intro).getByRole("link", { name: /what fools Atlas on Your map/ }),
+    ).toHaveAttribute("href", "/map");
+    expect(screen.getByTestId("stamp-fooled-blind-spot")).toHaveAttribute("data-earned", "false");
+    expect(screen.getByTestId("stamp-fooled-blind-spot-progress")).toHaveTextContent(
+      "6 of 10 picks in a row",
+    );
+    expect(screen.getByTestId("stamp-fooled-mind-over-model-progress")).toHaveTextContent(
+      "2 of 50 pairs read",
+    );
+    expect(screen.getByTestId("stamp-fooled-mind-over-model")).toHaveTextContent(
+      "Pairs right so far: yours 2, Atlas's own sureness 1",
+    );
+  });
+
+  it("collects Blind spot from today's run of ten", async () => {
+    rememberFooledDay("2026-11-10", { streak: 10, atlasRight: 4, atlasPlayed: 10, ended: null });
+    render(<Stamps countries={COUNTRIES} deckIds={IDS} now={now} />);
+    expect(await screen.findByTestId("stamp-fooled-blind-spot")).toHaveAttribute(
+      "data-earned",
+      "true",
+    );
+    expect(JSON.parse(localStorage.getItem(STAMPS_KEY)!)).toEqual({
+      "fooled-blind-spot": "2026-11-10",
     });
   });
 });

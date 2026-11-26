@@ -368,3 +368,68 @@ test("the end of a Which fooled Atlas? run keeps both its buttons on a 320px pho
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });
+
+test("ten right picks in one run earn Blind spot, with every pair counted toward Mind over model", async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+
+  await page.goto("./stamps");
+  await expect(page.getByRole("heading", { name: "Which fooled Atlas?", level: 2 })).toBeVisible();
+  const blindSpot = page.getByTestId("stamp-fooled-blind-spot");
+  await expect(blindSpot).toHaveAttribute("data-earned", "false");
+  await expect(page.getByTestId("stamp-fooled-blind-spot-progress")).toHaveText(
+    "0 of 10 picks in a row",
+  );
+  await expect(page.getByTestId("stamp-fooled-mind-over-model-progress")).toHaveText(
+    "0 of 50 pairs read",
+  );
+
+  // Ten right picks from the shipped data, by key, then leave mid-run.
+  await page
+    .getByTestId("stamps-fooled-intro")
+    .getByRole("link", { name: "Which fooled Atlas?", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/fooled-atlas\/?$/);
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+  // Dead heats are never read as right, so only pairs that can be called count, for both sides.
+  let pairs = 0;
+  let atlas = 0;
+  for (let n = 0; n < 10; n++) {
+    await expect(page.getByRole("button", { name: "Photo 1 fooled Atlas" })).toBeEnabled();
+    const { ids, fooled } = await pairOnScreen(page);
+    if (fooled !== null) {
+      pairs++;
+      // Atlas's own pick is the photo it was less sure of; even sureness picks the first.
+      const [a, b] = ids.map((id) => ATLAS.guesses[id]!.confidence);
+      if ((b < a ? 2 : 1) === fooled) atlas++;
+    }
+    await page.keyboard.press(String(fooled ?? 1));
+    await expect(card).toBeVisible();
+    await page.keyboard.press("Enter");
+  }
+  await expect(page.getByText("Streak", { exact: true }).locator("+ dd")).toHaveText("10");
+
+  await page.goto("./stamps");
+  await expect(blindSpot).toHaveAttribute("data-earned", "true");
+  await expect(page.getByTestId("stamps-standing")).toContainText("since you last looked");
+  await expect(page.getByTestId("stamp-fooled-mind-over-model-progress")).toHaveText(
+    `${pairs} of 50 ${pairs === 1 ? "pair" : "pairs"} read`,
+  );
+  if (pairs > 0)
+    await expect(page.getByTestId("stamp-fooled-mind-over-model")).toContainText(
+      `Pairs right so far: yours ${pairs}, Atlas's own sureness ${atlas}`,
+    );
+
+  await page.setViewportSize({ width: 320, height: 700 });
+  await blindSpot.scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+  await page
+    .getByTestId("stamps-fooled-intro")
+    .getByRole("link", { name: /what fools Atlas on Your map/ })
+    .click();
+  await expect(page).toHaveURL(/\/map\/?$/);
+  expect(errors).toEqual([]);
+});

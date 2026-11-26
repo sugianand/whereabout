@@ -13,6 +13,7 @@ import {
   keepStamps,
   loadBullseyeSources,
   loadClueSources,
+  loadFooledSources,
   loadSpotSources,
   loadTrustSources,
   nextStamp,
@@ -134,6 +135,7 @@ export default function Stamps({
       bullseye: loadBullseyeSources(),
       spot: loadSpotSources(),
       trust: loadTrustSources(),
+      fooled: loadFooledSources(),
     });
     const { stamps: collected, fresh } = keepStamps(stamps, today);
     // Units change only the closest pin's words, so a new stamp stays new across a switch.
@@ -302,6 +304,29 @@ export default function Stamps({
                   .
                 </p>
               )}
+              {group.id === "fooled" && (
+                <p className="mt-1 text-sm text-chalk-dim" data-testid="stamps-fooled-intro">
+                  From{" "}
+                  <Link
+                    href="/fooled-atlas"
+                    className="underline underline-offset-2 hover:text-chalk"
+                  >
+                    Which fooled Atlas?
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    href="/fooled-atlas/daily"
+                    className="underline underline-offset-2 hover:text-chalk"
+                  >
+                    today&apos;s run
+                  </Link>
+                  . Every pair you pick is counted in{" "}
+                  <Link href="/map" className="underline underline-offset-2 hover:text-chalk">
+                    what fools Atlas on Your map
+                  </Link>
+                  .
+                </p>
+              )}
               <ul className="mt-3 grid gap-3 sm:grid-cols-2">
                 {stamps.map((s) => (
                   <StampCard key={s.id} stamp={s} fresh={view.fresh.includes(s.id)} />
@@ -313,7 +338,8 @@ export default function Stamps({
 
       <p className="mt-10 text-sm text-chalk-dim">
         Stamps come from what you&apos;ve played in this browser: your record, your map and album,
-        the clue games, the World Tour, Bullseye, Spot the clue, Trust Atlas? and the days kept on{" "}
+        the clue games, the World Tour, Bullseye, Spot the clue, Trust Atlas?, Which fooled Atlas?
+        and the days kept on{" "}
         <Link href="/today" className="underline underline-offset-2 hover:text-chalk">
           Today
         </Link>

@@ -32,6 +32,9 @@
  * - Trust Atlas? (`lib/game/trustAtlas.ts`): Lie detector for every call right in one whole game,
  *   free or today's, and calling more right than Atlas's own rule over at least
  *   `TRUST_READ_PHOTOS` photos, by your trust on Your map.
+ * - Which fooled Atlas? (`lib/game/fooledAtlas.ts`): Blind spot for a run of `FOOLED_RUN_STAMP`
+ *   right picks, free or today's, and picking more pairs right than Atlas's own sureness over at
+ *   least `FOOLED_READ_PAIRS` pairs, by what fools Atlas on Your map.
  *
  * The days every game keeps are the last `ARCHIVE_DAYS`, and the map's history is capped, so a
  * stamp could otherwise fade once its proof is gone. Each stamp is therefore written down under
@@ -65,6 +68,15 @@ import { loadSpotDays } from "@/lib/game/spotDaily";
 import { loadSpotRead } from "@/lib/game/spotRead";
 import { TRUST_PHOTOS, loadBestTrust, trustTotals } from "@/lib/game/trustAtlas";
 import { loadTrustDays } from "@/lib/game/trustDaily";
+import { loadBestFooled } from "@/lib/game/fooledAtlas";
+import { loadFooledDays } from "@/lib/game/fooledDaily";
+import {
+  emptyFooledRead,
+  fooledReadLeader,
+  fooledReadTotals,
+  loadFooledRead,
+  type FooledRead,
+} from "@/lib/game/fooledRead";
 import {
   emptyTrustRead,
   loadTrustRead,
@@ -142,6 +154,15 @@ export const TRUST_READ_PHOTOS = 50;
 export const TRUST_STAMP_IDS = ["trust-lie-detector", "trust-second-opinion"] as const;
 export type TrustStampId = (typeof TRUST_STAMP_IDS)[number];
 
+/** Right picks in a row in one Which fooled Atlas? run that earn a stamp. */
+export const FOOLED_RUN_STAMP = 10;
+
+/** Pairs read in Which fooled Atlas? before picking more right than Atlas's sureness earns a stamp. */
+export const FOOLED_READ_PAIRS = 50;
+
+export const FOOLED_STAMP_IDS = ["fooled-blind-spot", "fooled-mind-over-model"] as const;
+export type FooledStampId = (typeof FOOLED_STAMP_IDS)[number];
+
 export type StampId =
   | BadgeId
   | ContinentStampId
@@ -155,7 +176,8 @@ export type StampId =
   | "tour-complete"
   | BullseyeStampId
   | SpotStampId
-  | TrustStampId;
+  | TrustStampId
+  | FooledStampId;
 
 export type StampGroup =
   | "badges"
@@ -167,7 +189,8 @@ export type StampGroup =
   | "tour"
   | "bullseye"
   | "spot"
-  | "trust";
+  | "trust"
+  | "fooled";
 
 export const STAMP_GROUPS: readonly { id: StampGroup; title: string }[] = [
   { id: "badges", title: "Badges" },
@@ -180,6 +203,7 @@ export const STAMP_GROUPS: readonly { id: StampGroup; title: string }[] = [
   { id: "bullseye", title: "Bullseye" },
   { id: "spot", title: "Spot the clue" },
   { id: "trust", title: "Trust Atlas?" },
+  { id: "fooled", title: "Which fooled Atlas?" },
 ];
 
 /** How far along an unearned stamp is: `have` of `need`, counted in `unit`. */
@@ -231,6 +255,16 @@ export interface StampSources {
   spot?: SpotSources;
   /** What Trust Atlas? keeps (`loadTrustSources`); none played if not given. */
   trust?: TrustSources;
+  /** What Which fooled Atlas? keeps (`loadFooledSources`); none played if not given. */
+  fooled?: FooledSources;
+}
+
+/** What Which fooled Atlas? keeps, for its stamps. */
+export interface FooledSources {
+  /** The longest run of right picks, free or today's. */
+  bestRun: number;
+  /** Every pair picked, by how far apart the misses were, as what fools Atlas reads it. */
+  read: FooledRead;
 }
 
 /** What Trust Atlas? keeps, for its stamps. */
@@ -328,6 +362,7 @@ export const STAMP_IDS: readonly StampId[] = [
   ...BULLSEYE_STAMP_IDS,
   ...SPOT_STAMP_IDS,
   ...TRUST_STAMP_IDS,
+  ...FOOLED_STAMP_IDS,
 ];
 
 const KNOWN: ReadonlySet<string> = new Set(STAMP_IDS);
@@ -872,6 +907,54 @@ function trustStamps({ trust }: StampSources): Stamp[] {
   ];
 }
 
+/**
+ * Which fooled Atlas?'s stamps. Blind spot counts the longest run kept; Mind over model compares
+ * your picks with Atlas's own sureness on the same pairs, by `fooledReadLeader`, so the stamp and
+ * what fools Atlas on Your map always agree. Dead heats are left out of both counts there, so
+ * they are here too.
+ */
+function fooledStamps({ fooled }: StampSources): Stamp[] {
+  const bestRun = Math.min(fooled?.bestRun ?? 0, FOOLED_RUN_STAMP);
+  const read = fooled?.read ?? emptyFooledRead();
+  const { pairs, you, atlas } = fooledReadTotals(read);
+  const enough = pairs >= FOOLED_READ_PAIRS;
+  const leader = fooledReadLeader(read);
+  const ahead = enough && leader === "you";
+  const counts = `yours ${you}, Atlas's own sureness ${atlas}`;
+  let note: string | null = null;
+  if (ahead) note = `Pairs right over ${pairs} pairs: ${counts}`;
+  else if (enough) note = `Pairs right over ${pairs} pairs: ${counts}. Pick on to pull ahead.`;
+  else if (leader !== null) note = `Pairs right so far: ${counts}`;
+  return [
+    {
+      id: "fooled-blind-spot",
+      group: "fooled",
+      name: "Blind spot",
+      how: `Pick ${FOOLED_RUN_STAMP} pairs right in a row in one Which fooled Atlas? run`,
+      icon: "🙈",
+      earned: bestRun >= FOOLED_RUN_STAMP,
+      progress: {
+        have: bestRun,
+        need: FOOLED_RUN_STAMP,
+        unit: ["pick in a row", "picks in a row"],
+      },
+      note: null,
+    },
+    {
+      id: "fooled-mind-over-model",
+      group: "fooled",
+      name: "Mind over model",
+      how: `Pick more Which fooled Atlas? pairs right than Atlas's own sureness does, over at least ${FOOLED_READ_PAIRS} pairs`,
+      icon: "🧠",
+      earned: ahead,
+      progress: enough
+        ? null
+        : { have: pairs, need: FOOLED_READ_PAIRS, unit: ["pair read", "pairs read"] },
+      note,
+    },
+  ];
+}
+
 /** Every stamp as the browser's records stand, before what was kept is added in. */
 export function readStamps(sources: StampSources): Stamp[] {
   return [
@@ -885,6 +968,7 @@ export function readStamps(sources: StampSources): Stamp[] {
     ...bullseyeStamps(sources),
     ...spotStamps(sources),
     ...trustStamps(sources),
+    ...fooledStamps(sources),
   ];
 }
 
@@ -925,6 +1009,17 @@ export function loadTrustSources(): TrustSources {
     .filter((d) => d.results.length >= TRUST_PHOTOS)
     .map((d) => trustTotals(d.results).correct);
   return { bestCorrect: Math.max(loadBestTrust(), ...days), read: loadTrustRead() };
+}
+
+/**
+ * What Which fooled Atlas? keeps in this browser, for `StampSources.fooled`: the longest free run
+ * (kept after every right pick, so a run left midway counts as far as it got), or the longest of
+ * today's runs kept, and every pair as what fools Atlas counts them. A friend's challenge counts
+ * toward the pairs but not Blind spot, as it never counts toward the best either.
+ */
+export function loadFooledSources(): FooledSources {
+  const days = Object.values(loadFooledDays()).map((d) => d.streak);
+  return { bestRun: Math.max(loadBestFooled(), ...days), read: loadFooledRead() };
 }
 
 /**

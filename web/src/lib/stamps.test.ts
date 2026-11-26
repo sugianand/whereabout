@@ -25,6 +25,9 @@ import { rememberSpotDay } from "@/lib/game/spotDaily";
 import { recordSpotRead } from "@/lib/game/spotRead";
 import { BEST_TRUST_KEY, rightCall, type TrustCall, type TrustResult } from "@/lib/game/trustAtlas";
 import { rememberTrustDay } from "@/lib/game/trustDaily";
+import { BEST_FOOLED_KEY, judgeFooled } from "@/lib/game/fooledAtlas";
+import { rememberFooledDay } from "@/lib/game/fooledDaily";
+import { addPair, emptyFooledRead, recordFooledRead, type FooledRead } from "@/lib/game/fooledRead";
 import { addCall, emptyTrustRead, recordTrustRead, type TrustRead } from "@/lib/game/trustRead";
 import type { AtlasLooked } from "@/lib/game/types";
 import { rememberClimate, type ClimateResult } from "@/lib/game/whichClimate";
@@ -42,6 +45,8 @@ import {
   STAMPS_KEY,
   SPOT_FOUND_STAMP,
   TRUST_READ_PHOTOS,
+  FOOLED_READ_PAIRS,
+  FOOLED_RUN_STAMP,
   STAMP_IDS,
   albumPageStampId,
   albumShareNeed,
@@ -55,6 +60,7 @@ import {
   loadClueSources,
   loadSpotSources,
   loadTrustSources,
+  loadFooledSources,
   loadKeptStamps,
   longestFullRun,
   nextStamp,
@@ -138,6 +144,8 @@ describe("readStamps", () => {
       "spot-found",
       "trust-lie-detector",
       "trust-second-opinion",
+      "fooled-blind-spot",
+      "fooled-mind-over-model",
     ]);
     expect(stamps.every((s) => !s.earned)).toBe(true);
     // Every id read is one the store accepts.
@@ -919,6 +927,112 @@ describe("loadTrustSources", () => {
     recordTrustRead(trustCall("b", false, "doubt", 0.1), 0.1);
     const { read } = loadTrustSources();
     expect(read.map((t) => t.photos)).toEqual([1, 0, 1]);
+  });
+});
+
+/**
+ * A read of `n` pairs 5 km and 200 km off (far apart), `mine` of them picked right and `atlas`
+ * of them right by Atlas's own sureness, plus `ties` dead heats.
+ */
+function fooledRead(n: number, mine: number, atlas: number, ties = 0): FooledRead {
+  let read = emptyFooledRead();
+  for (let i = 0; i < n; i++) {
+    const you = judgeFooled(i < mine ? "b" : "a", 5, 200);
+    const own = judgeFooled(i < atlas ? "b" : "a", 5, 200);
+    read = addPair(read, you, own, 5, 200);
+  }
+  for (let i = 0; i < ties; i++) {
+    read = addPair(read, judgeFooled("a", 100, 110), judgeFooled("a", 100, 110), 100, 110);
+  }
+  return read;
+}
+
+describe("Which fooled Atlas? stamps", () => {
+  const fooled = (bestRun: number, read: FooledRead = emptyFooledRead()) =>
+    sources({ fooled: { bestRun, read } });
+
+  it("lists both under Which fooled Atlas?, none earned in a fresh browser", () => {
+    const stamps = readStamps(sources()).filter((s) => s.group === "fooled");
+    expect(stamps.map((s) => s.id)).toEqual(["fooled-blind-spot", "fooled-mind-over-model"]);
+    expect(stamps.every((s) => !s.earned)).toBe(true);
+    expect(byId(stamps, "fooled-blind-spot").progress).toEqual({
+      have: 0,
+      need: FOOLED_RUN_STAMP,
+      unit: ["pick in a row", "picks in a row"],
+    });
+    expect(byId(stamps, "fooled-mind-over-model").progress).toEqual({
+      have: 0,
+      need: FOOLED_READ_PAIRS,
+      unit: ["pair read", "pairs read"],
+    });
+    expect(byId(stamps, "fooled-mind-over-model").note).toBeNull();
+  });
+
+  it("earns Blind spot at a run of ten, never counting past it", () => {
+    const nine = byId(readStamps(fooled(9)), "fooled-blind-spot");
+    expect(nine.earned).toBe(false);
+    expect(toGo(nine.progress!)).toBe("1 pick in a row to go");
+    expect(byId(readStamps(fooled(10)), "fooled-blind-spot").earned).toBe(true);
+    expect(byId(readStamps(fooled(31)), "fooled-blind-spot").progress?.have).toBe(10);
+  });
+
+  it("earns Mind over model only ahead of Atlas's sureness over fifty pairs", () => {
+    const short = byId(readStamps(fooled(0, fooledRead(49, 40, 20))), "fooled-mind-over-model");
+    expect(short.earned).toBe(false);
+    expect(short.progress?.have).toBe(49);
+    expect(short.note).toBe("Pairs right so far: yours 40, Atlas's own sureness 20");
+
+    const ahead = byId(readStamps(fooled(0, fooledRead(50, 31, 30))), "fooled-mind-over-model");
+    expect(ahead.earned).toBe(true);
+    expect(ahead.progress).toBeNull();
+    expect(ahead.note).toBe("Pairs right over 50 pairs: yours 31, Atlas's own sureness 30");
+
+    const level = byId(readStamps(fooled(0, fooledRead(50, 30, 30))), "fooled-mind-over-model");
+    expect(level.earned).toBe(false);
+    expect(level.note).toBe(
+      "Pairs right over 50 pairs: yours 30, Atlas's own sureness 30. Pick on to pull ahead.",
+    );
+
+    const behind = byId(readStamps(fooled(0, fooledRead(60, 20, 45))), "fooled-mind-over-model");
+    expect(behind.earned).toBe(false);
+  });
+
+  it("never counts dead heats toward the fifty pairs", () => {
+    const stamp = byId(readStamps(fooled(0, fooledRead(45, 45, 0, 10))), "fooled-mind-over-model");
+    expect(stamp.earned).toBe(false);
+    expect(stamp.progress?.have).toBe(45);
+  });
+});
+
+describe("loadFooledSources", () => {
+  beforeEach(() => localStorage.clear());
+
+  const run = (streak: number, ended: "miss" | null = "miss") => ({
+    streak,
+    atlasRight: 0,
+    atlasPlayed: streak,
+    ended,
+  });
+
+  it("is empty in a fresh browser", () => {
+    expect(loadFooledSources()).toEqual({ bestRun: 0, read: emptyFooledRead() });
+  });
+
+  it("takes the longest of the free runs' best and today's runs, one still going too", () => {
+    localStorage.setItem(BEST_FOOLED_KEY, "4");
+    rememberFooledDay("2026-11-09", run(7));
+    expect(loadFooledSources().bestRun).toBe(7);
+    // Today's run is still going, eleven pairs in: those picks were all right.
+    rememberFooledDay(TODAY, run(11, null));
+    expect(loadFooledSources().bestRun).toBe(11);
+  });
+
+  it("reads every pair as what fools Atlas keeps them", () => {
+    recordFooledRead(judgeFooled("b", 5, 200), judgeFooled("a", 5, 200), 5, 200);
+    recordFooledRead(judgeFooled("a", 100, 110), null, 100, 110);
+    const { read } = loadFooledSources();
+    expect(read.bands.map((t) => t.pairs)).toEqual([0, 0, 1]);
+    expect(read.ties).toBe(1);
   });
 });
 

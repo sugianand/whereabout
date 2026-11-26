@@ -284,7 +284,10 @@ it bet on beside you, by Your calibration, and two for Spot the clue: Mind reade
 most telling square found on all five photos of one whole free or daily game, and Sharp eye for
 finding it 25 times in any game, by your read of Atlas, and two for Trust Atlas?: Lie detector
 for all ten calls right in one whole free or daily game, and Second opinion for calling more
-photos right than Atlas's own sureness over at least 50 photos, by your trust on Your map. Each says how it's earned and how close you are (for
+photos right than Atlas's own sureness over at least 50 photos, by your trust on Your map, and two for
+Which fooled Atlas?: Blind spot for ten pairs right in a row in one free or daily run, and Mind over
+model for picking more pairs right than Atlas's own sureness over at least 50 pairs, by what fools
+Atlas on Your map. Each says how it's earned and how close you are (for
 Atlas, your nearest miss on the days kept; for a leg not yet cleared, your best game there against
 Atlas), the one nearest to done is named next, and a stamp once collected stays.
 
