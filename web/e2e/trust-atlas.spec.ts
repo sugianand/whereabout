@@ -24,7 +24,9 @@ async function atlasRightOnScreen(page: Page) {
   await expect(main).toHaveAttribute("data-photo", /.+/);
   const id = (await main.getAttribute("data-photo"))!;
   const top = ATLAS.guesses[id]!.topCountries[0]!;
-  return { right: top.country === COUNTRY.get(id), sure: Math.round(top.p * 100) };
+  // `p` is what Atlas's rule reads; `sure` is the rounded percent shown, so 49.6% reads as 50%
+  // while the rule still doubts it.
+  return { right: top.country === COUNTRY.get(id), sure: Math.round(top.p * 100), p: top.p };
 }
 
 test("Trust Atlas? judges each call on the real country, by tap and by key, and keeps the best", async ({
@@ -51,7 +53,7 @@ test("Trust Atlas? judges each call on the real country, by tap and by key, and 
   for (let n = 0; n < 10; n++) {
     await expect(page.getByText(`Photo ${n + 1} of 10`, { exact: true })).toBeVisible();
     await expect(trust).toBeEnabled();
-    const { right, sure } = await atlasRightOnScreen(page);
+    const { right, sure, p } = await atlasRightOnScreen(page);
     if (right) atlasRight++;
     await expect(page.getByTestId("trust-question")).toContainText(`${sure}% sure. Is it right?`);
     await expect(page.getByRole("meter", { name: "How sure Atlas is" })).toHaveAttribute(
@@ -81,7 +83,7 @@ test("Trust Atlas? judges each call on the real country, by tap and by key, and 
       right ? "Atlas was right: it is " : "Atlas was wrong: it is ",
     );
     await expect(card.getByTestId("trust-atlas")).toContainText(
-      sure >= 50 ? "Atlas trusted its answer" : "Atlas doubted its answer",
+      p >= 0.5 ? "Atlas trusted its answer" : "Atlas doubted its answer",
     );
     const next = card.getByRole("button", { name: n === 9 ? "See the results" : "Next photo" });
     await expect(next).toBeFocused();
@@ -487,9 +489,9 @@ test("every call right in one game earns Lie detector, with every call counted t
   for (let n = 0; n < 10; n++) {
     await expect(page.getByText(`Photo ${n + 1} of 10`, { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Trust it: Atlas is right" })).toBeEnabled();
-    const { right, sure } = await atlasRightOnScreen(page);
+    const { right, p } = await atlasRightOnScreen(page);
     // Atlas's own rule trusts itself from 50% sure.
-    if (right === sure >= 50) rule++;
+    if (right === p >= 0.5) rule++;
     await page.keyboard.press(right ? "y" : "n");
     await expect(card.getByRole("heading")).toHaveText("Called it");
     await page.keyboard.press("Enter");
