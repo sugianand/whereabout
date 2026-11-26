@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GameRecord } from "@/lib/game/deck";
 import { BEST_FOOLED_KEY } from "@/lib/game/fooledAtlas";
 import { FOOLED_DAILY_KEY, dailyFooledOrder } from "@/lib/game/fooledDaily";
+import { loadFooledRead } from "@/lib/game/fooledRead";
 import type { CatalogPhoto } from "@/lib/game/types";
 import { stubCanvas } from "@/test/canvas";
 import { gameFor } from "@/test/deck";
@@ -109,6 +110,26 @@ describe("FooledAtlas", () => {
     expect(screen.getByText("Best").nextElementSibling).toHaveTextContent("1");
   });
 
+  it("counts every pick toward What fools Atlas, once each", async () => {
+    await setup();
+    await waitFor(() => expect(pickButton(1)).toBeEnabled());
+    fireEvent.click(pickButton(1));
+    fireEvent.click(await screen.findByRole("button", { name: "Next pair" }));
+    await waitFor(() => expect(pickButton(1)).toBeEnabled());
+    fireEvent.keyDown(window, { key: "1" });
+    await screen.findByRole("region");
+    // A second key press on the answer adds nothing.
+    fireEvent.keyDown(window, { key: "1" });
+    // Both pairs are far apart (q5 4,448 km against q3 111 km, then q3 against q4 3,336 km):
+    // you got the first right, and Atlas, picking the photo it was less sure of, neither.
+    expect(loadFooledRead().bands).toEqual([
+      { pairs: 0, you: 0, atlas: 0 },
+      { pairs: 0, you: 0, atlas: 0 },
+      { pairs: 2, you: 1, atlas: 0 },
+    ]);
+    expect(loadFooledRead().ties).toBe(0);
+  });
+
   it("calls two near bullseyes a dead heat, either pick right", async () => {
     await setup(["q1", "q2"]);
     await waitFor(() => expect(pickButton(2)).toBeEnabled());
@@ -117,6 +138,9 @@ describe("FooledAtlas", () => {
     expect(within(card).getByRole("heading")).toHaveTextContent("Too close to call");
     expect(card).toHaveTextContent("Atlas came within 25 km of both, so either pick counts.");
     expect(streak()).toHaveTextContent("1");
+    // A dead heat is set aside on Your map, not counted as read right.
+    expect(loadFooledRead().ties).toBe(1);
+    expect(loadFooledRead().bands.every((t) => t.pairs === 0)).toBe(true);
   });
 
   it("says so when there are too few photos to deal", async () => {
@@ -174,6 +198,10 @@ describe("FooledAtlas, today's run", () => {
     const card = await screen.findByRole("region");
     expect(within(card).getByRole("heading")).toHaveTextContent("Wrong");
     expect(card).toHaveTextContent("Today's run is over: 1 pair in a row.");
+    // Two picks, counted once each over the reload, toward What fools Atlas.
+    const read = loadFooledRead();
+    expect(read.bands.reduce((n, t) => n + t.pairs, 0) + read.ties).toBe(2);
+    expect(read.bands.reduce((n, t) => n + t.you, 0)).toBe(1);
     expect(within(card).queryByRole("button", { name: "Start a new run" })).toBeNull();
     expect(within(card).getByRole("link", { name: "Play a free run" })).toHaveAttribute(
       "href",

@@ -4,9 +4,8 @@ import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 const PHOTO = readFileSync(resolve(process.cwd(), "e2e/fixtures/photo.png"));
-const ATLAS: { guesses: Record<string, { lat: number; lng: number }> } = JSON.parse(
-  readFileSync(resolve(process.cwd(), "src/data/atlas.json"), "utf8"),
-);
+const ATLAS: { guesses: Record<string, { lat: number; lng: number; confidence: number }> } =
+  JSON.parse(readFileSync(resolve(process.cwd(), "src/data/atlas.json"), "utf8"));
 const CATALOG: { id: string; lat: number; lng: number }[] = JSON.parse(
   readFileSync(resolve(process.cwd(), "src/data/photos.json"), "utf8"),
 );
@@ -142,6 +141,74 @@ test("on a 320px phone both photos, their buttons and the answer fit without scr
   const box = (await next.boundingBox())!;
   expect(box.y + box.height).toBeLessThanOrEqual(569);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+});
+
+test("your picks show on Your map's What fools Atlas, by how far apart the misses were", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto("./fooled-atlas");
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+  const bands = ["close", "clear", "far"] as const;
+  const expected = new Map(bands.map((b) => [b, { pairs: 0, you: 0, atlas: 0 }]));
+  let ties = 0;
+  // Three right picks, then leave mid-run: all three already count.
+  for (let n = 0; n < 3; n++) {
+    await expect(page.getByRole("button", { name: "Photo 1 fooled Atlas" })).toBeEnabled();
+    const { ids, fooled } = await pairOnScreen(page);
+    await page.keyboard.press(String(fooled ?? 1));
+    await expect(card.getByRole("heading")).toBeVisible();
+    if (fooled === null) ties++;
+    else {
+      const [a, b] = ids.map(missKm);
+      const ratio = Math.max(a, b) / Math.max(Math.min(a, b), 1);
+      const t = expected.get(ratio < 3 ? "close" : ratio < 10 ? "clear" : "far")!;
+      // Atlas's own pick is the photo it was less sure of.
+      const [sureA, sureB] = ids.map((id) => ATLAS.guesses[id]!.confidence);
+      const own = sureB < sureA ? 2 : 1;
+      t.pairs++;
+      t.you++;
+      if (own === fooled) t.atlas++;
+    }
+    await card.getByRole("button", { name: "Next pair" }).click();
+  }
+
+  await page.goto("./map");
+  const section = page.getByTestId("fooled-read");
+  await expect(section.getByRole("heading", { name: "What fools Atlas" })).toBeVisible();
+  const pairs = 3 - ties;
+  const atlas = [...expected.values()].reduce((s, t) => s + t.atlas, 0);
+  if (pairs > 0) {
+    await expect(page.getByTestId("fooled-read-line")).toContainText(
+      `You picked ${pairs} of ${pairs} pair`,
+    );
+    await expect(page.getByTestId("fooled-read-line")).toContainText(
+      `Atlas's own sureness picked ${atlas} (`,
+    );
+  }
+  if (ties > 0) await expect(page.getByTestId("fooled-read-ties")).toContainText(`${ties} dead`);
+  for (const b of bands) {
+    const t = expected.get(b)!;
+    await expect(page.getByTestId(`fooled-read-${b}`)).toHaveAttribute(
+      "data-pairs",
+      String(t.pairs),
+    );
+    await expect(page.getByTestId(`fooled-read-${b}-you`)).toHaveAttribute(
+      "data-correct",
+      String(t.you),
+    );
+    await expect(page.getByTestId(`fooled-read-${b}-atlas`)).toHaveAttribute(
+      "data-correct",
+      String(t.atlas),
+    );
+  }
+  const box = (await page.getByTestId("fooled-read-far").boundingBox())!;
+  expect(box.x + box.width).toBeLessThanOrEqual(321);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+
+  await section.getByRole("link", { name: "Play Which fooled Atlas?" }).click();
+  await expect(page).toHaveURL(/\/fooled-atlas\/?$/);
 });
 
 test("a challenge link deals a friend the same pairs, with the run to beat and the photo they picked", async ({

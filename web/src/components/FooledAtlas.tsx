@@ -40,6 +40,7 @@ import {
   rememberFooledDay,
   type FooledDay,
 } from "@/lib/game/fooledDaily";
+import { recordFooledRead } from "@/lib/game/fooledRead";
 import { formatDistance } from "@/lib/geo";
 import { placeholderUrl, sources } from "@/lib/photoSources";
 import { sendShare, type ShareOutcome } from "@/lib/share";
@@ -240,6 +241,8 @@ export default function FooledAtlas({
         sureB: atlasSureness(recB),
       } as const;
       const after = fooledReducer(state, action);
+      // Every pick counts once toward What fools Atlas on Your map, whatever the run.
+      if (after.phase === "answered") recordFooledRead(after.verdict, after.atlas, missA, missB);
       if (after.phase === "answered" && day) {
         // Today's run is kept after every pick, so a reload resumes it and never deals it again.
         // It is a day's result, apart from the free runs' best.
