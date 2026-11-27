@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "r
 
 import { isShortcut } from "@/lib/controls";
 import { countryName } from "@/lib/countries";
+import { runToday } from "@/lib/game/dailyRuns";
 import { fetchRecords, type Deck, type GameRecord } from "@/lib/game/deck";
 import {
   CHIPS,
@@ -24,10 +25,19 @@ import {
   rememberHedge,
   type HedgeResult,
 } from "@/lib/game/hedge";
+import {
+  dailyHedgeOrder,
+  dailyHedgeSeed,
+  hedgeDailyShare,
+  loadHedgeDay,
+  rememberHedgeDay,
+  settleHedge,
+} from "@/lib/game/hedgeDaily";
 import { formatPoints } from "@/lib/geo";
 import { placeholderUrl, sources } from "@/lib/photoSources";
 
 import ControlsHelp from "./ControlsHelp";
+import { DailyRunResult } from "./DailyRunShare";
 import GamesMenu from "./GamesMenu";
 
 type HedgeProps = {
@@ -38,6 +48,13 @@ type HedgeProps = {
   loadRecords?: (ids: string[]) => Promise<GameRecord[]>;
   /** For tests: the randomness that picks each game's seed. */
   random?: () => number;
+  /**
+   * Today's game (src/lib/game/hedgeDaily.ts): the day's five photos and four countries each,
+   * one try a day, picked back up after a reload at the first photo not yet bet on.
+   */
+  daily?: boolean;
+  /** For tests: the clock that picks today's game. */
+  now?: () => Date;
 };
 
 const ADD_KEYS: Record<string, number> = { "1": 0, "2": 1, "3": 2, "4": 3 };
@@ -48,7 +65,7 @@ const ADD_KEYS: Record<string, number> = { "1": 0, "2": 1, "3": 2, "4": 3 };
  * The answer shows both sides' chips on every country and what the scoring rule paid. Five
  * photos, the best kept in this browser.
  */
-export default function Hedge({ deck, ids, loadRecords, random }: HedgeProps) {
+export default function Hedge({ deck, ids, loadRecords, random, daily = false, now }: HedgeProps) {
   const [state, dispatch] = useReducer(hedgeReducer, initialHedge);
   const [best, setBest] = useState(0);
   const [bestBeforeGame, setBestBeforeGame] = useState(0);
@@ -57,15 +74,28 @@ export default function Hedge({ deck, ids, loadRecords, random }: HedgeProps) {
   // The chips on the photo being bet, and the order they went on, so Backspace takes back the
   // last one placed.
   const [placed, setPlaced] = useState<readonly number[]>([]);
+  // The day today's game was dealt for, kept when the clock passes midnight mid-game.
+  const [day, setDay] = useState<string | null>(null);
 
   const start = useCallback(() => {
+    setPlaced([]);
+    if (daily) {
+      const today = runToday(now?.());
+      setDay(today);
+      dispatch({
+        type: "start",
+        order: dailyHedgeOrder(ids, today),
+        seed: dailyHedgeSeed(today),
+        from: loadHedgeDay(today)?.results,
+      });
+      return;
+    }
     const stored = loadBestHedge();
     setBest(stored);
     setBestBeforeGame(stored);
-    setPlaced([]);
     const seed = Math.floor((random ?? Math.random)() * 2 ** 32);
     dispatch({ type: "start", order: dealHedge(ids, seed), seed });
-  }, [ids, random]);
+  }, [daily, ids, now, random]);
 
   // The game is dealt in the browser after hydration, never at build time.
   useEffect(() => {
@@ -146,12 +176,16 @@ export default function Hedge({ deck, ids, loadRecords, random }: HedgeProps) {
     const result = hedgeResult(record!, options, chips);
     if (!result) return;
     const after = hedgeReducer(state, { type: "bet", result });
-    // Only a whole game counts as a best.
-    if (after.phase === "answered" && after.results.length === after.order.length) {
+    if (day) {
+      // Kept after every photo, so a reload can't take a bet back. Today's game is played once
+      // for the day, apart from the free game's best.
+      if (after.phase === "answered") rememberHedgeDay(day, after.results);
+    } else if (after.phase === "answered" && after.results.length === after.order.length) {
+      // Only a whole game counts as a best.
       setBest(rememberHedge(hedgeTotals(after.results).total));
     }
     dispatch({ type: "bet", result });
-  }, [betting, left, record, options, chips, state]);
+  }, [betting, left, record, options, chips, state, day]);
 
   const next = useCallback(() => {
     setPlaced([]);
@@ -180,6 +214,17 @@ export default function Hedge({ deck, ids, loadRecords, random }: HedgeProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, [betting, add, take, bet]);
 
+  if (state.phase === "done" && day && state.results.length > 0) {
+    return (
+      <HedgeDayResult
+        day={day}
+        results={settleHedge(state.results, records)}
+        records={records}
+        now={now}
+      />
+    );
+  }
+
   if (state.phase === "done") {
     return (
       <HedgeSummary
@@ -204,7 +249,7 @@ export default function Hedge({ deck, ids, loadRecords, random }: HedgeProps) {
       data-phase={answered ? "revealed" : "betting"}
       data-photo={record?.photo.id}
     >
-      <h1 className="sr-only">{`Whereabout: Hedge your bets, photo ${index + 1} of ${total}`}</h1>
+      <h1 className="sr-only">{`Whereabout: Hedge your bets${daily ? ", today" : ""}, photo ${index + 1} of ${total}`}</h1>
 
       <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 px-4 pb-2 pt-4 md:px-6">
         <div className="min-w-0">
@@ -214,10 +259,18 @@ export default function Hedge({ deck, ids, loadRecords, random }: HedgeProps) {
           >
             Whereabout
           </Link>
-          <p className="mt-1 text-sm text-chalk-dim">Hedge your bets: spread ten chips</p>
+          <p className="mt-1 text-sm text-chalk-dim">
+            {`Hedge your bets${daily ? " today" : ""}: spread ten chips`}
+          </p>
           <p className="text-sm text-chalk-dim" aria-live="polite">
             {`Photo ${index + 1} of ${total}`}
           </p>
+          <Link
+            href={daily ? "/hedge" : "/hedge/daily"}
+            className="text-sm text-gold underline underline-offset-2 hover:brightness-110"
+          >
+            {daily ? "Free games" : "Today's game"}
+          </Link>
         </div>
         <div className="flex shrink-0 items-start gap-3">
           <GamesMenu screen="hedge" streakHref="/streak" />
@@ -233,10 +286,12 @@ export default function Hedge({ deck, ids, loadRecords, random }: HedgeProps) {
                 {formatPoints(totals.atlas)}
               </dd>
             </div>
-            <div className="flex justify-end gap-1.5 text-sm text-chalk-dim">
-              <dt>Best</dt>
-              <dd className="tabular">{formatPoints(best)}</dd>
-            </div>
+            {!daily && (
+              <div className="flex justify-end gap-1.5 text-sm text-chalk-dim">
+                <dt>Best</dt>
+                <dd className="tabular">{formatPoints(best)}</dd>
+              </div>
+            )}
           </dl>
         </div>
       </header>
@@ -540,6 +595,64 @@ function HedgeCard({
   );
 }
 
+/** Each photo bet on, by place, with both sides' chips on the right country and points. */
+function BetList({
+  results,
+  records,
+}: {
+  results: readonly HedgeResult[];
+  records: ReadonlyMap<string, GameRecord>;
+}) {
+  return (
+    <ol className="mt-6 space-y-2" aria-label="Your bets">
+      {results.map((r, i) => {
+        const rec = records.get(r.id);
+        return (
+          <li
+            key={r.id}
+            className="rounded-xl border border-graticule/70 px-3 py-2 text-sm"
+            data-testid="hedge-row"
+          >
+            <span className="block text-chalk">{rec?.photo.place ?? `Photo ${i + 1}`}</span>
+            <span className="block text-chalk-dim">
+              {`${hedgeLine(r, countryName)} You ${formatPoints(r.score)}, Atlas ${formatPoints(r.atlasScore)}.`}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/** Today's Hedge your bets once its last photo is bet on, on this visit or an earlier one. */
+function HedgeDayResult({
+  day,
+  results,
+  records,
+  now,
+}: {
+  day: string;
+  results: readonly HedgeResult[];
+  records: ReadonlyMap<string, GameRecord>;
+  now?: () => Date;
+}) {
+  const { total, atlas } = hedgeTotals(results);
+  return (
+    <DailyRunResult
+      game="Hedge your bets"
+      day={day}
+      unit="game"
+      headline={`${formatPoints(total)} points`}
+      summary={`Atlas's probabilities scored ${formatPoints(atlas)}. ${hedgeEndLine(results)}`}
+      shareText={(href) => hedgeDailyShare(day, results, href)}
+      freeHref="/hedge"
+      now={now}
+    >
+      <BetList results={results} records={records} />
+    </DailyRunResult>
+  );
+}
+
 function HedgeSummary({
   results,
   records,
@@ -584,23 +697,7 @@ function HedgeSummary({
             one nothing. The rule is proper: on average it pays most to bet each country as likely
             as you really think it is.
           </p>
-          <ol className="mt-6 space-y-2" aria-label="Your bets">
-            {results.map((r, i) => {
-              const rec = records.get(r.id);
-              return (
-                <li
-                  key={r.id}
-                  className="rounded-xl border border-graticule/70 px-3 py-2 text-sm"
-                  data-testid="hedge-row"
-                >
-                  <span className="block text-chalk">{rec?.photo.place ?? `Photo ${i + 1}`}</span>
-                  <span className="block text-chalk-dim">
-                    {`${hedgeLine(r, countryName)} You ${formatPoints(r.score)}, Atlas ${formatPoints(r.atlasScore)}.`}
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
+          <BetList results={results} records={records} />
         </>
       )}
       <div className="mt-8 flex flex-wrap items-center gap-4">

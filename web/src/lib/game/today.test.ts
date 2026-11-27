@@ -12,6 +12,8 @@ import { ARCHIVE_DAYS, DAILY_SCORES_KEY, daysBefore } from "./dailyArchive";
 import { rememberFarDay } from "./farDaily";
 import { rememberFooledDay } from "./fooledDaily";
 import { rememberGroundDay } from "./groundDaily";
+import type { HedgeResult } from "./hedge";
+import { rememberHedgeDay } from "./hedgeDaily";
 import { hotAtlas, hotPin, hotRound } from "./hotCold";
 import { rememberHotDay } from "./hotDaily";
 import { type PairResult } from "./howFar";
@@ -335,6 +337,20 @@ const TRUST_GAME: TrustResult[] = Array.from({ length: 10 }, (_, i) => {
   };
 });
 
+/**
+ * A whole Hedge your bets game: all ten chips on the right country on four photos and on a wrong
+ * one on the fifth, 4,000 points; Atlas puts six on a wrong country every time, 490 a photo.
+ */
+const HEDGE_GAME: HedgeResult[] = Array.from({ length: 5 }, (_, i) => ({
+  id: `h${i}`,
+  options: ["FR", "BE", "CH", "LU"],
+  chips: i < 4 ? [10, 0, 0, 0] : [0, 10, 0, 0],
+  atlasChips: [2, 6, 1, 1],
+  right: 0,
+  score: i < 4 ? 1000 : 0,
+  atlasScore: 490,
+}));
+
 /** Finish one game joined later on `day`, as it writes its own store. */
 const finishJoined: Partial<Record<TodayGameId, (day: string) => void>> = {
   "line-up": (day) => rememberLineDay(day, { results: Array<RowResult>(5).fill(ROW) }),
@@ -354,6 +370,7 @@ const finishJoined: Partial<Record<TodayGameId, (day: string) => void>> = {
   "trust-atlas": (day) => rememberTrustDay(day, TRUST_GAME),
   "fooled-atlas": (day) =>
     rememberFooledDay(day, { streak: 3, atlasRight: 2, atlasPlayed: 4, ended: "miss" }),
+  hedge: (day) => rememberHedgeDay(day, HEDGE_GAME),
 };
 
 /** Every daily game finished on `day` but `except`, each as it writes its own store. */
@@ -677,6 +694,35 @@ describe("today's Which fooled Atlas? on Today", () => {
 
   it("has a Beat Atlas game of its own", () => {
     expect(VERSUS_GAMES.some((g) => g.id === "fooled-atlas")).toBe(true);
+  });
+});
+
+describe("today's Hedge your bets on Today", () => {
+  const DAY_IN = "2026-11-28";
+  const AT = new Date(`${DAY_IN}T12:00:00Z`);
+  const game = () => todayGames(DAY_IN, IDS, AT).find((g) => g.id === "hedge")!;
+
+  it("reads the bets as they are kept, and calls the game against Atlas's probabilities", () => {
+    expect(todayGames("2026-11-27", IDS, AT).some((g) => g.id === "hedge")).toBe(false);
+    expect(game()).toMatchObject({ status: "new", line: "Not started", href: "/hedge/daily" });
+    rememberHedgeDay(DAY_IN, HEDGE_GAME.slice(0, 2));
+    expect(game()).toMatchObject({
+      status: "going",
+      line: "2 of 5 photos, 2,000 points",
+      atlas: "980 points",
+      versus: null,
+    });
+    finishJoined.hedge!(DAY_IN);
+    expect(game()).toMatchObject({
+      status: "done",
+      line: "4,000 of 5,000",
+      atlas: "2,450 points",
+      versus: { you: 4000, atlas: 2450, unit: "points", call: "you" },
+    });
+  });
+
+  it("has a Beat Atlas game of its own", () => {
+    expect(VERSUS_GAMES.some((g) => g.id === "hedge")).toBe(true);
   });
 });
 

@@ -160,6 +160,12 @@ nothing, and an even spread about 625 whichever is right. The rule is proper, so
 spread that pays most is the one that matches how likely you really think each country is. Atlas
 bets the same four with its own belief, renormalised and rounded to whole chips, and the answer
 shows both sides' chips on every country. Five photos a game; your best is kept in your browser.
+**Today's game** (at `/hedge/daily`, on Today from 2026-11-28) deals everyone the same five photos
+and the same four countries on each, in the same order, on the same UTC day, one try a day. Each bet
+is kept as it is placed, so a reload picks up at the next photo and can't take one back, and a kept
+bet is scored again on its photo rather than trusted; Today sets your points against Atlas's
+probabilities, for a *Beat Atlas* stamp. The share line is your points beside Atlas's and a square
+per photo by the chips you had on the right country, spoiling no place or country.
 **Which fooled Atlas?** (at `/fooled-atlas`, in the Games menu) shows two photos side by side:
 pick the one Atlas placed further from where it was taken (tap it, or press 1 or 2). The answer
 tags each photo with how far off Atlas's pin landed and draws both misses on a scale from spot on

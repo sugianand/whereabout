@@ -193,6 +193,17 @@ test("full days count up on a calendar that fits the screen", async ({ page }) =
       keep("whereabout:trust-atlas-daily", { results: tenIds.map(trusted) });
       // And Which fooled Atlas? from 2026-11-26 on.
       keep("whereabout:fooled-atlas-daily", run);
+      // And Hedge your bets from 2026-11-28 on: all in on the right country, level with Atlas.
+      const hedged = (id: string) => ({
+        id,
+        options: ["FR", "BE", "CH", "LU"],
+        chips: [10, 0, 0, 0],
+        atlasChips: [10, 0, 0, 0],
+        right: 0,
+        score: 1000,
+        atlasScore: 1000,
+      });
+      keep("whereabout:hedge-daily", { results: ["a", "b", "c", "d", "e"].map(hedged) });
     },
     { full: [before(1), before(2)], partly: before(3) },
   );

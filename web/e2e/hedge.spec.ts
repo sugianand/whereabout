@@ -143,3 +143,109 @@ test("on a 320px phone the photo, the four countries and the bet fit without scr
   expect(nextBox.y + nextBox.height).toBeLessThanOrEqual(568);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });
+
+test("today's Hedge your bets deals the day once, keeps each bet through a reload, and shares points", async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+  const day = new Date().toISOString().slice(0, 10);
+
+  // From a free game to today's.
+  await page.goto("./hedge");
+  await page.getByRole("link", { name: "Today's game" }).click();
+  await expect(page).toHaveURL(/\/hedge\/daily\/?$/);
+  await expect(page.getByText("Hedge your bets today: spread ten chips")).toBeVisible();
+  await expect(page.getByText("Best", { exact: true })).toHaveCount(0);
+
+  // Every photo all in on its real country, so the total is known: 5,000.
+  const dealt: { id: string; offered: string[] }[] = [];
+  const allIn = async (n: number) => {
+    await expect(page.getByText(`Photo ${n + 1} of 5`, { exact: true })).toBeVisible();
+    const { id, right } = await onScreen(page);
+    const offered = await page
+      .getByTestId("hedge-option")
+      .evaluateAll((els) => els.map((e) => e.getAttribute("data-country")!));
+    dealt.push({ id, offered });
+    for (let i = 0; i < 10; i++) await page.keyboard.press(String(right + 1));
+    await page.keyboard.press("g");
+    await expect(card.getByTestId("hedge-points")).toContainText("You scored 1,000 of 1,000");
+    await card.getByRole("button", { name: n === 4 ? "See the results" : "Next photo" }).click();
+  };
+  await allIn(0);
+  await allIn(1);
+
+  // A reload can't take a bet back: it picks up at the third photo, the points kept.
+  await page.reload();
+  await expect(page.getByText("Photo 3 of 5", { exact: true })).toBeVisible();
+  await expect(page.locator("dd", { hasText: /^2,000$/ })).toBeVisible();
+  for (let n = 2; n < 5; n++) await allIn(n);
+  expect(new Set(dealt.map((d) => d.id)).size).toBe(5);
+
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("5,000 points");
+  await expect(page.getByText(`Hedge your bets · today's game · ${day}`)).toBeVisible();
+  const summary = page.getByText(/^Atlas's probabilities scored [\d,]+\./);
+  const atlas = (await summary.textContent())!.match(/scored ([\d,]+)\./)![1]!;
+  await expect(page.getByTestId("hedge-row")).toHaveCount(5);
+  await page.getByRole("button", { name: "Share today's game" }).click();
+  await expect(page.getByRole("status")).toHaveText("Result copied. Paste it anywhere.");
+  const sent = await page.evaluate(() => (window as unknown as { sent: string }).sent);
+  expect(sent).toContain(`Whereabout · Hedge your bets · ${day}`);
+  expect(sent).toContain(`🎲 5,000 of 5,000 · Atlas's probabilities ${atlas}`);
+  expect(sent).toContain("🟩".repeat(5));
+  expect(sent).toMatch(/\/hedge\/daily\/$/);
+  // No place and no country: the share spoils no photo.
+  for (const { id, offered } of dealt) {
+    expect(sent).not.toContain(id);
+    for (const c of offered) expect(sent).not.toContain(c);
+  }
+  // The free game's best is untouched.
+  expect(await page.evaluate(() => localStorage.getItem("whereabout:hedge-best"))).toBe(null);
+
+  // The day is never dealt again, and a second visit deals the same countries in the same order.
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("5,000 points");
+  await expect(page.getByRole("button", { name: "Bet", exact: true })).toHaveCount(0);
+  await page.evaluate(() => localStorage.removeItem("whereabout:hedge-daily"));
+  await page.reload();
+  const again = await onScreen(page);
+  expect(again.id).toBe(dealt[0]!.id);
+  expect(
+    await page
+      .getByTestId("hedge-option")
+      .evaluateAll((els) => els.map((e) => e.getAttribute("data-country")!)),
+  ).toEqual(dealt[0]!.offered);
+  expect(errors).toEqual([]);
+});
+
+test("today's Hedge your bets fits a 320px phone, its link to free games on screen", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  for (const [path, link] of [
+    ["./hedge", "Today's game"],
+    ["./hedge/daily", "Free games"],
+  ] as const) {
+    await page.goto(path);
+    await onScreen(page);
+    const linkBox = (await page.getByRole("link", { name: link }).boundingBox())!;
+    expect(linkBox.x + linkBox.width).toBeLessThanOrEqual(321);
+    const bet = (await page.getByRole("button", { name: "Bet", exact: true }).boundingBox())!;
+    expect(bet.y + bet.height).toBeLessThanOrEqual(569);
+    expect((await page.getByTestId("hedge-photo").boundingBox())!.height).toBeGreaterThan(100);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      320,
+    );
+  }
+});

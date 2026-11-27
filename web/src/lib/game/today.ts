@@ -5,7 +5,9 @@
  * and the photos and rows of How far apart?, Hot and cold, Line them up, Close-up, Which climate?,
  * What's on the ground?, Bullseye, Spot the clue and Trust Atlas? (./farDaily.ts, ./hotDaily.ts,
  * ./lineDaily.ts, ./closeDaily.ts, ./climateDaily.ts, ./groundDaily.ts, ./bullseyeDaily.ts,
- * ./spotDaily.ts, ./trustDaily.ts). Which fooled Atlas? is a streak game too (./fooledDaily.ts). What a game can't read back counts as not started.
+ * ./spotDaily.ts, ./trustDaily.ts), and the bets of Hedge your bets (./hedgeDaily.ts). Which
+ * fooled Atlas? is a streak game too (./fooledDaily.ts). What a game can't read back counts as
+ * not started.
  *
  * Like every share in the game, the combined line is scores and counts only, so it spoils no
  * photo. Only finished games go in it: a run still going has no result yet.
@@ -39,6 +41,8 @@ import { dailyRunUrl, type DailyRun } from "./dailyRuns";
 import { loadFarDay } from "./farDaily";
 import { loadFooledDay } from "./fooledDaily";
 import { loadGroundDay } from "./groundDaily";
+import { HEDGE_MAX, HEDGE_PHOTOS, hedgeTotals } from "./hedge";
+import { loadHedgeDay } from "./hedgeDaily";
 import { HOT_PHOTOS, PHOTO_POINTS, atlasTotal as hotAtlasTotal, hotTotal } from "./hotCold";
 import { loadHotDay } from "./hotDaily";
 import { PAIRS, PAIR_POINTS, atlasTotal, totalPoints } from "./howFar";
@@ -71,7 +75,8 @@ export type TodayGameId =
   | "bullseye"
   | "spot-the-clue"
   | "trust-atlas"
-  | "fooled-atlas";
+  | "fooled-atlas"
+  | "hedge";
 
 /** One daily game: where it lives, whatever the browser holds. */
 export interface TodayGameInfo {
@@ -226,6 +231,15 @@ export const TODAY_GAMES: readonly TodayGameInfo[] = [
     blurb: "Two photos: pick the one Atlas placed further from home, until your first miss.",
     // From the next UTC day, so a day already played in full isn't left one game short.
     since: "2026-11-26",
+  },
+  {
+    id: "hedge",
+    name: "Hedge your bets",
+    href: "/hedge/daily",
+    icon: "🎲",
+    blurb: "Five photos, four countries each: spread ten chips the way you rate the odds.",
+    // From the next UTC day, so a day already played in full isn't left one game short.
+    since: "2026-11-28",
   },
 ];
 
@@ -443,6 +457,21 @@ function spotTheClue(day: string) {
   return { status: "done" as const, line, atlas: null, versus: null };
 }
 
+function hedge(day: string) {
+  const results = loadHedgeDay(day)?.results ?? [];
+  if (results.length === 0)
+    return { status: "new" as const, line: NOT_STARTED, atlas: null, versus: null };
+  const { total, atlas } = hedgeTotals(results);
+  // Atlas bets every photo with its own probabilities, so it always has points beside yours.
+  const rival = `${formatPoints(atlas)} points`;
+  if (results.length < HEDGE_PHOTOS) {
+    const line = `${results.length} of ${HEDGE_PHOTOS} photos, ${formatPoints(total)} points`;
+    return { status: "going" as const, line, atlas: rival, versus: null };
+  }
+  const line = `${formatPoints(total)} of ${formatPoints(HEDGE_PHOTOS * HEDGE_MAX)}`;
+  return { status: "done" as const, line, atlas: rival, versus: versus(total, atlas, "points") };
+}
+
 function trustAtlas(day: string) {
   const results = loadTrustDay(day)?.results ?? [];
   const { correct, atlasCorrect } = trustTotals(results);
@@ -497,6 +526,8 @@ export function todayGames(
         return { ...info, ...trustAtlas(day) };
       case "fooled-atlas":
         return { ...info, ...streakGame(loadFooledDay(day), "pair") };
+      case "hedge":
+        return { ...info, ...hedge(day) };
     }
   });
 }

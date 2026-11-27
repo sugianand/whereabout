@@ -437,9 +437,25 @@ odds beside a model's probabilities on the same photos. Still the static site wi
   reducer and the best; component tests bet by tap and by key and play a whole game; e2e plays
   five photos by tap and key on desktop and phone, fits a 320px phone, lists and presses every
   key in the controls sheet, and checks axe on the bet and the answer)
-- [ ] Web: today's Hedge your bets: the same five photos and the same four countries for
+- [x] Web: today's Hedge your bets: the same five photos and the same four countries for
   everyone each UTC day, one try, kept after every bet so a reload resumes it, shared as a line
-  that names no place, on Today
+  that names no place, on Today (`/hedge/daily`, `web/src/lib/game/hedgeDaily.ts`:
+  `dailyHedgeSeed` hashes `whereabout:hedge:<day>` into one seed that both deals the five photos
+  (`dealHedge`) and orders each photo's four countries (`hedgeOptions`), so everyone sees the same
+  choices in the same order. Each bet is kept under `whereabout:hedge-daily` as it is placed, and
+  `parseHedgeDay` reads back only whole chips, ten a side, and the points the rule gives them;
+  `settleHedge` scores each kept bet again with `hedgeResult` once its photo's record arrives, so
+  the right country, both scores and Atlas's chips never come from storage. `hedgeReducer`'s start
+  takes `from` to resume. The share line is the points beside Atlas's probabilities and a square
+  per photo by the chips on the right country (🟩 7 to 10, 🟨 4 to 6, 🟧 1 to 3, 🟥 none), no place
+  and no country. `components/Hedge.tsx` takes `daily`: no best, the free game's best untouched,
+  and the free and daily pages link to each other. Today lists it from 2026-11-28 with your points
+  against Atlas's, which adds a *Beat Atlas* stamp. Unit tests for the deal, the day's options on
+  the real catalog, the kept day, its junk, the settling and the share; component tests resume
+  after a remount, finish the day and settle a forged one from the photos; e2e on desktop and phone
+  plays the day from the free game's link, reloads mid-game, shares, finds the day not dealt again
+  with the same countries in the same order, and fits a 320px phone; Today's and Stamps' full days
+  seed it; axe on the new page)
 - [ ] Web: challenge a friend to Hedge your bets: the same five photos and four countries from a
   link, with the sender's chips shown beside yours on each answer, *Send yours back* and a
   head-to-head picture

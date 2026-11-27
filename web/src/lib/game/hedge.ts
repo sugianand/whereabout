@@ -182,7 +182,7 @@ export type HedgeState =
   | { phase: "done"; order: readonly string[]; seed: number; results: readonly HedgeResult[] };
 
 export type HedgeAction =
-  | { type: "start"; order: readonly string[]; seed: number }
+  | { type: "start"; order: readonly string[]; seed: number; from?: readonly HedgeResult[] }
   | { type: "bet"; result: HedgeResult }
   | { type: "next" };
 
@@ -190,10 +190,14 @@ export const initialHedge: HedgeState = { phase: "idle" };
 
 export function hedgeReducer(state: HedgeState, action: HedgeAction): HedgeState {
   switch (action.type) {
-    case "start":
-      return action.order.length === 0
-        ? { phase: "done", order: [], seed: action.seed, results: [] }
-        : { phase: "betting", order: action.order, seed: action.seed, results: [] };
+    case "start": {
+      // `from` picks a game back up: today's bets kept before a reload.
+      const { order, seed } = action;
+      const results = action.from ?? [];
+      return results.length >= order.length
+        ? { phase: "done", order, seed, results }
+        : { phase: "betting", order, seed, results };
+    }
     case "bet":
       if (state.phase !== "betting" || action.result.id !== state.order[state.results.length]) {
         return state;
