@@ -151,6 +151,15 @@ A whole free game can **challenge a friend**: the link deals them the same ten p
 your trust or doubt on each, shown on their answer card once they have made their own call. Whether
 each of your calls was right is judged on the photo's real country, never read from the link, and
 the end screen offers *Send yours back* and a head-to-head picture.
+**Hedge your bets** (at `/hedge`, in the Games menu) asks how sure you are, not just where. Each
+photo comes with four countries, its own and the first three others on Atlas's shortlist, and ten
+chips to spread over them (tap + and −, or press 1 to 4 to add a chip and Backspace to take the
+last one back, then *Bet* or G). The bet scores by the quadratic (Brier) rule, `500 × (1 + 2q − Σq²)`
+with `q` the chips as shares: every chip on the right country pays 1,000, all in on a wrong one
+nothing, and an even spread about 625 whichever is right. The rule is proper, so on average the
+spread that pays most is the one that matches how likely you really think each country is. Atlas
+bets the same four with its own belief, renormalised and rounded to whole chips, and the answer
+shows both sides' chips on every country. Five photos a game; your best is kept in your browser.
 **Which fooled Atlas?** (at `/fooled-atlas`, in the Games menu) shows two photos side by side:
 pick the one Atlas placed further from where it was taken (tap it, or press 1 or 2). The answer
 tags each photo with how far off Atlas's pin landed and draws both misses on a scale from spot on

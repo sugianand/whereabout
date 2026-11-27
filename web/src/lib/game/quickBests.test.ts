@@ -17,6 +17,7 @@ import { BEST_SURVIVAL_KEY } from "./survival";
 import { BEST_CLIMATE_KEY } from "./whichClimate";
 import { BEST_GROUND_KEY } from "./onTheGround";
 import { BEST_SPOT_KEY } from "./spotClue";
+import { BEST_HEDGE_KEY } from "./hedge";
 import { BEST_TRUST_KEY } from "./trustAtlas";
 import { BEST_FOOLED_KEY } from "./fooledAtlas";
 import { BEST_WAY_KEY } from "./whichWay";
@@ -41,6 +42,7 @@ describe("loadQuickBests", () => {
     localStorage.setItem(BEST_BULLSEYE_KEY, "2750");
     localStorage.setItem(BEST_SPOT_KEY, "3420");
     localStorage.setItem(BEST_TRUST_KEY, "8");
+    localStorage.setItem(BEST_HEDGE_KEY, "3640");
     localStorage.setItem(BEST_FOOLED_KEY, "6");
     localStorage.setItem(BEST_NAME_KEY, "7");
     localStorage.setItem(BEST_LINE_KEY, "14");
@@ -61,6 +63,7 @@ describe("loadQuickBests", () => {
       bullseye: 2750,
       "spot-the-clue": 3420,
       "trust-atlas": 8,
+      hedge: 3640,
       "fooled-atlas": 6,
       "name-country": 7,
       "line-up": 14,
@@ -131,6 +134,7 @@ describe("bestLine", () => {
     bullseye: 2750,
     "spot-the-clue": 3420,
     "trust-atlas": 8,
+    hedge: 3640,
     "fooled-atlas": 6,
     "name-country": 7,
     "line-up": 14,
@@ -153,6 +157,7 @@ describe("bestLine", () => {
     expect(bestLine("bullseye", bests)).toBe("Best: 2,750 points");
     expect(bestLine("spot-the-clue", bests)).toBe("Best: 3,420 points");
     expect(bestLine("trust-atlas", bests)).toBe("Best: 8 of 10 called right");
+    expect(bestLine("hedge", bests)).toBe("Best: 3,640 points");
     expect(bestLine("fooled-atlas", bests)).toBe("Best: 6 in a row");
     expect(bestLine("name-country", bests)).toBe("Best: 7 in a row");
     expect(bestLine("line-up", bests)).toBe("Best: 14 of 20 in place");

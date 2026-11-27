@@ -4,7 +4,7 @@
  *
  * Nothing new is stored here. Each mode keeps its own best under its own key (blitz.ts,
  * streak.ts, survival.ts, furtherNorth.ts, oddOneOut.ts, howFar.ts, whichWay.ts, hotCold.ts, bullseye.ts,
- * spotClue.ts, trustAtlas.ts, fooledAtlas.ts, nameCountry.ts, lineUp.ts, closeUp.ts, leftRight.ts,
+ * spotClue.ts, trustAtlas.ts, hedge.ts, fooledAtlas.ts, nameCountry.ts, lineUp.ts, closeUp.ts, leftRight.ts,
  * whichClimate.ts, clueMix.ts, onTheGround.ts); this only reads them back through the
  * same loaders, so a value a mode would refuse (a negative streak, junk JSON) is refused here too.
  */
@@ -25,6 +25,7 @@ import { loadBestName } from "./nameCountry";
 import { loadBestOdd } from "./oddOneOut";
 import { GROUND_PHOTOS, loadBestGround } from "./onTheGround";
 import { loadBestFooled } from "./fooledAtlas";
+import { loadBestHedge } from "./hedge";
 import { regionSlug } from "./regions";
 import { loadBestSpot } from "./spotClue";
 import { loadBestStreak } from "./streak";
@@ -46,6 +47,7 @@ export const QUICK_MODES = [
   "bullseye",
   "spot-the-clue",
   "trust-atlas",
+  "hedge",
   "fooled-atlas",
   "name-country",
   "line-up",
@@ -86,6 +88,8 @@ export interface QuickBests {
   "spot-the-clue": number | null;
   /** The most correct calls in a whole game. */
   "trust-atlas": number | null;
+  /** The most points in a whole game. */
+  hedge: number | null;
   /** The longest run of pairs called. */
   "fooled-atlas": number | null;
   /** The longest run of countries named. */
@@ -116,6 +120,7 @@ export const NO_BESTS: QuickBests = {
   bullseye: null,
   "spot-the-clue": null,
   "trust-atlas": null,
+  hedge: null,
   "fooled-atlas": null,
   "name-country": null,
   "line-up": null,
@@ -158,6 +163,7 @@ export function loadQuickBests(): QuickBests {
     bullseye: positive(loadBestBullseye()),
     "spot-the-clue": positive(loadBestSpot()),
     "trust-atlas": positive(loadBestTrust()),
+    hedge: positive(loadBestHedge()),
     "fooled-atlas": positive(loadBestFooled()),
     "name-country": positive(loadBestName()),
     "line-up": positive(loadBestLine()),
@@ -224,6 +230,7 @@ export function bestLine(mode: QuickMode, bests: QuickBests): string | null {
     case "how-far":
     case "hot-cold":
     case "bullseye":
+    case "hedge":
     case "spot-the-clue": {
       const n = bests[mode];
       return n === null ? null : `Best: ${formatPoints(n)} points`;

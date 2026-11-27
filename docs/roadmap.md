@@ -414,6 +414,40 @@ it knows when it is lost. Still the static site with no accounts.
 - [x] Web: what fools Atlas on Your map: over every Which fooled Atlas? pair, how often you read Atlas's misses right against its own sureness rule, by how far apart the two misses were, from counts the browser keeps (`web/src/lib/game/fooledRead.ts`: `gapRatio` is the larger miss over the smaller, the smaller taken as at least 1 km, and `GAPS` bands it as close (under 3 times), clear (3 to under 10 times) and far apart (10 times or more). Each band keeps only counts: pairs picked, how many you got right and how many Atlas's own pick (the photo it was less sure of) got right. A dead heat (`tooClose`) counts any pick right, so it is kept apart as a count of dead heats and never read as right; a pair Atlas sat out isn't counted, so you and its sureness always play the same pairs; `parseFooledRead` drops counts that can't agree with themselves. `recordFooledRead` adds each pick once as it is made, in free runs, challenges and today's run alike, under `whereabout:fooled-atlas-read`, and a reload of today's run resumes at the next pair, so nothing is counted twice. `components/FooledRead.tsx` shows *What fools Atlas* on Your map once a pair is picked: the headline, who reads Atlas's misses better, the dead heats set aside, and a card per band with a meter each for you and Atlas's sureness, linking to both runs. Picks made before this release weren't kept. Unit tests for the gap, the bands, dead heats, pairs Atlas sat out, junk, keeping and the words; component tests for the chart, picks counted once each in a free run, a dead heat set aside and today's run counted once over a reload; e2e on desktop and phone makes three picks at 320px, leaves mid-run and finds each band's counts from `atlas.json` and the catalog with no sideways scroll; What fools Atlas joins the axe audit after Which fooled Atlas?'s first answer)
 - [x] Web: Which fooled Atlas? stamps: *Blind spot* for a run of 10 and *Mind over model* for out-reading Atlas's own sureness over at least 50 pairs, in a group on Stamps with progress (`web/src/lib/stamps.ts`: `loadFooledSources` takes the longest of the free runs' best (`loadBestFooled`, kept after every right pick and never from a challenge) and each run today's Which fooled Atlas? keeps, finished or still going, and every pair from what fools Atlas on Your map (`loadFooledRead`). *Blind spot* is earned at `FOOLED_RUN_STAMP` = 10 picks in a row; *Mind over model* needs `FOOLED_READ_PAIRS` = 50 pairs read and then compares your picks with Atlas's own sureness through `fooledReadLeader`, so the stamp and What fools Atlas always agree, dead heats left out of both; level isn't ahead, and the note gives both counts. The group's intro links to both runs and to Your map. Unit tests for both stamps' progress, the cap, a lead, a tie, a trail, dead heats, and the sources from free runs, a run still going and the read; component tests read both stamps from storage and collect Blind spot from today's run; e2e on desktop and phone follows the intro to Which fooled Atlas?, picks ten pairs right from `atlas.json` and the catalog, finds Blind spot collected with the pairs counted beside Atlas's sureness at 320px, and follows the intro to Your map)
 
+## Milestone 29 — Hedge your bets: put a number on it
+
+A game about the other half of a model's answer: not which country, but how much to believe
+each. Four countries and ten chips per photo, scored by a proper scoring rule (the quadratic, or
+Brier, score), so going all in only pays when you are that sure and an honest hedge pays best on
+average. Atlas bets the same four with its own belief, so every game sets a person's sense of the
+odds beside a model's probabilities on the same photos. Still the static site with no accounts.
+
+- [x] Web: Hedge your bets: `/hedge` deals five photos Atlas weighed another country for; each
+  offers the photo's country and Atlas's first three others, shuffled by the game's seed and the
+  photo, with ten chips to spread by + and − or 1 to 4 and Backspace, and *Bet* (or G) once all
+  ten are on. The answer shows your chips and Atlas's on every country as pips, the right one
+  marked, and both scores; the end screen totals both sides and keeps the best, shown in the
+  Games menu and the controls sheet (`web/src/lib/game/hedge.ts`: `hedgeScore` is
+  `500 × (1 + 2q[c] − Σq²)`, refused unless all ten whole chips are on; `atlasChips` reads the
+  heatmap belief, or the shortlist without one, renormalised over the four and rounded by
+  largest remainder in `toChips`; `hedgeOptions` seeds its shuffle from the game's seed and the
+  photo id so a later daily or challenge can deal the same four; a pure `hedgeReducer`, and the
+  best under `whereabout:hedge-best`. Unit tests for the rule's ends, its properness at 60%
+  sure, refused bets, the rounding, the options on every bundled photo, Atlas's chips, the
+  reducer and the best; component tests bet by tap and by key and play a whole game; e2e plays
+  five photos by tap and key on desktop and phone, fits a 320px phone, lists and presses every
+  key in the controls sheet, and checks axe on the bet and the answer)
+- [ ] Web: today's Hedge your bets: the same five photos and the same four countries for
+  everyone each UTC day, one try, kept after every bet so a reload resumes it, shared as a line
+  that names no place, on Today
+- [ ] Web: challenge a friend to Hedge your bets: the same five photos and four countries from a
+  link, with the sender's chips shown beside yours on each answer, *Send yours back* and a
+  head-to-head picture
+- [ ] Web: your odds on Your map: over every Hedge your bets photo, how often the country you
+  put each share of chips on was the right one, beside Atlas's own, from counts the browser keeps
+- [ ] Web: Hedge your bets stamps: one for a whole game of 4,000 points or more, one for
+  out-scoring Atlas's probabilities over at least 25 photos, in a group on Stamps with progress
+
 ## Beyond
 
 Rooms, distillation, deployment and a research write-up (`docs/architecture.md`). New

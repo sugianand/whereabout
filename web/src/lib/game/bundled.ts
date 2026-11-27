@@ -10,6 +10,7 @@ import catalog from "@/data/photos.json";
 import { continentMap } from "./clueMix";
 import { buildDeck, gameRecords } from "./deck";
 import { fooledIds } from "./fooledAtlas";
+import { hedgeIds } from "./hedge";
 import { nameIds } from "./nameCountry";
 import { groundMap } from "./onTheGround";
 import { spotIds } from "./spotClue";
@@ -69,6 +70,12 @@ export const bundledSpotIds = spotIds(bundledRecords);
  * answer arrives with its photo's record.
  */
 export const bundledTrustIds = trustIds(bundledRecords);
+
+/**
+ * The photos Hedge your bets can deal: those Atlas weighed another country for (`hedgeIds`).
+ * Ids only; the countries offered and Atlas's belief arrive with each photo's record.
+ */
+export const bundledHedgeIds = hedgeIds(bundledRecords);
 
 /**
  * The photos Which fooled Atlas? can deal: those Atlas pinned (`fooledIds`). Ids only; how far

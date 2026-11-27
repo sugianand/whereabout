@@ -354,6 +354,35 @@ test.describe("on a keyboard", () => {
     await expect(page.getByText("Photo 3 of 10", { exact: true })).toBeVisible();
   });
 
+  test("? lists Hedge your bets's controls, and every one of its keys works", async ({ page }) => {
+    await page.goto("./hedge");
+    await expect(page.getByTestId("hedge-option")).toHaveCount(4);
+    const left = page.getByTestId("hedge-left");
+    await expect(left).toHaveText("10 chips to place");
+    const sheet = await openWithKey(page, "Controls for Hedge your bets");
+    await expectSheetLists(sheet, "hedge", false);
+    // 1 pressed in the sheet doesn't place a chip behind it.
+    await page.keyboard.press("1");
+    await page.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+    await expect(left).toHaveText("10 chips to place");
+
+    // 1 to 4 each put a chip on, Backspace takes the last back.
+    const adds = keysOf("hedge", "add");
+    expect(adds).toEqual(["1", "2", "3", "4"]);
+    for (const key of adds) await page.keyboard.press(key);
+    await expect(left).toHaveText("6 chips to place");
+    await page.keyboard.press(keysOf("hedge", "take")[0]);
+    await expect(left).toHaveText("7 chips to place");
+    for (let i = 0; i < 7; i++) await page.keyboard.press("1");
+    const card = page.getByRole("region").filter({ has: page.getByRole("heading") });
+    await page.keyboard.press(keysOf("hedge", "bet")[0]);
+    await expect(card).toBeVisible();
+    await expect(card.getByRole("button", { name: "Next photo" })).toBeFocused();
+    await page.keyboard.press(keysOf("hedge", "next")[0]);
+    await expect(page.getByText("Photo 2 of 5", { exact: true })).toBeVisible();
+  });
+
   test("? lists Which fooled Atlas?'s controls, and every one of its keys works", async ({
     page,
   }) => {
@@ -616,6 +645,7 @@ test.describe("on a touch screen", () => {
     ["bullseye", "./bullseye", "Controls for Bullseye"],
     ["spot-the-clue", "./spot-the-clue", "Controls for Spot the clue"],
     ["trust-atlas", "./trust-atlas", "Controls for Trust Atlas?"],
+    ["hedge", "./hedge", "Controls for Hedge your bets"],
     ["fooled-atlas", "./fooled-atlas", "Controls for Which fooled Atlas?"],
   ] as const) {
     test(`the help button lists ${screen}'s gestures on screen`, async ({ page }) => {

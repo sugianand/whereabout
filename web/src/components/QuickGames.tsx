@@ -88,6 +88,11 @@ const BLURBS: Record<QuickMode, { name: string; blurb: string }> = {
     blurb:
       "Atlas names a country and says how sure it is: call whether it got it right. Ten photos, against Atlas's own sureness.",
   },
+  hedge: {
+    name: "Hedge your bets",
+    blurb:
+      "Four countries and ten chips: spread them the way you rate the odds, scored by a rule that pays an honest hedge. Five photos against Atlas's own probabilities.",
+  },
   "fooled-atlas": {
     name: "Which fooled Atlas?",
     blurb:
@@ -252,6 +257,7 @@ export default function QuickGames({
           "bullseye",
           "spot-the-clue",
           "trust-atlas",
+          "hedge",
           "fooled-atlas",
           "name-country",
           "line-up",

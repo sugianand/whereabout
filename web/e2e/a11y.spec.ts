@@ -58,6 +58,7 @@ const FIRST_SCREENS = [
   "./bullseye",
   "./spot-the-clue",
   "./trust-atlas",
+  "./hedge",
   "./fooled-atlas",
   "./bullseye/daily",
   "./spot-the-clue/daily",
@@ -240,6 +241,20 @@ for (const colorScheme of ["dark", "light"] as const) {
       await page.goto("./map");
       await expect(page.getByTestId("fooled-read-line")).toBeVisible();
       await expectAccessible(page, "what fools atlas");
+    });
+
+    // Hedge your bets's answer card sits over the photo, both sides' chips on every country.
+    test("hedge your bets passes axe with chips placed and at its first answer", async ({
+      page,
+    }) => {
+      await page.goto("./hedge");
+      await expect(page.getByTestId("hedge-option")).toHaveCount(4);
+      for (const key of ["1", "1", "2", "3", "4"]) await page.keyboard.press(key);
+      await expectAccessible(page, "hedge your bets bet");
+      for (let i = 0; i < 5; i++) await page.keyboard.press("1");
+      await page.getByRole("button", { name: "Bet", exact: true }).click();
+      await expect(page.getByTestId("hedge-points")).toBeVisible();
+      await expectAccessible(page, "hedge your bets answer");
     });
 
     // Trust Atlas?'s answer card sits over the photo, the real country tagged on it.

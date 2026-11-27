@@ -38,6 +38,7 @@ export type HelpScreen =
   | "bullseye"
   | "spot-the-clue"
   | "trust-atlas"
+  | "hedge"
   | "fooled-atlas"
   | "name-country"
   | "line-up"
@@ -344,6 +345,42 @@ export const CONTROLS: Record<HelpScreen, readonly ControlGroup[]> = {
       ],
     },
   ],
+  hedge: [
+    {
+      title: "The bet",
+      controls: [
+        {
+          id: "add",
+          does: "Put a chip on the 1st, 2nd, 3rd or 4th country",
+          keys: [k("1"), k("2"), k("3"), k("4")],
+          mouse: "Click + beside a country",
+          touch: "Tap + beside a country",
+        },
+        {
+          id: "take",
+          does: "Take back the last chip you placed",
+          keys: [k("Backspace")],
+          mouse: "Click − beside a country",
+          touch: "Tap − beside a country",
+        },
+        {
+          id: "bet",
+          does: "Bet, once all ten chips are on",
+          keys: [k("G", "g")],
+          mouse: "Bet",
+          touch: "Bet",
+        },
+        {
+          id: "next",
+          does: "Next photo, from the answer",
+          keys: [k("Enter")],
+          mouse: "Next photo",
+          touch: "Next photo",
+        },
+        HELP,
+      ],
+    },
+  ],
   "trust-atlas": [
     {
       title: "The call",
@@ -577,6 +614,7 @@ export const SCREEN_TITLES: Record<HelpScreen, string> = {
   bullseye: "Controls for Bullseye",
   "spot-the-clue": "Controls for Spot the clue",
   "trust-atlas": "Controls for Trust Atlas?",
+  hedge: "Controls for Hedge your bets",
   "fooled-atlas": "Controls for Which fooled Atlas?",
   "name-country": "Controls for Name the country",
   "line-up": "Controls for Line them up",
