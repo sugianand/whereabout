@@ -456,9 +456,23 @@ odds beside a model's probabilities on the same photos. Still the static site wi
   plays the day from the free game's link, reloads mid-game, shares, finds the day not dealt again
   with the same countries in the same order, and fits a 320px phone; Today's and Stamps' full days
   seed it; axe on the new page)
-- [ ] Web: challenge a friend to Hedge your bets: the same five photos and four countries from a
+- [x] Web: challenge a friend to Hedge your bets: the same five photos and four countries from a
   link, with the sender's chips shown beside yours on each answer, *Send yours back* and a
-  head-to-head picture
+  head-to-head picture (`web/src/lib/game/hedgeChallenge.ts`: the link is the game's seed in base
+  36, the five ids and each bet as one character a country, `0` to `9` and `a` for ten, e.g.
+  `?challenge=21i3v9_a1.b2.c3.d4.e5_a000.3331.…`; the seed alone reorders each photo's four
+  countries with `hedgeOptions`, so no country rides in the link. `parseHedgeChallenge` takes only
+  a 32-bit seed, five different dealt photos and whole bets of ten; `hedgeFriendResult` scores each
+  bet again with `hedgeResult` as its record arrives, so the points never come from the link, and a
+  bet that no longer fits the countries a photo now offers makes the challenge stale and deals a
+  fresh game with a reason. On a challenge every record loads up front for the points to beat and
+  the friend's running total; the answer card shows the friend's chips on every country beside
+  yours and Atlas's only after you bet. The end says who won, lists the friend's chips on the right
+  country, and offers *Send yours back* and a head-to-head of chips on it and points per photo. A
+  challenge never counts as a best. Unit tests for the link's round trip and junk, the real deal,
+  scoring, staleness, the lines and the head-to-head; component tests answer a challenge, set three
+  broken links aside and send a free game; e2e on desktop and phone sends a game, plays it as the
+  friend, replies, saves the picture and fits a 320px phone)
 - [ ] Web: your odds on Your map: over every Hedge your bets photo, how often the country you
   put each share of chips on was the right one, beside Atlas's own, from counts the browser keeps
 - [ ] Web: Hedge your bets stamps: one for a whole game of 4,000 points or more, one for

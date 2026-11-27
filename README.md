@@ -166,6 +166,11 @@ is kept as it is placed, so a reload picks up at the next photo and can't take o
 bet is scored again on its photo rather than trusted; Today sets your points against Atlas's
 probabilities, for a *Beat Atlas* stamp. The share line is your points beside Atlas's and a square
 per photo by the chips you had on the right country, spoiling no place or country.
+A whole free game can **challenge a friend**: the link carries the game's seed, the five photos and
+your chips on each, so they bet over the same four countries in the same order and see your chips
+beside theirs and Atlas's once their own bet is in. Your points are scored again on each photo's
+real country, never read from the link, which names no country; the end screen offers *Send yours
+back* and a head-to-head picture.
 **Which fooled Atlas?** (at `/fooled-atlas`, in the Games menu) shows two photos side by side:
 pick the one Atlas placed further from where it was taken (tap it, or press 1 or 2). The answer
 tags each photo with how far off Atlas's pin landed and draws both misses on a scale from spot on

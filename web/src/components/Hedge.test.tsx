@@ -16,6 +16,7 @@ import {
   dailyHedgeSeed,
   loadHedgeDay,
 } from "@/lib/game/hedgeDaily";
+import { encodeHedgeChallenge } from "@/lib/game/hedgeChallenge";
 import { countryName } from "@/lib/countries";
 import { gameFor } from "@/test/deck";
 
@@ -264,4 +265,157 @@ describe("today's Hedge your bets", () => {
       "/hedge/daily",
     );
   });
+});
+
+function useClipboard() {
+  const sent = { text: "" };
+  Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+  Object.defineProperty(navigator, "clipboard", {
+    value: { writeText: async (t: string) => void (sent.text = t) },
+    configurable: true,
+  });
+  return sent;
+}
+
+describe("a Hedge your bets challenge", () => {
+  // The friend's game: h0 to h4 with countries ordered by seed 7, and five chips on France and
+  // five on the next country on every photo, 750 points each: 3,750 to beat.
+  const SEED = 7;
+  const LINKED = IDS.slice(0, HEDGE_PHOTOS);
+  const linkedOptions = (n: number) => hedgeOptions(byId.get(LINKED[n]!)!, SEED);
+  const halfOnFrance = (n: number) => {
+    const options = linkedOptions(n);
+    const fr = options.indexOf("FR");
+    return options.map((_, i) => (i === fr || i === (fr + 1) % 4 ? 5 : 0));
+  };
+  const FRIEND = encodeHedgeChallenge({
+    seed: SEED,
+    ids: LINKED,
+    bets: LINKED.map((_, n) => halfOnFrance(n)),
+  });
+
+  afterEach(() => window.history.replaceState(null, "", "/"));
+
+  it("deals the friend's five and countries, shows their chips once yours are in, and sends yours back", async () => {
+    const sent = useClipboard();
+    window.history.replaceState(null, "", `/hedge?challenge=${FRIEND}`);
+    await setup();
+    // Every record arrives up front, so the friend's bets are scored before the first photo.
+    await waitFor(() => expect(screen.getByTestId("hedge-challenge")).toHaveTextContent("3,750"));
+    expect(screen.queryByText("Best")).toBeNull();
+    for (let n = 0; n < HEDGE_PHOTOS; n++) {
+      await waitFor(() =>
+        expect(document.querySelector("main")).toHaveAttribute("data-photo", LINKED[n]),
+      );
+      await waitFor(() => expect(plus("FR")).toBeEnabled());
+      const options = linkedOptions(n);
+      // The friend's countries, in the friend's order.
+      expect(screen.getAllByTestId("hedge-option").map((r) => r.dataset.country)).toEqual(options);
+      expect(screen.getByTestId("hedge-friend-score")).toHaveTextContent(
+        (750 * n).toLocaleString("en-US"),
+      );
+      // The friend's bet stays hidden until yours is placed.
+      expect(screen.queryByTestId("hedge-friend-line")).toBeNull();
+      // You: all in on France on every photo but the last, all in on the wrong one there.
+      const fr = options.indexOf("FR");
+      const at = String((n === HEDGE_PHOTOS - 1 ? (fr + 2) % 4 : fr) + 1);
+      for (let i = 0; i < 10; i++) key(at);
+      key("g");
+      const card = await screen.findByRole("region");
+      expect(within(card).getByTestId("hedge-friend-line")).toHaveTextContent(
+        "Friend: Your friend had 5 chips on France: 750.",
+      );
+      const friendChips = within(card)
+        .getAllByTestId("hedge-friend-chips")
+        .map((c) => c.textContent);
+      expect(friendChips).toEqual(halfOnFrance(n).map((c) => `Friend${c}${c} chips`));
+      const label = n === HEDGE_PHOTOS - 1 ? "See the results" : "Next photo";
+      fireEvent.click(within(card).getByRole("button", { name: label }));
+    }
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("4,000 points");
+    expect(screen.getByTestId("hedge-challenge-line")).toHaveTextContent(
+      "You beat your friend's 3,750 by 250.",
+    );
+    expect(screen.getAllByTestId("hedge-row-friend")[0]).toHaveTextContent(
+      "Friend: 5 chips on it, 750.",
+    );
+    // A challenge's photos were picked by someone who had seen them: never a best.
+    expect(localStorage.getItem(BEST_HEDGE_KEY)).toBeNull();
+    expect(screen.queryByText(/new best/)).toBeNull();
+    expect(screen.getByRole("button", { name: "Share head to head" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Send yours back" }));
+    await waitFor(() => expect(sent.text).not.toBe(""));
+    const lines = sent.text.split("\n");
+    expect(lines[0]).toMatch(
+      /^Whereabout · Hedge your bets: 4,000 points\. Atlas's probabilities: /,
+    );
+    expect(lines[1]).toBe("That beats your 3,750. Your turn to read the odds.");
+    expect(lines[2]).toMatch(
+      new RegExp(`^http://localhost:3000/hedge\\?challenge=7_${LINKED.join("\\.")}_`),
+    );
+    for (const id of LINKED) expect(sent.text).not.toContain(byId.get(id)!.photo.place);
+    expect(sent.text).not.toContain("France");
+
+    fireEvent.click(screen.getByRole("button", { name: "Play a fresh game" }));
+    await waitFor(() => expect(screen.queryByTestId("hedge-challenge")).toBeNull());
+    expect(window.location.search).toBe("");
+  }, 30_000);
+
+  it.each([
+    [
+      `7_${LINKED.slice(0, 4).join(".")}_a000.a000.a000.a000`,
+      "That challenge link was cut short, so here's a fresh game instead.",
+    ],
+    [
+      `7_${LINKED.slice(0, 4).join(".")}.zz_a000.a000.a000.a000.a000`,
+      "That challenge's photos aren't in the game any more, so here's a fresh game instead.",
+    ],
+    [
+      // Two countries on a photo that offers four: the bet no longer fits it.
+      `7_${LINKED.join(".")}_a000.a000.a000.a000.55`,
+      "That challenge's countries have changed since it was sent, so here's a fresh game instead.",
+    ],
+  ])("sets the link %s aside for a fresh game", async (value, notice) => {
+    window.history.replaceState(null, "", `/hedge?challenge=${value}`);
+    await setup();
+    expect(await screen.findByText(notice)).toBeInTheDocument();
+    expect(screen.queryByTestId("hedge-challenge")).toBeNull();
+    expect(window.location.search).toBe("");
+    await waitFor(() =>
+      expect(document.querySelector("main")).toHaveAttribute("data-photo", ORDER[0]),
+    );
+  });
+
+  it("offers a whole free game to a friend, with no head to head", async () => {
+    const sent = useClipboard();
+    await setup();
+    for (let n = 0; n < HEDGE_PHOTOS; n++) {
+      await waitFor(() =>
+        expect(document.querySelector("main")).toHaveAttribute("data-photo", ORDER[n]),
+      );
+      await waitFor(() => expect(plus("FR")).toBeEnabled());
+      const fr = String(optionsOf(n).indexOf("FR") + 1);
+      for (let i = 0; i < 10; i++) key(fr);
+      key("g");
+      const card = await screen.findByRole("region");
+      expect(within(card).queryByTestId("hedge-friend-line")).toBeNull();
+      const label = n === HEDGE_PHOTOS - 1 ? "See the results" : "Next photo";
+      fireEvent.click(within(card).getByRole("button", { name: label }));
+    }
+    fireEvent.click(await screen.findByRole("button", { name: "Challenge a friend" }));
+    await waitFor(() => expect(sent.text).not.toBe(""));
+    const bets = ORDER.slice(0, HEDGE_PHOTOS)
+      .map((_, n) =>
+        optionsOf(n)
+          .map((c) => (c === "FR" ? "a" : "0"))
+          .join(""),
+      )
+      .join(".");
+    expect(sent.text).toContain(`?challenge=0_${ORDER.slice(0, HEDGE_PHOTOS).join(".")}_${bets}`);
+    expect(sent.text).toContain(
+      "Same five photos, same four countries: can you read the odds better?",
+    );
+    expect(screen.queryByRole("button", { name: "Share head to head" })).toBeNull();
+  }, 30_000);
 });

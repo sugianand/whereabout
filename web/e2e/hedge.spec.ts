@@ -249,3 +249,184 @@ test("today's Hedge your bets fits a 320px phone, its link to free games on scre
     );
   }
 });
+
+test("a Hedge your bets challenge deals a friend the same five and countries, with the sender's chips shown after theirs", async ({
+  page,
+}) => {
+  test.setTimeout(240_000);
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  const sent = () => page.evaluate(() => (window as unknown as { sent: string }).sent);
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+  const offered = () =>
+    page
+      .getByTestId("hedge-option")
+      .evaluateAll((els) => els.map((e) => e.getAttribute("data-country")!));
+
+  // The sender goes all in on the right country every time: 5,000 to beat.
+  await page.goto("./hedge");
+  const game: { id: string; offered: string[]; right: number }[] = [];
+  for (let n = 0; n < 5; n++) {
+    await expect(page.getByText(`Photo ${n + 1} of 5`, { exact: true })).toBeVisible();
+    const { id, right } = await onScreen(page);
+    game.push({ id, offered: await offered(), right });
+    for (let i = 0; i < 10; i++) await page.keyboard.press(String(right + 1));
+    await page.keyboard.press("g");
+    await expect(card.getByTestId("hedge-friend-line")).toHaveCount(0);
+    await page.keyboard.press("Enter");
+  }
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("5,000 points");
+  await page.getByRole("button", { name: "Challenge a friend" }).click();
+  await expect(page.getByText(/^Challenge (sent|link copied)/)).toBeVisible();
+  const message = await sent();
+  expect(message.split("\n")[0]).toMatch(
+    /^Whereabout · Hedge your bets: 5,000 points\. Atlas's probabilities: [\d,]+\.$/,
+  );
+  const link = message.split("\n").at(-1)!;
+  const bets = game.map((g) => g.offered.map((_, i) => (i === g.right ? "a" : "0")).join(""));
+  expect(link).toMatch(
+    new RegExp(
+      `/whereabout/hedge/?\\?challenge=[0-9a-z]+_${game.map((g) => g.id).join("\\.")}_${bets.join("\\.")}$`,
+    ),
+  );
+  for (const country of new Set(game.flatMap((g) => g.offered))) {
+    expect(message).not.toContain(`_${country}`);
+  }
+
+  // The friend, with nothing kept, gets the same five and the same countries in the same order,
+  // and spreads three, three, two, two on each.
+  await page.evaluate(() => localStorage.clear());
+  await page.goto(link);
+  await expect(page.getByTestId("hedge-challenge")).toHaveText("5,000");
+  await expect(page.getByText("Best", { exact: true })).toHaveCount(0);
+  let mine = 0;
+  for (let n = 0; n < 5; n++) {
+    const g = game[n]!;
+    await expect(page.locator("main[data-photo]")).toHaveAttribute("data-photo", g.id);
+    await expect(page.getByTestId("hedge-friend-score")).toHaveText(
+      (1000 * n).toLocaleString("en-US"),
+    );
+    const { labels } = await onScreen(page);
+    expect(await offered()).toEqual(g.offered);
+    await expect(card).toHaveCount(0);
+    for (const [i, chips] of [3, 3, 2, 2].entries()) {
+      for (let c = 0; c < chips; c++) await page.keyboard.press(String(i + 1));
+    }
+    await page.keyboard.press("g");
+    mine += g.right < 2 ? 670 : 570;
+    await expect(card.getByTestId("hedge-friend-line")).toHaveText(
+      `Friend: Your friend had 10 chips on ${labels[g.right]}: 1,000.`,
+    );
+    await expect(card.getByTestId("hedge-friend-chips").nth(g.right)).toContainText("10 chips");
+    await page.keyboard.press("Enter");
+  }
+  const total = mine.toLocaleString("en-US");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(`${total} points`);
+  await expect(page.getByTestId("hedge-challenge-line")).toHaveText(
+    `Your friend's 5,000 wins, by ${(5000 - mine).toLocaleString("en-US")}.`,
+  );
+  await expect(page.getByTestId("hedge-row-friend")).toHaveCount(5);
+  await expect(page.getByTestId("hedge-row-friend").first()).toHaveText(
+    "Friend: 10 chips on it, 1,000.",
+  );
+  expect(await page.evaluate(() => localStorage.getItem("whereabout:hedge-best"))).toBeNull();
+
+  await page.getByRole("button", { name: "Send yours back" }).click();
+  await expect(page.getByText(/^Challenge (sent|link copied)/)).toBeVisible();
+  const reply = await sent();
+  expect(reply.split("\n")[1]).toBe("Your 5,000 wins this time. Try them again?");
+  expect(reply.split("\n").at(-1)).toMatch(
+    new RegExp(`_${game.map((g) => g.id).join("\\.")}_${game.map(() => "3322").join("\\.")}$`),
+  );
+
+  // Head to head: both games as a 1080px picture, saved, with the reply link copied.
+  await page.evaluate(() => ((window as unknown as { sent: string }).sent = ""));
+  const picture = page.getByRole("button", { name: "Share head to head" });
+  const [download] = await Promise.all([page.waitForEvent("download"), picture.click()]);
+  expect(download.suggestedFilename()).toBe("whereabout-hedge-your-bets-head-to-head.png");
+  const png = readFileSync((await download.path())!);
+  expect(png.subarray(1, 4).toString()).toBe("PNG");
+  expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1080, 1080]);
+  expect(await sent()).toBe(reply);
+
+  // A fresh game drops the link.
+  await page.getByRole("button", { name: "Play a fresh game" }).click();
+  await expect(page.getByText("Photo 1 of 5", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("hedge-challenge")).toHaveCount(0);
+  expect(new URL(page.url()).search).toBe("");
+  expect(errors).toEqual([]);
+});
+
+test("a broken Hedge your bets challenge says so and deals a fresh game", async ({ page }) => {
+  await page.goto("./hedge?challenge=7_wm001_a000");
+  await expect(page.getByText(/That challenge link was cut short/)).toBeVisible();
+  await expect(page.getByTestId("hedge-challenge")).toHaveCount(0);
+  await expect(page.getByText("Photo 1 of 5", { exact: true })).toBeVisible();
+  expect(new URL(page.url()).search).toBe("");
+});
+
+test("a Hedge your bets challenge's answer card and end buttons fit a 320px phone", async ({
+  page,
+}) => {
+  test.skip((page.viewportSize()?.width ?? 1000) >= 768, "a phone layout check");
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 320, height: 568 });
+  // A free game first, to get a real link; then play it as the friend.
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (t: string) => void ((window as unknown as { sent: string }).sent = t),
+      },
+      configurable: true,
+    });
+  });
+  await page.goto("./hedge");
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+  for (let n = 0; n < 5; n++) {
+    await onScreen(page);
+    for (let i = 0; i < 10; i++) await page.keyboard.press("1");
+    await page.keyboard.press("g");
+    await page.keyboard.press("Enter");
+  }
+  await page.getByRole("button", { name: "Challenge a friend" }).click();
+  const link = (await page.evaluate(() => (window as unknown as { sent: string }).sent))
+    .split("\n")
+    .at(-1)!;
+  await page.goto(link);
+  await expect(page.getByTestId("hedge-challenge")).toHaveText(/^[\d,]+$/);
+  for (let n = 0; n < 5; n++) {
+    await onScreen(page);
+    for (let i = 0; i < 10; i++) await page.keyboard.press("2");
+    await page.keyboard.press("g");
+    await expect(card.getByTestId("hedge-friend-line")).toBeVisible();
+    const next = card.getByRole("button", { name: n === 4 ? "See the results" : "Next photo" });
+    const box = (await next.boundingBox())!;
+    expect(box.y + box.height).toBeLessThanOrEqual(569);
+    for (const row of await card.getByTestId("hedge-both").all()) {
+      const r = (await row.boundingBox())!;
+      expect(r.x + r.width).toBeLessThanOrEqual(321);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      320,
+    );
+    await page.keyboard.press("Enter");
+  }
+  for (const label of ["Play a fresh game", "Send yours back", "Share head to head"]) {
+    const button = page.getByRole("button", { name: label });
+    await button.scrollIntoViewIfNeeded();
+    const box = (await button.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(321);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+});
