@@ -245,7 +245,7 @@ for (const colorScheme of ["dark", "light"] as const) {
     });
 
     // Hedge your bets's answer card sits over the photo, both sides' chips on every country.
-    test("hedge your bets passes axe with chips placed and at its first answer", async ({
+    test("hedge your bets passes axe with chips placed, at its first answer and on Your odds", async ({
       page,
     }) => {
       await page.goto("./hedge");
@@ -256,6 +256,9 @@ for (const colorScheme of ["dark", "light"] as const) {
       await page.getByRole("button", { name: "Bet", exact: true }).click();
       await expect(page.getByTestId("hedge-points")).toBeVisible();
       await expectAccessible(page, "hedge your bets answer");
+      await page.goto("./map");
+      await expect(page.getByTestId("hedge-odds-line")).toBeVisible();
+      await expectAccessible(page, "your odds");
     });
 
     // Trust Atlas?'s answer card sits over the photo, the real country tagged on it.

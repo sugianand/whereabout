@@ -45,6 +45,7 @@ import {
   parseHedgeChallenge,
   type HedgeChallenge,
 } from "@/lib/game/hedgeChallenge";
+import { recordHedgeOdds } from "@/lib/game/hedgeOdds";
 import { formatPoints } from "@/lib/geo";
 import { placeholderUrl, sources } from "@/lib/photoSources";
 import { sendShare, type ShareOutcome } from "@/lib/share";
@@ -261,6 +262,8 @@ export default function Hedge({ deck, ids, loadRecords, random, daily = false, n
     const result = hedgeResult(record!, options, chips);
     if (!result) return;
     const after = hedgeReducer(state, { type: "bet", result });
+    // Your odds on Your map counts every bet once, as it is placed, in every kind of game.
+    if (after.phase === "answered") recordHedgeOdds(result);
     if (day) {
       // Kept after every photo, so a reload can't take a bet back. Today's game is played once
       // for the day, apart from the free game's best.
@@ -684,6 +687,8 @@ function HedgeCard({
             key={country}
             className={`flex flex-wrap items-center gap-x-3 rounded-lg px-2 py-0.5 md:py-1 ${i === result.right ? "bg-sonar/15" : ""}`}
             data-testid="hedge-both"
+            data-you={result.chips[i]}
+            data-atlas={result.atlasChips[i]}
           >
             <span
               className={`min-w-0 flex-1 truncate md:basis-full ${i === result.right ? "font-semibold text-chalk" : "text-chalk-dim"}`}

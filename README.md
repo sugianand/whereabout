@@ -384,7 +384,11 @@ the photo (each square counted once as it is locked in; only counts are kept). T
 trust**: over every Trust Atlas? call, how many you called right at each band of Atlas's sureness
 (under 25%, 25% to 50%, 50% or more), trusting it when its country was right and doubting it when
 it wasn't, beside how Atlas's own rule (trust from 50%) did on the same photos, with who called more
-right; each call counted once as it is made, in every kind of game (only counts are kept). Then **head to head with friends**: every friend's challenge you've answered from a link,
+right; each call counted once as it is made, in every kind of game (only counts are kept). Then
+**your odds**: over every Hedge your bets photo, how often a country was the right one by how many
+chips you put on it (1–2, 3–4, 5–7 or 8–10), beside Atlas's own chips on the same photos, with how
+many points each side's chips were off the real odds on average (each bet counted once as it is
+placed, in every kind of game; only counts are kept). Then **head to head with friends**: every friend's challenge you've answered from a link,
 in any game, won, lost or tied, grouped by game with each result in its own units, a link to
 play theirs again and *Send a rematch*, which sends your result on it back. It is kept only in
 your browser.

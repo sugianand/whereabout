@@ -473,8 +473,23 @@ odds beside a model's probabilities on the same photos. Still the static site wi
   scoring, staleness, the lines and the head-to-head; component tests answer a challenge, set three
   broken links aside and send a free game; e2e on desktop and phone sends a game, plays it as the
   friend, replies, saves the picture and fits a 320px phone)
-- [ ] Web: your odds on Your map: over every Hedge your bets photo, how often the country you
+- [x] Web: your odds on Your map: over every Hedge your bets photo, how often the country you
   put each share of chips on was the right one, beside Atlas's own, from counts the browser keeps
+  (`web/src/lib/game/hedgeOdds.ts`: every country with chips on it falls in one band of `ODDS`,
+  1–2, 3–4, 5–7 or 8–10 chips, for you and for Atlas's rounded chips on the same four. A band
+  keeps only how many countries were bet on, the chips they held and how many were right;
+  `oddsGap` works the expected calibration error out of those, the average gap in points between
+  what the chips said and how often they came true, and `parseHedgeOdds` drops counts that can't
+  agree with themselves (chips outside a band, not ten a photo, more than one right country a
+  photo). `recordHedgeOdds` adds each bet once as it is placed, in free games, challenges and
+  today's game, under `whereabout:hedge-odds`; a kept day is never read back. `components/
+  HedgeOdds.tsx` shows *Your odds* on Your map once a bet is placed: the headline gap for both
+  sides, who reads the odds closer, and a card per band with a bar for how often it was right and
+  a tick where its chips said it would be. Bets placed before this release weren't kept. Unit
+  tests for the bands, the counts, the gap, the words, junk and keeping; component tests for the
+  chart, a free bet landing in its bands and today's game counted once over a reload; e2e on
+  desktop and phone bets three photos at 320px, leaves mid-game and finds every band's counts
+  from the answer cards with no sideways scroll; Your odds joins the axe audit)
 - [ ] Web: Hedge your bets stamps: one for a whole game of 4,000 points or more, one for
   out-scoring Atlas's probabilities over at least 25 photos, in a group on Stamps with progress
 

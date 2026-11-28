@@ -17,6 +17,7 @@ import {
   loadHedgeDay,
 } from "@/lib/game/hedgeDaily";
 import { encodeHedgeChallenge } from "@/lib/game/hedgeChallenge";
+import { loadHedgeOdds } from "@/lib/game/hedgeOdds";
 import { countryName } from "@/lib/countries";
 import { gameFor } from "@/test/deck";
 
@@ -116,6 +117,23 @@ describe("Hedge", () => {
     expect(both).toHaveLength(4);
     expect(both[right]).toHaveTextContent("France, the right country");
     expect(within(card).getByRole("button", { name: "Next photo" })).toHaveFocus();
+    // Your odds counts the bet: France's seven in Likely, Belgium's one and Switzerland's two
+    // as long shots; Atlas's six on France in Likely, its other four chips as long shots.
+    expect(loadHedgeOdds()).toEqual({
+      photos: 1,
+      you: [
+        { bets: 2, chips: 3, right: 0 },
+        { bets: 0, chips: 0, right: 0 },
+        { bets: 1, chips: 7, right: 1 },
+        { bets: 0, chips: 0, right: 0 },
+      ],
+      atlas: [
+        { bets: 3, chips: 4, right: 0 },
+        { bets: 0, chips: 0, right: 0 },
+        { bets: 1, chips: 6, right: 1 },
+        { bets: 0, chips: 0, right: 0 },
+      ],
+    });
   });
 
   it("bets by key: 1 to 4 put chips on, Backspace takes the last back, G bets", async () => {
@@ -216,6 +234,8 @@ describe("today's Hedge your bets", () => {
     );
     expect(screen.getByText("Photo 3 of 5")).toBeInTheDocument();
     expect(screen.getByText("1,000", { selector: "dd" })).toBeInTheDocument();
+    // Your odds counted the two bets once each; the reload added none.
+    expect(loadHedgeOdds().photos).toBe(2);
     for (let n = 2; n < HEDGE_PHOTOS; n++) await allIn(n, true);
 
     expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("4,000 points");
@@ -234,6 +254,8 @@ describe("today's Hedge your bets", () => {
     );
     // The free game's best is untouched.
     expect(localStorage.getItem(BEST_HEDGE_KEY)).toBe("1200");
+    // Four all in on France and one all in elsewhere, each counted once.
+    expect(loadHedgeOdds().you[3]).toEqual({ bets: 5, chips: 50, right: 4 });
   }, 30_000);
 
   it("shows a finished day's result instead of dealing it again, scored on the photos", async () => {
@@ -256,6 +278,8 @@ describe("today's Hedge your bets", () => {
       screen.getByText(/^Atlas's probabilities scored 4,450\. You read the odds better/),
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Bet" })).toBeNull();
+    // A kept day is never read into Your odds.
+    expect(loadHedgeOdds().photos).toBe(0);
   });
 
   it("links to today's game from a free one", async () => {

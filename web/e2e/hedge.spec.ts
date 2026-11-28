@@ -123,6 +123,71 @@ test("Hedge your bets scores a spread by tap and by key against Atlas's, and kee
   expect(errors).toEqual([]);
 });
 
+test("your bets show on Your map's odds, by the chips on each country, beside Atlas's", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto("./hedge");
+  const card = page.getByRole("region").filter({ has: page.getByRole("heading", { level: 2 }) });
+  const bands = ["long", "maybe", "likely", "sure"] as const;
+  const bandOf = (c: number) => (c <= 2 ? 0 : c <= 4 ? 1 : c <= 7 ? 2 : 3);
+  const blank = () => bands.map(() => ({ bets: 0, chips: 0, right: 0 }));
+  const expected = { you: blank(), atlas: blank() };
+  for (let n = 0; n < 3; n++) {
+    await expect(page.getByText(`Photo ${n + 1} of 5`, { exact: true })).toBeVisible();
+    const { right } = await onScreen(page);
+    // All in on the right country, all in on a wrong one, then three, three, two, two.
+    const spread =
+      n === 0
+        ? [0, 1, 2, 3].map((i) => (i === right ? 10 : 0))
+        : n === 1
+          ? [0, 1, 2, 3].map((i) => (i === (right + 1) % 4 ? 10 : 0))
+          : [3, 3, 2, 2];
+    for (const [i, chips] of spread.entries()) {
+      for (let c = 0; c < chips; c++) await page.keyboard.press(String(i + 1));
+    }
+    await page.keyboard.press("g");
+    const both = card.getByTestId("hedge-both");
+    await expect(both).toHaveCount(4);
+    for (let i = 0; i < 4; i++) {
+      for (const side of ["you", "atlas"] as const) {
+        const chips = Number(await both.nth(i).getAttribute(`data-${side}`));
+        if (side === "you") expect(chips).toBe(spread[i]);
+        if (chips === 0) continue;
+        const b = expected[side][bandOf(chips)]!;
+        b.bets++;
+        b.chips += chips;
+        if (i === right) b.right++;
+      }
+    }
+    if (n < 2) await card.getByRole("button", { name: "Next photo" }).click();
+  }
+
+  // Leave mid-game: all three bets already count.
+  await page.goto("./map");
+  const section = page.getByTestId("hedge-odds");
+  await expect(section.getByRole("heading", { name: "Your odds" })).toBeVisible();
+  await expect(page.getByTestId("hedge-odds-line")).toContainText(
+    /^Over 3 photos, your chips were/,
+  );
+  for (const [i, b] of bands.entries()) {
+    for (const side of ["you", "atlas"] as const) {
+      const row = page.getByTestId(`hedge-odds-${b}-${side}`);
+      const want = expected[side][i]!;
+      await expect(row).toHaveAttribute("data-bets", String(want.bets));
+      await expect(row).toHaveAttribute("data-chips", String(want.chips));
+      await expect(row).toHaveAttribute("data-right", String(want.right));
+    }
+  }
+  const box = (await page.getByTestId("hedge-odds-sure").boundingBox())!;
+  expect(box.x + box.width).toBeLessThanOrEqual(321);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+
+  await section.getByRole("link", { name: "Play Hedge your bets" }).click();
+  await expect(page).toHaveURL(/\/hedge\/?$/);
+});
+
 test("on a 320px phone the photo, the four countries and the bet fit without scrolling", async ({
   page,
 }) => {

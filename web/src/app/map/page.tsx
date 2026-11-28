@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import BullseyeCalibration from "@/components/BullseyeCalibration";
 import FooledRead from "@/components/FooledRead";
+import HedgeOdds from "@/components/HedgeOdds";
 import HeadToHeadLog from "@/components/HeadToHeadLog";
 import MixUps from "@/components/MixUps";
 import PlayedMap from "@/components/PlayedMap";
@@ -29,7 +30,7 @@ const streakable = ((r) => CONTINENTS.filter((c) => r[c]))(
 export const metadata: Metadata = {
   title: "Your map — Whereabout",
   description:
-    "Every photo you've played in Whereabout on one globe, coloured by how close your pin landed, with the countries you've seen and how you stand against Atlas in the quick games, how often you read the road and the climate right, the climates and ground you misread, the countries you mix up, how often your Bullseye rings hold against Atlas's, how well you read where Atlas looks in Spot the clue, how well you call Atlas's answers in Trust Atlas? beside its own sureness, how well you read which photo fooled Atlas by how far apart its misses were, and every friend's challenge you've answered. Kept only in your browser.",
+    "Every photo you've played in Whereabout on one globe, coloured by how close your pin landed, with the countries you've seen and how you stand against Atlas in the quick games, how often you read the road and the climate right, the climates and ground you misread, the countries you mix up, how often your Bullseye rings hold against Atlas's, how well you read where Atlas looks in Spot the clue, how well you call Atlas's answers in Trust Atlas? beside its own sureness, how well you read which photo fooled Atlas by how far apart its misses were, how true your Hedge your bets chips run beside Atlas's own odds, and every friend's challenge you've answered. Kept only in your browser.",
 };
 
 export default function YourMapPage() {
@@ -62,6 +63,7 @@ export default function YourMapPage() {
       <SpotRead />
       <TrustRead />
       <FooledRead />
+      <HedgeOdds />
       <HeadToHeadLog />
     </main>
   );
